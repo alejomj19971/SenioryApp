@@ -1,0 +1,14 @@
+{
+  "familiar": {
+    "id": "f-andrea",
+    "nombre": "Andrea",
+    "foto": "",
+    "adultoMayorId": "am-carmen"
+  },
+  "adultoMayor": {
+    "id": "am-carmen",
+    "nombre": "Doña Carmen",
+    "edad": 78,
+    "foto": ""
+  }
+}

@@ -1,0 +1,51 @@
+[
+  {
+    "fecha": "2026-09-21T08:10:00",
+    "presionSistolica": 124,
+    "presionDiastolica": 78,
+    "frecuenciaCardiaca": 72,
+    "glucosa": 96
+  },
+  {
+    "fecha": "2026-09-22T08:05:00",
+    "presionSistolica": 128,
+    "presionDiastolica": 80,
+    "frecuenciaCardiaca": 74,
+    "glucosa": 101
+  },
+  {
+    "fecha": "2026-09-23T08:15:00",
+    "presionSistolica": 122,
+    "presionDiastolica": 76,
+    "frecuenciaCardiaca": 70,
+    "glucosa": 94
+  },
+  {
+    "fecha": "2026-09-24T08:00:00",
+    "presionSistolica": 148,
+    "presionDiastolica": 92,
+    "frecuenciaCardiaca": 88,
+    "glucosa": 118
+  },
+  {
+    "fecha": "2026-09-25T08:20:00",
+    "presionSistolica": 130,
+    "presionDiastolica": 82,
+    "frecuenciaCardiaca": 75,
+    "glucosa": 103
+  },
+  {
+    "fecha": "2026-09-26T08:05:00",
+    "presionSistolica": 126,
+    "presionDiastolica": 79,
+    "frecuenciaCardiaca": 73,
+    "glucosa": 98
+  },
+  {
+    "fecha": "2026-09-27T08:10:00",
+    "presionSistolica": 123,
+    "presionDiastolica": 77,
+    "frecuenciaCardiaca": 71,
+    "glucosa": 95
+  }
+]

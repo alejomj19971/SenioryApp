@@ -1,0 +1,260 @@
+[
+  {
+    "id": "c-marta-restrepo",
+    "nombre": "Marta Elena Restrepo",
+    "foto": "",
+    "especialidad": "enfermeria",
+    "titulo": "Técnica en Enfermería — SENA",
+    "aniosExperiencia": 7,
+    "tarifaHora": 20000,
+    "zona": "Laureles, Medellín",
+    "disponibilidad": ["manana", "tarde"],
+    "calificacion": 4.9,
+    "serviciosCompletados": 186,
+    "bio": "Cuido con paciencia y cariño, como si fuera mi propia familia. Me especializo en control de signos vitales, administración de medicamentos y compañía para adultos mayores con movilidad reducida.",
+    "verificacion": {
+      "antecedentes": true,
+      "titulos": true,
+      "psicotecnica": true,
+      "fechaVerificacion": "2026-08-14"
+    },
+    "resenas": [
+      {
+        "autor": "Andrea G.",
+        "calificacion": 5,
+        "comentario": "Marta cuida a mi mamá desde hace tres meses. Es puntual, cariñosa y muy profesional.",
+        "fecha": "2026-09-02"
+      },
+      {
+        "autor": "Felipe R.",
+        "calificacion": 5,
+        "comentario": "Excelente manejo con pacientes de movilidad reducida. La recomiendo totalmente.",
+        "fecha": "2026-08-20"
+      }
+    ]
+  },
+  {
+    "id": "c-carlos-gomez",
+    "nombre": "Carlos Andrés Gómez",
+    "foto": "",
+    "especialidad": "auxiliar",
+    "titulo": "Auxiliar de Enfermería — Cruz Roja Colombiana",
+    "aniosExperiencia": 5,
+    "tarifaHora": 18000,
+    "zona": "Belén, Medellín",
+    "disponibilidad": ["tarde", "noche"],
+    "calificacion": 4.7,
+    "serviciosCompletados": 112,
+    "bio": "Apoyo en actividades diarias, aseo personal y acompañamiento nocturno. Trato respetuoso y mucha paciencia con adultos mayores.",
+    "verificacion": {
+      "antecedentes": true,
+      "titulos": true,
+      "psicotecnica": true,
+      "fechaVerificacion": "2026-07-30"
+    },
+    "resenas": [
+      {
+        "autor": "Luz M.",
+        "calificacion": 5,
+        "comentario": "Muy atento y responsable, se queda tranquilo toda la noche con mi papá.",
+        "fecha": "2026-08-11"
+      }
+    ]
+  },
+  {
+    "id": "c-luisa-ortiz",
+    "nombre": "Luisa Fernanda Ortiz",
+    "foto": "",
+    "especialidad": "fisioterapia",
+    "titulo": "Fisioterapeuta — Universidad CES",
+    "aniosExperiencia": 9,
+    "tarifaHora": 32000,
+    "zona": "El Poblado, Medellín",
+    "disponibilidad": ["manana"],
+    "calificacion": 5,
+    "serviciosCompletados": 203,
+    "bio": "Terapias de rehabilitación y movilidad en casa. Trabajo de la mano con la familia para mejorar la autonomía del paciente semana a semana.",
+    "verificacion": {
+      "antecedentes": true,
+      "titulos": true,
+      "psicotecnica": true,
+      "fechaVerificacion": "2026-09-01"
+    },
+    "resenas": [
+      {
+        "autor": "Camilo S.",
+        "calificacion": 5,
+        "comentario": "Mi abuela recuperó movilidad en las manos gracias a sus terapias. Excelente profesional.",
+        "fecha": "2026-09-10"
+      }
+    ]
+  },
+  {
+    "id": "c-jorge-munoz",
+    "nombre": "Jorge Iván Muñoz",
+    "foto": "",
+    "especialidad": "acompanamiento",
+    "titulo": "Técnico en Atención al Adulto Mayor — SENA",
+    "aniosExperiencia": 4,
+    "tarifaHora": 19000,
+    "zona": "Robledo, Medellín",
+    "disponibilidad": ["manana", "tarde"],
+    "calificacion": 4.8,
+    "serviciosCompletados": 74,
+    "bio": "Acompaño a citas médicas, diligencias y salidas recreativas. Me gusta conversar y mantener activa la mente de quienes cuido.",
+    "verificacion": {
+      "antecedentes": true,
+      "titulos": true,
+      "psicotecnica": true,
+      "fechaVerificacion": "2026-06-18"
+    },
+    "resenas": [
+      {
+        "autor": "Diana P.",
+        "calificacion": 5,
+        "comentario": "Muy puntual llevando a mi papá al médico. Se preocupa de verdad por su bienestar.",
+        "fecha": "2026-07-22"
+      }
+    ]
+  },
+  {
+    "id": "c-paula-zapata",
+    "nombre": "Paula Andrea Zapata",
+    "foto": "",
+    "especialidad": "enfermeria",
+    "titulo": "Enfermera Profesional — Universidad de Antioquia",
+    "aniosExperiencia": 11,
+    "tarifaHora": 24000,
+    "zona": "Bello",
+    "disponibilidad": ["noche"],
+    "calificacion": 4.9,
+    "serviciosCompletados": 231,
+    "bio": "Turnos nocturnos con monitoreo de signos vitales y manejo de medicamentos de alta precisión. Experiencia en cuidados post-hospitalarios.",
+    "verificacion": {
+      "antecedentes": true,
+      "titulos": true,
+      "psicotecnica": true,
+      "fechaVerificacion": "2026-08-05"
+    },
+    "resenas": [
+      {
+        "autor": "Mauricio T.",
+        "calificacion": 5,
+        "comentario": "Paula acompañó a mi mamá tras su cirugía. Profesional y muy atenta durante la noche.",
+        "fecha": "2026-08-19"
+      }
+    ]
+  },
+  {
+    "id": "c-diana-velez",
+    "nombre": "Diana Carolina Vélez",
+    "foto": "",
+    "especialidad": "auxiliar",
+    "titulo": "Auxiliar de Enfermería — SENA",
+    "aniosExperiencia": 6,
+    "tarifaHora": 21000,
+    "zona": "Envigado",
+    "disponibilidad": ["manana", "tarde", "noche"],
+    "calificacion": 4.6,
+    "serviciosCompletados": 95,
+    "bio": "Disponibilidad flexible para turnos completos. Apoyo en alimentación, aseo y actividades del día a día con mucha calidez.",
+    "verificacion": {
+      "antecedentes": true,
+      "titulos": true,
+      "psicotecnica": true,
+      "fechaVerificacion": "2026-07-12"
+    },
+    "resenas": [
+      {
+        "autor": "Sara V.",
+        "calificacion": 4,
+        "comentario": "Muy juiciosa y cumplida. Mi abuela la quiere mucho.",
+        "fecha": "2026-08-01"
+      }
+    ]
+  },
+  {
+    "id": "c-andres-correa",
+    "nombre": "Andrés Felipe Correa",
+    "foto": "",
+    "especialidad": "fisioterapia",
+    "titulo": "Fisioterapeuta — Universidad de Antioquia",
+    "aniosExperiencia": 8,
+    "tarifaHora": 30000,
+    "zona": "Itagüí",
+    "disponibilidad": ["tarde"],
+    "calificacion": 4.8,
+    "serviciosCompletados": 158,
+    "bio": "Especializado en rehabilitación post-ACV y fortalecimiento muscular para adultos mayores. Sesiones adaptadas a cada paciente.",
+    "verificacion": {
+      "antecedentes": true,
+      "titulos": true,
+      "psicotecnica": true,
+      "fechaVerificacion": "2026-05-27"
+    },
+    "resenas": [
+      {
+        "autor": "Natalia H.",
+        "calificacion": 5,
+        "comentario": "Excelente trato y resultados visibles en pocas semanas.",
+        "fecha": "2026-06-15"
+      }
+    ]
+  },
+  {
+    "id": "c-sandra-higuita",
+    "nombre": "Sandra Milena Higuita",
+    "foto": "",
+    "especialidad": "acompanamiento",
+    "titulo": "Técnica en Atención al Adulto Mayor — SENA",
+    "aniosExperiencia": 3,
+    "tarifaHora": 22000,
+    "zona": "Laureles, Medellín",
+    "disponibilidad": ["manana"],
+    "calificacion": 4.7,
+    "serviciosCompletados": 41,
+    "bio": "Acompañamiento cálido para compras, diligencias y estimulación cognitiva con juegos y lectura.",
+    "verificacion": {
+      "antecedentes": true,
+      "titulos": true,
+      "psicotecnica": true,
+      "fechaVerificacion": "2026-09-05"
+    },
+    "resenas": [
+      {
+        "autor": "Julián E.",
+        "calificacion": 5,
+        "comentario": "Mi tía disfruta mucho las tardes de lectura con Sandra.",
+        "fecha": "2026-09-12"
+      }
+    ]
+  },
+  {
+    "id": "c-ricardo-patino",
+    "nombre": "Ricardo León Patiño",
+    "foto": "",
+    "especialidad": "enfermeria",
+    "titulo": "Enfermero Profesional — Universidad CES",
+    "aniosExperiencia": 14,
+    "tarifaHora": 35000,
+    "zona": "El Poblado, Medellín",
+    "disponibilidad": ["manana", "tarde"],
+    "calificacion": 5,
+    "serviciosCompletados": 267,
+    "bio": "Enfermero con amplia experiencia en cuidados intensivos y manejo de pacientes con enfermedades crónicas.",
+    "verificacion": {
+      "antecedentes": true,
+      "titulos": true,
+      "psicotecnica": true,
+      "fechaVerificacion": "2026-08-28"
+    },
+    "resenas": [
+      {
+        "autor": "Isabel C.",
+        "calificacion": 5,
+        "comentario": "Un profesional de altísimo nivel. Nos dio mucha tranquilidad con el cuidado de mi papá.",
+        "fecha": "2026-09-08"
+      }
+    ]
+  }
+]

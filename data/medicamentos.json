@@ -1,0 +1,30 @@
+[
+  {
+    "id": "m-losartan",
+    "nombre": "Losartán",
+    "dosis": "50 mg",
+    "hora": "08:00",
+    "tomado": true
+  },
+  {
+    "id": "m-metformina",
+    "nombre": "Metformina",
+    "dosis": "850 mg",
+    "hora": "13:00",
+    "tomado": true
+  },
+  {
+    "id": "m-atorvastatina",
+    "nombre": "Atorvastatina",
+    "dosis": "20 mg",
+    "hora": "19:00",
+    "tomado": false
+  },
+  {
+    "id": "m-calcio",
+    "nombre": "Calcio + Vitamina D",
+    "dosis": "1 tableta",
+    "hora": "21:00",
+    "tomado": false
+  }
+]
