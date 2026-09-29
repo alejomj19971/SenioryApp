@@ -1,9 +1,10 @@
 import { Suspense } from "react";
 import { HeartPulse } from "lucide-react";
 import { BotonAlerta } from "@/components/teleasistencia/boton-alerta";
+import { CuidadorEnTurno } from "@/components/teleasistencia/cuidador-en-turno";
 import { ListaMedicamentos } from "@/components/teleasistencia/lista-medicamentos";
 import { GraficaSignos } from "@/components/teleasistencia/grafica-signos";
-import { obtenerAdultoMayor } from "@/lib/services/paciente";
+import { obtenerAdultoMayor, obtenerCuidadorEnTurno } from "@/lib/services/paciente";
 import {
   listarMedicamentos,
   listarSignosVitales,
@@ -16,8 +17,9 @@ export const metadata = {
 };
 
 export default async function TeleasistenciaPage() {
-  const [adultoMayor, medicamentos, signosVitales, ultimaLectura] = await Promise.all([
+  const [adultoMayor, cuidadorEnTurno, medicamentos, signosVitales, ultimaLectura] = await Promise.all([
     obtenerAdultoMayor(),
+    obtenerCuidadorEnTurno(),
     listarMedicamentos(),
     listarSignosVitales(),
     obtenerUltimaLecturaSignos(),
@@ -45,9 +47,15 @@ export default async function TeleasistenciaPage() {
         )}
       </div>
 
+      {cuidadorEnTurno && (
+        <CuidadorEnTurno cuidador={cuidadorEnTurno} adultoMayorNombre={adultoMayor.nombre} />
+      )}
+
       <Suspense fallback={<div className="min-h-24 w-full animate-pulse rounded-2xl bg-destructive/40" />}>
         <BotonAlerta />
       </Suspense>
+
+      <div className="h-px bg-border" aria-hidden="true" />
 
       <section className="flex flex-col gap-3">
         <h2 className="text-lg font-semibold text-foreground">Medicamentos de hoy</h2>

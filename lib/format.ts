@@ -28,6 +28,16 @@ export function formatearFechaHora(fechaISO: string): string {
   return formateadorFechaHora.format(new Date(fechaISO));
 }
 
+// Formato manual (no Intl): el espacio antes de "a. m."/"p. m." que genera
+// Intl.DateTimeFormat difiere entre el ICU de Node y el del navegador, lo
+// que rompe la hidratación en componentes cliente. HH:mm es determinista.
+export function formatearHora(fechaISO: string): string {
+  const fecha = new Date(fechaISO);
+  const horas = fecha.getHours().toString().padStart(2, "0");
+  const minutos = fecha.getMinutes().toString().padStart(2, "0");
+  return `${horas}:${minutos}`;
+}
+
 import type { Especialidad, Jornada } from "@/lib/types";
 
 const etiquetasEspecialidad: Record<Especialidad, string> = {

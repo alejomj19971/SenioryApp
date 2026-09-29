@@ -16,6 +16,10 @@ export function ResumenCosto({ resumen }: { resumen: ResumenServicio }) {
           {formatearCOP(resumen.cargoFamilia)}
         </span>
       </div>
+      <p className="text-xs text-muted-foreground">
+        Este cargo cubre la verificación de antecedentes, títulos y prueba
+        psicotécnica de cada cuidador, y la teleasistencia gratuita.
+      </p>
       <div className="h-px bg-border" />
       <div className="flex items-center justify-between text-lg font-bold text-foreground">
         <span>Total</span>

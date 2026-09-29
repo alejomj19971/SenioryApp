@@ -1,4 +1,3 @@
-import { HeartHandshake } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 interface LogoProps {
@@ -9,9 +8,12 @@ interface LogoProps {
 export function Logo({ className, iconOnly = false }: LogoProps) {
   return (
     <span className={cn("inline-flex items-center gap-2", className)}>
-      <span className="flex size-9 shrink-0 items-center justify-center rounded-xl bg-primary text-primary-foreground">
-        <HeartHandshake className="size-5" aria-hidden="true" />
-      </span>
+      {/* eslint-disable-next-line @next/next/no-img-element */}
+      <img
+        src="/logo-icon.png"
+        alt=""
+        className="size-10 shrink-0 object-contain"
+      />
       {!iconOnly && (
         <span className="text-xl font-bold tracking-tight text-foreground">
           Seniory

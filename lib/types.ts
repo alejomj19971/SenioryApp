@@ -28,6 +28,7 @@ export interface Cuidador {
   titulo: string; // ej. "Técnica en Enfermería — SENA"
   aniosExperiencia: number;
   tarifaHora: number; // COP, lo que cobra el cuidador
+  telefono: string; // formato E.164, ej. "+573001234567"
   zona: string; // barrio/comuna de Medellín o municipio del Valle de Aburrá
   disponibilidad: Jornada[];
   calificacion: number;
@@ -35,6 +36,7 @@ export interface Cuidador {
   bio: string;
   verificacion: Verificacion;
   resenas: Resena[];
+  hojaDeVida?: string; // ruta pública al PDF de la hoja de vida, ej. "/hojas-de-vida/nombre.pdf"
 }
 
 export interface FiltrosCuidador {
@@ -66,6 +68,7 @@ export interface AdultoMayor {
   nombre: string;
   edad: number;
   foto: string;
+  cuidadorAsignadoId?: string;
 }
 
 export interface Familiar {
@@ -73,4 +76,11 @@ export interface Familiar {
   nombre: string;
   foto: string;
   adultoMayorId: string;
+}
+
+export interface Mensaje {
+  id: string;
+  autor: "familiar" | "cuidador";
+  texto: string;
+  fecha: string; // ISO
 }

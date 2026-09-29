@@ -36,7 +36,7 @@ export function SelectorHoras({
   onHorasChange,
 }: SelectorHorasProps) {
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-6 rounded-2xl bg-card p-4 ring-1 ring-border">
       <div className="flex flex-col gap-2">
         <span className="text-base font-semibold text-foreground">Fecha</span>
         <div role="group" aria-label="Elegir fecha" className="flex flex-wrap gap-2">

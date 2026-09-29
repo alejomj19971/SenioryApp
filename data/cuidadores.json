@@ -7,6 +7,7 @@
     "titulo": "Técnica en Enfermería — SENA",
     "aniosExperiencia": 7,
     "tarifaHora": 20000,
+    "telefono": "+573168393514",
     "zona": "Laureles, Medellín",
     "disponibilidad": ["manana", "tarde"],
     "calificacion": 4.9,
@@ -31,7 +32,8 @@
         "comentario": "Excelente manejo con pacientes de movilidad reducida. La recomiendo totalmente.",
         "fecha": "2026-08-20"
       }
-    ]
+    ],
+    "hojaDeVida": "/hojas-de-vida/marta-elena-restrepo.pdf"
   },
   {
     "id": "c-carlos-gomez",
@@ -41,6 +43,7 @@
     "titulo": "Auxiliar de Enfermería — Cruz Roja Colombiana",
     "aniosExperiencia": 5,
     "tarifaHora": 18000,
+    "telefono": "+573001234502",
     "zona": "Belén, Medellín",
     "disponibilidad": ["tarde", "noche"],
     "calificacion": 4.7,
@@ -69,6 +72,7 @@
     "titulo": "Fisioterapeuta — Universidad CES",
     "aniosExperiencia": 9,
     "tarifaHora": 32000,
+    "telefono": "+573001234503",
     "zona": "El Poblado, Medellín",
     "disponibilidad": ["manana"],
     "calificacion": 5,
@@ -97,6 +101,7 @@
     "titulo": "Técnico en Atención al Adulto Mayor — SENA",
     "aniosExperiencia": 4,
     "tarifaHora": 19000,
+    "telefono": "+573001234504",
     "zona": "Robledo, Medellín",
     "disponibilidad": ["manana", "tarde"],
     "calificacion": 4.8,
@@ -125,6 +130,7 @@
     "titulo": "Enfermera Profesional — Universidad de Antioquia",
     "aniosExperiencia": 11,
     "tarifaHora": 24000,
+    "telefono": "+573001234505",
     "zona": "Bello",
     "disponibilidad": ["noche"],
     "calificacion": 4.9,
@@ -153,6 +159,7 @@
     "titulo": "Auxiliar de Enfermería — SENA",
     "aniosExperiencia": 6,
     "tarifaHora": 21000,
+    "telefono": "+573001234506",
     "zona": "Envigado",
     "disponibilidad": ["manana", "tarde", "noche"],
     "calificacion": 4.6,
@@ -181,6 +188,7 @@
     "titulo": "Fisioterapeuta — Universidad de Antioquia",
     "aniosExperiencia": 8,
     "tarifaHora": 30000,
+    "telefono": "+573001234507",
     "zona": "Itagüí",
     "disponibilidad": ["tarde"],
     "calificacion": 4.8,
@@ -199,7 +207,8 @@
         "comentario": "Excelente trato y resultados visibles en pocas semanas.",
         "fecha": "2026-06-15"
       }
-    ]
+    ],
+    "hojaDeVida": "/hojas-de-vida/andres-felipe-correa.pdf"
   },
   {
     "id": "c-sandra-higuita",
@@ -209,6 +218,7 @@
     "titulo": "Técnica en Atención al Adulto Mayor — SENA",
     "aniosExperiencia": 3,
     "tarifaHora": 22000,
+    "telefono": "+573001234508",
     "zona": "Laureles, Medellín",
     "disponibilidad": ["manana"],
     "calificacion": 4.7,
@@ -227,7 +237,8 @@
         "comentario": "Mi tía disfruta mucho las tardes de lectura con Sandra.",
         "fecha": "2026-09-12"
       }
-    ]
+    ],
+    "hojaDeVida": "/hojas-de-vida/sandra-milena-higuita.pdf"
   },
   {
     "id": "c-ricardo-patino",
@@ -237,6 +248,7 @@
     "titulo": "Enfermero Profesional — Universidad CES",
     "aniosExperiencia": 14,
     "tarifaHora": 35000,
+    "telefono": "+573001234509",
     "zona": "El Poblado, Medellín",
     "disponibilidad": ["manana", "tarde"],
     "calificacion": 5,

@@ -9,6 +9,7 @@
     "id": "am-carmen",
     "nombre": "Doña Carmen",
     "edad": 78,
-    "foto": ""
+    "foto": "",
+    "cuidadorAsignadoId": "c-marta-restrepo"
   }
 }

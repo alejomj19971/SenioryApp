@@ -47,6 +47,14 @@ export function BuscadorCuidadores({ cuidadores }: { cuidadores: Cuidador[] }) {
     });
   }, [cuidadores, busqueda, especialidad, jornada, zona, tarifaMaxima]);
 
+  function limpiarFiltros() {
+    setBusqueda("");
+    setEspecialidad(null);
+    setJornada(null);
+    setZona(null);
+    setTarifaMaxima(tarifaLimite);
+  }
+
   return (
     <div className="flex flex-col gap-5">
       <FiltrosCuidador
@@ -84,6 +92,13 @@ export function BuscadorCuidadores({ cuidadores }: { cuidadores: Cuidador[] }) {
           <p className="text-sm text-muted-foreground">
             Prueba ajustando la especialidad, la zona o la tarifa.
           </p>
+          <button
+            type="button"
+            onClick={limpiarFiltros}
+            className="mt-1 rounded-full bg-primary px-5 py-2.5 text-sm font-semibold text-primary-foreground"
+          >
+            Quitar filtros
+          </button>
         </div>
       )}
     </div>

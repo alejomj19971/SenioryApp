@@ -11,7 +11,7 @@ const items = [
   { href: "/app/teleasistencia", label: "Teleasistencia", icono: HeartPulse },
 ];
 
-export function BottomNav() {
+export function BottomNav({ hayMedicamentoPendiente = false }: { hayMedicamentoPendiente?: boolean }) {
   const pathname = usePathname();
 
   return (
@@ -22,6 +22,7 @@ export function BottomNav() {
       {items.map(({ href, label, icono: Icono }) => {
         const activo =
           href === "/app" ? pathname === "/app" : pathname.startsWith(href);
+        const mostrarIndicador = href === "/app/teleasistencia" && hayMedicamentoPendiente;
         return (
           <Link
             key={href}
@@ -32,8 +33,17 @@ export function BottomNav() {
               activo ? "text-primary" : "text-muted-foreground hover:text-foreground",
             )}
           >
-            <Icono className="size-6" aria-hidden="true" />
+            <span className="relative">
+              <Icono className="size-6" aria-hidden="true" />
+              {mostrarIndicador && (
+                <span
+                  className="absolute -top-0.5 -right-0.5 flex size-2.5 rounded-full bg-accent ring-2 ring-background"
+                  aria-hidden="true"
+                />
+              )}
+            </span>
             {label}
+            {mostrarIndicador && <span className="sr-only">Tienes un medicamento pendiente</span>}
           </Link>
         );
       })}

@@ -1,0 +1,28 @@
+{
+  "c-marta-restrepo": [
+    {
+      "id": "m-1",
+      "autor": "cuidador",
+      "texto": "¡Hola Andrea! Ya llegué donde Doña Carmen, todo tranquilo por aquí.",
+      "fecha": "2026-09-27T14:03:00.000Z"
+    },
+    {
+      "id": "m-2",
+      "autor": "familiar",
+      "texto": "¡Gracias Marta! ¿Ya se tomó el medicamento de la mañana?",
+      "fecha": "2026-09-27T14:05:00.000Z"
+    },
+    {
+      "id": "m-3",
+      "autor": "cuidador",
+      "texto": "Sí, se lo tomó completo con el desayuno. La voy a acompañar a caminar un rato al jardín.",
+      "fecha": "2026-09-27T14:06:00.000Z"
+    },
+    {
+      "id": "m-4",
+      "autor": "familiar",
+      "texto": "Perfecto, mil gracias por el cuidado de siempre.",
+      "fecha": "2026-09-27T14:07:00.000Z"
+    }
+  ]
+}

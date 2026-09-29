@@ -18,6 +18,11 @@ interface SpeechRecognitionEvent extends Event {
   readonly results: SpeechRecognitionResultList;
 }
 
+interface SpeechRecognitionErrorEvent extends Event {
+  readonly error: string;
+  readonly message: string;
+}
+
 interface SpeechRecognition extends EventTarget {
   lang: string;
   continuous: boolean;
@@ -27,7 +32,7 @@ interface SpeechRecognition extends EventTarget {
   abort: () => void;
   onresult: ((this: SpeechRecognition, event: SpeechRecognitionEvent) => void) | null;
   onend: ((this: SpeechRecognition, event: Event) => void) | null;
-  onerror: ((this: SpeechRecognition, event: Event) => void) | null;
+  onerror: ((this: SpeechRecognition, event: SpeechRecognitionErrorEvent) => void) | null;
 }
 
 interface Window {

@@ -11,7 +11,7 @@ const TARIFA_REFERENCIA = 21600; // total con cargo de servicio, ejemplo del pit
 
 export function Bolsas() {
   return (
-    <section id="precios" className="bg-background py-16 sm:py-24">
+    <section id="precios" className="bg-secondary/40 py-16 sm:py-24">
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
         <div className="mx-auto max-w-2xl text-center">
           <h2 className="text-3xl font-bold tracking-tight text-foreground sm:text-4xl">

@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Mic, MicOff } from "lucide-react";
+import { useReconocimientoVoz } from "@/lib/hooks/use-reconocimiento-voz";
 import { cn } from "@/lib/utils";
 
 interface ComandoVoz {
@@ -25,77 +25,65 @@ function normalizar(texto: string): string {
     .trim();
 }
 
+// Compara por palabras en vez de substring exacto, para tolerar frases
+// naturales como "quiero buscar un cuidador" o "búscame un cuidador".
+function coincideFrase(transcripcionNormalizada: string, frase: string): boolean {
+  const palabrasTranscripcion = transcripcionNormalizada.split(/\s+/);
+  return frase.split(" ").every((palabra) => palabrasTranscripcion.includes(palabra));
+}
+
 export function BotonVoz() {
   const router = useRouter();
-  const [soportado, setSoportado] = useState(false);
-  const [escuchando, setEscuchando] = useState(false);
-  const reconocimientoRef = useRef<InstanceType<NonNullable<typeof window.SpeechRecognition>> | null>(null);
-
-  useEffect(() => {
-    const ReconocimientoVoz =
-      window.SpeechRecognition ?? window.webkitSpeechRecognition;
-    if (!ReconocimientoVoz) return;
-
-    // Disponibilidad del navegador (sistema externo): se detecta una sola vez al montar.
-    // eslint-disable-next-line react-hooks/set-state-in-effect
-    setSoportado(true);
-    const reconocimiento = new ReconocimientoVoz();
-    reconocimiento.lang = "es-CO";
-    reconocimiento.continuous = false;
-    reconocimiento.interimResults = false;
-
-    reconocimiento.onresult = (evento: SpeechRecognitionEvent) => {
-      const transcripcion = normalizar(evento.results[0]?.[0]?.transcript ?? "");
+  const { soportado, escuchando, mensaje, alternarEscucha } = useReconocimientoVoz(
+    (transcripcionOriginal) => {
+      const transcripcion = normalizar(transcripcionOriginal);
       const comando = comandos.find((c) =>
-        c.frases.some((frase) => transcripcion.includes(frase)),
+        c.frases.some((frase) => coincideFrase(transcripcion, frase)),
       );
-      comando?.accion(router);
-    };
-    reconocimiento.onend = () => setEscuchando(false);
-    reconocimiento.onerror = () => setEscuchando(false);
-
-    reconocimientoRef.current = reconocimiento;
-
-    return () => {
-      reconocimiento.stop();
-    };
-  }, [router]);
+      if (comando) {
+        comando.accion(router);
+        return;
+      }
+      return `No reconocí "${transcripcionOriginal}". Prueba con "buscar cuidador", "teleasistencia", "alerta" o "inicio".`;
+    },
+  );
 
   if (!soportado) return null;
 
-  function alternarEscucha() {
-    if (!reconocimientoRef.current) return;
-    if (escuchando) {
-      reconocimientoRef.current.stop();
-      setEscuchando(false);
-      return;
-    }
-    reconocimientoRef.current.start();
-    setEscuchando(true);
-  }
-
   return (
-    <button
-      type="button"
-      onClick={alternarEscucha}
-      aria-pressed={escuchando}
-      aria-label={
-        escuchando
-          ? "Detener comando de voz"
-          : 'Activar comando de voz: di "buscar cuidador", "teleasistencia", "alerta" o "inicio"'
-      }
-      className={cn(
-        "flex size-12 shrink-0 items-center justify-center rounded-full border-2 transition-colors",
-        escuchando
-          ? "animate-pulse border-destructive bg-destructive text-white"
-          : "border-primary bg-primary/10 text-primary hover:bg-primary/20",
+    <div className="relative flex flex-col items-center gap-0.5">
+      <button
+        type="button"
+        onClick={alternarEscucha}
+        aria-pressed={escuchando}
+        aria-label={
+          escuchando
+            ? "Detener comando de voz"
+            : 'Activar comando de voz: di "buscar cuidador", "teleasistencia", "alerta" o "inicio"'
+        }
+        className={cn(
+          "flex size-12 shrink-0 items-center justify-center rounded-full border-2 transition-colors",
+          escuchando
+            ? "animate-pulse border-destructive bg-destructive text-white"
+            : "border-primary bg-primary/10 text-primary hover:bg-primary/20",
+        )}
+      >
+        {escuchando ? (
+          <MicOff className="size-5" aria-hidden="true" />
+        ) : (
+          <Mic className="size-5" aria-hidden="true" />
+        )}
+      </button>
+      <span className="text-[10px] font-medium text-muted-foreground">Voz</span>
+
+      {mensaje && (
+        <div
+          role="status"
+          className="absolute top-full right-0 z-40 mt-2 w-56 rounded-xl bg-foreground px-3 py-2 text-left text-xs font-medium text-background shadow-lg"
+        >
+          {mensaje}
+        </div>
       )}
-    >
-      {escuchando ? (
-        <MicOff className="size-5" aria-hidden="true" />
-      ) : (
-        <Mic className="size-5" aria-hidden="true" />
-      )}
-    </button>
+    </div>
   );
 }

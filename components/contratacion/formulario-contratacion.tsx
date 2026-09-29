@@ -18,6 +18,9 @@ function formatearISO(fecha: Date): string {
   return fecha.toISOString().slice(0, 10);
 }
 
+// Saldo de ejemplo para la demo — la bolsa de horas aún no tiene backend de saldo real.
+const SALDO_BOLSA_DEMO_HORAS = 12;
+
 export function FormularioContratacion({ cuidador }: { cuidador: Cuidador }) {
   const router = useRouter();
   const { setContratacionActual } = useContratacion();
@@ -75,14 +78,21 @@ export function FormularioContratacion({ cuidador }: { cuidador: Cuidador }) {
         onHorasChange={setHoras}
       />
 
-      <div className="flex items-center justify-between gap-3 rounded-2xl bg-secondary/60 p-4">
+      <div
+        className={cn(
+          "flex items-center justify-between gap-3 rounded-2xl p-4 ring-1",
+          usarBolsa ? "bg-primary/10 ring-primary/30" : "bg-secondary/60 ring-transparent",
+        )}
+      >
         <div className="flex items-center gap-3">
           <Wallet className="size-5 shrink-0 text-primary" aria-hidden="true" />
           <div>
             <Label htmlFor="usar-bolsa" className="text-base font-medium text-foreground">
               Usar bolsa de horas
             </Label>
-            <p className="text-sm text-muted-foreground">Aplica tus horas prepago</p>
+            <p className="text-sm text-muted-foreground">
+              Tienes {SALDO_BOLSA_DEMO_HORAS} horas prepago disponibles
+            </p>
           </div>
         </div>
         <Switch id="usar-bolsa" checked={usarBolsa} onCheckedChange={setUsarBolsa} />

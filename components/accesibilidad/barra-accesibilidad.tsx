@@ -40,21 +40,24 @@ export function BarraAccesibilidad() {
         ))}
       </div>
 
-      <div className="flex items-center gap-2">
-        <button
-          type="button"
-          onClick={alternarContraste}
-          aria-pressed={contraste === "alto"}
-          aria-label="Alternar modo de alto contraste"
-          className={cn(
-            "flex size-12 shrink-0 items-center justify-center rounded-full border-2 transition-colors",
-            contraste === "alto"
-              ? "border-primary bg-primary text-primary-foreground"
-              : "border-border bg-background text-foreground hover:border-primary/50",
-          )}
-        >
-          <Contrast className="size-5" aria-hidden="true" />
-        </button>
+      <div className="flex items-center gap-3">
+        <div className="flex flex-col items-center gap-0.5">
+          <button
+            type="button"
+            onClick={alternarContraste}
+            aria-pressed={contraste === "alto"}
+            aria-label="Alternar modo de alto contraste"
+            className={cn(
+              "flex size-12 shrink-0 items-center justify-center rounded-full border-2 transition-colors",
+              contraste === "alto"
+                ? "border-primary bg-primary text-primary-foreground"
+                : "border-border bg-background text-foreground hover:border-primary/50",
+            )}
+          >
+            <Contrast className="size-5" aria-hidden="true" />
+          </button>
+          <span className="text-[10px] font-medium text-muted-foreground">Contraste</span>
+        </div>
         <BotonVoz />
       </div>
     </div>

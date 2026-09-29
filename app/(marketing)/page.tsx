@@ -6,6 +6,7 @@ import { Confianza } from "@/components/landing/confianza";
 import { ComoFunciona } from "@/components/landing/como-funciona";
 import { Bolsas } from "@/components/landing/bolsas";
 import { AccesibilidadSeccion } from "@/components/landing/accesibilidad-seccion";
+import { Historias } from "@/components/landing/historias";
 import { CtaFinal } from "@/components/landing/cta-final";
 import { Footer } from "@/components/landing/footer";
 
@@ -17,10 +18,11 @@ export default function LandingPage() {
         <Hero />
         <Problema />
         <Pilares />
+        <AccesibilidadSeccion />
         <Confianza />
         <ComoFunciona />
         <Bolsas />
-        <AccesibilidadSeccion />
+        <Historias />
         <CtaFinal />
       </main>
       <Footer />

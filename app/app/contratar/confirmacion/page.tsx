@@ -31,8 +31,12 @@ export default function ConfirmacionPage() {
 
   return (
     <div className="flex flex-col items-center gap-6 px-4 py-10 text-center">
-      <span className="flex size-16 items-center justify-center rounded-full bg-primary/10 text-primary">
-        <CheckCircle2 className="size-9" aria-hidden="true" />
+      <span className="relative flex size-24 items-center justify-center rounded-full bg-primary/10 p-3 ring-8 ring-primary/5">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img src="/logo-icon.png" alt="" className="size-full object-contain" />
+        <span className="absolute -right-1 -bottom-1 flex size-7 items-center justify-center rounded-full bg-primary text-primary-foreground ring-4 ring-background">
+          <CheckCircle2 className="size-4" aria-hidden="true" />
+        </span>
       </span>
       <div>
         <h1 className="text-2xl font-bold text-foreground">¡Contratación confirmada!</h1>
@@ -59,7 +63,7 @@ export default function ConfirmacionPage() {
       <Link
         href="/app/teleasistencia"
         className={cn(
-          buttonVariants({ variant: "outline", className: "h-12 w-full rounded-full" }),
+          buttonVariants({ className: "h-14 w-full rounded-full text-base shadow-lg shadow-primary/25" }),
         )}
       >
         <HeartPulse className="size-5" aria-hidden="true" />

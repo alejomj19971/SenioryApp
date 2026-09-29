@@ -36,6 +36,10 @@ yarn-error.log*
 # vercel
 .vercel
 
+# material fuente sin optimizar (las copias servidas están en /public)
+/hojas de vida/
+/img/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
