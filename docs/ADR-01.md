@@ -42,6 +42,7 @@ Seniory es una plataforma web responsive que conecta a familias con cuidadores v
 - **Directorio de cuidadores verificados:** búsqueda con filtros y perfiles con verificación de antecedentes, títulos y prueba psicotécnica.
 - **Contratación de servicios** por horas o turnos, con seguimiento del estado del servicio y calificación al finalizar.
 - **Teleasistencia:** alertas de emergencia, recordatorios de medicamentos y signos vitales visibles para la familia.
+- **Mensajería** entre la familia y el cuidador.
 - **Pagos** del servicio.
 
 **Actores:** familiar responsable, adulto mayor y cuidador.
@@ -405,7 +406,7 @@ El repositorio separa el frontend, el backend y la documentación. La tecnologí
 ```
 seniory/
 ├─ frontend/        ← Aplicación web (Next.js), desplegada en Vercel
-├─ backend/         ← API: monolito modular con arquitectura hexagonal
+├─ backend/         ← API: monolito modular con arquitectura hexagonal (pendiente; hoy solo README)
 └─ docs/            ← Documentación de arquitectura (este archivo y los próximos ADRs)
 ```
 
@@ -415,13 +416,16 @@ seniory/
 frontend/
 ├─ app/                        ← Rutas y páginas (App Router de Next.js)
 │  ├─ (marketing)/             ← Landing pública
-│  └─ app/                     ← Aplicación: inicio, cuidadores, contratar, teleasistencia
+│  └─ app/                     ← Aplicación: inicio, cuidadores, contratar, mensajes, teleasistencia
 ├─ components/                 ← Componentes visuales agrupados por funcionalidad
 │  ├─ ui/                      ← Componentes base reutilizables (botones, tarjetas, diálogos)
 │  ├─ cuidadores/              ← Tarjeta de cuidador, filtros, badges de verificación, reseñas
 │  ├─ contratacion/            ← Selector de horas, resumen de costo
 │  ├─ teleasistencia/          ← Botón de alerta, medicamentos, gráfica de signos vitales
-│  └─ accesibilidad/           ← Alto contraste, tamaño de texto, comando de voz
+│  ├─ accesibilidad/           ← Alto contraste, tamaño de texto, comando de voz
+│  ├─ landing/                 ← Secciones de la landing pública
+│  ├─ mensajeria/              ← Interfaz de conversación
+│  └─ shell/                   ← Elementos persistentes de la aplicación
 ├─ lib/
 │  ├─ services/                ← PUERTOS: única puerta de acceso a los datos
 │  │                              (MVP: leen /data · Backend real: llaman a la API)
@@ -429,7 +433,8 @@ frontend/
 │  ├─ types.ts                 ← Tipos del dominio (Cuidador, Verificacion, Medicamento…)
 │  └─ format.ts                ← Formato de moneda y fechas
 ├─ data/                       ← ADAPTADOR del MVP: datos de prueba en JSON
-└─ public/                     ← Imágenes, logo e íconos
+├─ public/                     ← Imágenes, logo e íconos
+└─ types/                      ← Declaraciones TypeScript globales
 ```
 
 **Regla clave:** las páginas y componentes nunca leen `data/` directamente; siempre pasan por `lib/services`. Así, cuando exista el backend, solo cambia `lib/services` y las pantallas quedan igual.
