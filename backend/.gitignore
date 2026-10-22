@@ -1,0 +1,9 @@
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+
+# Variables de entorno: nunca se versionan (solo .env.ejemplo)
+.env
+.env.*
+!.env.ejemplo

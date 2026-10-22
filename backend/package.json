@@ -1,0 +1,49 @@
+{
+  "name": "seniory-backend",
+  "version": "0.0.1",
+  "description": "API de Seniory: monolito modular con arquitectura hexagonal (NestJS)",
+  "private": true,
+  "license": "UNLICENSED",
+  "type": "module",
+  "engines": {
+    "node": ">=24.22.0 <25"
+  },
+  "scripts": {
+    "build": "nest build",
+    "dev": "nest start --watch",
+    "dev:depurar": "nest start --debug --watch",
+    "start": "node dist/main",
+    "lint": "oxlint --type-aware --deny-warnings src/ pruebas/ && tsc --noEmit",
+    "formato": "prettier --write \"src/**/*.ts\" \"pruebas/**/*.ts\"",
+    "formato:verificar": "prettier --check \"src/**/*.ts\" \"pruebas/**/*.ts\"",
+    "test": "vitest run --project unitarias",
+    "test:integracion": "vitest run --project integracion",
+    "test:todo": "vitest run",
+    "test:cobertura": "vitest run --coverage",
+    "test:observar": "vitest --project unitarias"
+  },
+  "dependencies": {
+    "@nestjs/common": "^12.0.1",
+    "@nestjs/core": "^12.0.1",
+    "@nestjs/platform-express": "^12.0.1",
+    "reflect-metadata": "^0.2.2",
+    "rxjs": "^7.8.1"
+  },
+  "devDependencies": {
+    "@nestjs/cli": "^12.0.0",
+    "@nestjs/schematics": "^12.0.0",
+    "@nestjs/testing": "^12.0.1",
+    "@types/express": "^5.0.0",
+    "@types/node": "^24.0.0",
+    "@types/supertest": "^7.0.0",
+    "@vitest/coverage-v8": "^4.1.2",
+    "oxlint": "^1.58.0",
+    "oxlint-tsgolint": "^7.0.2001",
+    "prettier": "^3.4.2",
+    "source-map-support": "^0.5.21",
+    "supertest": "^7.0.0",
+    "typescript": "^6.0.2",
+    "vite": "^8.0.0",
+    "vitest": "^4.1.2"
+  }
+}

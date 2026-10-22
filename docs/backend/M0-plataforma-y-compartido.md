@@ -106,7 +106,9 @@ backend/
 ├─ docker-compose.yml
 ├─ Dockerfile
 ├─ drizzle.config.ts
-├─ jest.config.ts                          ← proyectos `unitarias` e `integracion`
+├─ vitest.config.ts                        ← proyectos `unitarias` e `integracion`
+├─ .oxlintrc.json                          ← reglas de lint (oxlint, valor por defecto de Nest 12)
+├─ .nvmrc                                  ← versión de Node (24 LTS)
 ├─ nest-cli.json                           ← plugin de Swagger (documenta los DTOs automáticamente)
 ├─ .env.ejemplo
 └─ package.json
@@ -160,9 +162,9 @@ Se instala la versión estable más reciente y se fija con `package-lock.json`. 
 | `nestjs-pino`, `pino`, `pino-http` | Logs JSON. |
 | `@sentry/nestjs` | Reporte de errores (opcional en local). |
 | `uuid` | UUID v7. |
-| Desarrollo: `jest`, `ts-jest`, `@nestjs/testing` | Pruebas. Es lo que genera el CLI de Nest y funciona con decoradores sin configuración extra. |
+| Desarrollo: `vitest`, `@vitest/coverage-v8`, `@nestjs/testing` | Pruebas. Es lo que genera el CLI de Nest 12; con Vite 8 funciona con los decoradores e inyección por tipo sin configuración extra (verificado al crear el proyecto). |
 | Desarrollo: `@testcontainers/postgresql`, `supertest`, `fast-check` | Integración con Postgres real, API y pruebas de propiedades. |
-| Desarrollo: `dependency-cruiser`, `eslint`, `typescript-eslint`, `prettier` | Calidad y arquitectura. |
+| Desarrollo: `dependency-cruiser`, `oxlint`, `oxlint-tsgolint`, `prettier` | Calidad y arquitectura. |
 
 ### 4.3 Scripts de `package.json`
 
@@ -170,7 +172,7 @@ Se instala la versión estable más reciente y se fija con `package-lock.json`. 
 |---|---|
 | `dev` | Arranca con recarga. |
 | `build` | Compila a `dist/`. |
-| `lint` | ESLint + verificación de tipos (`tsc --noEmit`). |
+| `lint` | oxlint (con reglas que usan tipos, sin advertencias permitidas) + verificación de tipos (`tsc --noEmit`). |
 | `arquitectura` | `dependency-cruiser` con las reglas de §4.9. |
 | `test` | Unitarias (sin Docker). |
 | `test:integracion` | Integración y API (con Testcontainers). |
@@ -384,7 +386,7 @@ Ejemplo de cuerpo:
 
 ### 4.11 Pruebas: infraestructura
 
-- **`jest.config.ts`** con dos proyectos: `unitarias` (sin Docker, rápidas) e `integracion` (Testcontainers y Supertest). El contenedor de Postgres se arranca una vez en el `globalSetup` de `integracion`.
+- **`vitest.config.ts`** con dos proyectos: `unitarias` (sin Docker, rápidas) e `integracion` (Testcontainers y Supertest). El contenedor de Postgres se arranca una vez en el `globalSetup` de `integracion`.
 - **`pruebas/soporte/`**:
   - `RelojFalso` (con `fijar()` y `avanzar()`), `GeneradorDeIdsSecuencial`, `PublicadorDeEventosEnMemoria`, `AuditoriaEnMemoria`.
   - `baseDeDatosDePrueba()`: arranca un Postgres con Testcontainers una vez por ejecución, aplica migraciones y limpia las tablas entre pruebas.
@@ -450,7 +452,7 @@ M0 no cambia pantallas. Se deja documentado en `backend/README.md` cómo levanta
 
 | PR | Contenido | Se puede revisar porque… |
 |---|---|---|
-| 1 | Proyecto creado con el CLI de Nest (`nest new`, Express), TypeScript estricto, ESLint, Prettier, Jest con los dos proyectos, plugin de Swagger y scripts. | Solo herramientas, sin lógica. |
+| 1 | Proyecto creado con el CLI de Nest 12 (`nest new`, Express, ESM), TypeScript estricto, oxlint, Prettier, Vitest con los dos proyectos, Node 24 fijado y scripts; `/salud` mínimo para probar el esqueleto. El plugin de Swagger pasa al PR 5, junto con `@nestjs/swagger`. | Solo herramientas, sin lógica. |
 | 2 | Configuración validada, `docker-compose.yml`, Drizzle, primera migración (esquema `compartido`, extensiones). | Se prueba levantando la base local. |
 | 3 | `compartido/dominio` (`Dinero`, `FechaCivil`, `Id`, errores) y puertos, con pruebas unitarias. | Código puro con pruebas. |
 | 4 | Unidad de trabajo, outbox, despachador, sondeo y auditoría, con pruebas de integración. | La pieza más delicada, aislada en su propio PR. |

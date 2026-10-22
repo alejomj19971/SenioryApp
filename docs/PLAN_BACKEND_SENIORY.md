@@ -91,7 +91,10 @@ Salieron de leer el código del frontend. Cada uno queda asignado a un módulo.
 | Autenticación | JWT de acceso corto + refresh rotativo, `argon2id` | Módulo Identidad propio. |
 | Tiempo real | **SSE** | Alertas y mensajes son servidor → cliente; más simple que WebSockets. |
 | Contrato | `@nestjs/swagger` (OpenAPI) y cliente tipado generado para el frontend | Una sola fuente del contrato. |
-| Pruebas | **Jest** (lo genera el CLI de Nest), **fast-check**, Testcontainers, Supertest | Dominio sin infraestructura (E14). |
+| Pruebas | **Vitest** (lo genera el CLI de Nest 12), **fast-check**, Testcontainers, Supertest | Dominio sin infraestructura (E14). |
+| Lint | **oxlint** con reglas que usan tipos (lo genera el CLI de Nest 12) + `tsc --noEmit` | Valor por defecto de Nest 12. |
+| Módulos | **ESM** (`"type": "module"`, imports con extensión `.js`) | Valor por defecto de Nest 12. |
+| Node.js | **24 LTS** (fijado en `backend/.nvmrc` y `engines`) | Última versión LTS al iniciar M0. |
 | Arquitectura | **dependency-cruiser** en CI | Hace cumplir E13. |
 | Observabilidad | `pino` (JSON, sin datos personales) + Sentry | E1, E2 y E11. |
 | Seguridad HTTP | `helmet`, `cookie-parser`, `@nestjs/throttler`, CORS restringido | Sección 5. |
@@ -259,7 +262,7 @@ El orden respeta las dependencias (sección 4.3) y adelanta el valor más import
 
 | Aspecto | Detalle |
 |---|---|
-| **Entregables** | Proyecto NestJS (TypeScript estricto, Express, ESLint, Prettier, Jest); `docker-compose.yml` con Postgres; Drizzle y migraciones; validación de variables de entorno al arrancar; `/salud` y `/salud/listo`; Swagger; `pino` con `idDeCorrelacion`; `helmet`, CORS y `throttler`; formato `problem+json`; CI (instalar, lint, arquitectura, unitarias, integración, build, auditoría); despliegue automático a staging. |
+| **Entregables** | Proyecto NestJS 12 (TypeScript estricto, Express, ESM, oxlint, Prettier, Vitest); `docker-compose.yml` con Postgres; Drizzle y migraciones; validación de variables de entorno al arrancar; `/salud` y `/salud/listo`; Swagger; `pino` con `idDeCorrelacion`; `helmet`, CORS y `throttler`; formato `problem+json`; CI (instalar, lint, arquitectura, unitarias, integración, build, auditoría); despliegue automático a staging. |
 | **`compartido`** | `Dinero`, `FechaCivil`, `Id` (UUID v7), puertos `Reloj` y `GeneradorDeIds`, `EventoDeDominio`, tabla y despachador de **outbox**, servicio de **auditoría**, jerarquía de errores de dominio, `UnidadDeTrabajo`, guards de seguridad (validación de token y roles; sin lógica de negocio) y utilidades de pruebas (Testcontainers, dobles). |
 | **Reglas** | `.dependency-cruiser.cjs` con las reglas de la sección 4.2 y script `npm run arquitectura`. |
 
