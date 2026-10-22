@@ -1,0 +1,364 @@
+# M1 — Identidad
+
+| Campo | Valor |
+|---|---|
+| **Módulo** | M1 |
+| **Bloque del diagrama** | Identidad y usuarios: «Registro, autenticación, roles y perfil del adulto mayor» |
+| **Escenarios de ADR-01** | E6 (control de acceso por rol; el registro de accesos lo usa Teleasistencia) |
+| **Rigor hexagonal** | Ligero, con la mayor cobertura de pruebas de seguridad del backend |
+| **Tamaño** | L |
+| **Depende de** | M0 |
+| **Estado** | Plan aprobado (2026-10-22) |
+
+---
+
+## 1. Objetivo y alcance
+
+Que cada persona entre a Seniory con su propia cuenta, con un rol, y que el sistema sepa **qué familiar está vinculado a qué adulto mayor y si existe consentimiento para tratar sus datos de salud**. Todos los módulos siguientes dependen de esto para decidir quién puede hacer qué.
+
+**Entra**
+- Registro de familiares, inicio y cierre de sesión, renovación de sesión.
+- Perfil propio (`/yo`) y actualización de datos básicos.
+- Registro del adulto mayor por parte de un familiar, con vínculo de responsable.
+- Consentimiento para el tratamiento de datos de salud: otorgar y revocar.
+- Aceptación de la política de tratamiento de datos del propio usuario (Ley 1581).
+- Puertos de consulta que usarán Reservas, Teleasistencia, Mensajería y Notificaciones.
+- Implementación del `VerificadorDeTokens` que el guard de M0 espera.
+- Creación de administradores por línea de comandos.
+- Pantallas del frontend: registro, inicio de sesión, alta del adulto mayor y consentimiento.
+
+**No entra**
+- **Datos clínicos** (medicamentos, signos vitales, condiciones): viven en Teleasistencia (decisión del 2026-10-22, [README](./README.md)).
+- Registro de cuidadores (M9; aquí solo queda el puerto que lo permitirá).
+- Invitar a otros familiares a un mismo adulto mayor (posterior).
+- Recuperación de contraseña y verificación de correo: dependen de un canal de correo (M5). El modelo queda preparado (`correoVerificadoEn`).
+- Inicio de sesión con Google u otros proveedores.
+
+---
+
+## 2. Relación con el diagrama y los ADR
+
+| Diagrama / ADR | Cómo lo aplica M1 |
+|---|---|
+| «Registro, autenticación, roles» | Cuentas con rol, sesión con cookies y guard global de M0. |
+| «Perfil del adulto mayor» | `AdultoMayor` con datos básicos (nombre, fecha de nacimiento, foto). |
+| «Datos de salud aquí» (diagrama) | **Cambia:** los datos de salud van a Teleasistencia. Identidad guarda vínculos y consentimientos, que son la base del control de acceso de E6. Pendiente corregir el diagrama. |
+| ADR-01 §4.4: «El módulo Identidad centraliza autenticación y control de acceso por rol» | Identidad responde *quién es* y *qué relación tiene* con el adulto mayor. La decisión final de acceso a datos de salud la toma Teleasistencia con su `PoliticaDeAcceso` (PLAN_BACKEND §4.4). |
+| Actores del diagrama: familiar, adulto mayor, cuidador | Roles `familiar`, `adulto_mayor`, `cuidador` y `administrador`. |
+
+---
+
+## 3. Definición de preparado
+
+- [ ] M0 terminado.
+- [ ] **Decidido cómo llegan las cookies al frontend** (§7.1). Recomendado: reescrituras de Next hacia el backend.
+- [ ] **Texto de la política de tratamiento de datos y del consentimiento de salud** en una primera versión (`v1`), aunque luego lo revise asesoría legal.
+- [ ] **Decidido quién puede otorgar el consentimiento de salud** (§10, decisión 1). Si no hay respuesta, se implementa el modelo que soporta ambos casos y se permite solo «representante» en la demo.
+
+---
+
+## 4. Diseño
+
+### 4.1 Modelo de dominio
+
+**Objetos de valor**
+
+| Objeto | Regla |
+|---|---|
+| `Correo` | Sin espacios, en minúsculas, formato válido, máximo 254 caracteres. |
+| `Contrasena` | Entre 10 y 128 caracteres; sin reglas de composición (guía NIST 800-63B); se rechazan las de una lista de contraseñas comunes. Nunca se guarda: solo su hash. |
+| `TelefonoE164` | Formato `+<código><número>` (ej. `+573001234567`). Opcional para familiares. |
+| `NombrePersona` | Entre 1 y 100 caracteres, sin espacios sobrantes. |
+| `Rol` | `familiar`, `adulto_mayor`, `cuidador`, `administrador`. |
+| `Parentesco` | `hijo_hija`, `nieto_nieta`, `conyuge`, `hermano_hermana`, `otro`. |
+| `FinalidadDeConsentimiento` | `datos_de_salud` (otras finalidades se agregan si hacen falta). |
+
+**Agregados y entidades**
+
+| Agregado | Contenido | Reglas |
+|---|---|---|
+| `Usuario` | `id`, `correo`, `nombre`, `telefono?`, `rol`, `estado` (`activo`, `eliminado`), `correoVerificadoEn?`, y su `Credencial` (`hash`, `intentosFallidos`, `bloqueadoHasta?`). | Correo único. Tras **5 intentos fallidos** se bloquea por 15 minutos (y se duplica en bloqueos seguidos, hasta 24 h). Un inicio de sesión exitoso reinicia el contador. Un usuario `eliminado` no puede iniciar sesión. Nadie cambia su propio rol. |
+| `SesionDeRefresco` | `id`, `usuarioId`, `familiaId`, `hashDelToken`, `emitidaEn`, `expiraEn`, `reemplazadaEn?`, `revocadaEn?` | Cada renovación **reemplaza** el token por uno nuevo de la misma familia. Si alguien presenta un token ya reemplazado o revocado, se considera robado: **se revoca toda la familia** y se audita. |
+| `AdultoMayor` | `id`, `nombre`, `fechaDeNacimiento`, `fotoUrl?`, `usuarioId?` (si algún día tiene cuenta propia), `creadoPor` | La edad **se calcula** con `Reloj` (no se guarda). Fecha de nacimiento en el pasado y edad máxima de 120 años. |
+| `Vinculo` | `id`, `familiarId`, `adultoMayorId`, `parentesco`, `esResponsable`, `estado` (`activo`, `revocado`) | Solo un vínculo activo por pareja familiar–adulto mayor. Al registrar un adulto mayor, quien lo registra queda como responsable. |
+| `Consentimiento` | `id`, `adultoMayorId`, `finalidad`, `otorgadoPor`, `calidad` (`titular` o `representante`), `versionDelTexto`, `otorgadoEn`, `revocadoEn?` | Solo un consentimiento vigente por adulto mayor y finalidad. Solo lo otorga un familiar vinculado (como representante) o el propio adulto mayor (como titular). Revocar es inmediato y emite un evento. |
+| `AceptacionDePolitica` | `usuarioId`, `version`, `aceptadaEn` | Obligatoria para registrarse. |
+
+### 4.2 Casos de uso
+
+| Caso de uso | Quién | Entrada | Resultado | Errores |
+|---|---|---|---|---|
+| `RegistrarFamiliar` | público | nombre, correo, contraseña, teléfono opcional, versión de la política aceptada | usuario `familiar` y sesión iniciada | 400 datos; 409 correo ya registrado |
+| `IniciarSesion` | público | correo, contraseña | sesión (cookies) | 401 genérico, también si la cuenta está bloqueada |
+| `RenovarSesion` | público con cookie de refresco | token de refresco | nuevos tokens | 401; si el token ya fue usado, revoca la familia |
+| `CerrarSesion` | autenticado | — | familia de sesiones revocada, cookies borradas | — |
+| `ObtenerPerfilPropio` | autenticado | — | usuario y adultos mayores vinculados (con edad y si hay consentimiento de salud) | — |
+| `ActualizarPerfilPropio` | autenticado | nombre o teléfono | perfil actualizado | 400 |
+| `RegistrarAdultoMayor` | familiar | nombre, fecha de nacimiento, parentesco | adulto mayor y vínculo de responsable, en una transacción | 400 |
+| `OtorgarConsentimiento` | familiar vinculado o el adulto mayor | finalidad, versión del texto, calidad | consentimiento vigente | 404 si no hay vínculo; 409 si ya hay uno vigente |
+| `RevocarConsentimiento` | quien puede otorgarlo | id del consentimiento | revocado | 404 |
+| `CrearAdministrador` | línea de comandos | nombre, correo, contraseña desde variables de entorno | usuario `administrador` | 409 |
+
+Los derechos de exportar y suprimir datos (Ley 1581) se diseñan aquí, pero se pueden implementar en M10 si el tiempo aprieta: `ExportarMisDatos` y `EliminarMiCuenta` (anonimiza nombre, correo y teléfono, revoca sesiones y vínculos, emite `CuentaEliminada`).
+
+### 4.3 Puertos
+
+**Puerto de entrada que usan otros módulos** (`identidad/aplicacion/puertos/entrada/consulta-de-identidad.ts`):
+
+```ts
+export interface ConsultaDeIdentidad {
+  obtenerContacto(usuarioId: string): Promise<Contacto | null>;          // Notificaciones
+  obtenerAdultoMayor(id: string): Promise<AdultoMayorResumen | null>;    // Reservas, Teleasistencia
+  esFamiliarVinculado(usuarioId: string, adultoMayorId: string): Promise<boolean>;
+  tieneConsentimientoVigente(adultoMayorId: string, finalidad: 'datos_de_salud'): Promise<boolean>;
+  listarFamiliaresVinculados(adultoMayorId: string): Promise<string[]>;  // destinatarios de alertas
+}
+
+export interface Contacto { usuarioId: string; nombre: string; correo: string; telefono: string | null; }
+export interface AdultoMayorResumen { id: string; nombre: string; edad: number; fotoUrl: string | null; }
+```
+
+Se agrega en M9: `RegistrarUsuarioCuidador(datos)` para que Directorio cree la cuenta del cuidador.
+
+**Lo que exporta `IdentidadModule`** (y nada más):
+
+| Símbolo | Quién lo inyecta |
+|---|---|
+| `CONSULTA_DE_IDENTIDAD` | Reservas, Teleasistencia, Mensajería, Notificaciones |
+| `VERIFICADOR_DE_TOKENS` | El guard global registrado en `AppModule` (reemplaza al `VerificadorQueRechazaTodo` de M0) |
+
+Repositorios, hash y emisor de tokens quedan privados del módulo: si otro módulo intenta inyectarlos, Nest falla al arrancar.
+
+**Puertos de salida**
+
+| Puerto | Adaptador |
+|---|---|
+| `RepositorioUsuarios`, `RepositorioSesiones`, `RepositorioAdultosMayores`, `RepositorioVinculos`, `RepositorioConsentimientos` | Drizzle, esquema `identidad`. |
+| `HashDeContrasenas` | `@node-rs/argon2` con **argon2id, 19 MiB de memoria, 2 iteraciones, paralelismo 1** (recomendación de OWASP). Trae binarios para Windows, sin compilar. |
+| `EmisorDeTokens` | JWT de acceso firmado (HS256 con secreto de al menos 256 bits y `kid` para poder rotarlo). También implementa el `VerificadorDeTokens` de M0. |
+| `GeneradorDeTokensOpacos` | 32 bytes aleatorios de `crypto.randomBytes` para los tokens de refresco; se guarda solo su SHA-256. |
+| `ListaDeContrasenasComunes` | Archivo local con las 10 000 contraseñas más comunes. |
+| `Reloj`, `GeneradorDeIds`, `UnidadDeTrabajo`, `PublicadorDeEventos`, `Auditoria` | Los de M0. |
+
+### 4.4 Sesión y tokens
+
+| Elemento | Valor |
+|---|---|
+| Token de acceso | JWT con `sub` (id), `rol`, `iat`, `exp`, `jti`. Dura **15 minutos**. |
+| Token de refresco | Opaco, dura **30 días**, rota en cada uso. |
+| Cookie de acceso | `seniory_acceso`: `HttpOnly`, `Secure` (salvo en local), `SameSite=Lax`, `Path=/`. |
+| Cookie de refresco | `seniory_refresco`: igual, pero `Path=/api/v1/auth`, para que solo viaje a las rutas de sesión. |
+| Rol actualizado | El rol se lee de la base al renovar, así un cambio de rol se aplica en máximo 15 minutos. |
+| CSRF | `SameSite=Lax` más verificación de `Origin` en toda petición que no sea `GET`. |
+
+Variables de entorno nuevas: `SECRETO_JWT_ACCESO`, `ID_CLAVE_JWT`, `DURACION_ACCESO_MIN` (15), `DURACION_REFRESCO_DIAS` (30), `COOKIES_SEGURAS` (`true` fuera de local), `VERSION_POLITICA_VIGENTE`, `VERSION_CONSENTIMIENTO_SALUD_VIGENTE`.
+
+### 4.5 API
+
+Todas bajo `/api/v1`. Respuestas de error en `problem+json` (M0).
+
+| Método y ruta | Acceso | Cuerpo | Respuesta |
+|---|---|---|---|
+| `POST /auth/registro` | público, límite 5/min por IP | `{ nombre, correo, contrasena, telefono?, versionPolitica }` | 201 `{ usuario }` + cookies |
+| `POST /auth/login` | público, límite 10/min por IP | `{ correo, contrasena }` | 200 `{ usuario }` + cookies |
+| `POST /auth/refresh` | cookie de refresco | — | 204 + cookies nuevas |
+| `POST /auth/logout` | autenticado | — | 204, cookies borradas |
+| `GET /yo` | autenticado | — | 200 (ejemplo abajo) |
+| `PATCH /yo` | autenticado | `{ nombre?, telefono? }` | 200 `{ usuario }` |
+| `POST /adultos-mayores` | familiar | `{ nombre, fechaDeNacimiento, parentesco }` | 201 `{ adultoMayor }` |
+| `GET /adultos-mayores/:id` | familiar vinculado | — | 200 `{ adultoMayor }`; 404 si no hay vínculo |
+| `POST /adultos-mayores/:id/consentimientos` | familiar vinculado o el titular | `{ finalidad, versionDelTexto, calidad }` | 201 `{ consentimiento }` |
+| `DELETE /consentimientos/:id` | quien puede otorgarlo | — | 204 |
+
+El registro **no acepta `rol`**: siempre crea un `familiar`. El `ValidationPipe` global (`forbidNonWhitelisted`) rechaza el campo porque el DTO no lo declara:
+
+```ts
+export class RegistroDto {
+  @IsString() @Length(1, 100, { message: 'El nombre debe tener entre 1 y 100 caracteres' })
+  nombre!: string;
+
+  @IsEmail({}, { message: 'El correo no es válido' }) @MaxLength(254)
+  correo!: string;
+
+  @IsString() @Length(10, 128, { message: 'La contraseña debe tener entre 10 y 128 caracteres' })
+  contrasena!: string;
+
+  @IsOptional() @Matches(/^\+[1-9]\d{7,14}$/, { message: 'El teléfono debe tener formato internacional, ej. +573001234567' })
+  telefono?: string;
+
+  @IsString()
+  versionPolitica!: string;
+}
+```
+
+El DTO solo verifica la forma. Las reglas (contraseña común, correo ya registrado) las aplica el dominio y el caso de uso.
+
+Ejemplo de `GET /yo`:
+
+```json
+{
+  "usuario": { "id": "0192…", "nombre": "Andrea", "correo": "andrea@ejemplo.co", "rol": "familiar" },
+  "adultosMayores": [
+    {
+      "id": "0192…",
+      "nombre": "Doña Carmen",
+      "edad": 78,
+      "fotoUrl": null,
+      "parentesco": "hijo_hija",
+      "esResponsable": true,
+      "consentimientoDeSalud": true
+    }
+  ]
+}
+```
+
+### 4.6 Eventos
+
+| Evento | Datos | Quién reacciona |
+|---|---|---|
+| `identidad.usuario_registrado` | `usuarioId`, `rol` | Notificaciones (bienvenida, cuando exista correo) |
+| `identidad.adulto_mayor_registrado` | `adultoMayorId`, `registradoPor` | — |
+| `identidad.vinculo_creado` | `vinculoId`, `familiarId`, `adultoMayorId` | — |
+| `identidad.consentimiento_otorgado` | `adultoMayorId`, `finalidad` | — |
+| `identidad.consentimiento_revocado` | `adultoMayorId`, `finalidad` | Teleasistencia (corta accesos), Notificaciones |
+| `identidad.cuenta_eliminada` | `usuarioId` | Todos los módulos con datos del usuario |
+
+Los contratos viven en `compartido/eventos/identidad.ts`. Ningún evento lleva correo, teléfono ni nombre: solo IDs.
+
+### 4.7 Datos (esquema `identidad`)
+
+| Tabla | Columnas | Restricciones |
+|---|---|---|
+| `usuarios` | `id`, `correo` (`citext`), `nombre`, `telefono`, `rol`, `estado`, `correo_verificado_en`, `creado_en`, `actualizado_en` | `UNIQUE (correo)`; `CHECK` de `rol` y `estado`; `CHECK` de formato E.164 en `telefono` |
+| `credenciales` | `usuario_id` (PK, FK), `hash`, `intentos_fallidos`, `bloqueado_hasta`, `actualizado_en` | `CHECK (intentos_fallidos >= 0)` |
+| `sesiones_refresco` | `id`, `usuario_id`, `familia_id`, `hash_del_token` (`bytea`), `emitida_en`, `expira_en`, `reemplazada_en`, `revocada_en` | `UNIQUE (hash_del_token)`; índices por `familia_id` y `usuario_id` |
+| `adultos_mayores` | `id`, `nombre`, `fecha_de_nacimiento` (`date`), `foto_url`, `usuario_id`, `creado_por`, `creado_en` | `UNIQUE (usuario_id)` cuando no es nulo |
+| `vinculos` | `id`, `familiar_id`, `adulto_mayor_id`, `parentesco`, `es_responsable`, `estado`, `creado_en`, `revocado_en` | Único parcial `(familiar_id, adulto_mayor_id)` donde `estado = 'activo'` |
+| `consentimientos` | `id`, `adulto_mayor_id`, `finalidad`, `otorgado_por`, `calidad`, `version_del_texto`, `otorgado_en`, `revocado_en` | Único parcial `(adulto_mayor_id, finalidad)` donde `revocado_en IS NULL` |
+| `aceptaciones_de_politica` | `usuario_id`, `version`, `aceptada_en` | PK `(usuario_id, version)` |
+
+Una tarea programada diaria borra las sesiones vencidas hace más de 30 días.
+
+### 4.8 Semillas
+
+| Dato | Valor |
+|---|---|
+| Familiar | Andrea (`andrea@demo.seniory.co`), contraseña desde la variable `CONTRASENA_DEMO`, nunca en el repositorio. |
+| Adulto mayor | Doña Carmen, fecha de nacimiento que da 78 años, vínculo de responsable con Andrea. |
+| Consentimiento | `datos_de_salud` vigente, otorgado por Andrea como representante, versión `v1`. |
+| Administrador | **No** se siembra: se crea con `npm run crear-admin` en cada entorno. |
+
+Los IDs se derivan con UUID v5 de `f-andrea` y `am-carmen` (los ids de `frontend/data/familia.json`), así se mantienen estables.
+
+---
+
+## 5. Seguridad
+
+| Amenaza | Control |
+|---|---|
+| Robo de credenciales por fuerza bruta o listas filtradas | Argon2id; bloqueo progresivo por cuenta; límite por IP en `/auth/login` y `/auth/registro`; lista de contraseñas comunes. |
+| Enumeración de cuentas | Mismo mensaje para «no existe» y «contraseña errónea»; si el correo no existe se verifica contra un hash ficticio para igualar el tiempo de respuesta. El registro con correo existente responde 409, aceptado como compromiso de usabilidad y mitigado con el límite por IP. |
+| Robo de sesión | Cookies `HttpOnly`; acceso de 15 minutos; refresco rotativo con detección de reutilización. |
+| CSRF | `SameSite=Lax` y verificación de `Origin`. |
+| Escalada de privilegios | Registro sin campo `rol`; administradores solo por línea de comandos; rol releído de la base en cada renovación. |
+| Acceso a un adulto mayor ajeno (IDOR) | Toda ruta con `:id` verifica el vínculo; sin vínculo responde 404. |
+| Datos personales en logs | Redacción de M0 más pruebas que lo verifican. |
+| Consentimiento ignorado | Revocar emite un evento y Teleasistencia lo consulta en cada acceso (M6). |
+
+**Auditoría** (con el servicio de M0): registro, inicio de sesión exitoso y fallido, bloqueo, reutilización de refresco, cierre de sesión, registro de adulto mayor, vínculos, consentimientos otorgados y revocados, creación de administradores.
+
+---
+
+## 6. Pruebas obligatorias
+
+| Capa | Prueba |
+|---|---|
+| Unitarias | `Correo`, `Contrasena`, `TelefonoE164`, `NombrePersona`: casos válidos e inválidos. |
+| Unitarias | `Credencial`: el 5.º fallo bloquea 15 min; el bloqueo siguiente dura 30; un éxito reinicia el contador; con `RelojFalso`, el bloqueo expira. |
+| Unitarias | `SesionDeRefresco`: rotar marca el anterior como reemplazado; presentar uno reemplazado revoca la familia. |
+| Unitarias | `AdultoMayor.edad()`: el día antes y el día del cumpleaños, con `RelojFalso`. |
+| Unitarias | `Consentimiento`: un familiar sin vínculo no puede otorgarlo; no puede haber dos vigentes. |
+| Integración | Correo único sin distinguir mayúsculas (`Andrea@` y `andrea@`). |
+| Integración | Único parcial de vínculos y de consentimientos vigentes. |
+| Integración | `RegistrarAdultoMayor` crea adulto mayor, vínculo y evento juntos, o nada. |
+| API | Registro → `/yo` → cierre de sesión → `/yo` responde 401. |
+| API | Registro con `rol: "administrador"` en el cuerpo → 400. |
+| Arquitectura | `IdentidadModule` exporta solo `CONSULTA_DE_IDENTIDAD` y `VERIFICADOR_DE_TOKENS`. |
+| API | Inicio de sesión con usuario inexistente y con contraseña errónea: mismo estado y mismo mensaje. |
+| API | Refresco reutilizado → 401 y la sesión legítima también queda revocada. |
+| API | Petición `POST` con `Origin` no permitido → rechazada. |
+| API | **Matriz de autorización:** un familiar no ve ni consiente sobre el adulto mayor de otro (404); un cuidador no puede registrar adultos mayores (403); sin sesión → 401. |
+| API | Ninguna respuesta incluye `hash`, `intentos_fallidos` ni tokens en el cuerpo. |
+| Logs | Tras un inicio de sesión, los logs no contienen la contraseña, el correo ni la cookie. |
+
+---
+
+## 7. Integración con el frontend
+
+> Antes de escribir código en `frontend/`, leer `frontend/AGENTS.md` y la guía de `node_modules/next/dist/docs/` sobre reescrituras, cookies en componentes de servidor y protección de rutas. **No asumir** las API de versiones anteriores de Next.
+
+### 7.1 Cómo llegan las cookies
+
+El frontend está en Vercel y el backend en otro dominio; las cookies del backend no llegarían al servidor de Next. Opciones:
+
+| Opción | Cómo funciona | Cuándo conviene |
+|---|---|---|
+| **Reescrituras de Next (recomendada ahora)** | El navegador llama a `/api/v1/...` en el mismo dominio del frontend, y Next reenvía al backend. Las cookies quedan en el dominio del frontend y no hace falta CORS. | Mientras no exista un dominio propio. Riesgo conocido: conexiones SSE largas por el proxy (se revisa en M6). |
+| Subdominios propios | `app.seniory.co` y `api.seniory.co` comparten sitio; las cookies se emiten para `.seniory.co`. | Cuando se compre el dominio. |
+
+En local no hay problema: las cookies de `localhost` se comparten entre los puertos 3000 y 3001.
+
+### 7.2 Cambios
+
+| Archivo o ruta | Cambio |
+|---|---|
+| `lib/api/` (nuevo) | Cliente HTTP base: reenvía la cookie desde los componentes de servidor y traduce `problem+json` a mensajes en español. |
+| `lib/services/paciente.ts` | `obtenerFamiliar()` y `obtenerAdultoMayor()` usan `GET /yo` (el adulto mayor es el primero con `esResponsable`). `obtenerCuidadorEnTurno()` sigue leyendo el JSON hasta M4. |
+| `lib/types.ts` | `Familiar` deja de tener `adultoMayorId` fijo; se agrega el tipo de la respuesta de `/yo`. |
+| Rutas nuevas | Registro, inicio de sesión, alta del adulto mayor y consentimiento (fuera de `/app`). Mismos requisitos de accesibilidad del MVP: texto ≥ 18 px, objetivos de 48 × 48 px, etiquetas visibles, errores leídos por lectores de pantalla. |
+| `/app/*` | Sin sesión, redirige al inicio de sesión. Si el familiar no tiene adulto mayor o consentimiento, lo lleva a completarlos. |
+| `AppHeader` | Opción para cerrar sesión. |
+
+### 7.3 La demo del Rocket Pitch
+
+El guion exige que cada paso del demo sea un toque. En el dispositivo del pitch se deja la **sesión de Andrea iniciada** antes de presentar (el refresco dura 30 días), así el inicio de sesión no aparece en el recorrido en vivo.
+
+---
+
+## 8. Pull requests
+
+| PR | Contenido |
+|---|---|
+| 1 | Dominio: objetos de valor, `Usuario` con `Credencial`, `SesionDeRefresco`, `AdultoMayor`, `Vinculo`, `Consentimiento`, con pruebas unitarias. |
+| 2 | Persistencia: esquema `identidad`, migración, repositorios y pruebas de integración. |
+| 3 | Autenticación: hash, tokens, `VerificadorDeTokens`, casos de uso de registro, inicio, renovación y cierre de sesión, endpoints de `/auth`, límites por ruta y pruebas de API. |
+| 4 | Perfil, adultos mayores, consentimientos, `ConsultaDeIdentidad`, eventos, auditoría y matriz de autorización. |
+| 5 | Semillas, `crear-admin` y documentación del módulo. |
+| 6 | Frontend: cliente de API, reescrituras, pantallas nuevas, `paciente.ts` sobre `/yo` y protección de `/app`. |
+| 7 | *(Opcional, o en M10)* Exportar y eliminar cuenta. |
+
+---
+
+## 9. Definición de terminado de M1
+
+Además de la definición común ([PLAN_BACKEND §6.3](../PLAN_BACKEND_SENIORY.md)):
+
+- [ ] En staging: registro → alta de Doña Carmen → consentimiento → `/app` muestra «Hola, Andrea» con datos de la sesión, sin leer `familia.json` para el familiar ni el adulto mayor.
+- [ ] Matriz de autorización completa en verde; los recursos ajenos responden 404.
+- [ ] Un refresco reutilizado revoca la familia de sesiones y queda auditado.
+- [ ] La CI verifica que los logs no contienen contraseñas, correos ni cookies.
+- [ ] `ConsultaDeIdentidad` documentada en el README del módulo, con sus pruebas.
+- [ ] Sesión de demo iniciada en el dispositivo del pitch.
+
+---
+
+## 10. Decisiones abiertas
+
+| # | Decisión | Recomendación |
+|---|---|---|
+| 1 | **Quién otorga el consentimiento de salud.** La Ley 1581 hace titular al adulto mayor; un familiar solo puede hacerlo si lo representa. | Modelo con `calidad` (`titular` o `representante`). Consultar asesoría legal antes de producción; para el adulto mayor autovalente, lo ideal es que consienta él mismo. |
+| 2 | Si el adulto mayor tiene cuenta propia. | Todavía no; el modelo lo permite con `usuarioId`. |
+| 3 | Verificación de correo obligatoria. | Sí, cuando exista el canal de correo (M5); hasta entonces, cuentas sin verificar con todas las funciones. |
+| 4 | Autenticación en dos pasos para administradores. | Sí antes de producción (M10). |
+| 5 | Reescrituras de Next o subdominios. | Reescrituras ahora; subdominios cuando haya dominio. |
+| 6 | ¿Volver a pedir consentimiento si cambia el texto? | Sí ante cambios de fondo; se maneja comparando `versionDelTexto` con la vigente. |
