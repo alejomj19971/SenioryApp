@@ -4,10 +4,22 @@
 |---|---|
 | **Motor** | PostgreSQL 17 (misma versión mayor en local, pruebas y hosting) |
 | **Fecha** | 2026-10-24 |
-| **Estado** | Propuesta |
+| **Estado** | **Construida** el 2026-10-26 (rama `feat/base-de-datos`): 8 esquemas, 37 tablas, 10 migraciones y 253 pruebas de restricciones contra un Postgres real |
 | **Base** | [ADR-01](../ADR-01.md) (un esquema por módulo, ningún módulo lee las tablas de otro, E13) · [PLAN_BACKEND](../PLAN_BACKEND_SENIORY.md) · planes de cada módulo en esta carpeta |
 
-Este documento es el diseño **lógico** completo. Cada módulo crea sus tablas con Drizzle en su propio esquema cuando le llega el turno (M0 crea `compartido`, M1 crea `identidad`, etc.); el detalle definitivo de cada tabla se confirma en el plan de su módulo.
+Este documento es el diseño **lógico** completo y **ya está implementado**: los esquemas Drizzle viven en `backend/src/<modulo>/infraestructura/salida/persistencia/<modulo>.esquema.ts` y las migraciones en `backend/drizzle/`. Se construyeron todas juntas, una migración por módulo y en el orden de dependencias, para tener la base completa y probada desde el principio; cada módulo ajusta lo que necesite con migraciones nuevas cuando llegue su turno.
+
+**Qué cambió al construirla** (respecto al diseño original):
+
+| Cambio | Motivo |
+|---|---|
+| **Tres triggers** de integridad: `compartido.auditoria` y `pagos.movimientos_de_bolsa` son de solo inserción (no admiten UPDATE ni DELETE), y `directorio.cuidadores` no puede marcarse `visible` sin las tres verificaciones aprobadas y vigentes. | Son reglas críticas (E6, E3, E7) que no deben depender solo de que el código no falle. |
+| Más reglas `CHECK`: `servicios_solicitud_con_plazo`, `pagos_desglose_de_servicio_coherente`, `pagos_bolsa_se_paga_con_pasarela`, `cuidadores_calificacion_coherente`, `vinculos_revocacion_coherente`, etc. | Cierran estados imposibles que el diseño original dejaba abiertos. |
+| Los índices descendentes de columnas `NOT NULL` son `DESC NULLS FIRST` (migración 0009). | Drizzle emite `NULLS LAST` por defecto y Postgres **no usa ese índice** para un `ORDER BY x DESC` normal (medido con 20.000 filas: recorrido completo y ordenamiento en vez de índice). |
+| `pagos.paquetes_de_bolsa` queda **vacía**. | Los paquetes y su unidad (pesos u horas) aún no están aprobados por el equipo empresarial. |
+| La política de precios v1 (8 % y 10 %) y las franjas horarias van como **datos de referencia** dentro de las migraciones. | Producción las necesita (§9.1). |
+| La migración 0001 usa `CREATE SCHEMA IF NOT EXISTS`. | Drizzle emite `CREATE SCHEMA` a secas y la 0000 ya había creado `compartido`. |
+| **Política de migraciones.** Antes del primer despliegue a producción se pueden aplanar (reescribir) las migraciones; a partir de ahí, **nunca se editan**. | Mientras no haya datos reales, mantener un historial limpio vale más que conservar cada paso. |
 
 ---
 
@@ -605,7 +617,7 @@ Cada módulo borra del frontend el JSON que reemplaza al conectarse; estos fixtu
 
 ## 10. Orden de creación
 
-Cada módulo agrega su esquema en su propia migración; ninguno depende de las tablas de otro, así que el orden solo sigue el plan:
+Cada módulo tiene su propia migración; ninguno depende de las tablas de otro. El orden de los archivos sigue las dependencias (`backend/drizzle/`): `0000` extensiones, `0001` compartido, `0002` identidad, `0003` directorio, `0004` pagos, `0005` reservas, `0006` notificaciones, `0007` teleasistencia, `0008` mensajería y `0009` índices descendentes. Orden previsto de uso por módulo:
 
 `compartido` (M0) → `identidad` (M1) → `directorio` (M2) → `pagos.politicas_de_precios` (M3) → `reservas` (M4) → `notificaciones` (M5) → `teleasistencia` (M6) → resto de `pagos` (M7) → `mensajeria` (M8) → columnas y tablas de verificación de `directorio` (M9) → roles y permisos (M10).
 

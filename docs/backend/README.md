@@ -4,7 +4,7 @@ Cada archivo de esta carpeta es el **plan detallado de un módulo**: lo que se c
 
 El marco general (stack, reglas de arquitectura, estándares y orden) está en [PLAN_BACKEND_SENIORY.md](../PLAN_BACKEND_SENIORY.md). La arquitectura de referencia es [ADR-01](../ADR-01.md) y su diagrama.
 
-**Diseño de la base de datos** (los 8 esquemas y 37 tablas de todos los módulos): [BASE_DE_DATOS.md](./BASE_DE_DATOS.md).
+**Diseño de la base de datos** (los 8 esquemas y 37 tablas de todos los módulos, **ya construida**): [BASE_DE_DATOS.md](./BASE_DE_DATOS.md).
 
 ## Estado
 
@@ -32,6 +32,7 @@ El marco general (stack, reglas de arquitectura, estándares y orden) está en [
 | 2026-10-22 | **NestJS 12 con sus valores por defecto:** Express, `class-validator`, Vitest, oxlint y ESM (al crear el proyecto se confirmó que Nest 12 ya no genera Jest ni ESLint). Node 24 LTS. Se mantiene Drizzle. Cada `@Module` exporta solo sus puertos de entrada. | Menor curva de aprendizaje: la documentación oficial y los tutoriales usan esas opciones. Drizzle se mantiene porque un esquema por módulo hace visible E13. Los `exports` mínimos hacen que Nest falle al arrancar si un módulo inyecta algo ajeno. | Registrar en el ADR-03. |
 | 2026-10-24 | **El frontend usa Next como BFF** ([PLAN_FRONTEND](../PLAN_FRONTEND_SENIORY.md)). Ajustes al backend: ventana de gracia de 30 s al renovar el token (M1), `Origin` verificado solo si viene (M1), IP del cliente por `X-Cliente-IP` con secreto compartido (M0). | El navegador ya no llama a la API; lo hacen los servidores de Next. | Registrar en el ADR-03. |
 | 2026-10-26 | **Es la aplicación real, no una demo.** (1) Los adaptadores simulados y los datos de ejemplo existen solo para desarrollo y pruebas; en producción el arranque los rechaza. (2) Producción recibe datos de **referencia** por migración, administradores por línea de comandos y cuidadores reales por importación verificada. (3) Sin «línea de emergencia» simulada: la alerta avisa a la familia y al cuidador. (4) El cuidador acepta los servicios él mismo (vista mínima en F4) y la solicitud expira. (5) Nueva sección de requisitos legales, operativos y de negocio para lanzar. | Una aplicación con datos de salud y dinero real no puede prometer ni simular lo que no hace. | [PLAN_BACKEND §1 y §12](../PLAN_BACKEND_SENIORY.md), [BASE_DE_DATOS §9](./BASE_DE_DATOS.md). Registrar en el ADR-03. |
+| 2026-10-26 | **La base de datos completa se construyó por adelantado** (8 esquemas, 37 tablas, 10 migraciones, 253 pruebas de restricciones), en vez de módulo por módulo. Se añaden 3 triggers de integridad (auditoría y libro de la bolsa de solo inserción; cuidador visible solo con las tres verificaciones). | Tener la base completa y probada desde el principio permite que cada módulo se apoye en ella; los cambios posteriores van en migraciones nuevas. | Ver [BASE_DE_DATOS.md](./BASE_DE_DATOS.md). Política: las migraciones se pueden aplanar antes del primer despliegue a producción. |
 | 2026-10-22 | Se agrega el módulo **`mensajeria`**. | La mensajería es una funcionalidad de ADR-01 §1 y existe en el frontend, pero no aparece como módulo en el diagrama ni en ADR-01 §4.7. | Agregarlo al diagrama y al ADR-03. |
 
 ## Plantilla de cada plan

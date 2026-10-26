@@ -34,6 +34,8 @@ export default defineConfig({
           // Levantar un contenedor de Postgres tarda más que una prueba normal.
           testTimeout: 60_000,
           hookTimeout: 180_000,
+          // Un Postgres real y desechable por corrida, con todas las migraciones aplicadas.
+          globalSetup: ['pruebas/soporte/global-setup-bd.ts'],
         },
       },
     ],
