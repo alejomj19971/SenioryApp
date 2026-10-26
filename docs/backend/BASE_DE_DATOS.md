@@ -303,7 +303,7 @@ erDiagram
 
 | Tabla | Columnas | Restricciones e índices |
 |---|---|---|
-| **franjas** | `jornada` PK, `hora_inicio` time, `hora_fin` time, `cruza_medianoche` bool | `jornada IN ('manana','tarde','noche')`. Horario de cada franja **[ABIERTA]**; propuesta: mañana 06–12, tarde 12–18, noche 18–06 (cruza la medianoche) |
+| **franjas** | `jornada` PK, `hora_inicio` time, `hora_fin` time, `cruza_medianoche` bool | `jornada IN ('manana','tarde','noche')`. Horario **decidido el 2026-10-26**: mañana 06–12, tarde 12–18, noche 18–06 (cruza la medianoche) |
 | **servicios** | `id`, `familiar_id`, `adulto_mayor_id`, `cuidador_id` (los tres de otros esquemas), `fecha` date, `jornada` FK, `horas` smallint, `estado` text, `medio_de_pago` text, `aceptacion_automatica` bool (copia de la preferencia del cuidador al solicitar), `solicitud_expira_en` timestamptz null (plazo para que el cuidador acepte; la tarea programada cancela con motivo «expirada» los vencidos), **desglose congelado:** `tarifa_hora`, `subtotal`, `cargo_familia`, `total_familia`, `pago_profesional` (bigint), `politica_version` int; `clave_idempotencia` text, `solicitado_en`, `aceptado_en`, `iniciado_en`, `finalizado_en`, `cancelado_en` (null), `cancelado_por` uuid null, `motivo_cancelacion` text null, `version`, `creado_en`, `actualizado_en` | Ver abajo |
 | **historial_de_estados** | `id`, `servicio_id` FK, `desde` text null, `hacia` text, `accion` text, `actor_id` uuid null, `ocurrido_en` | Índice `(servicio_id, ocurrido_en)`; una fila por transición válida (trazabilidad de E9) |
 | **calificaciones** | `servicio_id` PK/FK, `familiar_id`, `calificacion` smallint, `comentario` text null, `creada_en` | `calificacion BETWEEN 1 AND 5`; `char_length(comentario) <= 500`; la regla «solo si está finalizado» la aplica el dominio |
@@ -575,7 +575,7 @@ Son parte de la configuración del negocio; sin ellos la aplicación no funciona
 
 | Dato | Tabla | Nota |
 |---|---|---|
-| Franjas horarias | `reservas.franjas` | Horarios propuestos en §3.4 (**[ABIERTA]**, confirmar antes de producción) |
+| Franjas horarias | `reservas.franjas` | Horarios decididos el 2026-10-26 (§3.4) |
 | Política de precios versión 1 | `pagos.politicas_de_precios` | 800 y 1000 puntos básicos, aprobados por el equipo empresarial |
 | Paquetes de bolsa | `pagos.paquetes_de_bolsa` | 10, 20 y 40 horas, con los descuentos que apruebe el equipo empresarial (los de la landing son «ilustrativos») |
 | Textos legales vigentes | Configuración de la aplicación | Versión de la política y del consentimiento (M1) |
@@ -616,7 +616,7 @@ Cada módulo agrega su esquema en su propia migración; ninguno depende de las t
 | # | Decisión | Afecta | Recomendación |
 |---|---|---|---|
 | 1 | Unidad de la bolsa: pesos u horas | `pagos.bolsas`, `movimientos_de_bolsa`, `paquetes_de_bolsa` | Pesos |
-| 2 | Horario de cada franja | `reservas.franjas` | Mañana 06–12, tarde 12–18, noche 18–06 |
+| 2 | ~~Horario de cada franja~~ | `reservas.franjas` | **Resuelto (2026-10-26):** mañana 06–12, tarde 12–18, noche 18–06 |
 | 3 | Rangos de referencia de signos vitales | `teleasistencia.rangos_de_referencia` | Definidos por un profesional de salud |
 | 4 | Cifrado de columnas clínicas | `teleasistencia` | Sí para `nombre`, `indicaciones` y `nota`; decidir entre `pgcrypto` y cifrado en la aplicación en M6 |
 | 5 | Plazos de retención (§6) | Varios | Con asesoría legal antes de producción |

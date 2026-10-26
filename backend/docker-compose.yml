@@ -1,0 +1,28 @@
+# Base de datos local de Seniory (solo desarrollo).
+# Puerto 5434 en tu equipo para no chocar con otras bases (5432 y 5433 suelen estar ocupados).
+#   npm run bd:arriba   → levanta Postgres y espera a que esté lista
+#   npm run bd:abajo    → lo apaga (los datos se conservan en el volumen)
+name: seniory
+
+services:
+  postgres:
+    image: postgres:17
+    container_name: seniory_postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: seniory
+      POSTGRES_PASSWORD: seniory
+      POSTGRES_DB: seniory
+    ports:
+      - '5434:5432'
+    volumes:
+      - seniory_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U seniory -d seniory']
+      interval: 3s
+      timeout: 3s
+      retries: 20
+
+volumes:
+  seniory_postgres_data:
+    name: seniory_postgres_data

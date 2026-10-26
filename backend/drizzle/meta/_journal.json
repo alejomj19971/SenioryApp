@@ -1,0 +1,13 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1793048975025,
+      "tag": "0000_base_extensiones_y_esquema_compartido",
+      "breakpoints": true
+    }
+  ]
+}

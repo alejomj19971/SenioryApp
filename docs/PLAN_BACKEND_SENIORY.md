@@ -343,7 +343,9 @@ El orden respeta las dependencias (sección 4.3) y adelanta lo que da confianza 
 
 **Terminado cuando:** además de la definición común, el recorrido búsqueda → perfil funciona contra la API (máximo 2 toques, E4), no hay teléfonos en la respuesta y `esVisible()` está cubierta por pruebas de propiedades.
 
-**Decisiones abiertas:** si el directorio es público o exige sesión; criterio de orden por defecto (el MVP destacaba primero al cuidador de $20.000/hora solo por el ejemplo del pitch; en la aplicación real, un criterio neutro como la calificación).
+**Decidido (2026-10-26):** el directorio **exige sesión** (solo usuarios con cuenta ven a los cuidadores), con límite de peticiones. Por eso la landing pública no lista cuidadores: muestra solo la propuesta de valor y lleva a registrarse.
+
+**Decisiones abiertas:** criterio de orden por defecto (el MVP destacaba primero al cuidador de $20.000/hora solo por el ejemplo del pitch; en la aplicación real, un criterio neutro como la calificación).
 
 ---
 
@@ -411,7 +413,12 @@ Cualquier otra transición lanza un error de dominio (HTTP 409).
 
 **Terminado cuando:** además de la definición común, se contrata de principio a fin contra la API real, dos solicitudes simultáneas no generan doble reserva y la confirmación sobrevive a recargar la página.
 
-**Decisiones abiertas:** **cuánto tiempo tiene el cuidador para aceptar** antes de que la solicitud expire y se avise a la familia (propuesta: 2 horas, o 30 minutos si el servicio es para hoy); horas exactas de cada franja; cómo pasa un servicio a `EnCurso` (check-in del cuidador o automático); política de cancelación y reembolso; si la confirmación debe decir «Solicitud enviada» o «Contratación confirmada» según el caso.
+**Decidido (2026-10-26):**
+- **Plazo de aceptación:** el cuidador tiene **2 horas** para aceptar, o **30 minutos** si el servicio es para hoy; vencido el plazo, la solicitud se cancela con motivo «expirada» y se avisa a la familia.
+- **Franjas:** mañana 06:00–12:00, tarde 12:00–18:00, noche 18:00–06:00 (cruza la medianoche).
+- **Cobro:** al aceptar el cuidador. El servicio no puede iniciar sin pago aprobado (bandera `REQUIERE_PAGO_APROBADO`, activa desde M7).
+
+**Decisiones abiertas:** cómo pasa un servicio a `EnCurso` (check-in del cuidador o automático); política de cancelación y reembolso; si la confirmación debe decir «Solicitud enviada» o «Contratación confirmada» según el caso.
 
 ---
 
@@ -585,8 +592,8 @@ Solo el puerto `ProveedorDeIA` y su adaptador, detrás de una frontera clara (AD
 |---|---|---|---|
 | 1 | Pasarela de pagos y dispersión al cuidador | M7 | Verificar primero cuál aprueba un marketplace; abrir el trámite durante M1. |
 | 2 | Bolsa en horas o en pesos | M7 | Crédito en pesos, mostrado también como horas equivalentes. |
-| 3 | Momento del cobro y política de reembolso | M4, M7 | Cobrar al aceptar; política por definir con el equipo empresarial. |
-| 4 | Plazo para que el cuidador acepte y qué pasa al vencer | M4 | Aceptación manual por defecto con una vista mínima del cuidador (en F4); expira en 2 horas (30 minutos si es para hoy) y se avisa a la familia. La aceptación automática solo si el propio cuidador la activa. |
+| 3 | ~~Momento del cobro~~ y política de reembolso | M4, M7 | **Cobro: resuelto (2026-10-26), al aceptar el cuidador.** Sigue abierta la política de cancelación y reembolso, a definir con el equipo empresarial. |
+| 4 | ~~Plazo para que el cuidador acepte y qué pasa al vencer~~ | M4 | **Resuelto (2026-10-26).** Aceptación manual por defecto con una vista mínima del cuidador (en F4); expira en 2 horas (30 minutos si es para hoy) y se avisa a la familia. La aceptación automática solo si el propio cuidador la activa. |
 | 5 | Quién consiente por el adulto mayor | M1 | Asesoría legal antes de lanzar. |
 | 6 | Umbrales clínicos y tolerancia de medicamentos | M6 | Los define un profesional de salud. |
 | 7 | Línea de emergencia | M6 | No existe en el sistema: la alerta avisa a familiares y cuidador, y la interfaz no promete un despacho. Solo se integra con un convenio real y su propio ADR. |
@@ -594,7 +601,7 @@ Solo el puerto `ProveedorDeIA` y su adaptador, detrás de una frontera clara (AD
 | 9 | Cifrado de campos clínicos y retención | M6, M10 | Cifrado desde M6; retención definida con asesoría legal. |
 | 10 | Hosting y región | M10 | Considerar transferencia internacional de datos (Ley 1581). |
 | 11 | Dominios y cookies | M1 | Subdominios del mismo sitio. |
-| 12 | Directorio público o con sesión | M2 | Con sesión y límite de peticiones. |
+| 12 | ~~Directorio público o con sesión~~ | M2 | **Resuelto (2026-10-26):** con sesión y límite de peticiones. |
 | 13 | Quién verifica a los cuidadores y cada cuánto vence | M9 | Proceso manual con administrador. |
 
 ### 10.2 Brechas con los ADR actuales

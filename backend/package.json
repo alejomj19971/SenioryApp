@@ -20,12 +20,21 @@
     "test:integracion": "vitest run --project integracion",
     "test:todo": "vitest run",
     "test:cobertura": "vitest run --coverage",
-    "test:observar": "vitest --project unitarias"
+    "test:observar": "vitest --project unitarias",
+    "bd:arriba": "docker compose up -d --wait",
+    "bd:abajo": "docker compose down",
+    "bd:generar": "drizzle-kit generate",
+    "bd:migrar": "npm run build && node --env-file-if-exists=.env dist/compartido/infraestructura/base-de-datos/migrar-cli.js"
   },
   "dependencies": {
     "@nestjs/common": "^12.0.1",
+    "@nestjs/config": "^12.0.1",
     "@nestjs/core": "^12.0.1",
     "@nestjs/platform-express": "^12.0.1",
+    "class-transformer": "^0.5.1",
+    "class-validator": "^0.15.1",
+    "drizzle-orm": "^0.45.4",
+    "pg": "^8.23.1",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.1"
   },
@@ -33,17 +42,24 @@
     "@nestjs/cli": "^12.0.0",
     "@nestjs/schematics": "^12.0.0",
     "@nestjs/testing": "^12.0.1",
+    "@testcontainers/postgresql": "^12.2.1",
     "@types/express": "^5.0.0",
     "@types/node": "^24.0.0",
+    "@types/pg": "^8.23.1",
     "@types/supertest": "^7.0.0",
     "@vitest/coverage-v8": "^4.1.2",
+    "drizzle-kit": "^0.31.11",
     "oxlint": "^1.58.0",
     "oxlint-tsgolint": "^7.0.2001",
     "prettier": "^3.4.2",
     "source-map-support": "^0.5.21",
     "supertest": "^7.0.0",
+    "testcontainers": "^12.2.1",
     "typescript": "^6.0.2",
     "vite": "^8.0.0",
     "vitest": "^4.1.2"
+  },
+  "overrides": {
+    "multer": "^2.5.0"
   }
 }

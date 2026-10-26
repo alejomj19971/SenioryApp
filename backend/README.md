@@ -5,7 +5,7 @@ API de Seniory: **monolito modular con arquitectura hexagonal** ([ADR-01](../doc
 - Plan general: [docs/PLAN_BACKEND_SENIORY.md](../docs/PLAN_BACKEND_SENIORY.md)
 - Planes por módulo: [docs/backend/](../docs/backend/README.md)
 
-**Estado:** M0 en construcción (PR 1: esqueleto del proyecto).
+**Estado:** M0 en construcción (PR 1 esqueleto ✅, PR 2 configuración y base de datos ✅).
 
 ## Requisitos
 
@@ -14,20 +14,24 @@ API de Seniory: **monolito modular con arquitectura hexagonal** ([ADR-01](../doc
   nvm install 24.22.1
   nvm use 24.22.1
   ```
-- **Docker Desktop** encendido (desde el PR 2, para la base de datos local y las pruebas de integración).
+- **Docker Desktop** encendido (base de datos local y pruebas de integración).
 
 ## Comandos
 
 | Comando | Qué hace |
 |---|---|
 | `npm install` | Instala dependencias. |
+| `cp .env.ejemplo .env` | Crea tu configuración local (no se sube a git). La API no arranca sin ella. |
+| `npm run bd:arriba` | Enciende Postgres en Docker (puerto **5434**). `bd:abajo` lo apaga. |
+| `npm run bd:migrar` | Aplica las migraciones a esa base. |
+| `npm run bd:generar` | Genera una migración nueva desde los esquemas (`-- --custom --name=…` para SQL a mano). |
 | `npm run dev` | Arranca la API con recarga en `http://localhost:3001`. |
 | `npm run build` | Compila a `dist/`. |
 | `npm start` | Ejecuta lo compilado. |
 | `npm run lint` | oxlint y verificación de tipos. |
 | `npm run formato` | Da formato con Prettier (`formato:verificar` solo revisa). |
 | `npm test` | Pruebas unitarias (sin Docker). |
-| `npm run test:integracion` | Pruebas de integración y de API. |
+| `npm run test:integracion` | Pruebas de integración y de API (levantan un Postgres real con Testcontainers; requieren Docker). |
 | `npm run test:cobertura` | Todas las pruebas con cobertura. |
 
 Comprobar que la API está viva: `GET http://localhost:3001/salud` → `{"estado":"ok"}`.
