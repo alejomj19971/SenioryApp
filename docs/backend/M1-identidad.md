@@ -53,7 +53,7 @@ Que cada persona entre a Seniory con su propia cuenta, con un rol, y que el sist
 - [ ] M0 terminado.
 - [ ] **Decidido cómo llegan las cookies al frontend** (§7.1). Recomendado: reescrituras de Next hacia el backend.
 - [ ] **Texto de la política de tratamiento de datos y del consentimiento de salud** en una primera versión (`v1`), aunque luego lo revise asesoría legal.
-- [ ] **Decidido quién puede otorgar el consentimiento de salud** (§10, decisión 1). Si no hay respuesta, se implementa el modelo que soporta ambos casos y se permite solo «representante» en la demo.
+- [ ] **Decidido quién puede otorgar el consentimiento de salud** (§10, decisión 1). Si no hay respuesta, se implementa el modelo que soporta ambos casos y se usa «representante» solo en desarrollo y staging. **Sin esa decisión legal no se lanza a usuarios reales.**
 
 ---
 
@@ -78,7 +78,7 @@ Que cada persona entre a Seniory con su propia cuenta, con un rol, y que el sist
 | Agregado | Contenido | Reglas |
 |---|---|---|
 | `Usuario` | `id`, `correo`, `nombre`, `telefono?`, `rol`, `estado` (`activo`, `eliminado`), `correoVerificadoEn?`, y su `Credencial` (`hash`, `intentosFallidos`, `bloqueadoHasta?`). | Correo único. Tras **5 intentos fallidos** se bloquea por 15 minutos (y se duplica en bloqueos seguidos, hasta 24 h). Un inicio de sesión exitoso reinicia el contador. Un usuario `eliminado` no puede iniciar sesión. Nadie cambia su propio rol. |
-| `SesionDeRefresco` | `id`, `usuarioId`, `familiaId`, `hashDelToken`, `emitidaEn`, `expiraEn`, `reemplazadaEn?`, `revocadaEn?` | Cada renovación **reemplaza** el token por uno nuevo de la misma familia. Si alguien presenta un token ya reemplazado o revocado, se considera robado: **se revoca toda la familia** y se audita. |
+| `SesionDeRefresco` | `id`, `usuarioId`, `familiaId`, `hashDelToken`, `emitidaEn`, `expiraEn`, `reemplazadaEn?`, `revocadaEn?` | Cada renovación **reemplaza** el token por uno nuevo de la misma familia. Si alguien presenta un token reemplazado **hace más de 30 s** o revocado, se considera robado: **se revoca toda la familia** y se audita. Dentro de esos 30 s (ventana de gracia) se emite otro par nuevo de la misma familia, sin revocarla (no se puede devolver el par anterior porque solo se guarda el hash de cada token), porque el frontend puede renovar varias veces a la vez ([F1 §4.3](../frontend/F1-identidad.md)). |
 | `AdultoMayor` | `id`, `nombre`, `fechaDeNacimiento`, `fotoUrl?`, `usuarioId?` (si algún día tiene cuenta propia), `creadoPor` | La edad **se calcula** con `Reloj` (no se guarda). Fecha de nacimiento en el pasado y edad máxima de 120 años. |
 | `Vinculo` | `id`, `familiarId`, `adultoMayorId`, `parentesco`, `esResponsable`, `estado` (`activo`, `revocado`) | Solo un vínculo activo por pareja familiar–adulto mayor. Al registrar un adulto mayor, quien lo registra queda como responsable. |
 | `Consentimiento` | `id`, `adultoMayorId`, `finalidad`, `otorgadoPor`, `calidad` (`titular` o `representante`), `versionDelTexto`, `otorgadoEn`, `revocadoEn?` | Solo un consentimiento vigente por adulto mayor y finalidad. Solo lo otorga un familiar vinculado (como representante) o el propio adulto mayor (como titular). Revocar es inmediato y emite un evento. |
@@ -149,7 +149,7 @@ Repositorios, hash y emisor de tokens quedan privados del módulo: si otro módu
 | Cookie de acceso | `seniory_acceso`: `HttpOnly`, `Secure` (salvo en local), `SameSite=Lax`, `Path=/`. |
 | Cookie de refresco | `seniory_refresco`: igual, pero `Path=/api/v1/auth`, para que solo viaje a las rutas de sesión. |
 | Rol actualizado | El rol se lee de la base al renovar, así un cambio de rol se aplica en máximo 15 minutos. |
-| CSRF | `SameSite=Lax` más verificación de `Origin` en toda petición que no sea `GET`. |
+| CSRF | `SameSite=Lax` más verificación de `Origin` en toda petición que no sea `GET` **cuando trae ese encabezado** (las llamadas del BFF de Next son de servidor a servidor y no lo traen; los navegadores sí lo envían en `POST` entre sitios). |
 
 Variables de entorno nuevas: `SECRETO_JWT_ACCESO`, `ID_CLAVE_JWT`, `DURACION_ACCESO_MIN` (15), `DURACION_REFRESCO_DIAS` (30), `COOKIES_SEGURAS` (`true` fuera de local), `VERSION_POLITICA_VIGENTE`, `VERSION_CONSENTIMIENTO_SALUD_VIGENTE`.
 
@@ -239,16 +239,25 @@ Los contratos viven en `compartido/eventos/identidad.ts`. Ningún evento lleva c
 
 Una tarea programada diaria borra las sesiones vencidas hace más de 30 días.
 
-### 4.8 Semillas
+### 4.8 Datos iniciales
+
+**Producción no recibe usuarios de ejemplo.** Las cuentas reales entran así:
+
+| Cuenta | Cómo se crea |
+|---|---|
+| Familiares | Registro por la aplicación. |
+| Administradores | `npm run crear-admin` en cada entorno, con contraseña de un solo uso que se cambia al primer ingreso y autenticación en dos pasos (decisión 4). |
+| Cuidadores | Los crea el administrador al importar cuidadores verificados ([M2](../PLAN_BACKEND_SENIORY.md), `npm run cuidadores:importar`); luego, registro propio (M9). |
+
+**Fixtures de desarrollo** (solo local, pruebas y staging; `npm run semillas` se niega a correr en producción):
 
 | Dato | Valor |
 |---|---|
-| Familiar | Andrea (`andrea@demo.seniory.co`), contraseña desde la variable `CONTRASENA_DEMO`, nunca en el repositorio. |
+| Familiar de prueba | Andrea (`andrea@prueba.seniory.invalid`), con la contraseña de la variable `CONTRASENA_DE_PRUEBA`, nunca en el repositorio. |
 | Adulto mayor | Doña Carmen, fecha de nacimiento que da 78 años, vínculo de responsable con Andrea. |
 | Consentimiento | `datos_de_salud` vigente, otorgado por Andrea como representante, versión `v1`. |
-| Administrador | **No** se siembra: se crea con `npm run crear-admin` en cada entorno. |
 
-Los IDs se derivan con UUID v5 de `f-andrea` y `am-carmen` (los ids de `frontend/data/familia.json`), así se mantienen estables.
+Los IDs se derivan con UUID v5 de `f-andrea` y `am-carmen` (los ids de `frontend/data/familia.json`), así se mantienen estables. El dominio `.invalid` está reservado y nunca recibe correo real.
 
 ---
 
@@ -285,7 +294,9 @@ Los IDs se derivan con UUID v5 de `f-andrea` y `am-carmen` (los ids de `frontend
 | API | Registro con `rol: "administrador"` en el cuerpo → 400. |
 | Arquitectura | `IdentidadModule` exporta solo `CONSULTA_DE_IDENTIDAD` y `VERIFICADOR_DE_TOKENS`. |
 | API | Inicio de sesión con usuario inexistente y con contraseña errónea: mismo estado y mismo mensaje. |
-| API | Refresco reutilizado → 401 y la sesión legítima también queda revocada. |
+| API | Refresco reutilizado después de 30 s → 401 y la sesión legítima también queda revocada. |
+| API | Dos renovaciones simultáneas con el mismo token (dentro de 30 s) → ambas reciben un par válido de la misma familia y la sesión sigue activa. |
+| API | `POST` sin encabezado `Origin` (llamada del BFF) se acepta; con `Origin` no permitido se rechaza. |
 | API | Petición `POST` con `Origin` no permitido → rechazada. |
 | API | **Matriz de autorización:** un familiar no ve ni consiente sobre el adulto mayor de otro (404); un cuidador no puede registrar adultos mayores (403); sin sesión → 401. |
 | API | Ninguna respuesta incluye `hash`, `intentos_fallidos` ni tokens en el cuerpo. |
@@ -295,33 +306,16 @@ Los IDs se derivan con UUID v5 de `f-andrea` y `am-carmen` (los ids de `frontend
 
 ## 7. Integración con el frontend
 
-> Antes de escribir código en `frontend/`, leer `frontend/AGENTS.md` y la guía de `node_modules/next/dist/docs/` sobre reescrituras, cookies en componentes de servidor y protección de rutas. **No asumir** las API de versiones anteriores de Next.
+El trabajo del frontend tiene su propio plan: **[F1 — Identidad en el frontend](../frontend/F1-identidad.md)**, construido sobre [F0](../frontend/F0-base-de-integracion.md).
 
-### 7.1 Cómo llegan las cookies
+**Decisión (2026-10-24): Next actúa como *backend for frontend* (BFF).** El navegador solo habla con Next; los componentes de servidor y las acciones de servidor de Next llaman a esta API de servidor a servidor. Las cookies de sesión viven en el dominio del frontend: Next las escribe a partir de los `Set-Cookie` que devuelve `/auth/*`. Reemplaza la opción de reescrituras que se había propuesto aquí, porque sigue la recomendación de la documentación de Next 16 y no expone esta API al navegador.
 
-El frontend está en Vercel y el backend en otro dominio; las cookies del backend no llegarían al servidor de Next. Opciones:
+Consecuencias para este módulo (ya incorporadas en §4.4 y §5):
+- Ventana de gracia de 30 s para un token de refresco recién reemplazado.
+- Verificación de `Origin` solo cuando la petición trae ese encabezado.
+- Límite por IP usando `X-Cliente-IP` cuando `X-Seniory-BFF` trae el secreto correcto (M0 §4.10).
 
-| Opción | Cómo funciona | Cuándo conviene |
-|---|---|---|
-| **Reescrituras de Next (recomendada ahora)** | El navegador llama a `/api/v1/...` en el mismo dominio del frontend, y Next reenvía al backend. Las cookies quedan en el dominio del frontend y no hace falta CORS. | Mientras no exista un dominio propio. Riesgo conocido: conexiones SSE largas por el proxy (se revisa en M6). |
-| Subdominios propios | `app.seniory.co` y `api.seniory.co` comparten sitio; las cookies se emiten para `.seniory.co`. | Cuando se compre el dominio. |
-
-En local no hay problema: las cookies de `localhost` se comparten entre los puertos 3000 y 3001.
-
-### 7.2 Cambios
-
-| Archivo o ruta | Cambio |
-|---|---|
-| `lib/api/` (nuevo) | Cliente HTTP base: reenvía la cookie desde los componentes de servidor y traduce `problem+json` a mensajes en español. |
-| `lib/services/paciente.ts` | `obtenerFamiliar()` y `obtenerAdultoMayor()` usan `GET /yo` (el adulto mayor es el primero con `esResponsable`). `obtenerCuidadorEnTurno()` sigue leyendo el JSON hasta M4. |
-| `lib/types.ts` | `Familiar` deja de tener `adultoMayorId` fijo; se agrega el tipo de la respuesta de `/yo`. |
-| Rutas nuevas | Registro, inicio de sesión, alta del adulto mayor y consentimiento (fuera de `/app`). Mismos requisitos de accesibilidad del MVP: texto ≥ 18 px, objetivos de 48 × 48 px, etiquetas visibles, errores leídos por lectores de pantalla. |
-| `/app/*` | Sin sesión, redirige al inicio de sesión. Si el familiar no tiene adulto mayor o consentimiento, lo lleva a completarlos. |
-| `AppHeader` | Opción para cerrar sesión. |
-
-### 7.3 La demo del Rocket Pitch
-
-El guion exige que cada paso del demo sea un toque. En el dispositivo del pitch se deja la **sesión de Andrea iniciada** antes de presentar (el refresco dura 30 días), así el inicio de sesión no aparece en el recorrido en vivo.
+Ya no hay una versión de demostración: el recorrido que sigue el frontend es el de la aplicación real ([F1](../frontend/F1-identidad.md)).
 
 ---
 
@@ -333,8 +327,8 @@ El guion exige que cada paso del demo sea un toque. En el dispositivo del pitch 
 | 2 | Persistencia: esquema `identidad`, migración, repositorios y pruebas de integración. |
 | 3 | Autenticación: hash, tokens, `VerificadorDeTokens`, casos de uso de registro, inicio, renovación y cierre de sesión, endpoints de `/auth`, límites por ruta y pruebas de API. |
 | 4 | Perfil, adultos mayores, consentimientos, `ConsultaDeIdentidad`, eventos, auditoría y matriz de autorización. |
-| 5 | Semillas, `crear-admin` y documentación del módulo. |
-| 6 | Frontend: cliente de API, reescrituras, pantallas nuevas, `paciente.ts` sobre `/yo` y protección de `/app`. |
+| 5 | Fixtures de desarrollo, `crear-admin` y documentación del módulo. |
+| 6 | Ajustes para el BFF: ventana de gracia del refresco, `Origin` opcional y `X-Cliente-IP` (con pruebas). El trabajo de pantallas va en [F1](../frontend/F1-identidad.md). |
 | 7 | *(Opcional, o en M10)* Exportar y eliminar cuenta. |
 
 ---
@@ -348,7 +342,7 @@ Además de la definición común ([PLAN_BACKEND §6.3](../PLAN_BACKEND_SENIORY.m
 - [ ] Un refresco reutilizado revoca la familia de sesiones y queda auditado.
 - [ ] La CI verifica que los logs no contienen contraseñas, correos ni cookies.
 - [ ] `ConsultaDeIdentidad` documentada en el README del módulo, con sus pruebas.
-- [ ] Sesión de demo iniciada en el dispositivo del pitch.
+- [ ] Dos renovaciones simultáneas del mismo token no cierran la sesión.
 
 ---
 
@@ -360,5 +354,5 @@ Además de la definición común ([PLAN_BACKEND §6.3](../PLAN_BACKEND_SENIORY.m
 | 2 | Si el adulto mayor tiene cuenta propia. | Todavía no; el modelo lo permite con `usuarioId`. |
 | 3 | Verificación de correo obligatoria. | Sí, cuando exista el canal de correo (M5); hasta entonces, cuentas sin verificar con todas las funciones. |
 | 4 | Autenticación en dos pasos para administradores. | Sí antes de producción (M10). |
-| 5 | Reescrituras de Next o subdominios. | Reescrituras ahora; subdominios cuando haya dominio. |
+| 5 | ~~Reescrituras de Next o subdominios.~~ | **Resuelta (2026-10-24):** Next como BFF ([F1](../frontend/F1-identidad.md)). |
 | 6 | ¿Volver a pedir consentimiento si cambia el texto? | Sí ante cambios de fondo; se maneja comparando `versionDelTexto` con la vigente. |

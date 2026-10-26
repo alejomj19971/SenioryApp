@@ -101,7 +101,7 @@ backend/
 │  ├─ api/
 │  └─ soporte/                             ← Testcontainers, dobles, fábricas
 ├─ drizzle/                                ← migraciones generadas
-├─ semillas/
+├─ semillas/                               ← fixtures de DESARROLLO (nunca producción)
 ├─ .dependency-cruiser.cjs
 ├─ docker-compose.yml
 ├─ Dockerfile
@@ -179,7 +179,7 @@ Se instala la versión estable más reciente y se fija con `package-lock.json`. 
 | `test:cobertura` | Cobertura con umbrales. |
 | `bd:generar` | Genera una migración desde los esquemas Drizzle. |
 | `bd:migrar` | Aplica migraciones pendientes. |
-| `semillas` | Carga datos de prueba (idempotente). |
+| `semillas` | Carga fixtures de desarrollo (idempotente). **Se niega a ejecutarse con `NODE_ENV=production`.** |
 
 ### 4.4 Configuración
 
@@ -194,10 +194,15 @@ Las variables se declaran en una clase con decoradores de `class-validator` y `@
 | `NIVEL_DE_LOG` | `info` | |
 | `ZONA_HORARIA_NEGOCIO` | `America/Bogota` | Usada por `FechaCivil`. |
 | `SENTRY_DSN` | (vacío en local) | Opcional. |
+| `SECRETO_BFF` | (aleatorio, 32 bytes o más) | Compartido con el frontend (`SENIORY_BFF_SECRETO`); habilita `X-Cliente-IP`. Secreto en staging y producción. |
 
 M1 agrega las variables de tokens y cookies.
 
+**Arranque seguro (aplicación real).** Con `NODE_ENV=production` el validador de configuración **rechaza el arranque** si: falta un secreto; algún proveedor se elige como `simulado` (los módulos de pagos, notificaciones y similares agregan su variable, por ejemplo `PROVEEDOR_PAGOS` o `CANAL_ALERTAS`); las cookies no son `Secure`; `ORIGENES_PERMITIDOS` contiene `localhost` o comodines; o `SECRETO_BFF` es corto. Cada módulo que introduce un proveedor registra su regla en este validador, y una prueba de integración arranca la aplicación en modo producción con un adaptador simulado y verifica que falla.
+
 ### 4.5 Base de datos
+
+El diseño completo de todos los esquemas está en [BASE_DE_DATOS.md](./BASE_DE_DATOS.md). Esta sección resume las convenciones que M0 deja configuradas.
 
 | Tema | Convención |
 |---|---|
@@ -209,7 +214,7 @@ M1 agrega las variables de tokens y cookies.
 | Restricciones | `CHECK`, `UNIQUE` y claves foráneas **dentro** del esquema. Entre esquemas, solo IDs sin clave foránea. |
 | Extensiones | `citext`, `unaccent`, `pg_trgm` (se habilitan en la primera migración). |
 | Migraciones | Generadas con `drizzle-kit`, revisadas a mano en el PR y nunca editadas una vez aplicadas. Cambios destructivos en dos pasos. |
-| Semillas | Idempotentes. Los IDs de prueba se derivan del id antiguo del JSON con UUID v5, para que sean reproducibles. |
+| Datos iniciales | Dos clases que no se mezclan ([BASE_DE_DATOS §9](./BASE_DE_DATOS.md)): **datos de referencia** (franjas, política de precios, paquetes de bolsa) en migraciones, que sí van a producción; y **fixtures de desarrollo** en `semillas/`, idempotentes, con IDs derivados del id antiguo del JSON con UUID v5, que nunca llegan a producción. |
 
 `docker-compose.yml` levanta `postgres:17` con volumen persistente y una base `seniory` para desarrollo; las pruebas usan Testcontainers con su propia base efímera.
 
@@ -352,6 +357,7 @@ Cada regla tiene una **prueba que la rompe a propósito** (un archivo de ejemplo
 | Roles | `@Roles('familiar', …)` con `GuardDeRoles`; un rol insuficiente responde 403. |
 | Validación | `ValidationPipe` global con `whitelist: true`, `forbidNonWhitelisted: true` y `transform: true`: un campo no declarado en el DTO se rechaza (evita asignación masiva, por ejemplo enviar `rol` al registrarse). Los DTOs son clases con decoradores de `class-validator` y mensajes en español. |
 | Correlación | Se acepta `X-Request-Id` si es un UUID válido; si no, se genera. Se devuelve en la respuesta, va en cada log y en cada evento. |
+| Peticiones del frontend (BFF) | El frontend Next llama a esta API desde sus servidores ([PLAN_FRONTEND §2](../PLAN_FRONTEND_SENIORY.md)), así que todas las peticiones llegan desde pocas IP. Si `X-Seniory-BFF` coincide con la variable `SECRETO_BFF` (comparación de tiempo constante), el `throttler` y los logs usan la IP de `X-Cliente-IP`; si no, la IP de la conexión. Nunca se confía en `X-Forwarded-For` de origen desconocido. |
 | Logs | `nestjs-pino` en JSON. Redacción obligatoria de `authorization`, `cookie`, `set-cookie`, `contrasena`, `correo`, `telefono` y cualquier `datos` de eventos. |
 | Errores | `FiltroDeErrores` traduce todo a `application/problem+json` (tabla abajo). Un error no controlado responde 500 sin detalles internos y se reporta a Sentry. |
 | Documentación | Swagger en `/api/docs` solo fuera de producción. |
@@ -469,6 +475,8 @@ Además de la definición común ([PLAN_BACKEND §6.3](../PLAN_BACKEND_SENIORY.m
 
 - [ ] `npm run dev` arranca con la base local y `/salud/listo` responde 200.
 - [ ] Sin una variable obligatoria, la aplicación no inicia y el mensaje dice cuál falta.
+- [ ] En modo producción, el arranque rechaza las configuraciones inseguras descritas en §4.4 (prueba de integración).
+- [ ] `npm run semillas` falla si `NODE_ENV=production`.
 - [ ] Un evento se publica y se consume una sola vez, aunque se reprocese.
 - [ ] Una transacción revertida no deja eventos en el outbox, pero sí deja su registro de auditoría.
 - [ ] Cada regla de arquitectura rompe la CI con su archivo de ejemplo.

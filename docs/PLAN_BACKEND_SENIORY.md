@@ -11,8 +11,9 @@
 | **Fecha** | 2026-10-21 |
 | **Estado** | Propuesta, pendiente de formalizar en un ADR-03 |
 | **Base** | [ADR-01](./ADR-01.md) (estilo arquitectónico) · [ADR-02](./ADR-02.md) (repositorio único) · [PLAN_MVP_SENIORY](./PLAN_MVP_SENIORY.md) |
-| **Versión** | Reemplaza la primera versión de este plan (organizada por fases). Parte de lo que el frontend hace hoy. |
+| **Versión** | Reemplaza la primera versión de este plan (organizada por fases). Parte de lo que el frontend hace hoy. **Actualizado el 2026-10-26: es la aplicación real, no una demo** (ver «Aplicación real» en la sección 1 y los requisitos de lanzamiento de la sección 12). |
 | **Planes detallados** | Uno por módulo en [docs/backend/](./backend/README.md), alineados con el diagrama de arquitectura. |
+| **Frontend** | La integración del frontend tiene su propio plan: [PLAN_FRONTEND_SENIORY.md](./PLAN_FRONTEND_SENIORY.md). Reemplaza la sección 9 de este documento en lo que se contradiga (en particular, Next actúa como BFF en lugar de reescrituras). |
 
 ---
 
@@ -28,8 +29,13 @@ El backend reemplaza los JSON de `frontend/data/` por una API real **sin cambiar
 4. **La base de datos también defiende las reglas.** Restricciones, índices únicos parciales y `CHECK` respaldan al código; no se confía solo en validaciones de la aplicación.
 5. **Seguridad por defecto.** Se deniega salvo permiso explícito; un recurso ajeno responde 404, no 403, para no revelar que existe.
 6. **Cada decisión significativa queda en un ADR.**
+7. **Aplicación real, no demo.** Lo que se construye es lo que usarán familias y cuidadores reales:
+   - Los adaptadores simulados (pasarela, canales de notificación, línea de emergencia) existen **solo para desarrollo y pruebas**. En producción la aplicación **no arranca** si encuentra un adaptador simulado configurado.
+   - Los datos de ejemplo (`semillas/`) son **fixtures de desarrollo**: el script se niega a ejecutarse con `NODE_ENV=production`. Producción solo recibe **datos de referencia** (franjas, política de precios, paquetes de bolsa) por migración, administradores creados por línea de comandos y cuidadores reales dados de alta y verificados.
+   - La interfaz no promete lo que el sistema no hace (por ejemplo, no se menciona una «línea de emergencia» sin una integración real).
+   - Los requisitos legales, operativos y de negocio para lanzar están en la sección 12 y bloquean el lanzamiento.
 
-**Fuera de alcance por ahora:** microservicios, brokers externos, Kubernetes, GraphQL, dispositivos de monitoreo reales, módulo de acompañamiento presencial, solicitudes abiertas por zona (E8, posterior al MVP según ADR-01) y funciones de IA (solo el puerto, módulo M11).
+**Fuera de alcance por ahora:** microservicios, brokers externos, Kubernetes, GraphQL, dispositivos de monitoreo reales, módulo de acompañamiento presencial, solicitudes abiertas por zona (E8, posterior a la primera versión según ADR-01) y funciones de IA (solo el puerto, módulo M11). **Ya no está fuera de alcance:** autenticación, backend, base de datos, pagos reales ni el registro de cuidadores, que el plan del MVP dejaba afuera.
 
 ---
 
@@ -129,7 +135,7 @@ backend/
 │                                         seguridad (guards), errores
 ├─ pruebas/{unitarias,integracion,api}/<modulo>/
 ├─ drizzle/                            ← migraciones
-├─ semillas/                           ← datos de prueba (desde frontend/data/*.json)
+├─ semillas/                           ← fixtures de DESARROLLO (desde frontend/data/*.json); nunca producción
 ├─ docker-compose.yml, .dependency-cruiser.cjs, package.json
 ```
 
@@ -206,10 +212,10 @@ Ejemplo: `teleasistencia` declara el puerto de salida `PoliticaDeAcceso.puedeVer
 4. **Infraestructura.** Esquema Drizzle y migración, repositorios, pruebas de integración con Postgres real y pruebas de contrato de los puertos.
 5. **Entrada REST.** DTOs con class-validator, controladores, guards, `problem+json`, pruebas de API y matriz de autorización.
 6. **Eventos.** Publicación vía outbox y manejadores idempotentes.
-7. **Semillas y OpenAPI.** Datos de prueba migrados desde el JSON; contrato publicado.
+7. **Datos de desarrollo y OpenAPI.** Fixtures de desarrollo (solo para local y staging) migrados desde el JSON; los datos de referencia que necesita producción van en migraciones. Contrato publicado.
 8. **Integración con el frontend.** Cliente tipado, reimplementar el servicio correspondiente, ajustar pantallas y probar el recorrido a mano.
 9. **Revisión.** `npm run arquitectura`, lista de seguridad, `EXPLAIN` de las consultas críticas, README del módulo.
-10. **Cierre.** Cumplir la Definición de terminado, despliegue a staging, demostración y revisión del equipo.
+10. **Cierre.** Cumplir la Definición de terminado, despliegue a staging y revisión del equipo.
 
 ### 6.2 Definición de preparado (para empezar un módulo)
 
@@ -233,7 +239,7 @@ Ejemplo: `teleasistencia` declara el puerto de salida `PoliticaDeAcceso.puedeVer
 
 ## 7. Orden de los módulos
 
-El orden respeta las dependencias (sección 4.3) y adelanta el valor más importante del pitch: la confianza (directorio) y la seguridad (teleasistencia) antes que el dinero real, porque la pasarela exige trámites externos que conviene iniciar desde el principio.
+El orden respeta las dependencias (sección 4.3) y adelanta lo que da confianza y seguridad a las familias (directorio verificado y teleasistencia) antes que el dinero real, porque la pasarela exige trámites externos (cuenta comercial, aprobación del modelo de marketplace) que conviene iniciar desde el principio.
 
 | # | Módulo | Rigor hexagonal (ADR-01 §4.10) | Tamaño | Depende de | Qué se ve funcionando |
 |---|---|---|---|---|---|
@@ -244,7 +250,7 @@ El orden respeta las dependencias (sección 4.3) y adelanta el valor más import
 | M4 | Reservas | Completo | L | M1, M2, M3 | Contratar, confirmación y cuidador en turno reales |
 | M5 | Notificaciones | Ligero | M | M1, M4 | Avisos de estados del servicio |
 | M6 | Teleasistencia | Completo | L | M1, M4, M5 | Alerta real, medicamentos y signos vitales persistentes |
-| M7 | Pagos II: cobro, bolsas y liquidación | Completo | L | M4 | Pago en sandbox y bolsa de horas con saldo |
+| M7 | Pagos II: cobro, bolsas y liquidación | Completo | L | M4 | Pago con la pasarela (sandbox hasta producción) y bolsa de horas con saldo |
 | M8 | Mensajería | Ligero | M | M4, M5 | Chat con el cuidador |
 | M9 | Directorio II: registro y verificación | Ligero | M | M1, M2 | Alta de cuidadores y revisión de verificación |
 | M10 | Endurecimiento y despliegue | n/a | M | todos | Producción con monitoreo y respaldos |
@@ -329,14 +335,15 @@ El orden respeta las dependencias (sección 4.3) y adelanta el valor más import
 
 **Pasos**
 - [ ] Dominio: `Cuidador`, `Verificacion`, `esVisible()` y `Resena`, con pruebas.
-- [ ] Esquema, migración y semillas desde `frontend/data/cuidadores.json`; subir las hojas de vida al almacén.
+- [ ] Esquema, migración y fixtures de desarrollo desde `frontend/data/cuidadores.json` (nunca en producción); subir las hojas de vida de prueba al almacén.
+- [ ] **Carga inicial de cuidadores reales** por un administrador (comando `npm run cuidadores:importar` sobre un archivo revisado, que crea el cuidador, su usuario con rol `cuidador` y las verificaciones ya aprobadas offline, con sus fechas de vigencia). Es la vía de alta mientras el registro autónomo (M9) no exista.
 - [ ] Consulta con `unaccent`, `pg_trgm` y paginación por cursor; revisar con `EXPLAIN`.
 - [ ] Endpoints, DTOs públicos y pruebas de API.
 - [ ] Frontend: `cuidadores.ts` y buscador.
 
 **Terminado cuando:** además de la definición común, el recorrido búsqueda → perfil funciona contra la API (máximo 2 toques, E4), no hay teléfonos en la respuesta y `esVisible()` está cubierta por pruebas de propiedades.
 
-**Decisiones abiertas:** si el directorio es público o exige sesión; criterio de orden por defecto (el MVP destacaba primero al cuidador de $20.000/hora solo por el ejemplo del pitch).
+**Decisiones abiertas:** si el directorio es público o exige sesión; criterio de orden por defecto (el MVP destacaba primero al cuidador de $20.000/hora solo por el ejemplo del pitch; en la aplicación real, un criterio neutro como la calificación).
 
 ---
 
@@ -355,7 +362,7 @@ El orden respeta las dependencias (sección 4.3) y adelanta el valor más import
 
 **Pasos**
 - [ ] `Dinero` en puntos básicos y `calcularServicio` con pruebas de vectores y propiedades.
-- [ ] `PoliticaDePrecios` y su tabla; semilla con 8 % y 10 %.
+- [ ] `PoliticaDePrecios` y su tabla; versión 1 (8 % y 10 %) como **dato de referencia en una migración**, porque producción la necesita.
 - [ ] `CotizarServicio` con el puerto de directorio y `POST /pagos/cotizaciones`.
 - [ ] Frontend: confirmar que la vista previa y el servidor coinciden.
 
@@ -379,15 +386,16 @@ El orden respeta las dependencias (sección 4.3) y adelanta el valor más import
 | **Datos** | Esquema `reservas`: `servicios` (con `version` y desglose), `calificaciones`. |
 | **Seguridad** | Cada acción verifica quién es el actor y su relación con el servicio; un servicio ajeno responde 404. El **monto lo calcula el servidor**: el cliente nunca lo envía. `Idempotency-Key` en `POST /servicios` para que un reintento no cree dos servicios. |
 | **Pruebas obligatorias** | Unitarias: **todas** las transiciones, válidas e inválidas, y que cada válida emite su evento; prueba de propiedades sobre secuencias de acciones. Integración: dos solicitudes simultáneas para el mismo cuidador y franja (una falla con 409), bloqueo optimista. API: matriz de autorización por acción; fecha «hoy» a las 8 p. m. hora de Colombia. |
-| **Frontend** | `contratacion.ts` llama a `POST /servicios`. La confirmación pasa a una ruta con id y lee el servicio de la API (**H3**); `ContratacionProvider` deja de ser necesario. La fecha se envía como fecha civil local, sin `toISOString()`. Mensajes claros para 409 («Marta ya tiene un servicio en esa franja»). `CuidadorEnTurno` usa el endpoint nuevo y el tipo con teléfono (**H1**, **H4**). |
+| **Frontend** | `contratacion.ts` llama a `POST /servicios`. La confirmación pasa a una ruta con id y lee el servicio de la API (**H3**); `ContratacionProvider` deja de ser necesario. La fecha se envía como fecha civil local, sin `toISOString()`. Mensajes claros para 409 («Marta ya tiene un servicio en esa franja»). `CuidadorEnTurno` usa el endpoint nuevo y el tipo con teléfono (**H1**, **H4**). **Vista mínima del cuidador (nueva, en F4):** en una aplicación real, un cuidador de verdad debe poder aceptar o rechazar la solicitud, marcar que inició y que terminó. Se agrega `/cuidador` con «Mis servicios» (solicitudes pendientes, agenda y acciones), con inicio de sesión del cuidador (rol `cuidador`, M1). |
 
 **Transiciones del servicio**
 
 | Desde | Acción | Quién | Hacia | Condición |
 |---|---|---|---|---|
-| (nuevo) | solicitar | familiar | `Solicitado` | Reglas de creación. Si el cuidador tiene `aceptacionAutomatica`, pasa de inmediato a `Aceptado`. |
+| (nuevo) | solicitar | familiar | `Solicitado` | Reglas de creación. Por defecto el cuidador debe aceptar. Solo si el **propio cuidador** activó `aceptacionAutomatica` en su perfil, pasa de inmediato a `Aceptado`. |
 | `Solicitado` | aceptar | cuidador asignado | `Aceptado` | Sigue verificado y libre en esa franja. |
 | `Solicitado` | rechazar | cuidador asignado | `Cancelado` | — |
+| `Solicitado` | expirar | sistema (tarea programada) | `Cancelado` | Venció `solicitudExpiraEn` sin respuesta del cuidador; motivo «expirada» y aviso a la familia para que elija a otro. |
 | `Solicitado`, `Aceptado` | cancelar | familiar | `Cancelado` | Reembolso según política **[ABIERTA]**. |
 | `Aceptado` | iniciar | cuidador (o automático al iniciar la franja) | `EnCurso` | Pago aprobado cuando M7 lo exija (bandera `REQUIERE_PAGO_APROBADO`). |
 | `EnCurso` | finalizar | cuidador | `Finalizado` | Habilita la calificación. |
@@ -403,7 +411,7 @@ Cualquier otra transición lanza un error de dominio (HTTP 409).
 
 **Terminado cuando:** además de la definición común, se contrata de principio a fin contra la API real, dos solicitudes simultáneas no generan doble reserva y la confirmación sobrevive a recargar la página.
 
-**Decisiones abiertas:** aceptación **automática o manual** (hoy no hay pantalla para el cuidador; recomendado: automática para los cuidadores semilla y manual cuando exista su aplicación); horas exactas de cada franja; cómo pasa un servicio a `EnCurso` (check-in del cuidador o automático); política de cancelación y reembolso; si la confirmación debe decir «Solicitud enviada» o «Contratación confirmada» según el caso.
+**Decisiones abiertas:** **cuánto tiempo tiene el cuidador para aceptar** antes de que la solicitud expire y se avise a la familia (propuesta: 2 horas, o 30 minutos si el servicio es para hoy); horas exactas de cada franja; cómo pasa un servicio a `EnCurso` (check-in del cuidador o automático); política de cancelación y reembolso; si la confirmación debe decir «Solicitud enviada» o «Contratación confirmada» según el caso.
 
 ---
 
@@ -414,16 +422,16 @@ Cualquier otra transición lanza un error de dominio (HTTP 409).
 | **Sirve a** | El texto del `BotonAlerta` («Se notificará a Andrea…»), los avisos de cada estado del servicio (E9) y la alerta de teleasistencia (E11). Hoy no hay interfaz propia. |
 | **Dominio** | `Notificacion` (destinatario, tipo, prioridad, canal, estado: pendiente, enviada, entregada, fallida; intentos; `claveDeDeduplicacion`; `entregadaEn`); `Plantilla` en español (Colombia), con parámetros. |
 | **Casos de uso** | Un manejador por evento (`AlCrearseServicio`, `AlGenerarseAlerta`, `AlOmitirseMedicamento`…), `EntregarNotificacion`, `ReintentarFallidas`, `ListarMisNotificaciones` (opcional, para una campana en la interfaz). |
-| **Puertos de salida** | `CanalDeNotificacion` con adaptadores intercambiables: **Simulado** (por defecto, guarda y registra), correo, SMS, WhatsApp **[ABIERTA]**; `RepositorioNotificaciones`; `Reloj`. Entrada: solo los eventos. |
+| **Puertos de salida** | `CanalDeNotificacion` con adaptadores intercambiables: correo, SMS y WhatsApp **[ABIERTA]** (al menos un canal confiable para las alertas), más un adaptador **Simulado** que guarda y registra, **solo para desarrollo y pruebas** (en producción la aplicación no arranca con él configurado); `RepositorioNotificaciones`; `Reloj`. Entrada: solo los eventos. |
 | **Reglas** | Alertas de teleasistencia con **prioridad alta**: se envían por todos los canales disponibles **en paralelo** hasta confirmar al menos una entrega. Clave de deduplicación `(eventoId, destinatarioId, tipo)`, así reprocesar un evento no repite el aviso. Reintentos con espera creciente y tope; los agotados van a una tabla de fallidas y avisan al equipo (Sentry). |
 | **Eventos** | Consume `ServicioSolicitado/Confirmado/Iniciado/Finalizado/Cancelado`, `PagoAprobado`, `AlertaGenerada`, `MedicamentoOmitido`, `LecturaFueraDeRango`, `CuidadorVisible`. Publica `NotificacionEntregada` (para medir E11). |
 | **Datos** | Esquema `notificaciones`: `notificaciones`, `intentos`, `fallidas`. |
 | **Seguridad** | **Minimización:** el contenido de SMS, correo y WhatsApp **no lleva datos clínicos** («Alerta de Doña Carmen: abre Seniory»), porque esos canales no son confiables para datos de salud (Ley 1581). Límite de envíos por destinatario. Plantillas sin HTML libre. |
-| **Pruebas obligatorias** | Evento duplicado produce una sola notificación; reintentos y agotamiento con `Reloj` falso; envío en paralelo de la prioridad alta; medición de `entregadaEn − generadaEn` con el canal simulado (E11). |
+| **Pruebas obligatorias** | Evento duplicado produce una sola notificación; reintentos y agotamiento con `Reloj` falso; envío en paralelo de la prioridad alta; medición de `entregadaEn − generadaEn` con el canal simulado en pruebas (E11) y, antes de lanzar, con el canal real en staging; si ningún canal confirma la entrega, la alerta queda marcada «sin entregar» y avisa al equipo. |
 | **Frontend** | Sin cambios obligatorios. Opcional: campana con `GET /notificaciones`. Web Push exige *service worker* y queda para más adelante. |
 
 **Pasos**
-- [ ] Dominio y plantillas; adaptador `Simulado`.
+- [ ] Dominio y plantillas; adaptador `Simulado` (solo desarrollo y pruebas) y verificación de arranque que lo prohíbe en producción.
 - [ ] Manejadores de eventos de Reservas (primero) y consumo del outbox.
 - [ ] Reintentos, tabla de fallidas y deduplicación.
 - [ ] Elegir y agregar un canal real **[ABIERTA]**.
@@ -442,8 +450,9 @@ Cualquier otra transición lanza un error de dominio (HTTP 409).
 | **Dominio** | `Medicamento` (nombre, dosis, horarios `HH:mm`, días, vigencia); `Toma` (medicamento, fecha civil, hora programada, estado: pendiente, tomada u omitida, quién y cuándo la registró); `LecturaDeSignos` (presión sistólica y diastólica, frecuencia cardiaca, glucosa, momento, quién la registró, fuente); `RangosDeReferencia`; `Alerta` (origen: botón o voz, estado: generada, notificada o atendida, destinatarios, clave de idempotencia). |
 | **Reglas** | Marcar o desmarcar una toma solo el día que corresponde; deshacer queda en auditoría (**H6**). Una toma pasa a `omitida` tras una tolerancia configurable **[ABIERTA]**, y emite `MedicamentoOmitido`. Una lectura fuera de rango emite `LecturaFueraDeRango`. Las lecturas se validan por rangos plausibles. **Los umbrales clínicos los define un profesional de salud**, no el equipo de desarrollo **[ABIERTA]**. |
 | **Casos de uso** | `GenerarAlerta`, `AtenderAlerta`, `ListarMedicamentos`, `MarcarTomaRealizada`, `DesmarcarToma`, `RegistrarLecturaDeSignos`, `ListarSignosVitales(dias)`, `ObtenerResumenDeEstado` (alimenta Inicio y la barra inferior con una sola consulta, en vez de una por página). |
-| **Puertos de salida** | `PoliticaDeAcceso` (adaptador sobre `identidad` y `reservas`, sección 4.4), `LineaDeEmergencia` (adaptador **Simulado**; el real exige convenio, **H7** **[ABIERTA]**), repositorios, `Reloj`, `Auditoria`. |
+| **Puertos de salida** | `PoliticaDeAcceso` (adaptador sobre `identidad` y `reservas`, sección 4.4), repositorios, `Reloj`, `Auditoria`. **No hay puerto ni adaptador de «línea de emergencia»**: la alerta se envía a los familiares vinculados y al cuidador en turno. Una integración con un servicio de emergencias solo se agrega con un convenio real y su propio ADR (**H7**). |
 | **API** | `GET /adultos-mayores/:id/resumen`; `GET /adultos-mayores/:id/medicamentos`, `PATCH /medicamentos/:id/tomas/:tomaId`; `GET /adultos-mayores/:id/signos-vitales?dias=7` (y `/ultima`; devuelve lista vacía, **H8**); `POST /adultos-mayores/:id/signos-vitales`; `POST /adultos-mayores/:id/alertas` (con `Idempotency-Key`), `PATCH /alertas/:id/atendida`; `GET /adultos-mayores/:id/eventos` (SSE). |
+| **Alcance (aviso legal)** | Teleasistencia es una herramienta de **aviso a la familia y al cuidador**, no un servicio de emergencias médicas ni un dispositivo médico. Los textos de la aplicación y los términos y condiciones lo dicen con claridad, y la pantalla de la alerta indica siempre a quién se avisó y ofrece llamar al 123. Revisar el texto con asesoría legal antes de lanzar. |
 | **Eventos** | Publica `AlertaGenerada` (con los destinatarios ya resueltos), `AlertaAtendida`, `MedicamentoOmitido`, `LecturaFueraDeRango`. Consume `ConsentimientoRevocado` para cerrar accesos. |
 | **Datos** | Esquema `teleasistencia`: `medicamentos`, `tomas`, `lecturas_signos`, `alertas`, `rangos_de_referencia`. Índice único `(medicamento_id, fecha, hora)` en `tomas`; índice `(adulto_mayor_id, momento)` en lecturas. |
 | **Seguridad (E6)** | **Todo caso de uso empieza consultando `PoliticaDeAcceso`.** El cuidador solo accede mientras tiene un servicio activo. Un acceso denegado responde 404 y se audita en menos de 1 s. Revocar el consentimiento corta el acceso de inmediato. Sin datos clínicos en logs ni en notificaciones. Cifrado de campos clínicos **[ABIERTA]**; retención de lecturas y supresión **[ABIERTA]**. |
@@ -471,7 +480,7 @@ Cualquier otra transición lanza un error de dominio (HTTP 409).
 | **Reglas (E3)** | Llave de idempotencia única por pagador: dos envíos con la misma llave crean un solo `Pago`. Cada notificación de la pasarela se procesa una sola vez por su id de evento. Se verifican monto, moneda y referencia; Pagos **recalcula** el desglose y lo compara con el que envía Reservas. Los estados solo avanzan: un aviso tardío no devuelve un pago aprobado a pendiente. El saldo de una bolsa nunca es negativo. |
 | **Flujo con Reservas** | Reservas orquesta el cobro: al aceptar el servicio llama a `Pagos.IniciarCobro` (o a `ReservarSaldo` si el medio es bolsa). Pagos responde con una referencia de pago y publica `PagoAprobado`. Al finalizar (`ServicioFinalizado`) se consume la reserva y se liquida al cuidador; al cancelar (`ServicioCancelado`) se libera o se reembolsa. Pagos no conoce las tablas de Reservas. |
 | **Casos de uso** | `IniciarCobro`, `ProcesarNotificacionDePasarela`, `ConciliarPagos` (diario), `ComprarBolsa`, `ObtenerSaldoDeBolsa`, `ReservarSaldo`, `ConsumirReserva`, `LiberarReserva`, `LiquidarAlCuidador`, `ReembolsarPago`, `ListarMisPagos`, `ObtenerCatalogoDeBolsas`. |
-| **Puertos de salida** | `PasarelaDePagos` (crear cobro, consultar estado, reembolsar, verificar firma), `DispersorDePagos` (pago al cuidador, **[ABIERTA]**), repositorios, `Reloj`. Adaptadores: **Simulado** y el de la pasarela elegida (sandbox). |
+| **Puertos de salida** | `PasarelaDePagos` (crear cobro, consultar estado, reembolsar, verificar firma), `DispersorDePagos` (pago al cuidador, **[ABIERTA]**), repositorios, `Reloj`. Adaptadores: el de la **pasarela elegida** (sandbox en desarrollo y staging; credenciales reales y cuenta comercial aprobada en producción) y un **Simulado** solo para pruebas, que la aplicación rechaza al arrancar en producción. |
 | **API** | `GET /catalogo/bolsas` (público), `GET /bolsa` (saldo y movimientos), `POST /bolsa/compras` (con `Idempotency-Key`), `GET /pagos`, `POST /pagos/webhook/:proveedor` (público, con firma). El cobro de un servicio lo inicia Reservas. |
 | **Eventos** | Publica `PagoAprobado`, `PagoRechazado`, `PagoReembolsado`, `BolsaComprada`, `LiquidacionRealizada`. Consume `ServicioFinalizado` y `ServicioCancelado`. |
 | **Datos** | Esquema `pagos`: `pagos`, `eventos_de_pasarela` (únicos por id externo), `bolsas`, `movimientos_de_bolsa`, `liquidaciones`, `conciliaciones`. |
@@ -481,7 +490,7 @@ Cualquier otra transición lanza un error de dominio (HTTP 409).
 
 **Pasos**
 - [ ] Dominio de `Pago` y de la bolsa con su libro; pruebas de propiedades.
-- [ ] Puerto de la pasarela y adaptador simulado; luego el adaptador sandbox.
+- [ ] Puerto de la pasarela y adaptador simulado (solo pruebas); luego el adaptador de la pasarela real contra su sandbox.
 - [ ] Webhook con firma, deduplicación y conciliación.
 - [ ] Reacciones a eventos de Reservas (reservar, consumir, liberar, liquidar).
 - [ ] Activar `REQUIERE_PAGO_APROBADO` en Reservas.
@@ -544,7 +553,8 @@ Cualquier otra transición lanza un error de dominio (HTTP 409).
 | Aspecto | Detalle |
 |---|---|
 | **Entregables** | Entorno de producción con secretos fuera del repositorio; **un rol de base de datos por módulo** con permisos solo sobre su esquema (refuerza E13 a nivel de la base); respaldos automáticos y **restauración probada**; monitor de disponibilidad y alertas (E2); tableros de errores 5xx, retraso del outbox y latencia de alertas; revisión de seguridad frente a OWASP ASVS 2 y API Top 10; revisión de cumplimiento de la Ley 1581 (política de tratamiento, exportar y suprimir datos, región de hospedaje); prueba de carga ligera (búsqueda de cuidadores y alertas) y revisión de índices; plan de reversión de despliegues. |
-| **Terminado cuando** | Producción con URL estable, restauración de respaldo ensayada, alertas de monitoreo activas y lista de seguridad firmada por ambos desarrolladores. |
+| **Arranque seguro** | En producción la aplicación **no inicia** si hay un adaptador simulado (pasarela, notificaciones), si falta un secreto o si las migraciones incluyen datos de prueba; la CI lo verifica. |
+| **Terminado cuando** | Producción con URL estable, restauración de respaldo ensayada, alertas de monitoreo activas, lista de seguridad firmada por ambos desarrolladores y **todos los requisitos de la sección 12 cumplidos**. |
 
 ---
 
@@ -576,10 +586,10 @@ Solo el puerto `ProveedorDeIA` y su adaptador, detrás de una frontera clara (AD
 | 1 | Pasarela de pagos y dispersión al cuidador | M7 | Verificar primero cuál aprueba un marketplace; abrir el trámite durante M1. |
 | 2 | Bolsa en horas o en pesos | M7 | Crédito en pesos, mostrado también como horas equivalentes. |
 | 3 | Momento del cobro y política de reembolso | M4, M7 | Cobrar al aceptar; política por definir con el equipo empresarial. |
-| 4 | Aceptación automática o manual del servicio | M4 | Automática para los cuidadores semilla hasta que exista su aplicación. |
+| 4 | Plazo para que el cuidador acepte y qué pasa al vencer | M4 | Aceptación manual por defecto con una vista mínima del cuidador (en F4); expira en 2 horas (30 minutos si es para hoy) y se avisa a la familia. La aceptación automática solo si el propio cuidador la activa. |
 | 5 | Quién consiente por el adulto mayor | M1 | Asesoría legal antes de lanzar. |
 | 6 | Umbrales clínicos y tolerancia de medicamentos | M6 | Los define un profesional de salud. |
-| 7 | Línea de emergencia real | M6 | Mantener simulada hasta tener convenio; que la interfaz no prometa un despacho que no existe. |
+| 7 | Línea de emergencia | M6 | No existe en el sistema: la alerta avisa a familiares y cuidador, y la interfaz no promete un despacho. Solo se integra con un convenio real y su propio ADR. |
 | 8 | Canales de notificación reales | M5 | Al menos uno confiable para alertas (SMS o WhatsApp) además de la app. |
 | 9 | Cifrado de campos clínicos y retención | M6, M10 | Cifrado desde M6; retención definida con asesoría legal. |
 | 10 | Hosting y región | M10 | Considerar transferencia internacional de datos (Ley 1581). |
@@ -604,7 +614,7 @@ Solo el puerto `ProveedorDeIA` y su adaptador, detrás de una frontera clara (AD
 | Sobreingeniería hexagonal en módulos simples | Rigor completo solo en Reservas, Pagos y Teleasistencia (ADR-01 §4.10). |
 | El monolito es un punto único de falla (E2) | Monitoreo, despliegues con reversión rápida y pruebas antes de cada despliegue. |
 | Acceso indebido a datos de otra familia (E6) | Matriz de autorización por endpoint, 404 en recursos ajenos y auditoría. |
-| Retrasos externos (pasarela, canales, convenios) | Adaptadores simulados desde el primer módulo; trámites abiertos temprano. |
+| Retrasos externos (pasarela, canales, convenios) | Trámites abiertos desde M1; mientras tanto se desarrolla contra dobles de prueba, que **nunca** llegan a producción (el arranque los rechaza). Si la pasarela o el canal de alertas no están aprobados, **no se lanza**. |
 | Varias instancias y SSE | Con una instancia no hay problema; al escalar, repartir eventos con `LISTEN/NOTIFY` de Postgres, sin Redis. |
 | Dos desarrolladores y un semestre | Módulos pequeños de punta a punta; M9, M10 y M11 se pueden recortar sin romper el flujo principal. |
 
@@ -612,7 +622,7 @@ Solo el puerto `ProveedorDeIA` y su adaptador, detrás de una frontera clara (AD
 
 ## 11. Definición de terminado del backend
 
-- [ ] Flujo completo contra el backend real: registro → inicio de sesión → buscar → contratar → pagar en sandbox → servicio hasta `Finalizado` → teleasistencia y alerta → mensajes.
+- [ ] Flujo completo contra el backend real: registro → inicio de sesión → buscar → contratar → pagar con la pasarela (sandbox fuera de producción) → servicio hasta `Finalizado` → teleasistencia y alerta → mensajes.
 - [ ] `npm run arquitectura` sin violaciones (E13) y pruebas del dominio sin infraestructura (E14).
 - [ ] `(20000, 1)` → 21 600 en backend y frontend, con los mismos vectores (E10).
 - [ ] 0 accesos no autorizados en la matriz de autorización (E6); cuidadores no verificados invisibles (E7).
@@ -620,4 +630,29 @@ Solo el puerto `ProveedorDeIA` y su adaptador, detrás de una frontera clara (AD
 - [ ] Alerta entregada en menos de 30 s en el 95 % de los casos con el canal real (E11).
 - [ ] Ya no se importa ningún JSON de `frontend/data/` en el código de la aplicación.
 - [ ] Producción desplegada con respaldos probados y monitoreo activo.
+- [ ] Ningún adaptador simulado ni dato de prueba en producción (el arranque y la CI lo verifican).
+- [ ] Todos los requisitos de lanzamiento de la sección 12 cumplidos.
 - [ ] ADR-03 aceptado y ADR-01 actualizado con `mensajeria` y las bolsas de horas.
+
+---
+
+## 12. Requisitos para lanzar a usuarios reales
+
+Seniory maneja **datos de salud, dinero y la confianza de familias con personas mayores**. Estos requisitos no son opcionales y **bloquean el lanzamiento**. Las referencias legales son orientativas: cada una debe confirmarse con asesoría legal.
+
+| Área | Requisito | Responsable | Se necesita para |
+|---|---|---|---|
+| **Datos personales** | Política de tratamiento de datos, aviso de privacidad y autorización previa, expresa e informada (Ley 1581 de 2012 y su reglamentación). Los datos de salud son sensibles (art. 6): la autorización es opcional y no puede condicionarse la contratación de un cuidador a ella. | Legal | M1, F1 |
+| **Datos personales** | Procedimiento para atender consultas y reclamos de los titulares (acceso, corrección, supresión) con sus plazos, y para informar a la autoridad (SIC) de incidentes de seguridad. Verificar si aplica el Registro Nacional de Bases de Datos. | Legal + equipo | M1, M10 |
+| **Términos y condiciones** | Términos para familias y para cuidadores. Define la relación con el cuidador (trabajador independiente, no empleado), responsabilidades, cancelaciones y reembolsos conforme al Estatuto del Consumidor. | Legal + empresarial | M4, M7 |
+| **Teleasistencia** | Aviso de alcance (no es un servicio de emergencias médicas ni un dispositivo médico) y revisión de los textos de la alerta. Umbrales clínicos definidos por un profesional de salud. | Legal + salud | M6 |
+| **Riesgos del servicio** | Evaluar un seguro de responsabilidad civil y el manejo de quejas o incidentes entre familias y cuidadores. | Empresarial + legal | M4 |
+| **Dinero** | Empresa constituida, cuenta comercial aprobada con la pasarela (que acepte el modelo de marketplace y la dispersión al cuidador), facturación electrónica ante la DIAN del cargo de servicio y tratamiento tributario de las retenciones. | Empresarial + contador | M7 |
+| **Precios** | Comisiones y bolsas de horas aprobadas (hoy los de la landing son «ilustrativos»). | Empresarial | M3, M7 |
+| **Alertas** | Al menos un canal confiable contratado (SMS o WhatsApp Business, este último con plantillas aprobadas por Meta) y probado en staging con E11. | Equipo | M5, M6 |
+| **Cuidadores reales** | Procedimiento de verificación operativo (quién revisa, en cuánto tiempo, con qué vigencia) y primeros cuidadores verificados cargados por un administrador. | Empresarial | M2, M9 |
+| **Soporte** | Canal de atención a familias y cuidadores, horarios y responsable; procedimiento para suspender un cuidador. | Empresarial | M10 |
+| **Operación** | Respaldo con restauración ensayada, monitoreo y alertas, procedimiento de incidentes (quién actúa y cómo se comunica una caída), secretos rotados y revisión de seguridad (OWASP ASVS nivel 2). | Equipo | M10 |
+| **Pruebas con personas** | Pruebas de usabilidad con adultos mayores y familiares reales (E4, E5). | Equipo | F-todos |
+| **Lanzamiento por etapas** | Piloto cerrado con pocas familias y cuidadores (propuesta: 20 familias en el Valle de Aburrá) durante algunas semanas antes de abrir, con las metas de E1, E2 y E11 monitoreadas. | Todos | M10 |
+| **Contenido** | Sin textos ni cifras de demostración en la landing; licencia de las fotos comprobada. | Equipo | F7 |
