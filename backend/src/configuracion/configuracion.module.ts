@@ -40,6 +40,9 @@ export const CONFIGURACION = Symbol('CONFIGURACION');
           ZONA_HORARIA_NEGOCIO: servicio.getOrThrow<string>(
             'ZONA_HORARIA_NEGOCIO',
           ),
+          INTERVALO_SONDEO_OUTBOX_MS: servicio.getOrThrow<number>(
+            'INTERVALO_SONDEO_OUTBOX_MS',
+          ),
           SENTRY_DSN: servicio.get<string>('SENTRY_DSN'),
           SECRETO_BFF: servicio.get<string>('SECRETO_BFF'),
         };

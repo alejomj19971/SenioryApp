@@ -53,6 +53,7 @@ describe('validarVariables', () => {
         origenesPermitidos: ['http://localhost:3000'],
         nivelDeLog: 'info',
         zonaHorariaNegocio: 'America/Bogota',
+        intervaloSondeoOutboxMs: 1000,
         sentryDsn: null,
         secretoBff: null,
       });
@@ -129,6 +130,24 @@ describe('validarVariables', () => {
       ).toContain('NIVEL_DE_LOG');
     });
 
+    it.each(['-1', '60001', '1.5', 'rapido'])(
+      'rechaza el intervalo de sondeo %s',
+      (intervalo) => {
+        expect(
+          problemasDe(
+            entornoBase({ INTERVALO_SONDEO_OUTBOX_MS: intervalo }),
+          ).join(),
+        ).toContain('INTERVALO_SONDEO_OUTBOX_MS');
+      },
+    );
+
+    it('admite apagar el sondeo fuera de producción', () => {
+      expect(
+        validarVariables(entornoBase({ INTERVALO_SONDEO_OUTBOX_MS: '0' }))
+          .INTERVALO_SONDEO_OUTBOX_MS,
+      ).toBe(0);
+    });
+
     it('rechaza una zona horaria inexistente', () => {
       expect(
         problemasDe(
@@ -169,6 +188,14 @@ describe('validarVariables', () => {
 
       expect(problemasDe(variables)).toEqual([
         `SECRETO_BFF es obligatorio en ${entorno}`,
+      ]);
+    });
+
+    it('en producción no permite apagar el sondeo del outbox', () => {
+      expect(
+        problemasDe(entornoDeProduccion({ INTERVALO_SONDEO_OUTBOX_MS: '0' })),
+      ).toEqual([
+        'En producción, INTERVALO_SONDEO_OUTBOX_MS no puede ser 0 (los eventos pendientes nunca se entregarían)',
       ]);
     });
 

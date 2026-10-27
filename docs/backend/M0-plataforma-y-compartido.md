@@ -197,6 +197,7 @@ Las variables se declaran en una clase con decoradores de `class-validator` y `@
 | `ORIGENES_PERMITIDOS` | `http://localhost:3000` | Lista separada por comas; sin comodines. |
 | `NIVEL_DE_LOG` | `info` | |
 | `ZONA_HORARIA_NEGOCIO` | `America/Bogota` | Usada por `FechaCivil`. |
+| `INTERVALO_SONDEO_OUTBOX_MS` | `1000` | De 0 a 60 000. `0` apaga el sondeo (lo usan las pruebas); **en producción no se admite 0**. |
 | `SENTRY_DSN` | (vacío en local) | Opcional. |
 | `SECRETO_BFF` | (aleatorio, 32 bytes o más) | Compartido con el frontend (`SENIORY_BFF_SECRETO`); habilita `X-Cliente-IP`. Secreto en staging y producción. |
 
@@ -345,6 +346,20 @@ Flujo:
 4. Cada manejador corre en su propia unidad de trabajo y registra `(manejador, evento_id)` en `eventos_consumidos` en esa misma transacción. Si ya existe, no hace nada: eso lo vuelve **idempotente**.
 5. El evento se marca procesado cuando todos sus manejadores terminaron. Si alguno falla, se reintenta con espera creciente; tras el máximo de intentos se marca `fallido_en` y se reporta a Sentry.
 
+**Construido en el PR 4** (`compartido/infraestructura/`):
+
+| Pieza | Archivo | Cómo funciona |
+|---|---|---|
+| Unidad de trabajo | `base-de-datos/contexto-transaccional.ts` | `ContextoTransaccional` implementa `UnidadDeTrabajo`. Una llamada anidada **se une** a la transacción externa. `conexion()` da la transacción o el pool; `alConfirmar()` agenda acciones que solo corren si hubo commit. |
+| Publicador | `outbox/publicador-de-eventos-outbox.ts` | Inserta en `outbox` con la transacción actual (lanza fuera de una unidad) y, tras el commit, pide la entrega inmediata. |
+| Despachador | `outbox/despachador-de-eventos.ts` | Reclama eventos vencidos con `FOR UPDATE SKIP LOCKED` y los **reserva** 60 s adelantando `proxima_ejecucion`: varias instancias nunca toman el mismo. Espera tras un fallo: 1 s, 2 s, 4 s… hasta 10 min; al décimo intento, `fallido_en`. |
+| Registro de manejadores | `outbox/registro-de-manejadores.ts` | Cada módulo registra sus `ManejadorDeEventos` (puerto en `aplicacion/puertos`) al iniciar. El `nombre` es estable porque se guarda en `eventos_consumidos`; un nombre repetido falla al arrancar. |
+| Sondeo | `outbox/sondeo-del-outbox.ts` | `setTimeout` encadenado (nunca dos vueltas a la vez). Si encontró eventos repite de inmediato; si no, espera `INTERVALO_SONDEO_OUTBOX_MS`. Se detiene en `beforeApplicationShutdown`, antes de que se cierre el pool. |
+| Auditoría | `auditoria/auditoria-postgres.ts` | Escribe con el pool, nunca con la transacción. Si falla, el error se propaga: una lectura de datos de salud sin auditar no se entrega. |
+| Módulo | `compartido.module.ts` | Global. Exporta los símbolos de los puertos, `ContextoTransaccional` (para los repositorios) y `RegistroDeManejadores`. Las clases no usan decoradores: se crean con fábricas. |
+
+**Ajustes respecto al plan:** no se instalan `@nestjs/event-emitter` ni `@nestjs/schedule`, porque el despachador llama directamente a los manejadores y el sondeo es un `setTimeout`; `@nestjs/schedule` se evaluará para las tareas programadas de M4. Dos piezas quedan pendientes del PR 5: el `id_de_correlacion` de la auditoría (hoy `null`, se tomará de `X-Request-Id`) y el aviso a Sentry de los eventos fallidos (hoy van al log).
+
 **Auditoría** (esquema `compartido`, tabla `auditoria`): `id`, `ocurrido_en`, `actor_id`, `accion`, `recurso_tipo`, `recurso_id`, `resultado`, `id_de_correlacion`, `metadatos`. Se escribe **fuera de la transacción del caso de uso** (con su propia conexión), para que un acceso denegado quede registrado aunque la operación falle (E6: registro en menos de 1 s). Es una tabla de solo inserción; en M10 se le retiran los permisos de actualización y borrado.
 
 ### 4.9 Reglas de arquitectura (`npm run arquitectura`)
@@ -477,7 +492,7 @@ M0 no cambia pantallas. Se deja documentado en `backend/README.md` cómo levanta
 | 1 | Proyecto creado con el CLI de Nest 12 (`nest new`, Express, ESM), TypeScript estricto, oxlint, Prettier, Vitest con los dos proyectos, Node 24 fijado y scripts; `/salud` mínimo para probar el esqueleto. El plugin de Swagger pasa al PR 5, junto con `@nestjs/swagger`. | Solo herramientas, sin lógica. |
 | 2 ✅ | Configuración validada con arranque seguro, `docker-compose.yml`, Drizzle, migrador programático, primera migración (esquema `compartido`, extensiones) y pruebas con Testcontainers. | Se prueba levantando la base local (`npm run bd:arriba`) y con `npm run test:integracion`. |
 | 3 ✅ | `compartido/dominio` (`Dinero`, `FechaCivil`, `Id`, errores), puertos y sobre de eventos, con pruebas unitarias (incluye propiedades con `fast-check`). Se adelantan los adaptadores triviales `RelojDelSistema` y `GeneradorDeIdsUuidV7`, los dobles de `pruebas/soporte/dobles.ts` y los umbrales de cobertura. | Código puro con pruebas. |
-| 4 | Unidad de trabajo, outbox, despachador, sondeo y auditoría, con pruebas de integración. | La pieza más delicada, aislada en su propio PR. |
+| 4 ✅ | Unidad de trabajo, outbox, despachador, sondeo y auditoría, con pruebas de integración (incluida la concurrencia de varios despachadores y el ciclo de vida de la aplicación). | La pieza más delicada, aislada en su propio PR. |
 | 5 | Capa HTTP: errores, validación, correlación, logs, guards, CORS, `helmet`, `throttler`, salud y Swagger. | Probado con pruebas de API. |
 | 6 | Reglas de `dependency-cruiser` con sus archivos de ejemplo y CI en GitHub Actions. | La CI se valida a sí misma. |
 | 7 | `Dockerfile`, despliegue a staging y `backend/README.md`. | Depende del hosting elegido. |

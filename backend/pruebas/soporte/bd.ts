@@ -1,6 +1,8 @@
 import { randomUUID } from 'node:crypto';
+import { drizzle } from 'drizzle-orm/node-postgres';
 import pg from 'pg';
 import { inject } from 'vitest';
+import type { BaseDeDatos } from '../../src/compartido/infraestructura/base-de-datos/base-de-datos.module.js';
 
 // Códigos de error de Postgres (SQLSTATE) que usan las pruebas de restricciones.
 export const UNICA = '23505';
@@ -14,6 +16,12 @@ export type Ejecutor = Pick<pg.Pool, 'query'>;
 // Conexión a la base compartida de la corrida (ver global-setup-bd.ts).
 export function conectarBd(): pg.Pool {
   return new pg.Pool({ connectionString: inject('urlBdPrueba'), max: 4 });
+}
+
+// La misma base vista con Drizzle, como la reciben los adaptadores. Se cierra con `pool.end()`.
+export function conectarDrizzle(): { pool: pg.Pool; bd: BaseDeDatos } {
+  const pool = conectarBd();
+  return { pool, bd: drizzle(pool) };
 }
 
 export const nuevoId = (): string => randomUUID();

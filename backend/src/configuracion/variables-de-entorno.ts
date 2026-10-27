@@ -65,6 +65,18 @@ export class VariablesDeEntorno {
   @IsString()
   ZONA_HORARIA_NEGOCIO: string = 'America/Bogota';
 
+  // Cada cuánto busca el despachador eventos pendientes en el outbox. 0 lo apaga (solo en pruebas:
+  // en producción un evento que no se entregó al instante quedaría sin entregar).
+  @Type(() => Number)
+  @IsInt({ message: 'INTERVALO_SONDEO_OUTBOX_MS debe ser un número entero' })
+  @Min(0, {
+    message: 'INTERVALO_SONDEO_OUTBOX_MS debe estar entre 0 y 60000',
+  })
+  @Max(60_000, {
+    message: 'INTERVALO_SONDEO_OUTBOX_MS debe estar entre 0 y 60000',
+  })
+  INTERVALO_SONDEO_OUTBOX_MS: number = 1_000;
+
   @IsOptional()
   @IsString()
   SENTRY_DSN?: string;
@@ -82,6 +94,7 @@ export interface Configuracion {
   origenesPermitidos: string[];
   nivelDeLog: NivelDeLog;
   zonaHorariaNegocio: string;
+  intervaloSondeoOutboxMs: number;
   sentryDsn: string | null;
   secretoBff: string | null;
 }
@@ -185,6 +198,11 @@ function reglasAdicionales(variables: VariablesDeEntorno): string[] {
         'En producción, NIVEL_DE_LOG no puede ser debug ni trace (podrían registrarse datos personales)',
       );
     }
+    if (variables.INTERVALO_SONDEO_OUTBOX_MS === 0) {
+      problemas.push(
+        'En producción, INTERVALO_SONDEO_OUTBOX_MS no puede ser 0 (los eventos pendientes nunca se entregarían)',
+      );
+    }
   }
 
   return problemas;
@@ -234,6 +252,7 @@ export function configuracionDesdeVariables(
     origenesPermitidos: listaDeOrigenes(variables.ORIGENES_PERMITIDOS),
     nivelDeLog: variables.NIVEL_DE_LOG,
     zonaHorariaNegocio: variables.ZONA_HORARIA_NEGOCIO,
+    intervaloSondeoOutboxMs: variables.INTERVALO_SONDEO_OUTBOX_MS,
     sentryDsn: variables.SENTRY_DSN ?? null,
     secretoBff: variables.SECRETO_BFF ?? null,
   };

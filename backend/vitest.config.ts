@@ -14,6 +14,9 @@ export default defineConfig({
       NODE_ENV: 'test',
       URL_BASE_DE_DATOS: 'postgres://seniory:seniory@localhost:5434/seniory',
       ORIGENES_PERMITIDOS: 'http://localhost:3000',
+      // Las pruebas que arrancan la aplicación completa no deben procesar eventos de ninguna base;
+      // las pruebas del outbox controlan el despachador directamente.
+      INTERVALO_SONDEO_OUTBOX_MS: '0',
     },
     projects: [
       {
