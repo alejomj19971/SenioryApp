@@ -262,6 +262,17 @@ export class SinPermiso extends ErrorDeDominio {}             // rol insuficient
 
 `FechaCivil.hoy` calcula el día con `Intl.DateTimeFormat` en la zona indicada, sin dependencias. Es la respuesta al hallazgo H2 del plan general (el frontend calcula «hoy» en UTC).
 
+**Ajustes al construirlo (PR 3):**
+
+| Cambio | Motivo |
+|---|---|
+| `FechaCivil.hoy` recibe `{ ahora(): Date }` en vez de importar el puerto `Reloj`. | El dominio no puede importar `aplicacion` (regla `dominio-puro`); por tipado estructural, cualquier `Reloj` sirve. |
+| `codigo` se pasa al constructor, con un valor por defecto por clase (`validacion`, `no_encontrado`, `conflicto`, `regla_de_negocio`, `no_autenticado`, `sin_permiso`). | Cada módulo puede dar un código más específico (`reservas.franja_ocupada`) sin crear una subclase por error. |
+| Nuevo `idDesdeTexto()`: valida el formato UUID y normaliza a minúsculas. | Convertir en `Id` un texto que viene de una ruta o un JSON sin un `as` sin control. |
+| `Dinero.porcentaje` admite de 0 a 10 000 puntos básicos y calcula con `BigInt`. | Coincide con el CHECK de `politicas_de_precios` y evita perder precisión en el producto intermedio. |
+| `FechaCivil` también tiene `igualA`. | Comparar fechas sin pasar por texto. |
+| Cada puerto exporta su símbolo de inyección junto a la interfaz (`RELOJ`, `GENERADOR_DE_IDS`, `UNIDAD_DE_TRABAJO`, `PUBLICADOR_DE_EVENTOS`, `AUDITORIA`, `VERIFICADOR_DE_TOKENS`); los roles (`ROLES`, `Rol`) viven en `verificador-de-tokens.ts`. | Un `Symbol` es JavaScript puro: la capa de aplicación sigue sin depender de Nest. |
+
 ### 4.7 `compartido/aplicacion/puertos`
 
 ```ts
@@ -465,7 +476,7 @@ M0 no cambia pantallas. Se deja documentado en `backend/README.md` cómo levanta
 |---|---|---|
 | 1 | Proyecto creado con el CLI de Nest 12 (`nest new`, Express, ESM), TypeScript estricto, oxlint, Prettier, Vitest con los dos proyectos, Node 24 fijado y scripts; `/salud` mínimo para probar el esqueleto. El plugin de Swagger pasa al PR 5, junto con `@nestjs/swagger`. | Solo herramientas, sin lógica. |
 | 2 ✅ | Configuración validada con arranque seguro, `docker-compose.yml`, Drizzle, migrador programático, primera migración (esquema `compartido`, extensiones) y pruebas con Testcontainers. | Se prueba levantando la base local (`npm run bd:arriba`) y con `npm run test:integracion`. |
-| 3 | `compartido/dominio` (`Dinero`, `FechaCivil`, `Id`, errores) y puertos, con pruebas unitarias. | Código puro con pruebas. |
+| 3 ✅ | `compartido/dominio` (`Dinero`, `FechaCivil`, `Id`, errores), puertos y sobre de eventos, con pruebas unitarias (incluye propiedades con `fast-check`). Se adelantan los adaptadores triviales `RelojDelSistema` y `GeneradorDeIdsUuidV7`, los dobles de `pruebas/soporte/dobles.ts` y los umbrales de cobertura. | Código puro con pruebas. |
 | 4 | Unidad de trabajo, outbox, despachador, sondeo y auditoría, con pruebas de integración. | La pieza más delicada, aislada en su propio PR. |
 | 5 | Capa HTTP: errores, validación, correlación, logs, guards, CORS, `helmet`, `throttler`, salud y Swagger. | Probado con pruebas de API. |
 | 6 | Reglas de `dependency-cruiser` con sus archivos de ejemplo y CI en GitHub Actions. | La CI se valida a sí misma. |

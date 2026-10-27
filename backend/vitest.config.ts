@@ -48,6 +48,19 @@ export default defineConfig({
         'src/**/*.esquema.ts',
         'src/**/migrar-cli.ts',
       ],
+      // Umbrales de M0 §4.11: `npm run test:cobertura` falla si bajan.
+      thresholds: {
+        lines: 70,
+        statements: 70,
+        functions: 70,
+        branches: 70,
+        'src/compartido/dominio/**': {
+          lines: 90,
+          statements: 90,
+          functions: 90,
+          branches: 90,
+        },
+      },
     },
   },
 });
