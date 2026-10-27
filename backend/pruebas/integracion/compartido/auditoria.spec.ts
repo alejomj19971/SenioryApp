@@ -1,5 +1,6 @@
 import { AuditoriaPostgres } from '../../../src/compartido/infraestructura/auditoria/auditoria-postgres.js';
 import { ContextoTransaccional } from '../../../src/compartido/infraestructura/base-de-datos/contexto-transaccional.js';
+import { ContextoDePeticionAls } from '../../../src/compartido/infraestructura/contexto-de-peticion-als.js';
 import { GeneradorDeIdsUuidV7 } from '../../../src/compartido/infraestructura/generador-de-ids-uuid-v7.js';
 import { conectarDrizzle, nuevoId } from '../../soporte/bd.js';
 import { RelojFalso } from '../../soporte/dobles.js';
@@ -7,10 +8,12 @@ import { RelojFalso } from '../../soporte/dobles.js';
 describe('AuditoriaPostgres', () => {
   const { pool, bd } = conectarDrizzle();
   const reloj = new RelojFalso('2026-10-21T15:30:00.000Z');
+  const contextoDePeticion = new ContextoDePeticionAls();
   const auditoria = new AuditoriaPostgres(
     bd,
     new GeneradorDeIdsUuidV7(),
     reloj,
+    contextoDePeticion,
   );
   const contexto = new ContextoTransaccional(bd);
 
@@ -88,5 +91,26 @@ describe('AuditoriaPostgres', () => {
     expect(await registrosDe(recursoId)).toEqual([
       expect.objectContaining({ actor_id: null }),
     ]);
+  });
+
+  it('guarda el ID de correlación de la petición en curso', async () => {
+    const recursoId = nuevoId();
+    const idDeCorrelacion = nuevoId();
+
+    await contextoDePeticion.ejecutar({ idDeCorrelacion }, () =>
+      auditoria.registrar({
+        actorId: null,
+        accion: 'prueba.correlacion',
+        recursoTipo: 'prueba',
+        recursoId,
+        resultado: 'permitido',
+      }),
+    );
+
+    const { rows } = await pool.query<{ id_de_correlacion: string }>(
+      'select id_de_correlacion from compartido.auditoria where recurso_id = $1',
+      [recursoId],
+    );
+    expect(rows[0]?.id_de_correlacion).toBe(idDeCorrelacion);
   });
 });

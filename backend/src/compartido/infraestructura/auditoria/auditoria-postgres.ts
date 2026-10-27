@@ -2,6 +2,7 @@ import type {
   Auditoria,
   EntradaDeAuditoria,
 } from '../../aplicacion/puertos/auditoria.js';
+import type { ContextoDePeticion } from '../../aplicacion/puertos/contexto-de-peticion.js';
 import type { GeneradorDeIds } from '../../aplicacion/puertos/generador-de-ids.js';
 import type { Reloj } from '../../aplicacion/puertos/reloj.js';
 import type { BaseDeDatos } from '../base-de-datos/base-de-datos.module.js';
@@ -18,6 +19,7 @@ export class AuditoriaPostgres implements Auditoria {
     private readonly bd: BaseDeDatos,
     private readonly generadorDeIds: GeneradorDeIds,
     private readonly reloj: Reloj,
+    private readonly contextoDePeticion: ContextoDePeticion,
   ) {}
 
   async registrar(entrada: EntradaDeAuditoria): Promise<void> {
@@ -29,8 +31,7 @@ export class AuditoriaPostgres implements Auditoria {
       recursoTipo: entrada.recursoTipo,
       recursoId: entrada.recursoId,
       resultado: entrada.resultado,
-      // TODO(M0 PR 5): tomarlo del contexto de la petición (X-Request-Id) cuando exista.
-      idDeCorrelacion: null,
+      idDeCorrelacion: this.contextoDePeticion.idDeCorrelacion(),
       metadatos: entrada.metadatos ?? null,
     });
   }

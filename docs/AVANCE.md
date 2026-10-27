@@ -1,16 +1,16 @@
 # Seniory — Avance del proyecto
 
-**Corte:** 26 de octubre de 2026 · Se actualiza al terminar cada PR o cuando se toma una decisión.
+**Corte:** 27 de octubre de 2026 · Se actualiza al terminar cada PR o cuando se toma una decisión.
 
 ## Dónde vamos
 
-> **Backend, módulo M0 (plataforma y compartido): PR 4 de 8 terminado.**
-> Siguiente paso: **PR 5, capa HTTP** (errores en formato estándar, validación, `X-Request-Id`, guard de autenticación, CORS, `helmet`, límite de peticiones, `/salud/listo` y Swagger).
+> **Backend, módulo M0 (plataforma y compartido): PR 5 de 8 terminado.**
+> Siguiente paso: **PR 6, reglas de arquitectura y CI** (`dependency-cruiser` para que la CI rompa si un módulo cruza fronteras, y GitHub Actions que corra lint, pruebas, build y auditoría en cada PR).
 >
 > El frontend sigue siendo el prototipo del pitch con datos de ejemplo; su integración con el backend empieza en F0, después de M0.
 
 ```
-Backend   M0 ███████████░░░░░░░░░  PR 4/8   ← aquí
+Backend   M0 ████████████▌░░░░░░░  PR 5/8   ← aquí
           M1 … M11                 pendientes
 Frontend  F0 … F9                  planes F0 y F1 propuestos; nada construido
 Base de datos  ████████████████████  completa (adelantada)
@@ -35,15 +35,15 @@ Base de datos  ████████████████████  com
 | M0 · PR 1 | Proyecto NestJS 12, TypeScript estricto, oxlint, Prettier, Vitest, Node 24, `/salud`. | ✅ commit `d8383f0` |
 | M0 · PR 2 | Configuración validada con arranque seguro en producción, Postgres en Docker (puerto 5434), Drizzle y migrador. | ✅ commit `1b8b6b6` |
 | Base de datos | 8 esquemas, 37 tablas, 10 migraciones, 3 triggers, 253 pruebas de restricciones. Se adelantó: estaba repartida entre los módulos. | ✅ commit `45e00b2` |
-| M0 · PR 3 | Dominio compartido: `Dinero`, `FechaCivil`, `Id`, errores, puertos y sobre de eventos. | ✅ hecho, **sin commit** |
-| M0 · PR 4 | Unidad de trabajo, outbox, despachador, sondeo y auditoría. | ✅ hecho, **sin commit** |
-| M0 · PR 5 | Capa HTTP. | ⏭️ siguiente |
-| M0 · PR 6 | Reglas de arquitectura (`dependency-cruiser`) y CI en GitHub Actions. | Pendiente |
+| M0 · PR 3 | Dominio compartido: `Dinero`, `FechaCivil`, `Id`, errores, puertos y sobre de eventos. | ✅ commit `e9eaaad` |
+| M0 · PR 4 | Unidad de trabajo, outbox, despachador, sondeo y auditoría. | ✅ commit `1bfbc75` |
+| M0 · PR 5 | Capa HTTP: problem+json, validación, `X-Request-Id`, autenticación que deniega por defecto, roles, límite de peticiones con IP real del BFF, `helmet`, CORS, logs con redacción, `/salud/listo` y Swagger. | ✅ hecho, **sin commit** |
+| M0 · PR 6 | Reglas de arquitectura (`dependency-cruiser`) y CI en GitHub Actions. | ⏭️ siguiente |
 | M0 · PR 7 | `Dockerfile` y despliegue a staging. | **Bloqueado:** falta elegir el hosting |
 | M0 · PR 8 | Borrador del ADR-03. | Pendiente |
 | M1 → M11 | Identidad, directorio, pagos, reservas, notificaciones, teleasistencia, mensajería, verificación, despliegue, IA. | Pendientes, en ese orden |
 
-**Cifras actuales:** 420 pruebas (140 unitarias y 280 contra Postgres real), cobertura del 97 %, lint y compilación limpios y 0 vulnerabilidades en las dependencias de producción.
+**Cifras actuales:** 471 pruebas (156 unitarias y 315 de integración y API contra Postgres real), cobertura del 97 %, lint y compilación limpios y 0 vulnerabilidades en las dependencias de producción.
 
 ### Frontend (`frontend/`)
 
@@ -61,7 +61,8 @@ Base de datos  ████████████████████  com
 | `refactor/estructura-frontend-backend-docs` | Reorganización en `frontend/`, `backend/` y `docs/`, más el plan del backend. | Sí, salvo el último commit |
 | `feat/backend-m0` | M0 PR 1 y PR 2. | No |
 | `feat/base-de-datos` | La base de datos completa. | No |
-| `feat/m0-dominio-compartido` (actual) | M0 PR 3 y PR 4, sin commit. | No |
+| `feat/m0-dominio-compartido` | M0 PR 3 y PR 4, más docs. | No |
+| `feat/m0-capa-http` (actual) | M0 PR 5, sin commit. | No |
 
 Cada rama parte de la anterior. Falta decidir cuándo subirlas y fusionarlas en `main`.
 
@@ -83,6 +84,7 @@ Cada rama parte de la anterior. Falta decidir cuándo subirlas y fusionarlas en 
 | Decisión | Quién | Bloquea |
 |---|---|---|
 | Hosting de staging y producción | Equipo | M0 PR 7, M10 |
+| Cuenta de Sentry (plan gratuito) y su `SENTRY_DSN` | Equipo | Reporte de errores antes de producción (M10) |
 | Pasarela de pagos (que acepte marketplace y pagos al cuidador) | Empresarial | M7 |
 | Bolsa en pesos u horas, y sus paquetes y descuentos | Empresarial | M7 |
 | Política de cancelación y reembolso | Empresarial + legal | M4, M7 |
@@ -93,7 +95,8 @@ Cada rama parte de la anterior. Falta decidir cuándo subirlas y fusionarlas en 
 
 ## Pendientes fuera del orden de los PR
 
-- Commits del PR 3 y del PR 4 (esperan aprobación).
+- Commit del PR 5 (espera aprobación).
+- Integrar Sentry cuando haya cuenta.
 - Renombrar `docs/backend/` y `docs/frontend/` para no confundirlas con las carpetas de código (propuesta: `docs/planes-backend/` y `docs/planes-frontend/`).
 - Documento de aprendizajes (pedido y aún sin hacer).
 - Corregir el diagrama de arquitectura (mover «Datos de salud» a Teleasistencia y agregar Mensajería) y registrar todos los cambios en el ADR-03.

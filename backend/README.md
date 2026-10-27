@@ -35,6 +35,10 @@ API de Seniory: **monolito modular con arquitectura hexagonal** ([ADR-01](../doc
 | `npm run test:cobertura` | Todas las pruebas con cobertura. |
 
 Comprobar que la API está viva: `GET http://localhost:3001/salud` → `{"estado":"ok"}`.
+Comprobar que puede atender (la base responde): `GET http://localhost:3001/salud/listo`.
+Documentación interactiva (solo fuera de producción): <http://localhost:3001/api/docs>.
+
+Toda ruta bajo `/api/v1` exige sesión salvo que el controlador la marque con `@Publico()`. Los errores llegan en `application/problem+json` con un `codigo` estable y el `idDeCorrelacion`, que también va en la cabecera `X-Request-Id` y en los logs.
 
 ## Convenciones
 

@@ -3,6 +3,7 @@ import { sql } from 'drizzle-orm';
 import type { ManejadorDeEventos } from '../../../src/compartido/aplicacion/puertos/manejador-de-eventos.js';
 import type { EventoDeIntegracion } from '../../../src/compartido/eventos/evento-de-integracion.js';
 import { ContextoTransaccional } from '../../../src/compartido/infraestructura/base-de-datos/contexto-transaccional.js';
+import { ContextoDePeticionAls } from '../../../src/compartido/infraestructura/contexto-de-peticion-als.js';
 import {
   DespachadorDeEventos,
   type OpcionesDelDespachador,
@@ -45,6 +46,7 @@ function manejadorDePrueba(
 describe('DespachadorDeEventos', () => {
   const { pool, bd } = conectarDrizzle();
   const contexto = new ContextoTransaccional(bd);
+  const contextoDePeticion = new ContextoDePeticionAls();
 
   beforeAll(() => {
     // Los reintentos y fallos se registran en el log; aquí se comprueban en la base.
@@ -68,6 +70,7 @@ describe('DespachadorDeEventos', () => {
       contexto,
       registro,
       reloj,
+      contextoDePeticion,
       opciones,
     );
     // Publicador sin entrega inmediata: la prueba decide cuándo despachar.
@@ -289,6 +292,26 @@ describe('DespachadorDeEventos', () => {
     expect(rowCount).toBe(1);
   });
 
+  it('el manejador corre con el ID de correlación del evento que atiende', async () => {
+    const { registro, despachador, tipo, publicar } = montar(2011);
+    let visto: string | undefined;
+    registro.registrar(
+      manejadorDePrueba(tipo, () => {
+        visto = contextoDePeticion.idDeCorrelacion();
+        return Promise.resolve();
+      }),
+    );
+    const id = await publicar();
+
+    await despachador.procesarPendientes([id]);
+
+    const { rows } = await pool.query<{ id_de_correlacion: string }>(
+      'select id_de_correlacion from compartido.outbox where id = $1',
+      [id],
+    );
+    expect(visto).toBe(rows[0]?.id_de_correlacion);
+  });
+
   it('un evento sin manejadores se marca procesado', async () => {
     const { despachador, publicar } = montar(2008);
     const id = await publicar();
@@ -327,7 +350,16 @@ describe('DespachadorDeEventos', () => {
     const despachadores = Array.from(
       { length: 3 },
       () =>
-        new DespachadorDeEventos(bd, contexto, registro, reloj, { lote: 7 }),
+        new DespachadorDeEventos(
+          bd,
+          contexto,
+          registro,
+          reloj,
+          contextoDePeticion,
+          {
+            lote: 7,
+          },
+        ),
     );
     // Cada uno reclama lotes de 7 hasta que no quede nada.
     await Promise.all(

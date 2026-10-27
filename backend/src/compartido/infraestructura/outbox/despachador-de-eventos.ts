@@ -8,6 +8,7 @@ import {
   outbox,
 } from '../base-de-datos/compartido.esquema.js';
 import type { ContextoTransaccional } from '../base-de-datos/contexto-transaccional.js';
+import type { ContextoDePeticionAls } from '../contexto-de-peticion-als.js';
 import type { RegistroDeManejadores } from './registro-de-manejadores.js';
 
 export interface OpcionesDelDespachador {
@@ -54,6 +55,7 @@ export class DespachadorDeEventos {
     private readonly contexto: ContextoTransaccional,
     private readonly registro: RegistroDeManejadores,
     private readonly reloj: Reloj,
+    private readonly contextoDePeticion: ContextoDePeticionAls,
     opciones: Partial<OpcionesDelDespachador> = {},
   ) {
     this.opciones = { ...OPCIONES_POR_DEFECTO, ...opciones };
@@ -127,21 +129,27 @@ export class DespachadorDeEventos {
     const errores: string[] = [];
     for (const manejador of this.registro.para(fila.tipo)) {
       try {
-        await this.contexto.ejecutar(async () => {
-          const nuevo = await this.contexto
-            .transaccionActual()
-            .insert(eventosConsumidos)
-            .values({
-              manejador: manejador.nombre,
-              eventoId: fila.id,
-              consumidoEn: this.reloj.ahora(),
-            })
-            .onConflictDoNothing()
-            .returning({ eventoId: eventosConsumidos.eventoId });
-          // Ya lo procesó en un intento anterior: no se repite.
-          if (nuevo.length === 0) return;
-          await manejador.manejar(evento);
-        });
+        // El manejador corre con el ID de correlación del evento: lo que registre o publique
+        // queda unido a la petición que originó la cadena.
+        await this.contextoDePeticion.ejecutar(
+          { idDeCorrelacion: evento.idDeCorrelacion },
+          () =>
+            this.contexto.ejecutar(async () => {
+              const nuevo = await this.contexto
+                .transaccionActual()
+                .insert(eventosConsumidos)
+                .values({
+                  manejador: manejador.nombre,
+                  eventoId: fila.id,
+                  consumidoEn: this.reloj.ahora(),
+                })
+                .onConflictDoNothing()
+                .returning({ eventoId: eventosConsumidos.eventoId });
+              // Ya lo procesó en un intento anterior: no se repite.
+              if (nuevo.length === 0) return;
+              await manejador.manejar(evento);
+            }),
+        );
       } catch (error) {
         errores.push(`${manejador.nombre}: ${mensajeDe(error)}`);
       }

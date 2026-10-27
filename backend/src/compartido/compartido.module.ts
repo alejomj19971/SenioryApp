@@ -2,6 +2,7 @@ import { Global, Module } from '@nestjs/common';
 import { CONFIGURACION } from '../configuracion/configuracion.module.js';
 import type { Configuracion } from '../configuracion/variables-de-entorno.js';
 import { AUDITORIA } from './aplicacion/puertos/auditoria.js';
+import { CONTEXTO_DE_PETICION } from './aplicacion/puertos/contexto-de-peticion.js';
 import {
   GENERADOR_DE_IDS,
   type GeneradorDeIds,
@@ -15,6 +16,7 @@ import {
   type BaseDeDatos,
 } from './infraestructura/base-de-datos/base-de-datos.module.js';
 import { ContextoTransaccional } from './infraestructura/base-de-datos/contexto-transaccional.js';
+import { ContextoDePeticionAls } from './infraestructura/contexto-de-peticion-als.js';
 import { GeneradorDeIdsUuidV7 } from './infraestructura/generador-de-ids-uuid-v7.js';
 import { DespachadorDeEventos } from './infraestructura/outbox/despachador-de-eventos.js';
 import { PublicadorDeEventosOutbox } from './infraestructura/outbox/publicador-de-eventos-outbox.js';
@@ -41,19 +43,33 @@ import { RelojDelSistema } from './infraestructura/reloj-del-sistema.js';
       useFactory: () => new RegistroDeManejadores(),
     },
     {
+      provide: ContextoDePeticionAls,
+      useFactory: () => new ContextoDePeticionAls(),
+    },
+    { provide: CONTEXTO_DE_PETICION, useExisting: ContextoDePeticionAls },
+    {
       provide: DespachadorDeEventos,
       inject: [
         BASE_DE_DATOS,
         ContextoTransaccional,
         RegistroDeManejadores,
         RELOJ,
+        ContextoDePeticionAls,
       ],
       useFactory: (
         bd: BaseDeDatos,
         contexto: ContextoTransaccional,
         registro: RegistroDeManejadores,
         reloj: Reloj,
-      ) => new DespachadorDeEventos(bd, contexto, registro, reloj),
+        contextoDePeticion: ContextoDePeticionAls,
+      ) =>
+        new DespachadorDeEventos(
+          bd,
+          contexto,
+          registro,
+          reloj,
+          contextoDePeticion,
+        ),
     },
     {
       provide: PUBLICADOR_DE_EVENTOS,
@@ -65,9 +81,13 @@ import { RelojDelSistema } from './infraestructura/reloj-del-sistema.js';
     },
     {
       provide: AUDITORIA,
-      inject: [BASE_DE_DATOS, GENERADOR_DE_IDS, RELOJ],
-      useFactory: (bd: BaseDeDatos, generador: GeneradorDeIds, reloj: Reloj) =>
-        new AuditoriaPostgres(bd, generador, reloj),
+      inject: [BASE_DE_DATOS, GENERADOR_DE_IDS, RELOJ, ContextoDePeticionAls],
+      useFactory: (
+        bd: BaseDeDatos,
+        generador: GeneradorDeIds,
+        reloj: Reloj,
+        contextoDePeticion: ContextoDePeticionAls,
+      ) => new AuditoriaPostgres(bd, generador, reloj, contextoDePeticion),
     },
     {
       provide: SondeoDelOutbox,
@@ -86,10 +106,13 @@ import { RelojDelSistema } from './infraestructura/reloj-del-sistema.js';
     UNIDAD_DE_TRABAJO,
     PUBLICADOR_DE_EVENTOS,
     AUDITORIA,
+    CONTEXTO_DE_PETICION,
     // Para la infraestructura de los módulos: sus repositorios piden la conexión al contexto
     // y registran sus manejadores de eventos al iniciar.
     ContextoTransaccional,
     RegistroDeManejadores,
+    // Para la capa HTTP: el middleware abre el contexto de cada petición.
+    ContextoDePeticionAls,
   ],
 })
 export class CompartidoModule {}

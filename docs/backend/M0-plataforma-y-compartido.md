@@ -421,6 +421,19 @@ Ejemplo de cuerpo:
 }
 ```
 
+**Construido en el PR 5** (`compartido/http/`, `src/configurar-aplicacion.ts`):
+
+| Pieza | Cómo quedó |
+|---|---|
+| Arranque | `configurarAplicacion()` aplica prefijo, contexto de petición, `helmet`, `cookie-parser`, límite de 100 KB, CORS y Swagger; la usan igual `main.ts` y las pruebas (`crearAppDePrueba()`). Guards, `ValidationPipe` y filtro se registran en `AppModule` (`APP_GUARD`, `APP_PIPE`, `APP_FILTER`). |
+| Contexto de petición | Puerto `ContextoDePeticion` con adaptador `ContextoDePeticionAls`. Lo abre un middleware en cada petición y el despachador en cada evento (con el ID del evento): la auditoría y los manejadores reciben así el ID de correlación. |
+| Correlación e IP | `datos-de-la-peticion.ts` calcula una vez por petición el ID (`X-Request-Id` si es UUID; si no, UUID v7) y la IP real (`X-Cliente-IP` solo con `X-Seniory-BFF` correcto, comparado en tiempo constante). |
+| Guards | `GuardDeLimiteDePeticiones` (100/min por IP real), `GuardDeAutenticacion` (cookie `seniory_acceso`; `Bearer` solo fuera de producción) y `GuardDeRoles`. `/salud` está exenta del límite. |
+| Errores | `FiltroDeErrores`: tabla de arriba. Además 400 `solicitud_invalida` (JSON mal formado), 413 `cuerpo_demasiado_grande`, 404 de rutas inexistentes y `detail` con el mensaje del error de dominio. Un 500 nunca expone el mensaje. |
+| Logs | `nestjs-pino` con redacción; `pino-pretty` solo en desarrollo; `/salud` no se registra. |
+
+**Ajustes respecto al plan:** `/salud/listo` solo comprueba la base: los eventos fallidos del outbox no la marcan como «no lista» (sacar la API de servicio no los arregla) y contarlos en cada consulta del monitor recorrería el outbox. Sentry queda pendiente hasta tener cuenta y `SENTRY_DSN`; mientras tanto, los errores 500 y los eventos fallidos van al log. `@nestjs/swagger` se fijó en 12.0.2 (la 12.0.5 salió el mismo día).
+
 ### 4.11 Pruebas: infraestructura
 
 - **`vitest.config.ts`** con dos proyectos: `unitarias` (sin Docker, rápidas) e `integracion` (Testcontainers y Supertest). El contenedor de Postgres se arranca una vez en el `globalSetup` de `integracion`.
@@ -493,7 +506,7 @@ M0 no cambia pantallas. Se deja documentado en `backend/README.md` cómo levanta
 | 2 ✅ | Configuración validada con arranque seguro, `docker-compose.yml`, Drizzle, migrador programático, primera migración (esquema `compartido`, extensiones) y pruebas con Testcontainers. | Se prueba levantando la base local (`npm run bd:arriba`) y con `npm run test:integracion`. |
 | 3 ✅ | `compartido/dominio` (`Dinero`, `FechaCivil`, `Id`, errores), puertos y sobre de eventos, con pruebas unitarias (incluye propiedades con `fast-check`). Se adelantan los adaptadores triviales `RelojDelSistema` y `GeneradorDeIdsUuidV7`, los dobles de `pruebas/soporte/dobles.ts` y los umbrales de cobertura. | Código puro con pruebas. |
 | 4 ✅ | Unidad de trabajo, outbox, despachador, sondeo y auditoría, con pruebas de integración (incluida la concurrencia de varios despachadores y el ciclo de vida de la aplicación). | La pieza más delicada, aislada en su propio PR. |
-| 5 | Capa HTTP: errores, validación, correlación, logs, guards, CORS, `helmet`, `throttler`, salud y Swagger. | Probado con pruebas de API. |
+| 5 ✅ | Capa HTTP: errores, validación, correlación, logs, guards, CORS, `helmet`, `throttler`, salud y Swagger. Sentry queda pendiente de la cuenta. | Probado con pruebas de API. |
 | 6 | Reglas de `dependency-cruiser` con sus archivos de ejemplo y CI en GitHub Actions. | La CI se valida a sí misma. |
 | 7 | `Dockerfile`, despliegue a staging y `backend/README.md`. | Depende del hosting elegido. |
 | 8 | Borrador del **ADR-03** (stack, decisiones de este plan, datos de salud en Teleasistencia, `mensajeria`). | Documento. |
