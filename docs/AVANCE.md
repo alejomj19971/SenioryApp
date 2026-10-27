@@ -5,7 +5,7 @@
 ## Dónde vamos
 
 > **Backend, módulo M0 (plataforma y compartido): PR 6 de 8 terminado.**
-> Siguiente paso: **subir las ramas a GitHub** para que la CI empiece a correr. Después, **PR 8 (borrador del ADR-03)**; el PR 7 (despliegue a staging) espera la elección del hosting.
+> Siguiente paso: **abrir los PR en GitHub y ver la CI en verde**. Después, **PR 8 (borrador del ADR-03)**; el PR 7 (despliegue a staging) espera la elección del hosting.
 >
 > El frontend sigue siendo el prototipo del pitch con datos de ejemplo; su integración con el backend empieza en F0, después de M0.
 
@@ -38,7 +38,7 @@ Base de datos  ████████████████████  com
 | M0 · PR 3 | Dominio compartido: `Dinero`, `FechaCivil`, `Id`, errores, puertos y sobre de eventos. | ✅ commit `e9eaaad` |
 | M0 · PR 4 | Unidad de trabajo, outbox, despachador, sondeo y auditoría. | ✅ commit `1bfbc75` |
 | M0 · PR 5 | Capa HTTP: problem+json, validación, `X-Request-Id`, autenticación que deniega por defecto, roles, límite de peticiones con IP real del BFF, `helmet`, CORS, logs con redacción, `/salud/listo` y Swagger. | ✅ commit `e417dbd` |
-| M0 · PR 6 | Reglas de arquitectura (`dependency-cruiser`, 7 reglas con ejemplos que las rompen), CI en GitHub Actions y Dependabot. | ✅ hecho, **sin commit** |
+| M0 · PR 6 | Reglas de arquitectura (`dependency-cruiser`, 7 reglas con ejemplos que las rompen), CI en GitHub Actions y Dependabot. | ✅ commit `617491a` |
 | M0 · PR 7 | `Dockerfile` y despliegue a staging. | **Bloqueado:** falta elegir el hosting |
 | M0 · PR 8 | Borrador del ADR-03. | ⏭️ siguiente |
 | M1 → M11 | Identidad, directorio, pagos, reservas, notificaciones, teleasistencia, mensajería, verificación, despliegue, IA. | Pendientes, en ese orden |
@@ -53,19 +53,20 @@ Base de datos  ████████████████████  com
 | F0 · Base de integración con el backend | Plan propuesto; empieza cuando M0 tenga la capa HTTP. |
 | F1–F9 | Pendientes. Cada F*n* conecta las pantallas al módulo M*n* y borra el JSON que reemplaza. |
 
-### Ramas (nada del backend está en GitHub todavía)
+### Ramas (en GitHub desde el 27 de octubre)
 
-| Rama | Contiene | En GitHub |
+Cada rama parte de la anterior. Se revisan con un PR encadenado por entrega (la base de cada PR es la rama anterior) y se fusionan en orden, de arriba hacia abajo.
+
+| # | Rama | Contiene |
 |---|---|---|
-| `main` | Prototipo del pitch. | Sí (con un commit local sin subir) |
-| `refactor/estructura-frontend-backend-docs` | Reorganización en `frontend/`, `backend/` y `docs/`, más el plan del backend. | Sí, salvo el último commit |
-| `feat/backend-m0` | M0 PR 1 y PR 2. | No |
-| `feat/base-de-datos` | La base de datos completa. | No |
-| `feat/m0-dominio-compartido` | M0 PR 3 y PR 4, más docs. | No |
-| `feat/m0-capa-http` | M0 PR 5. | No |
-| `feat/m0-arquitectura-y-ci` (actual) | M0 PR 6, sin commit. | No |
+| 1 | `refactor/estructura-frontend-backend-docs` | Reorganización en `frontend/`, `backend/` y `docs/`, y planes. |
+| 2 | `feat/backend-m0` | M0 PR 1 y PR 2. |
+| 3 | `feat/base-de-datos` | La base de datos completa. |
+| 4 | `feat/m0-dominio-compartido` | M0 PR 3 y PR 4, y documentación de avance. |
+| 5 | `feat/m0-capa-http` | M0 PR 5. |
+| 6 | `feat/m0-arquitectura-y-ci` | M0 PR 6 (trae la CI). |
 
-Cada rama parte de la anterior. Falta decidir cuándo subirlas y fusionarlas en `main`.
+**La CI solo corre en el PR 6:** es la primera rama que tiene `.github/workflows/backend.yml`. Una vez fusionada en `main`, correrá en todos los PR que toquen `backend/`.
 
 ## Decisiones
 
@@ -96,7 +97,7 @@ Cada rama parte de la anterior. Falta decidir cuándo subirlas y fusionarlas en 
 
 ## Pendientes fuera del orden de los PR
 
-- Commit del PR 6 y subir las ramas a GitHub (esperan aprobación).
+- Abrir los 6 PR encadenados en GitHub y fusionarlos en orden.
 - Regla `exports-solo-puertos-de-entrada`: se implementa en M1, con el primer módulo de negocio.
 - Integrar Sentry cuando haya cuenta.
 - Renombrar `docs/backend/` y `docs/frontend/` para no confundirlas con las carpetas de código (propuesta: `docs/planes-backend/` y `docs/planes-frontend/`).
