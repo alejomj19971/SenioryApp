@@ -10,7 +10,7 @@ El marco general (stack, reglas de arquitectura, estándares y orden) está en [
 
 | # | Módulo | Bloque del diagrama | Plan | Estado |
 |---|---|---|---|---|
-| M0 | Plataforma y compartido | `compartido/`, API REST, eventos internos, base de datos | [M0-plataforma-y-compartido.md](./M0-plataforma-y-compartido.md) | Plan aprobado (2026-10-22) |
+| M0 | Plataforma y compartido | `compartido/`, API REST, eventos internos, base de datos | [M0-plataforma-y-compartido.md](./M0-plataforma-y-compartido.md) | **En construcción:** PR 1–4 de 8 hechos ([avance](../AVANCE.md)) |
 | M1 | Identidad | Identidad y usuarios | [M1-identidad.md](./M1-identidad.md) | Plan aprobado (2026-10-22) |
 | M2 | Directorio (lectura) | Directorio y verificación | — | Pendiente |
 | M3 | Pagos I: cotización | Pagos | — | Pendiente |
