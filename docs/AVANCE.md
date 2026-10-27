@@ -4,13 +4,13 @@
 
 ## Dónde vamos
 
-> **Backend, módulo M0 (plataforma y compartido): PR 5 de 8 terminado.**
-> Siguiente paso: **PR 6, reglas de arquitectura y CI** (`dependency-cruiser` para que la CI rompa si un módulo cruza fronteras, y GitHub Actions que corra lint, pruebas, build y auditoría en cada PR).
+> **Backend, módulo M0 (plataforma y compartido): PR 6 de 8 terminado.**
+> Siguiente paso: **subir las ramas a GitHub** para que la CI empiece a correr. Después, **PR 8 (borrador del ADR-03)**; el PR 7 (despliegue a staging) espera la elección del hosting.
 >
 > El frontend sigue siendo el prototipo del pitch con datos de ejemplo; su integración con el backend empieza en F0, después de M0.
 
 ```
-Backend   M0 ████████████▌░░░░░░░  PR 5/8   ← aquí
+Backend   M0 ███████████████░░░░░  PR 6/8   ← aquí
           M1 … M11                 pendientes
 Frontend  F0 … F9                  planes F0 y F1 propuestos; nada construido
 Base de datos  ████████████████████  completa (adelantada)
@@ -37,13 +37,13 @@ Base de datos  ████████████████████  com
 | Base de datos | 8 esquemas, 37 tablas, 10 migraciones, 3 triggers, 253 pruebas de restricciones. Se adelantó: estaba repartida entre los módulos. | ✅ commit `45e00b2` |
 | M0 · PR 3 | Dominio compartido: `Dinero`, `FechaCivil`, `Id`, errores, puertos y sobre de eventos. | ✅ commit `e9eaaad` |
 | M0 · PR 4 | Unidad de trabajo, outbox, despachador, sondeo y auditoría. | ✅ commit `1bfbc75` |
-| M0 · PR 5 | Capa HTTP: problem+json, validación, `X-Request-Id`, autenticación que deniega por defecto, roles, límite de peticiones con IP real del BFF, `helmet`, CORS, logs con redacción, `/salud/listo` y Swagger. | ✅ hecho, **sin commit** |
-| M0 · PR 6 | Reglas de arquitectura (`dependency-cruiser`) y CI en GitHub Actions. | ⏭️ siguiente |
+| M0 · PR 5 | Capa HTTP: problem+json, validación, `X-Request-Id`, autenticación que deniega por defecto, roles, límite de peticiones con IP real del BFF, `helmet`, CORS, logs con redacción, `/salud/listo` y Swagger. | ✅ commit `e417dbd` |
+| M0 · PR 6 | Reglas de arquitectura (`dependency-cruiser`, 7 reglas con ejemplos que las rompen), CI en GitHub Actions y Dependabot. | ✅ hecho, **sin commit** |
 | M0 · PR 7 | `Dockerfile` y despliegue a staging. | **Bloqueado:** falta elegir el hosting |
-| M0 · PR 8 | Borrador del ADR-03. | Pendiente |
+| M0 · PR 8 | Borrador del ADR-03. | ⏭️ siguiente |
 | M1 → M11 | Identidad, directorio, pagos, reservas, notificaciones, teleasistencia, mensajería, verificación, despliegue, IA. | Pendientes, en ese orden |
 
-**Cifras actuales:** 471 pruebas (156 unitarias y 315 de integración y API contra Postgres real), cobertura del 97 %, lint y compilación limpios y 0 vulnerabilidades en las dependencias de producción.
+**Cifras actuales:** 482 pruebas (167 unitarias y de arquitectura, y 315 de integración y API contra Postgres real), cobertura del 97 %, lint y compilación limpios y 0 vulnerabilidades en las dependencias de producción.
 
 ### Frontend (`frontend/`)
 
@@ -62,7 +62,8 @@ Base de datos  ████████████████████  com
 | `feat/backend-m0` | M0 PR 1 y PR 2. | No |
 | `feat/base-de-datos` | La base de datos completa. | No |
 | `feat/m0-dominio-compartido` | M0 PR 3 y PR 4, más docs. | No |
-| `feat/m0-capa-http` (actual) | M0 PR 5, sin commit. | No |
+| `feat/m0-capa-http` | M0 PR 5. | No |
+| `feat/m0-arquitectura-y-ci` (actual) | M0 PR 6, sin commit. | No |
 
 Cada rama parte de la anterior. Falta decidir cuándo subirlas y fusionarlas en `main`.
 
@@ -95,7 +96,8 @@ Cada rama parte de la anterior. Falta decidir cuándo subirlas y fusionarlas en 
 
 ## Pendientes fuera del orden de los PR
 
-- Commit del PR 5 (espera aprobación).
+- Commit del PR 6 y subir las ramas a GitHub (esperan aprobación).
+- Regla `exports-solo-puertos-de-entrada`: se implementa en M1, con el primer módulo de negocio.
 - Integrar Sentry cuando haya cuenta.
 - Renombrar `docs/backend/` y `docs/frontend/` para no confundirlas con las carpetas de código (propuesta: `docs/planes-backend/` y `docs/planes-frontend/`).
 - Documento de aprendizajes (pedido y aún sin hacer).

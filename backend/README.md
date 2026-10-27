@@ -29,6 +29,7 @@ API de Seniory: **monolito modular con arquitectura hexagonal** ([ADR-01](../doc
 | `npm run build` | Compila a `dist/`. |
 | `npm start` | Ejecuta lo compilado. |
 | `npm run lint` | oxlint y verificación de tipos. |
+| `npm run arquitectura` | Reglas de arquitectura (`dependency-cruiser`): fronteras entre módulos y capas. |
 | `npm run formato` | Da formato con Prettier (`formato:verificar` solo revisa). |
 | `npm test` | Pruebas unitarias (sin Docker). |
 | `npm run test:integracion` | Pruebas de integración y de API: 253 pruebas de restricciones de la base de datos contra un Postgres real y desechable (Testcontainers; requiere Docker). |

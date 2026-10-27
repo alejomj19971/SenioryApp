@@ -23,7 +23,11 @@ export default defineConfig({
         extends: true,
         test: {
           name: 'unitarias',
-          include: ['pruebas/unitarias/**/*.spec.ts'],
+          include: [
+            'pruebas/unitarias/**/*.spec.ts',
+            // Reglas de arquitectura: no necesitan Docker (M0 §4.9).
+            'pruebas/arquitectura/**/*.spec.ts',
+          ],
         },
       },
       {

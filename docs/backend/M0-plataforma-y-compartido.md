@@ -377,6 +377,8 @@ Flujo:
 
 Cada regla tiene una **prueba que la rompe a propósito** (un archivo de ejemplo en `pruebas/arquitectura/`, excluido del build) para confirmar que la CI la detecta.
 
+**Construido en el PR 6:** `.dependency-cruiser.cjs` implementa las siete primeras reglas. Un «módulo de negocio» es cualquier carpeta de `src/` salvo `compartido`, `configuracion` y `salud`, así que un módulo nuevo queda cubierto sin tocar la configuración. Cuenta también los imports de solo tipos. `pruebas/arquitectura/reglas.spec.ts` (corre con `npm test`, sin Docker) comprueba que `src/` no tiene violaciones, que cada regla detecta su ejemplo de `pruebas/arquitectura/ejemplos/`, que usar el puerto de entrada de otro módulo sigue permitido y que ninguna regla queda sin ejemplo. Se verificó debilitando una regla a propósito: la prueba falla. **`exports-solo-puertos-de-entrada` queda para M1**, con el primer módulo de negocio: hoy no hay ningún `exports` de módulo que revisar.
+
 ### 4.10 Capa HTTP transversal
 
 | Tema | Decisión |
@@ -507,7 +509,7 @@ M0 no cambia pantallas. Se deja documentado en `backend/README.md` cómo levanta
 | 3 ✅ | `compartido/dominio` (`Dinero`, `FechaCivil`, `Id`, errores), puertos y sobre de eventos, con pruebas unitarias (incluye propiedades con `fast-check`). Se adelantan los adaptadores triviales `RelojDelSistema` y `GeneradorDeIdsUuidV7`, los dobles de `pruebas/soporte/dobles.ts` y los umbrales de cobertura. | Código puro con pruebas. |
 | 4 ✅ | Unidad de trabajo, outbox, despachador, sondeo y auditoría, con pruebas de integración (incluida la concurrencia de varios despachadores y el ciclo de vida de la aplicación). | La pieza más delicada, aislada en su propio PR. |
 | 5 ✅ | Capa HTTP: errores, validación, correlación, logs, guards, CORS, `helmet`, `throttler`, salud y Swagger. Sentry queda pendiente de la cuenta. | Probado con pruebas de API. |
-| 6 | Reglas de `dependency-cruiser` con sus archivos de ejemplo y CI en GitHub Actions. | La CI se valida a sí misma. |
+| 6 ✅ | Reglas de `dependency-cruiser` con sus archivos de ejemplo, CI en GitHub Actions (`.github/workflows/backend.yml`, acciones fijadas por SHA y permisos de solo lectura) y Dependabot semanal con una semana de espera por versión nueva. | La CI se valida a sí misma. |
 | 7 | `Dockerfile`, despliegue a staging y `backend/README.md`. | Depende del hosting elegido. |
 | 8 | Borrador del **ADR-03** (stack, decisiones de este plan, datos de salud en Teleasistencia, `mensajeria`). | Documento. |
 
