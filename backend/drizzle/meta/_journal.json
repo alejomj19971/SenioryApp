@@ -1,0 +1,76 @@
+{
+  "version": "7",
+  "dialect": "postgresql",
+  "entries": [
+    {
+      "idx": 0,
+      "version": "7",
+      "when": 1793048975025,
+      "tag": "0000_base_extensiones_y_esquema_compartido",
+      "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1793056500828,
+      "tag": "0001_compartido_outbox_eventos_auditoria",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1793056641076,
+      "tag": "0002_identidad",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1793056644248,
+      "tag": "0003_directorio",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1793056647041,
+      "tag": "0004_pagos",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1793056650143,
+      "tag": "0005_reservas",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1793056653320,
+      "tag": "0006_notificaciones",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1793056656632,
+      "tag": "0007_teleasistencia",
+      "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1793056659796,
+      "tag": "0008_mensajeria",
+      "breakpoints": true
+    },
+    {
+      "idx": 9,
+      "version": "7",
+      "when": 1793056743618,
+      "tag": "0009_indices_descendentes",
+      "breakpoints": true
+    }
+  ]
+}

@@ -1,0 +1,40 @@
+# Actualizaciones de dependencias (docs/backend/M0 §5). Dependabot abre PRs semanales que pasan por la
+# misma verificación que cualquier cambio. Las de seguridad llegan apenas se publican.
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /backend
+    schedule:
+      interval: weekly
+      day: monday
+      timezone: America/Bogota
+    open-pull-requests-limit: 5
+    # Espera una semana tras cada versión nueva: da tiempo a que aparezcan fallos o paquetes
+    # comprometidos antes de instalarla.
+    cooldown:
+      default-days: 7
+    groups:
+      nest:
+        patterns: ['@nestjs/*']
+      desarrollo:
+        dependency-type: development
+        update-types: [minor, patch]
+
+  - package-ecosystem: npm
+    directory: /frontend
+    schedule:
+      interval: weekly
+      day: monday
+      timezone: America/Bogota
+    open-pull-requests-limit: 5
+    cooldown:
+      default-days: 7
+
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+      day: monday
+      timezone: America/Bogota
+    cooldown:
+      default-days: 7

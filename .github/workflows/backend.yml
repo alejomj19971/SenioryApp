@@ -1,0 +1,72 @@
+# Verificación del backend en cada PR y en cada push a main que toque backend/ (docs/backend/M0 §4.12).
+# El despliegue a staging se agrega en el PR 7 de M0, cuando se elija el hosting.
+name: Backend
+
+on:
+  pull_request:
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'backend/**'
+      - '.github/workflows/backend.yml'
+
+# Solo lectura: la verificación no publica nada ni escribe en el repositorio.
+permissions:
+  contents: read
+
+# Un push nuevo a la misma rama cancela la verificación anterior, que ya no sirve.
+concurrency:
+  group: backend-${{ github.ref }}
+  cancel-in-progress: true
+
+defaults:
+  run:
+    working-directory: backend
+
+jobs:
+  verificar:
+    name: Verificar
+    runs-on: ubuntu-24.04
+    timeout-minutes: 20
+    steps:
+      # Acciones fijadas a un commit exacto: una etiqueta se puede mover, un SHA no.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: backend/.nvmrc
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
+
+      - name: Instalar dependencias (exactas, desde package-lock.json)
+        run: npm ci
+
+      - name: Lint y tipos
+        run: npm run lint
+
+      - name: Formato
+        run: npm run formato:verificar
+
+      - name: Reglas de arquitectura (E13)
+        run: npm run arquitectura
+
+      - name: Pruebas unitarias
+        run: npm test
+
+      # Integración y API contra un Postgres 17 real (Testcontainers usa el Docker del runner),
+      # con los umbrales de cobertura de M0 §4.11.
+      - name: Todas las pruebas, con cobertura
+        run: npm run test:cobertura
+
+      - name: Compilación
+        run: npm run build
+
+      - name: Auditoría de dependencias
+        run: |
+          npm audit --audit-level=high
+          npm audit --omit=dev

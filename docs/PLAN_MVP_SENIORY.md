@@ -1,5 +1,7 @@
 # SENIORY — Plan de desarrollo del MVP (demo Rocket Pitch)
 
+> **Documento histórico (actualizado el 2026-10-26).** Este plan especificó el MVP para el Rocket Pitch, que ya está construido. **El desarrollo actual es la aplicación real**, y se rige por [PLAN_BACKEND_SENIORY.md](./PLAN_BACKEND_SENIORY.md) y [PLAN_FRONTEND_SENIORY.md](./PLAN_FRONTEND_SENIORY.md). Lo que aquí figura como «fuera de alcance» (autenticación, backend, base de datos, pagos reales, registro de cuidadores) **ahora sí está en alcance**. Se conserva por el contexto de producto (secciones 1, 5, 6 y 7) y como referencia de las pantallas.
+
 > **Para Claude Code:** este documento es la especificación del MVP. Trabaja **fase por fase**, en orden.
 > Al terminar cada fase: ejecuta `npm run build` y `npm run lint`, resume lo que hiciste y **detente para revisión** antes de seguir con la siguiente.
 > Si algo de este plan es ambiguo, pregunta antes de inventar. Alejo actúa como arquitecto del proyecto; tú implementas.
