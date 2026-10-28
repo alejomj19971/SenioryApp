@@ -1,4 +1,5 @@
 import { FechaCivil } from '../../src/compartido/dominio/fecha-civil.js';
+import { GeneradorDeIdsUuidV7 } from '../../src/compartido/infraestructura/generador-de-ids-uuid-v7.js';
 import { AdultoMayor } from '../../src/identidad/dominio/adulto-mayor.js';
 import { Correo } from '../../src/identidad/dominio/correo.js';
 import type { DiccionarioDeContrasenasComunes } from '../../src/identidad/dominio/contrasena.js';
@@ -10,12 +11,13 @@ import type {
 import { NombrePersona } from '../../src/identidad/dominio/nombre-persona.js';
 import { Usuario } from '../../src/identidad/dominio/usuario.js';
 import { Vinculo } from '../../src/identidad/dominio/vinculo.js';
-import { GeneradorDeIdsSecuencial } from './dobles.js';
 
 // Fábricas de objetos de Identidad para pruebas unitarias: valores válidos que cada prueba modifica
 // para romper UNA regla.
 
-const generador = new GeneradorDeIdsSecuencial();
+// UUID v7 reales y únicos: las pruebas de integración comparten una base de datos entre archivos,
+// y con IDs secuenciales (que reinician en cada archivo) se pisarían entre sí.
+const generador = new GeneradorDeIdsUuidV7();
 export const idDePrueba = <Marca extends string>() => generador.nuevo<Marca>();
 
 export const AHORA = new Date('2026-10-21T15:00:00.000Z');

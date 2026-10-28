@@ -8,7 +8,7 @@
 | **Rigor hexagonal** | Ligero, con la mayor cobertura de pruebas de seguridad del backend |
 | **Tamaño** | L |
 | **Depende de** | M0 |
-| **Estado** | En construcción: PR 1 de 7 hecho (2026-10-28). Plan aprobado el 2026-10-22. |
+| **Estado** | En construcción: PR 1 y 2 de 7 hechos (2026-10-28). Plan aprobado el 2026-10-22. |
 
 ---
 
@@ -98,9 +98,18 @@ Que cada persona entre a Seniory con su propia cuenta, con un rol, y que el sist
 | `AdultoMayor` | `registrar` exige nacimiento anterior a hoy y como máximo 120 años; no exige edad mínima. La edad es `edadEn(hoy)`, con `FechaCivil.aniosCumplidosA` (nueva): quien nació un 29 de febrero cumple el 1 de marzo. |
 | `Consentimiento` | `calidadDe(usuario, persona, vínculo)` decide quién puede actuar y con qué calidad (`titular` si es la propia persona con cuenta; `representante` si tiene vínculo activo). Sirve igual para otorgar y para revocar. `otorgar` exige que la calidad declarada coincida con la que le corresponde, y rechaza un segundo consentimiento vigente. Revisa el permiso **antes** que el conflicto, para que quien no puede actuar no averigüe si ya hay uno vigente. |
 
-**Para los PR siguientes:**
-- **Concurrencia (PR 3).** El contador de fallos se actualiza con la fila bloqueada (`SELECT … FOR UPDATE`) dentro de una transacción; dos fallos simultáneos no pueden contarse como uno. Al rotar una sesión, el repositorio conserva la primera marca (`coalesce(reemplazada_en, …)`).
-- **Persistencia (PR 2).** Una prueba compara las constantes del dominio (`PARENTESCOS`, roles, finalidades) con los `CHECK` de la base, para detectar si se desalinean.
+**Construido en el PR 2** (`identidad/aplicacion/puertos/salida/` y `identidad/infraestructura/salida/persistencia/`):
+
+| Pieza | Cómo quedó |
+|---|---|
+| Puertos de salida | Seis, cada uno con su símbolo de inyección: `RepositorioUsuarios`, `RepositorioSesiones`, `RepositorioAdultosMayores`, `RepositorioVinculos`, `RepositorioConsentimientos` y `RepositorioAceptacionesDePolitica` (el plan listaba cinco; la aceptación de la política también se guarda). |
+| Adaptadores Drizzle | Usan `ContextoTransaccional.conexion()`: si hay una unidad de trabajo en curso se unen a su transacción; si no, usan el pool. `Usuario` y su `Credencial` se guardan en una sola unidad: o quedan las dos filas o ninguna. |
+| Errores | Las violaciones de unicidad se traducen a errores de dominio: `usuario.correo_ya_registrado`, `vinculo.ya_existe`, `consentimiento.ya_vigente`. La utilidad `errores-de-postgres.ts` (en `compartido`) recorre la cadena de causas, porque Drizzle envuelve el error de `pg`. Tras un conflicto, la transacción en curso queda abortada: el caso de uso debe dejar que se revierta. |
+| Bloqueo de fila | `buscarPorCorreoParaActualizar` y `buscarPorHashDelToken` usan `FOR NO KEY UPDATE`. Así dos intentos de inicio de sesión de la misma cuenta, o dos renovaciones del mismo token, se atienden uno tras otro. Se probó con 12 inicios de sesión fallidos simultáneos: el contador termina en exactamente 5 y la cuenta queda bloqueada (sin el bloqueo terminaría en 1). No se usa `FOR UPDATE OF credenciales` porque Drizzle escribe la tabla con su esquema y Postgres lo rechaza. `NO KEY UPDATE` no estorba a quien inserte vínculos o consentimientos que apuntan al usuario. |
+| Sesiones | `actualizar` usa `coalesce`: nunca sobrescribe la primera marca de reemplazo o revocación. `eliminarVencidasAntesDe` borra en una sola sentencia, y una cadena de reemplazos sale junta sin romper la clave foránea. |
+| Constantes del dominio | Una prueba compara roles, parentescos, estados, finalidades y calidades con los `CHECK` de la base: si se agrega uno en un solo lado, falla. |
+
+Quedan para el PR 3: registrar el módulo en Nest (`IdentidadModule`) y la regla `exports-solo-puertos-de-entrada`, cuando haya casos de uso que exportar.
 
 ### 4.2 Casos de uso
 
@@ -342,7 +351,7 @@ Ya no hay una versión de demostración: el recorrido que sigue el frontend es e
 | PR | Contenido |
 |---|---|
 | 1 ✅ | Dominio: objetos de valor, `Usuario` con `Credencial`, `SesionDeRefresco`, `AdultoMayor`, `Vinculo`, `Consentimiento`, con pruebas unitarias. |
-| 2 | Persistencia: esquema `identidad`, migración, repositorios y pruebas de integración. |
+| 2 ✅ | Persistencia: esquema `identidad`, migración, repositorios y pruebas de integración. El esquema y la migración ya existían (base de datos construida por adelantado): este PR agrega los repositorios. |
 | 3 | Autenticación: hash, tokens, `VerificadorDeTokens`, casos de uso de registro, inicio, renovación y cierre de sesión, endpoints de `/auth`, límites por ruta y pruebas de API. |
 | 4 | Perfil, adultos mayores, consentimientos, `ConsultaDeIdentidad`, eventos, auditoría y matriz de autorización. |
 | 5 | Fixtures de desarrollo, `crear-admin` y documentación del módulo. |
