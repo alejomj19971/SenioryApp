@@ -48,7 +48,7 @@ Base de datos  ████████████████████  com
 | M1 · PR 3 → 7 | Autenticación, perfil y consentimientos, fixtures y `crear-admin`, ajustes para el BFF, exportar y eliminar cuenta. | ⏭️ siguiente: PR 3 |
 | M2 → M11 | Directorio, pagos, reservas, notificaciones, teleasistencia, mensajería, verificación, despliegue, IA. | Pendientes, en ese orden |
 
-**Cifras actuales:** 741 pruebas (365 unitarias y de arquitectura, y 376 de integración y API contra Postgres real), cobertura del 97 %, lint y compilación limpios y 0 vulnerabilidades en las dependencias de producción.
+**Cifras actuales:** 741 pruebas (372 unitarias y de arquitectura, y 369 de integración y API contra Postgres real), cobertura del 97 %, lint y compilación limpios y 0 vulnerabilidades en las dependencias de producción.
 
 ### Frontend (`frontend/`)
 
