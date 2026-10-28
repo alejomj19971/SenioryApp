@@ -42,10 +42,10 @@ Base de datos  ████████████████████  com
 | M0 · PR 5 | Capa HTTP: problem+json, validación, `X-Request-Id`, autenticación que deniega por defecto, roles, límite de peticiones con IP real del BFF, `helmet`, CORS, logs con redacción, `/salud/listo` y Swagger. | ✅ commit `e417dbd` |
 | M0 · PR 6 | Reglas de arquitectura (`dependency-cruiser`, 7 reglas con ejemplos que las rompen), CI en GitHub Actions y Dependabot. | ✅ commit `617491a` |
 | M0 · PR 7 | `Dockerfile` y despliegue a staging. | **Bloqueado:** falta elegir el hosting |
-| M0 · PR 8 | Borrador del ADR-03. | ✅ commit `f8f895c` (solo en local) |
-| M1 · PR 1 | Dominio de Identidad: `Correo`, `Contrasena` (nunca se filtra), `Credencial` con bloqueo progresivo, `SesionDeRefresco` con detección de robo, `Usuario` con rol inmutable, `AdultoMayor`, `Vinculo` y `Consentimiento`. | ✅ commit `9577fba` (solo en local) |
-| M1 · PR 2 | Repositorios de Identidad con Drizzle: conflictos traducidos a errores de dominio, bloqueo de fila para los intentos de inicio de sesión y las renovaciones simultáneas. | ✅ commit `3deb712` (solo en local) |
-| M1 · PR 3 | Autenticación: registro, inicio de sesión, renovación y cierre (`/auth/*`), argon2id, tokens de acceso JWT y de refresco rotativos con detección de robo, bloqueo progresivo, lista de contraseñas comunes y `IdentidadModule`. | ✅ hecho, **sin commit** |
+| M0 · PR 8 | Borrador del ADR-03. | ✅ commit `f8f895c` |
+| M1 · PR 1 | Dominio de Identidad: `Correo`, `Contrasena` (nunca se filtra), `Credencial` con bloqueo progresivo, `SesionDeRefresco` con detección de robo, `Usuario` con rol inmutable, `AdultoMayor`, `Vinculo` y `Consentimiento`. | ✅ commit `9577fba` |
+| M1 · PR 2 | Repositorios de Identidad con Drizzle: conflictos traducidos a errores de dominio, bloqueo de fila para los intentos de inicio de sesión y las renovaciones simultáneas. | ✅ commit `3deb712` |
+| M1 · PR 3 | Autenticación: registro, inicio de sesión, renovación y cierre (`/auth/*`), argon2id, tokens de acceso JWT y de refresco rotativos con detección de robo, bloqueo progresivo, lista de contraseñas comunes y `IdentidadModule`. | ✅ commit `a9d06c7` |
 | M1 · PR 4 → 7 | Perfil, adultos mayores y consentimientos; fixtures y `crear-admin`; ajustes para el BFF; exportar y eliminar cuenta. | ⏭️ siguiente: PR 4 |
 | M2 → M11 | Directorio, pagos, reservas, notificaciones, teleasistencia, mensajería, verificación, despliegue, IA. | Pendientes, en ese orden |
 
@@ -59,7 +59,7 @@ Base de datos  ████████████████████  com
 | F0 · Base de integración con el backend | Plan propuesto; empieza cuando M0 tenga la capa HTTP. |
 | F1–F9 | Pendientes. Cada F*n* conecta las pantallas al módulo M*n* y borra el JSON que reemplaza. |
 
-### Ramas (en GitHub desde el 27 de octubre)
+### Ramas (todas en GitHub; las 4 últimas desde el 28 de octubre)
 
 Cada rama parte de la anterior. Se revisan con un PR encadenado por entrega (la base de cada PR es la rama anterior) y se fusionan en orden, de arriba hacia abajo.
 
@@ -71,10 +71,10 @@ Cada rama parte de la anterior. Se revisan con un PR encadenado por entrega (la 
 | 4 | `feat/m0-dominio-compartido` | M0 PR 3 y PR 4, y documentación de avance. |
 | 5 | `feat/m0-capa-http` | M0 PR 5. |
 | 6 | `feat/m0-arquitectura-y-ci` | M0 PR 6 (trae la CI). |
-| 7 | `docs/adr-03` | M0 PR 8: borrador del ADR-03. **Solo en local.** |
-| 8 | `feat/m1-dominio` | M1 PR 1: dominio de Identidad. **Solo en local.** |
-| 9 | `feat/m1-persistencia` | M1 PR 2: repositorios. **Solo en local.** |
-| 10 | `feat/m1-autenticacion` (actual) | M1 PR 3: autenticación. **Solo en local.** |
+| 7 | `docs/adr-03` | M0 PR 8: borrador del ADR-03. |
+| 8 | `feat/m1-dominio` | M1 PR 1: dominio de Identidad. |
+| 9 | `feat/m1-persistencia` | M1 PR 2: repositorios. |
+| 10 | `feat/m1-autenticacion` (actual) | M1 PR 3: autenticación. |
 
 **La CI solo corre en el PR 6:** es la primera rama que tiene `.github/workflows/backend.yml`. Una vez fusionada en `main`, correrá en todos los PR que toquen `backend/`.
 
@@ -108,7 +108,7 @@ Cada rama parte de la anterior. Se revisan con un PR encadenado por entrega (la 
 
 ## Pendientes fuera del orden de los PR
 
-- Abrir los 6 PR encadenados en GitHub y fusionarlos en orden; subir `docs/adr-03`, `feat/m1-dominio`, `feat/m1-persistencia` y `feat/m1-autenticacion`.
+- Abrir los 6 PR encadenados en GitHub y fusionarlos en orden; abrir también los PR de las ramas 7 a 10 (ya están subidas).
 - Integrar Sentry cuando haya cuenta.
 - Renombrar `docs/backend/` y `docs/frontend/` para no confundirlas con las carpetas de código (propuesta: `docs/planes-backend/` y `docs/planes-frontend/`).
 - Documento de aprendizajes (pedido y aún sin hacer).
