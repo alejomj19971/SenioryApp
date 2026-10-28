@@ -32,6 +32,8 @@ export const NIVELES_DE_LOG = [
 export type NivelDeLog = (typeof NIVELES_DE_LOG)[number];
 
 const LARGO_MINIMO_SECRETO_BFF = 32;
+// 256 bits: el mínimo para firmar con HS256.
+const LARGO_MINIMO_SECRETO_JWT = 32;
 
 export class VariablesDeEntorno {
   @IsIn(ENTORNOS, {
@@ -77,6 +79,42 @@ export class VariablesDeEntorno {
   })
   INTERVALO_SONDEO_OUTBOX_MS: number = 1_000;
 
+  // Con qué se firman los tokens de acceso. Obligatorio en todos los entornos: un valor por defecto
+  // en el código sería una llave pública.
+  @IsString({ message: 'SECRETO_JWT_ACCESO es obligatorio' })
+  SECRETO_JWT_ACCESO!: string;
+
+  // Identifica la clave de firma (`kid`) para poder rotarla sin cerrar las sesiones abiertas.
+  @Matches(/^[A-Za-z0-9._-]{1,32}$/, {
+    message:
+      'ID_CLAVE_JWT debe tener entre 1 y 32 letras, números, puntos, guiones o guiones bajos',
+  })
+  ID_CLAVE_JWT: string = 'k1';
+
+  @Type(() => Number)
+  @IsInt({ message: 'DURACION_ACCESO_MIN debe ser un número entero' })
+  @Min(1, { message: 'DURACION_ACCESO_MIN debe estar entre 1 y 60' })
+  @Max(60, { message: 'DURACION_ACCESO_MIN debe estar entre 1 y 60' })
+  DURACION_ACCESO_MIN: number = 15;
+
+  @Type(() => Number)
+  @IsInt({ message: 'DURACION_REFRESCO_DIAS debe ser un número entero' })
+  @Min(1, { message: 'DURACION_REFRESCO_DIAS debe estar entre 1 y 90' })
+  @Max(90, { message: 'DURACION_REFRESCO_DIAS debe estar entre 1 y 90' })
+  DURACION_REFRESCO_DIAS: number = 30;
+
+  // Las cookies de sesión llevan `Secure` salvo en local (http://localhost no tiene https).
+  @IsIn(['true', 'false'], {
+    message: 'COOKIES_SEGURAS debe ser true o false',
+  })
+  COOKIES_SEGURAS: string = 'true';
+
+  // Versión de la política de tratamiento de datos que se pide aceptar al registrarse.
+  @Matches(/^[A-Za-z0-9][A-Za-z0-9._-]{0,19}$/, {
+    message: 'VERSION_POLITICA_VIGENTE no es una versión válida (ej. v1)',
+  })
+  VERSION_POLITICA_VIGENTE: string = 'v1';
+
   @IsOptional()
   @IsString()
   SENTRY_DSN?: string;
@@ -97,6 +135,12 @@ export interface Configuracion {
   intervaloSondeoOutboxMs: number;
   sentryDsn: string | null;
   secretoBff: string | null;
+  secretoJwtAcceso: string;
+  idClaveJwt: string;
+  duracionAccesoMin: number;
+  duracionRefrescoDias: number;
+  cookiesSeguras: boolean;
+  versionPoliticaVigente: string;
 }
 
 export class ErrorDeConfiguracion extends Error {
@@ -166,6 +210,16 @@ function reglasAdicionales(variables: VariablesDeEntorno): string[] {
     );
   }
 
+  if (variables.SECRETO_JWT_ACCESO !== undefined) {
+    if (variables.SECRETO_JWT_ACCESO.length < LARGO_MINIMO_SECRETO_JWT) {
+      problemas.push(
+        `SECRETO_JWT_ACCESO debe tener al menos ${LARGO_MINIMO_SECRETO_JWT} caracteres`,
+      );
+    } else if (variables.SECRETO_JWT_ACCESO === variables.SECRETO_BFF) {
+      problemas.push('SECRETO_JWT_ACCESO y SECRETO_BFF deben ser distintos');
+    }
+  }
+
   const exigeSecreto =
     variables.NODE_ENV === 'staging' || variables.NODE_ENV === 'production';
   if (exigeSecreto) {
@@ -176,6 +230,10 @@ function reglasAdicionales(variables: VariablesDeEntorno): string[] {
         `SECRETO_BFF debe tener al menos ${LARGO_MINIMO_SECRETO_BFF} caracteres`,
       );
     }
+  }
+
+  if (exigeSecreto && variables.COOKIES_SEGURAS !== 'true') {
+    problemas.push(`COOKIES_SEGURAS debe ser true en ${variables.NODE_ENV}`);
   }
 
   if (variables.NODE_ENV === 'production') {
@@ -255,5 +313,11 @@ export function configuracionDesdeVariables(
     intervaloSondeoOutboxMs: variables.INTERVALO_SONDEO_OUTBOX_MS,
     sentryDsn: variables.SENTRY_DSN ?? null,
     secretoBff: variables.SECRETO_BFF ?? null,
+    secretoJwtAcceso: variables.SECRETO_JWT_ACCESO,
+    idClaveJwt: variables.ID_CLAVE_JWT,
+    duracionAccesoMin: variables.DURACION_ACCESO_MIN,
+    duracionRefrescoDias: variables.DURACION_REFRESCO_DIAS,
+    cookiesSeguras: variables.COOKIES_SEGURAS === 'true',
+    versionPoliticaVigente: variables.VERSION_POLITICA_VIGENTE,
   };
 }

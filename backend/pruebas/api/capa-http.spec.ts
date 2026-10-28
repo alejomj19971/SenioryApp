@@ -401,6 +401,7 @@ describe('en producción', () => {
         NODE_ENV: 'production',
         ORIGENES_PERMITIDOS: 'https://app.seniory.co',
         SECRETO_BFF,
+        COOKIES_SEGURAS: 'true',
         INTERVALO_SONDEO_OUTBOX_MS: '1000',
       },
       ajustar: (constructor) =>

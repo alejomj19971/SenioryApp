@@ -21,7 +21,7 @@ API de Seniory: **monolito modular con arquitectura hexagonal** ([ADR-01](../doc
 | Comando | Qué hace |
 |---|---|
 | `npm install` | Instala dependencias. |
-| `cp .env.ejemplo .env` | Crea tu configuración local (no se sube a git). La API no arranca sin ella. |
+| `cp .env.ejemplo .env` | Crea tu configuración local (no se sube a git). La API no arranca sin ella. **Completa `SECRETO_JWT_ACCESO`** (el comando para generarlo está en el propio archivo) y deja `COOKIES_SEGURAS=false` en local. |
 | `npm run bd:arriba` | Enciende Postgres en Docker (puerto **5434**). `bd:abajo` lo apaga. |
 | `npm run bd:migrar` | Aplica las migraciones a esa base. |
 | `npm run bd:generar` | Genera una migración nueva desde los esquemas (`-- --custom --name=…` para SQL a mano). |

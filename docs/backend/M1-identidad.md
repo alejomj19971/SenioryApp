@@ -109,7 +109,33 @@ Que cada persona entre a Seniory con su propia cuenta, con un rol, y que el sist
 | Sesiones | `actualizar` usa `coalesce`: nunca sobrescribe la primera marca de reemplazo o revocación. `eliminarVencidasAntesDe` borra en una sola sentencia, y una cadena de reemplazos sale junta sin romper la clave foránea. |
 | Constantes del dominio | Una prueba compara roles, parentescos, estados, finalidades y calidades con los `CHECK` de la base: si se agrega uno en un solo lado, falla. |
 
-Quedan para el PR 3: registrar el módulo en Nest (`IdentidadModule`) y la regla `exports-solo-puertos-de-entrada`, cuando haya casos de uso que exportar.
+**Construido en el PR 3** (autenticación):
+
+| Pieza | Cómo quedó |
+|---|---|
+| `IdentidadModule` | Registra las piezas con fábricas (la capa de aplicación no usa decoradores de Nest) y **exporta solo `VERIFICADOR_DE_TOKENS`**; `CONSULTA_DE_IDENTIDAD` se suma en el PR 4. Reemplaza al verificador que rechazaba todo (se borró `verificador-que-rechaza-todo.ts`). La prueba `pruebas/arquitectura/exportaciones.spec.ts` comprueba que solo se exportan los símbolos permitidos, y que la regla detecta un módulo que exporta un repositorio. |
+| Hash | `HashDeContrasenasArgon2` (`@node-rs/argon2`): argon2id, 19 MiB, 2 iteraciones, 1 hilo. Un hash ilegible cuenta como contraseña incorrecta, no tumba el inicio de sesión. `simularVerificacion` gasta el mismo tiempo cuando el correo no existe. |
+| Tokens de acceso | `TokensJwt` (`jose`) es a la vez emisor y verificador: HS256, cabecera `kid` y `typ: at+jwt`, `iss`, `aud`, `sub`, `rol`, `jti`, 15 min. Rechaza otro algoritmo (incluido `none`), otra clave o `kid`, otro emisor, audiencia o tipo, y un rol que no existe. Usa el `Reloj` del sistema, así las pruebas lo adelantan sin esperar. Solo conoce **una** clave: cambiar el secreto o `ID_CLAVE_JWT` invalida los tokens de acceso vigentes (cada persona los renueva sola con su refresco, que no se ve afectado). Rotar sin ese salto exigiría aceptar una lista de claves. |
+| Tokens de refresco | `GeneradorDeTokensOpacosAleatorio`: 32 bytes aleatorios en base64url; solo se guarda el SHA-256. |
+| Contraseñas comunes | 9 218 contraseñas de 10 a 128 caracteres, tomadas de las listas «10k most common» y «100k NCSC» de SecLists (MIT; ver `contrasenas-comunes.LICENCIA.md`), en minúsculas y comparadas sin distinguir mayúsculas. Nest las copia a `dist/` (`assets` en `nest-cli.json`). El largo mínimo de 10 ya descarta las contraseñas más obvias. |
+| `RegistrarFamiliar` | Valida con el dominio, **calcula el hash antes de abrir la transacción** (no se ocupa una conexión mientras trabaja la CPU) y, en una sola transacción, guarda usuario, aceptación de la política, sesión y el evento `identidad.usuario_registrado`. Exige que la versión de la política sea la vigente (`politica.version_no_vigente`). |
+| `IniciarSesion` | Un rechazo se **devuelve** (no se lanza) para que el contador de fallos se confirme. Correo mal formado, sin cuenta, cuenta bloqueada o eliminada y contraseña errónea producen la **misma respuesta** y gastan el mismo tiempo; el motivo real solo queda en la auditoría. Durante un bloqueo no se mira la contraseña ni cuentan los intentos. |
+| `RenovarSesion` | Bloquea la fila de la sesión. `reutilizada` o cuenta no disponible revocan la familia **y se confirma**; `revocada` y `expirada` solo rechazan. Relee rol y estado de la base. En la ventana de gracia entrega otro par de la misma familia. |
+| `CerrarSesion` | **Pública con el token de refresco** (ver desviación abajo). Idempotente. |
+| Endpoints | `/auth/registro` (5/min por IP), `/auth/login` (10/min), `/auth/refresh` y `/auth/logout`. Los tokens viajan solo en cookies, nunca en el cuerpo. El refresco inválido borra las cookies. El correo se recorta antes de validarlo (quien lo pega suele traer un espacio). |
+| Variables nuevas | `SECRETO_JWT_ACCESO` (obligatoria en todos los entornos, 32 caracteres o más, distinta de `SECRETO_BFF`), `ID_CLAVE_JWT`, `DURACION_ACCESO_MIN`, `DURACION_REFRESCO_DIAS`, `COOKIES_SEGURAS` (debe ser `true` en staging y producción) y `VERSION_POLITICA_VIGENTE`. `VERSION_CONSENTIMIENTO_SALUD_VIGENTE` llega con el PR 4, que es quien la usa. |
+
+**Desviaciones del plan en el PR 3**
+
+| Plan | Lo construido | Por qué |
+|---|---|---|
+| `POST /auth/logout` exigía sesión (token de acceso) | Es público: lo que revoca es la familia del token de refresco que viaja en la cookie. | Con el token de acceso vencido (15 min) el usuario no podría cerrar sesión y las cookies quedarían puestas. Quien no tiene el refresco no puede revocar nada. |
+| El token de acceso revocado se rechaza | Un token de acceso ya emitido **sigue valiendo hasta que venza** (máximo 15 min) aunque se cierre la sesión o cambie el rol. | El verificador no consulta la base en cada petición (sería una consulta por llamada). Es el compromiso habitual del acceso corto; la renovación sí relee rol y estado. |
+| `/yo` en las pruebas «registro → /yo → cierre → /yo» | Se prueba con una ruta protegida de prueba. | `/yo` llega en el PR 4. |
+| Pruebas de `Origin` y de matriz de autorización | Quedan para los PR 6 y 4. | Dependen de código que aún no existe. |
+| Prueba de logs de punta a punta | Se prueba la redacción con las opciones reales de `opcionesDeLogs` sobre un servidor mínimo. | La salida estándar no se puede leer de forma fiable dentro de las pruebas. Se verificó que la prueba falla si se quita la redacción de `set-cookie` o de `contrasena`. |
+
+**Para quien ya tenga un `.env` local:** hay que agregar `SECRETO_JWT_ACCESO` (genera uno con el comando de `.env.ejemplo`) y `COOKIES_SEGURAS=false`; sin ellos la aplicación no arranca.
 
 ### 4.2 Casos de uso
 
@@ -118,7 +144,7 @@ Quedan para el PR 3: registrar el módulo en Nest (`IdentidadModule`) y la regla
 | `RegistrarFamiliar` | público | nombre, correo, contraseña, teléfono opcional, versión de la política aceptada | usuario `familiar` y sesión iniciada | 400 datos; 409 correo ya registrado |
 | `IniciarSesion` | público | correo, contraseña | sesión (cookies) | 401 genérico, también si la cuenta está bloqueada |
 | `RenovarSesion` | público con cookie de refresco | token de refresco | nuevos tokens | 401; si el token ya fue usado, revoca la familia |
-| `CerrarSesion` | autenticado | — | familia de sesiones revocada, cookies borradas | — |
+| `CerrarSesion` | público con cookie de refresco | token de refresco | familia de sesiones revocada, cookies borradas | — |
 | `ObtenerPerfilPropio` | autenticado | — | usuario y adultos mayores vinculados (con edad y si hay consentimiento de salud) | — |
 | `ActualizarPerfilPropio` | autenticado | nombre o teléfono | perfil actualizado | 400 |
 | `RegistrarAdultoMayor` | familiar | nombre, fecha de nacimiento, parentesco | adulto mayor y vínculo de responsable, en una transacción | 400 |
@@ -178,7 +204,7 @@ Repositorios, hash y emisor de tokens quedan privados del módulo: si otro módu
 | Rol actualizado | El rol se lee de la base al renovar, así un cambio de rol se aplica en máximo 15 minutos. |
 | CSRF | `SameSite=Lax` más verificación de `Origin` en toda petición que no sea `GET` **cuando trae ese encabezado** (las llamadas del BFF de Next son de servidor a servidor y no lo traen; los navegadores sí lo envían en `POST` entre sitios). |
 
-Variables de entorno nuevas: `SECRETO_JWT_ACCESO`, `ID_CLAVE_JWT`, `DURACION_ACCESO_MIN` (15), `DURACION_REFRESCO_DIAS` (30), `COOKIES_SEGURAS` (`true` fuera de local), `VERSION_POLITICA_VIGENTE`, `VERSION_CONSENTIMIENTO_SALUD_VIGENTE`.
+Variables de entorno nuevas: `SECRETO_JWT_ACCESO`, `ID_CLAVE_JWT`, `DURACION_ACCESO_MIN` (15), `DURACION_REFRESCO_DIAS` (30), `COOKIES_SEGURAS` (`true` fuera de local), `VERSION_POLITICA_VIGENTE` y, en el PR 4, `VERSION_CONSENTIMIENTO_SALUD_VIGENTE`.
 
 ### 4.5 API
 
@@ -189,7 +215,7 @@ Todas bajo `/api/v1`. Respuestas de error en `problem+json` (M0).
 | `POST /auth/registro` | público, límite 5/min por IP | `{ nombre, correo, contrasena, telefono?, versionPolitica }` | 201 `{ usuario }` + cookies |
 | `POST /auth/login` | público, límite 10/min por IP | `{ correo, contrasena }` | 200 `{ usuario }` + cookies |
 | `POST /auth/refresh` | cookie de refresco | — | 204 + cookies nuevas |
-| `POST /auth/logout` | autenticado | — | 204, cookies borradas |
+| `POST /auth/logout` | público con cookie de refresco | — | 204, cookies borradas |
 | `GET /yo` | autenticado | — | 200 (ejemplo abajo) |
 | `PATCH /yo` | autenticado | `{ nombre?, telefono? }` | 200 `{ usuario }` |
 | `POST /adultos-mayores` | familiar | `{ nombre, fechaDeNacimiento, parentesco }` | 201 `{ adultoMayor }` |
@@ -352,7 +378,7 @@ Ya no hay una versión de demostración: el recorrido que sigue el frontend es e
 |---|---|
 | 1 ✅ | Dominio: objetos de valor, `Usuario` con `Credencial`, `SesionDeRefresco`, `AdultoMayor`, `Vinculo`, `Consentimiento`, con pruebas unitarias. |
 | 2 ✅ | Persistencia: esquema `identidad`, migración, repositorios y pruebas de integración. El esquema y la migración ya existían (base de datos construida por adelantado): este PR agrega los repositorios. |
-| 3 | Autenticación: hash, tokens, `VerificadorDeTokens`, casos de uso de registro, inicio, renovación y cierre de sesión, endpoints de `/auth`, límites por ruta y pruebas de API. |
+| 3 ✅ | Autenticación: hash, tokens, `VerificadorDeTokens`, casos de uso de registro, inicio, renovación y cierre de sesión, endpoints de `/auth`, límites por ruta y pruebas de API. |
 | 4 | Perfil, adultos mayores, consentimientos, `ConsultaDeIdentidad`, eventos, auditoría y matriz de autorización. |
 | 5 | Fixtures de desarrollo, `crear-admin` y documentación del módulo. |
 | 6 | Ajustes para el BFF: ventana de gracia del refresco, `Origin` opcional y `X-Cliente-IP` (con pruebas). El trabajo de pantallas va en [F1](../frontend/F1-identidad.md). |

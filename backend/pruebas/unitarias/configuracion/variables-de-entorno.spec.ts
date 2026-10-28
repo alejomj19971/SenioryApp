@@ -5,6 +5,7 @@ import {
 } from '../../../src/configuracion/variables-de-entorno.js';
 
 const SECRETO_VALIDO = 'a'.repeat(32);
+const SECRETO_JWT_VALIDO = 'b'.repeat(32);
 
 function entornoBase(
   extra: Record<string, unknown> = {},
@@ -13,6 +14,8 @@ function entornoBase(
     NODE_ENV: 'development',
     URL_BASE_DE_DATOS: 'postgres://seniory:seniory@localhost:5434/seniory',
     ORIGENES_PERMITIDOS: 'http://localhost:3000',
+    SECRETO_JWT_ACCESO: SECRETO_JWT_VALIDO,
+    COOKIES_SEGURAS: 'false',
     ...extra,
   };
 }
@@ -24,6 +27,7 @@ function entornoDeProduccion(
     NODE_ENV: 'production',
     ORIGENES_PERMITIDOS: 'https://app.seniory.co',
     SECRETO_BFF: SECRETO_VALIDO,
+    COOKIES_SEGURAS: 'true',
     ...extra,
   });
 }
@@ -56,6 +60,12 @@ describe('validarVariables', () => {
         intervaloSondeoOutboxMs: 1000,
         sentryDsn: null,
         secretoBff: null,
+        secretoJwtAcceso: SECRETO_JWT_VALIDO,
+        idClaveJwt: 'k1',
+        duracionAccesoMin: 15,
+        duracionRefrescoDias: 30,
+        cookiesSeguras: false,
+        versionPoliticaVigente: 'v1',
       });
     });
 
@@ -252,6 +262,82 @@ describe('validarVariables', () => {
         configuracionDesdeVariables(validarVariables(entornoBase()))
           .esProduccion,
       ).toBe(false);
+    });
+  });
+
+  describe('sesión y tokens', () => {
+    it('exige el secreto de firma en todos los entornos', () => {
+      const entorno = entornoBase();
+      delete entorno.SECRETO_JWT_ACCESO;
+
+      expect(problemasDe(entorno).join()).toContain(
+        'SECRETO_JWT_ACCESO es obligatorio',
+      );
+    });
+
+    it('rechaza un secreto de firma de menos de 256 bits', () => {
+      expect(
+        problemasDe(entornoBase({ SECRETO_JWT_ACCESO: 'corto' })).join(),
+      ).toContain('SECRETO_JWT_ACCESO debe tener al menos 32 caracteres');
+    });
+
+    it('rechaza usar el mismo secreto para la firma y para el BFF', () => {
+      expect(
+        problemasDe(
+          entornoBase({
+            SECRETO_BFF: SECRETO_JWT_VALIDO,
+          }),
+        ).join(),
+      ).toContain('deben ser distintos');
+    });
+
+    it.each(['0', '61', 'x'])('rechaza una duración de acceso de %s', (min) => {
+      expect(
+        problemasDe(entornoBase({ DURACION_ACCESO_MIN: min })).join(),
+      ).toContain('DURACION_ACCESO_MIN');
+    });
+
+    it.each(['0', '91', 'x'])('rechaza un refresco de %s días', (dias) => {
+      expect(
+        problemasDe(entornoBase({ DURACION_REFRESCO_DIAS: dias })).join(),
+      ).toContain('DURACION_REFRESCO_DIAS');
+    });
+
+    it('rechaza un identificador de clave con caracteres raros', () => {
+      expect(
+        problemasDe(entornoBase({ ID_CLAVE_JWT: 'k 1' })).join(),
+      ).toContain('ID_CLAVE_JWT');
+    });
+
+    it('COOKIES_SEGURAS solo admite true o false y por defecto es true', () => {
+      expect(
+        problemasDe(entornoBase({ COOKIES_SEGURAS: 'quizás' })).join(),
+      ).toContain('COOKIES_SEGURAS');
+      const entorno = entornoBase();
+      delete entorno.COOKIES_SEGURAS;
+      expect(
+        configuracionDesdeVariables(validarVariables(entorno)).cookiesSeguras,
+      ).toBe(true);
+    });
+
+    it.each(['staging', 'production'])(
+      'en %s rechaza las cookies sin Secure',
+      (entorno) => {
+        expect(
+          problemasDe(
+            entornoDeProduccion({
+              NODE_ENV: entorno,
+              COOKIES_SEGURAS: 'false',
+            }),
+          ).join(),
+        ).toContain('COOKIES_SEGURAS debe ser true');
+      },
+    );
+
+    it('rechaza una versión de política con formato inválido', () => {
+      expect(
+        problemasDe(entornoBase({ VERSION_POLITICA_VIGENTE: 'v 1!' })).join(),
+      ).toContain('VERSION_POLITICA_VIGENTE');
     });
   });
 

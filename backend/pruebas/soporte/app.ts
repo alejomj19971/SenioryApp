@@ -13,6 +13,8 @@ import {
   validarVariables,
 } from '../../src/configuracion/variables-de-entorno.js';
 
+import { SECRETO_JWT_DE_PRUEBA } from './secretos.js';
+
 export interface OpcionesDeAppDePrueba {
   // Controladores extra, solo de prueba (por ejemplo, rutas que lanzan cada tipo de error).
   controladores?: Type[];
@@ -31,6 +33,8 @@ export async function crearAppDePrueba(
       NODE_ENV: 'test',
       URL_BASE_DE_DATOS: inject('urlBdPrueba'),
       ORIGENES_PERMITIDOS: 'http://localhost:3000',
+      SECRETO_JWT_ACCESO: SECRETO_JWT_DE_PRUEBA,
+      COOKIES_SEGURAS: 'false',
       INTERVALO_SONDEO_OUTBOX_MS: '0',
       NIVEL_DE_LOG: 'error',
       ...opciones.variables,

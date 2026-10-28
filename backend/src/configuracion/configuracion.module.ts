@@ -45,6 +45,18 @@ export const CONFIGURACION = Symbol('CONFIGURACION');
           ),
           SENTRY_DSN: servicio.get<string>('SENTRY_DSN'),
           SECRETO_BFF: servicio.get<string>('SECRETO_BFF'),
+          SECRETO_JWT_ACCESO: servicio.getOrThrow<string>('SECRETO_JWT_ACCESO'),
+          ID_CLAVE_JWT: servicio.getOrThrow<string>('ID_CLAVE_JWT'),
+          DURACION_ACCESO_MIN: servicio.getOrThrow<number>(
+            'DURACION_ACCESO_MIN',
+          ),
+          DURACION_REFRESCO_DIAS: servicio.getOrThrow<number>(
+            'DURACION_REFRESCO_DIAS',
+          ),
+          COOKIES_SEGURAS: servicio.getOrThrow<string>('COOKIES_SEGURAS'),
+          VERSION_POLITICA_VIGENTE: servicio.getOrThrow<string>(
+            'VERSION_POLITICA_VIGENTE',
+          ),
         };
         return configuracionDesdeVariables(variables);
       },
