@@ -67,6 +67,13 @@ export default defineConfig({
           functions: 90,
           branches: 90,
         },
+        // El dominio de cada módulo de negocio mantiene el mismo umbral que el compartido.
+        'src/identidad/dominio/**': {
+          lines: 90,
+          statements: 90,
+          functions: 90,
+          branches: 90,
+        },
       },
     },
   },

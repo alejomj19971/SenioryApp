@@ -10,9 +10,9 @@ const MILISEGUNDOS_POR_DIA = 86_400_000;
 // pide la zona del negocio (hallazgo H2 del plan general).
 export class FechaCivil {
   private constructor(
-    private readonly anio: number,
-    private readonly mes: number,
-    private readonly dia: number,
+    readonly anio: number,
+    readonly mes: number,
+    readonly dia: number,
   ) {}
 
   // Acepta solo "AAAA-MM-DD" y rechaza días que no existen (30 de febrero, 29 en años no bisiestos).
@@ -60,6 +60,16 @@ export class FechaCivil {
 
   esAnteriorA(otra: FechaCivil): boolean {
     return this.diasDesdeEpoca() < otra.diasDesdeEpoca();
+  }
+
+  // Años completos transcurridos desde esta fecha hasta `hasta` (la edad de quien nació hoy).
+  // Quien nació un 29 de febrero cumple el 1 de marzo en los años no bisiestos. Si `hasta` es
+  // anterior a esta fecha, el resultado es negativo.
+  aniosCumplidosA(hasta: FechaCivil): number {
+    const aniosDeDiferencia = hasta.anio - this.anio;
+    const aunNoCumple =
+      hasta.mes < this.mes || (hasta.mes === this.mes && hasta.dia < this.dia);
+    return aunNoCumple ? aniosDeDiferencia - 1 : aniosDeDiferencia;
   }
 
   igualA(otra: FechaCivil): boolean {

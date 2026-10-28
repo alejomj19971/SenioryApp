@@ -1,18 +1,14 @@
+import type { Rol } from '../../dominio/rol.js';
+
+// Los roles viven en el dominio compartido; se reexportan aquí porque este puerto los usa.
+export { ROLES, type Rol } from '../../dominio/rol.js';
+
 // Lo declara compartido porque lo usa el guard global de autenticación (PR 5),
 // pero lo implementa Identidad en M1: compartido nunca depende de un módulo de negocio.
 export interface VerificadorDeTokens {
   // Lanza NoAutenticado si el token no es válido, venció o fue revocado.
   verificar(token: string): Promise<UsuarioAutenticado>;
 }
-
-// Los mismos valores que el CHECK de `identidad.usuarios.rol`.
-export const ROLES = [
-  'familiar',
-  'adulto_mayor',
-  'cuidador',
-  'administrador',
-] as const;
-export type Rol = (typeof ROLES)[number];
 
 export interface UsuarioAutenticado {
   id: string;

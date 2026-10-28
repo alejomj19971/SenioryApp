@@ -123,6 +123,36 @@ describe('FechaCivil', () => {
     });
   });
 
+  describe('aniosCumplidosA', () => {
+    it.each([
+      ['1948-10-22', '2026-10-21', 77], // el día antes del cumpleaños
+      ['1948-10-22', '2026-10-22', 78], // el día del cumpleaños
+      ['1948-10-22', '2026-10-23', 78],
+      ['1948-12-31', '2026-01-01', 77], // el mes del cumpleaños todavía no llegó
+      ['1948-01-01', '2026-12-31', 78], // el mes del cumpleaños ya pasó
+      ['2026-10-21', '2026-10-21', 0], // nació hoy
+      ['2025-10-22', '2026-10-21', 0],
+    ])('nacido el %s, al %s tiene %i años', (nacimiento, hoy, anios) => {
+      expect(fecha(nacimiento).aniosCumplidosA(fecha(hoy))).toBe(anios);
+    });
+
+    it('quien nació un 29 de febrero cumple el 1 de marzo en los años no bisiestos', () => {
+      const bisiesta = fecha('1948-02-29');
+
+      expect(bisiesta.aniosCumplidosA(fecha('2026-02-28'))).toBe(77);
+      expect(bisiesta.aniosCumplidosA(fecha('2026-03-01'))).toBe(78);
+      expect(bisiesta.aniosCumplidosA(fecha('2028-02-29'))).toBe(80);
+    });
+
+    it('si la fecha final es anterior, el resultado es negativo', () => {
+      expect(fecha('2026-10-21').aniosCumplidosA(fecha('2025-10-21'))).toBe(-1);
+    });
+  });
+
+  it('expone año, mes y día', () => {
+    expect(fecha('2026-10-05')).toMatchObject({ anio: 2026, mes: 10, dia: 5 });
+  });
+
   it('se muestra como AAAA-MM-DD', () => {
     expect(String(fecha('2026-01-05'))).toBe('2026-01-05');
   });

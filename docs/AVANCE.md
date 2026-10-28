@@ -1,18 +1,18 @@
 # Seniory — Avance del proyecto
 
-**Corte:** 27 de octubre de 2026 · Se actualiza al terminar cada PR o cuando se toma una decisión.
+**Corte:** 28 de octubre de 2026 · Se actualiza al terminar cada PR o cuando se toma una decisión.
 
 ## Dónde vamos
 
-> **Backend, módulo M0 (plataforma y compartido): PR 8 terminado (borrador del ADR-03).**
-> M0 tiene 7 de 8 PR hechos: solo falta el **PR 7 (despliegue a staging)**, que espera la elección del hosting.
-> Siguiente paso: **revisar y aceptar el [ADR-03](./ADR-03.md)** entre los dos, ver la CI en verde en GitHub y empezar **M1 (Identidad)**.
+> **Backend: M0 con 7 de 8 PR hechos (falta el despliegue a staging, que espera el hosting) y M1 (Identidad) en marcha: PR 1 de 7 hecho (el dominio).**
+> Siguiente paso: **M1 · PR 2 (repositorios)**. Pendiente de ustedes: revisar y aceptar el [ADR-03](./ADR-03.md) y ver la CI en verde en GitHub.
 >
 > El frontend sigue siendo el prototipo del pitch con datos de ejemplo; su integración con el backend empieza en F0, después de M0.
 
 ```
-Backend   M0 █████████████████▌░░  7 de 8 PR (falta el despliegue)   ← aquí
-          M1 … M11                 pendientes
+Backend   M0 █████████████████▌░░  7 de 8 PR (falta el despliegue)
+          M1 ███░░░░░░░░░░░░░░░░░  PR 1 de 7 (dominio)   ← aquí
+          M2 … M11                 pendientes
 Frontend  F0 … F9                  planes F0 y F1 propuestos; nada construido
 Base de datos  ████████████████████  completa (adelantada)
 ```
@@ -42,10 +42,12 @@ Base de datos  ████████████████████  com
 | M0 · PR 5 | Capa HTTP: problem+json, validación, `X-Request-Id`, autenticación que deniega por defecto, roles, límite de peticiones con IP real del BFF, `helmet`, CORS, logs con redacción, `/salud/listo` y Swagger. | ✅ commit `e417dbd` |
 | M0 · PR 6 | Reglas de arquitectura (`dependency-cruiser`, 7 reglas con ejemplos que las rompen), CI en GitHub Actions y Dependabot. | ✅ commit `617491a` |
 | M0 · PR 7 | `Dockerfile` y despliegue a staging. | **Bloqueado:** falta elegir el hosting |
-| M0 · PR 8 | Borrador del ADR-03. | ✅ hecho, **sin commit** |
-| M1 → M11 | Identidad, directorio, pagos, reservas, notificaciones, teleasistencia, mensajería, verificación, despliegue, IA. | Pendientes, en ese orden |
+| M0 · PR 8 | Borrador del ADR-03. | ✅ commit `f8f895c` (solo en local) |
+| M1 · PR 1 | Dominio de Identidad: `Correo`, `Contrasena` (nunca se filtra), `Credencial` con bloqueo progresivo, `SesionDeRefresco` con detección de robo, `Usuario` con rol inmutable, `AdultoMayor`, `Vinculo` y `Consentimiento`. | ✅ hecho, **sin commit** |
+| M1 · PR 2 → 7 | Repositorios, autenticación, perfil y consentimientos, fixtures y `crear-admin`, ajustes para el BFF, exportar y eliminar cuenta. | ⏭️ siguiente: PR 2 |
+| M2 → M11 | Directorio, pagos, reservas, notificaciones, teleasistencia, mensajería, verificación, despliegue, IA. | Pendientes, en ese orden |
 
-**Cifras actuales:** 482 pruebas (167 unitarias y de arquitectura, y 315 de integración y API contra Postgres real), cobertura del 97 %, lint y compilación limpios y 0 vulnerabilidades en las dependencias de producción.
+**Cifras actuales:** 671 pruebas (356 unitarias y de arquitectura, y 315 de integración y API contra Postgres real), cobertura del 97 %, lint y compilación limpios y 0 vulnerabilidades en las dependencias de producción.
 
 ### Frontend (`frontend/`)
 
@@ -67,6 +69,8 @@ Cada rama parte de la anterior. Se revisan con un PR encadenado por entrega (la 
 | 4 | `feat/m0-dominio-compartido` | M0 PR 3 y PR 4, y documentación de avance. |
 | 5 | `feat/m0-capa-http` | M0 PR 5. |
 | 6 | `feat/m0-arquitectura-y-ci` | M0 PR 6 (trae la CI). |
+| 7 | `docs/adr-03` | M0 PR 8: borrador del ADR-03. **Solo en local.** |
+| 8 | `feat/m1-dominio` (actual) | M1 PR 1: dominio de Identidad. **Solo en local.** |
 
 **La CI solo corre en el PR 6:** es la primera rama que tiene `.github/workflows/backend.yml`. Una vez fusionada en `main`, correrá en todos los PR que toquen `backend/`.
 
@@ -92,15 +96,16 @@ Cada rama parte de la anterior. Se revisan con un PR encadenado por entrega (la 
 | Pasarela de pagos (que acepte marketplace y pagos al cuidador) | Empresarial | M7 |
 | Bolsa en pesos u horas, y sus paquetes y descuentos | Empresarial | M7 |
 | Política de cancelación y reembolso | Empresarial + legal | M4, M7 |
-| Quién consiente por la persona mayor, y textos legales | Asesoría legal | M1 |
+| Quién consiente por la persona mayor, y textos legales | Asesoría legal | Lanzamiento de M1 (no el desarrollo) |
+| Bloqueo de cuenta: ¿caducan los fallos? ¿desbloqueo por correo? (decisión 7 de [M1](./backend/M1-identidad.md)) | Equipo | M10 |
 | Rangos de signos vitales y tolerancia de medicamentos | Profesional de salud | M6 |
 | Cifrado de columnas clínicas y plazos de retención | Equipo + legal | M6, M10 |
 | Canal real de alertas (SMS o WhatsApp) | Equipo | M5, M6 |
 
 ## Pendientes fuera del orden de los PR
 
-- Abrir los 6 PR encadenados en GitHub y fusionarlos en orden.
-- Regla `exports-solo-puertos-de-entrada`: se implementa en M1, con el primer módulo de negocio.
+- Abrir los 6 PR encadenados en GitHub y fusionarlos en orden; subir `docs/adr-03` y `feat/m1-dominio`.
+- Regla `exports-solo-puertos-de-entrada`: se implementa en M1 · PR 3, cuando `IdentidadModule` exista.
 - Integrar Sentry cuando haya cuenta.
 - Renombrar `docs/backend/` y `docs/frontend/` para no confundirlas con las carpetas de código (propuesta: `docs/planes-backend/` y `docs/planes-frontend/`).
 - Documento de aprendizajes (pedido y aún sin hacer).

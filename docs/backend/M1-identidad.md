@@ -8,7 +8,7 @@
 | **Rigor hexagonal** | Ligero, con la mayor cobertura de pruebas de seguridad del backend |
 | **Tamaño** | L |
 | **Depende de** | M0 |
-| **Estado** | Plan aprobado (2026-10-22) |
+| **Estado** | En construcción: PR 1 de 7 hecho (2026-10-28). Plan aprobado el 2026-10-22. |
 
 ---
 
@@ -83,6 +83,24 @@ Que cada persona entre a Seniory con su propia cuenta, con un rol, y que el sist
 | `Vinculo` | `id`, `familiarId`, `adultoMayorId`, `parentesco`, `esResponsable`, `estado` (`activo`, `revocado`) | Solo un vínculo activo por pareja familiar–adulto mayor. Al registrar un adulto mayor, quien lo registra queda como responsable. |
 | `Consentimiento` | `id`, `adultoMayorId`, `finalidad`, `otorgadoPor`, `calidad` (`titular` o `representante`), `versionDelTexto`, `otorgadoEn`, `revocadoEn?` | Solo un consentimiento vigente por adulto mayor y finalidad. Solo lo otorga un familiar vinculado (como representante) o el propio adulto mayor (como titular). Revocar es inmediato y emite un evento. |
 | `AceptacionDePolitica` | `usuarioId`, `version`, `aceptadaEn` | Obligatoria para registrarse. |
+
+**Construido en el PR 1** (`backend/src/identidad/dominio/`, 97 % de cobertura solo con pruebas unitarias):
+
+| Pieza | Cómo quedó |
+|---|---|
+| `Correo` | Se normaliza (sin espacios y en minúsculas). Solo ASCII: los correos internacionales casi no tienen soporte y se rechazan para no crear cuentas a las que no se podría escribir. |
+| `Contrasena` | De 10 a 128 **caracteres** (no unidades de texto: 10 emojis bastan). Se normaliza a NFKC, para que la misma contraseña dé el mismo hash en cualquier teclado. Pide un `DiccionarioDeContrasenasComunes` (la lista la aporta la aplicación). `Contrasena.paraVerificar` no aplica las reglas de creación, para que una contraseña antigua siga entrando. **Nunca se filtra:** `toString`, `toJSON` y la inspección de Node ocultan el valor; solo `revelar()` lo entrega. |
+| `NombrePersona` | Se normaliza a NFC y los tramos de espacios quedan en uno. Rechaza caracteres de control y los que invierten el sentido de lectura (U+202A–202E, U+2066–2069), con los que se puede mostrar un nombre distinto del guardado. |
+| `Rol` | Se movió a `compartido/dominio/rol.ts`: el dominio de un módulo no puede importar la capa de aplicación de `compartido`. |
+| `Credencial` | **Cada quinto fallo seguido** bloquea la cuenta: 15 min, 30, 60… hasta 24 h (fallos 5, 10, 15…). Los fallos durante un bloqueo no cuentan ni lo extienden. Solo un éxito reinicia el contador, y un éxito con la cuenta bloqueada **falla** aunque la contraseña sea correcta. Exige que el hash tenga formato PHC (`$argon2id$…`): atrapa el error de guardar la contraseña en claro. |
+| `SesionDeRefresco` | `evaluarUso` devuelve `valida`, `en_gracia`, `expirada`, `reutilizada` o `revocada`. Revocada y reutilizada se evalúan **antes** que el vencimiento: un token viejo que reaparece es sospechoso aunque haya vencido. `rotar` en gracia **no** sobrescribe la primera marca, así renovar a la vez no extiende la ventana de 30 s. |
+| `Usuario` | El rol se fija al crear la cuenta (`registrarFamiliar` o `crearAdministrador`) y no tiene forma de cambiarse. Actualizar el perfil no toca `actualizadoEn` si no hubo cambios reales; `telefono: null` lo borra. |
+| `AdultoMayor` | `registrar` exige nacimiento anterior a hoy y como máximo 120 años; no exige edad mínima. La edad es `edadEn(hoy)`, con `FechaCivil.aniosCumplidosA` (nueva): quien nació un 29 de febrero cumple el 1 de marzo. |
+| `Consentimiento` | `calidadDe(usuario, persona, vínculo)` decide quién puede actuar y con qué calidad (`titular` si es la propia persona con cuenta; `representante` si tiene vínculo activo). Sirve igual para otorgar y para revocar. `otorgar` exige que la calidad declarada coincida con la que le corresponde, y rechaza un segundo consentimiento vigente. Revisa el permiso **antes** que el conflicto, para que quien no puede actuar no averigüe si ya hay uno vigente. |
+
+**Para los PR siguientes:**
+- **Concurrencia (PR 3).** El contador de fallos se actualiza con la fila bloqueada (`SELECT … FOR UPDATE`) dentro de una transacción; dos fallos simultáneos no pueden contarse como uno. Al rotar una sesión, el repositorio conserva la primera marca (`coalesce(reemplazada_en, …)`).
+- **Persistencia (PR 2).** Una prueba compara las constantes del dominio (`PARENTESCOS`, roles, finalidades) con los `CHECK` de la base, para detectar si se desalinean.
 
 ### 4.2 Casos de uso
 
@@ -323,7 +341,7 @@ Ya no hay una versión de demostración: el recorrido que sigue el frontend es e
 
 | PR | Contenido |
 |---|---|
-| 1 | Dominio: objetos de valor, `Usuario` con `Credencial`, `SesionDeRefresco`, `AdultoMayor`, `Vinculo`, `Consentimiento`, con pruebas unitarias. |
+| 1 ✅ | Dominio: objetos de valor, `Usuario` con `Credencial`, `SesionDeRefresco`, `AdultoMayor`, `Vinculo`, `Consentimiento`, con pruebas unitarias. |
 | 2 | Persistencia: esquema `identidad`, migración, repositorios y pruebas de integración. |
 | 3 | Autenticación: hash, tokens, `VerificadorDeTokens`, casos de uso de registro, inicio, renovación y cierre de sesión, endpoints de `/auth`, límites por ruta y pruebas de API. |
 | 4 | Perfil, adultos mayores, consentimientos, `ConsultaDeIdentidad`, eventos, auditoría y matriz de autorización. |
@@ -356,3 +374,4 @@ Además de la definición común ([PLAN_BACKEND §6.3](../PLAN_BACKEND_SENIORY.m
 | 4 | Autenticación en dos pasos para administradores. | Sí antes de producción (M10). |
 | 5 | ~~Reescrituras de Next o subdominios.~~ | **Resuelta (2026-10-24):** Next como BFF ([F1](../frontend/F1-identidad.md)). |
 | 6 | ¿Volver a pedir consentimiento si cambia el texto? | Sí ante cambios de fondo; se maneja comparando `versionDelTexto` con la vigente. |
+| 7 | **El bloqueo de cuenta permite una denegación de servicio:** quien conoce el correo de otra persona puede bloquearla (15 min, y hasta 24 h si insiste). Además, el contador solo se reinicia con un éxito: 4 errores de hace meses más uno hoy bloquean. | Aceptado en M1: el límite por IP frena el abuso y la alternativa (sin bloqueo) deja la cuenta expuesta a adivinar contraseñas. Evaluar en M10 que los fallos caduquen tras un tiempo y desbloquear por correo cuando exista el canal (M5). |
