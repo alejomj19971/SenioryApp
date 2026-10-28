@@ -9,7 +9,7 @@
 |---|---|
 | **Proyecto** | Seniory — *Creciendo y cuidando juntos* |
 | **Fecha** | 2026-10-21 |
-| **Estado** | En ejecución. Decisiones formalizadas en el [ADR-03](./ADR-03.md) (borrador) |
+| **Estado** | En ejecución. Decisiones formalizadas en el [ADR-04](./ADR-04.md) (borrador) |
 | **Base** | [ADR-01](./ADR-01.md) (estilo arquitectónico) · [ADR-02](./ADR-02.md) (repositorio único) · [PLAN_MVP_SENIORY](./PLAN_MVP_SENIORY.md) |
 | **Versión** | Reemplaza la primera versión de este plan (organizada por fases). Parte de lo que el frontend hace hoy. **Actualizado el 2026-10-26: es la aplicación real, no una demo** (ver «Aplicación real» en la sección 1 y los requisitos de lanzamiento de la sección 12). |
 | **Planes detallados** | Uno por módulo en [docs/backend/](./backend/README.md), alineados con el diagrama de arquitectura. |
@@ -92,11 +92,11 @@ Salieron de leer el código del frontend. Cada uno queda asignado a un módulo.
 | Base de datos | **PostgreSQL**, un **esquema por módulo** | Transacciones locales (E3) y fronteras visibles (E13). Extensiones `unaccent`, `pg_trgm`, `citext`. |
 | Acceso a datos | **Drizzle ORM** + `drizzle-kit` | Un archivo de esquema por módulo; ningún módulo ve las tablas de otro. |
 | Validación | **class-validator** + **class-transformer** con `ValidationPipe` | Lo estándar en Nest; decoradores parecidos a las anotaciones de validación de Java, y Swagger documenta los DTOs solo. La validación de negocio vive en el dominio. |
-| Eventos | `@nestjs/event-emitter` + tabla **outbox** | Eventos internos sin perder avisos si el proceso cae. |
+| Eventos | Despachador propio sobre la tabla **outbox** (sin `@nestjs/event-emitter`, que pierde eventos si el proceso cae) | Eventos internos sin perder avisos si el proceso cae. Ver [ADR-03](./ADR-03.md). |
 | Tareas programadas | `@nestjs/schedule` + `pg_try_advisory_lock` | Un solo ejecutor aunque haya varias instancias. Sin Redis. |
 | Autenticación | JWT de acceso corto + refresh rotativo, `argon2id` | Módulo Identidad propio. |
 | Tiempo real | **SSE** | Alertas y mensajes son servidor → cliente; más simple que WebSockets. |
-| Contrato | `@nestjs/swagger` (OpenAPI) y cliente tipado generado para el frontend | Una sola fuente del contrato. |
+| Contrato | `@nestjs/swagger` (OpenAPI 3.1) y cliente tipado generado para el frontend; AsyncAPI 3.0 para los eventos | Una sola fuente del contrato. Ver [ADR-03](./ADR-03.md). |
 | Pruebas | **Vitest** (lo genera el CLI de Nest 12), **fast-check**, Testcontainers, Supertest | Dominio sin infraestructura (E14). |
 | Lint | **oxlint** con reglas que usan tipos (lo genera el CLI de Nest 12) + `tsc --noEmit` | Valor por defecto de Nest 12. |
 | Módulos | **ESM** (`"type": "module"`, imports con extensión `.js`) | Valor por defecto de Nest 12. |
@@ -279,7 +279,7 @@ El orden respeta las dependencias (sección 4.3) y adelanta lo que da confianza 
 - [ ] Outbox, despachador y prueba de entrega de un evento (incluida la entrega duplicada).
 - [ ] Manejo de errores, `problem+json`, correlación y logs.
 - [ ] CI y despliegue a staging.
-- [x] Redactar el **ADR-03** con el stack y las decisiones de este documento ([borrador](./ADR-03.md), pendiente de aceptar).
+- [x] Redactar el **ADR-04** con el stack y las decisiones de este documento ([borrador](./ADR-04.md), pendiente de aceptar).
 
 **Terminado cuando:** además de la definición común, staging responde `/salud/listo`, una violación de las reglas de arquitectura rompe la CI y el outbox entrega un evento una sola vez aunque se reprocese.
 
@@ -606,9 +606,9 @@ Solo el puerto `ProveedorDeIA` y su adaptador, detrás de una frontera clara (AD
 
 ### 10.2 Brechas con los ADR actuales
 
-- **Datos de salud.** El diagrama y el escenario E6 de ADR-01 los ubican en Identidad, pero medicamentos y signos vitales son de Teleasistencia. Decisión del 2026-10-22: **viven en Teleasistencia**; Identidad guarda vínculos y consentimientos. Hay que corregir el diagrama y registrarlo en el ADR-03.
+- **Datos de salud.** El diagrama y el escenario E6 de ADR-01 los ubican en Identidad, pero medicamentos y signos vitales son de Teleasistencia. Decisión del 2026-10-22: **viven en Teleasistencia**; Identidad guarda vínculos y consentimientos. Hay que corregir el diagrama y registrarlo en el ADR-04.
 - **ADR-01 no lista `mensajeria` como módulo** aunque la mensajería es una funcionalidad (§1). Este plan la agrega.
-- **ADR-01 no contempla las bolsas de horas.** Se ubican en `pagos`; registrado en el [ADR-03](./ADR-03.md) (D5).
+- **ADR-01 no contempla las bolsas de horas.** Se ubican en `pagos`; registrado en el [ADR-04](./ADR-04.md) (D5).
 - **ADR-01 §4.8 muestra los módulos bajo `backend/`;** aquí se agrega `src/` por convención de Nest.
 - **ADR-02** afirma que no hay workspaces. Si se comparten tipos como paquete, debe revisarse.
 - **E8** (solicitud abierta de cuidado) queda fuera hasta después del MVP.
@@ -639,7 +639,7 @@ Solo el puerto `ProveedorDeIA` y su adaptador, detrás de una frontera clara (AD
 - [ ] Producción desplegada con respaldos probados y monitoreo activo.
 - [ ] Ningún adaptador simulado ni dato de prueba en producción (el arranque y la CI lo verifican).
 - [ ] Todos los requisitos de lanzamiento de la sección 12 cumplidos.
-- [ ] ADR-03 aceptado y ADR-01 actualizado con `mensajeria` y las bolsas de horas.
+- [ ] ADR-04 aceptado y ADR-01 actualizado con `mensajeria` y las bolsas de horas.
 
 ---
 

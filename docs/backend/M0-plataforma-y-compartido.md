@@ -511,7 +511,7 @@ M0 no cambia pantallas. Se deja documentado en `backend/README.md` cómo levanta
 | 5 ✅ | Capa HTTP: errores, validación, correlación, logs, guards, CORS, `helmet`, `throttler`, salud y Swagger. Sentry queda pendiente de la cuenta. | Probado con pruebas de API. |
 | 6 ✅ | Reglas de `dependency-cruiser` con sus archivos de ejemplo, CI en GitHub Actions (`.github/workflows/backend.yml`, acciones fijadas por SHA y permisos de solo lectura) y Dependabot semanal con una semana de espera por versión nueva. | La CI se valida a sí misma. |
 | 7 | `Dockerfile`, despliegue a staging y `backend/README.md`. | Depende del hosting elegido. |
-| 8 ✅ | Borrador del **[ADR-03](../ADR-03.md)** (stack, decisiones de este plan, datos de salud en Teleasistencia, `mensajeria`). | Documento. |
+| 8 ✅ | Borrador del **[ADR-04](../ADR-04.md)** (stack, decisiones de este plan, datos de salud en Teleasistencia, `mensajeria`). | Documento. |
 
 ---
 
@@ -527,7 +527,7 @@ Además de la definición común ([PLAN_BACKEND §6.3](../PLAN_BACKEND_SENIORY.m
 - [ ] Una transacción revertida no deja eventos en el outbox, pero sí deja su registro de auditoría.
 - [ ] Cada regla de arquitectura rompe la CI con su archivo de ejemplo.
 - [ ] Staging responde `/salud/listo` tras un *push* a `main` (o queda registrado como pendiente si el hosting no está decidido).
-- [ ] ADR-03 en borrador y revisado por ambos.
+- [ ] ADR-04 en borrador y revisado por ambos.
 
 ---
 
@@ -535,6 +535,6 @@ Además de la definición común ([PLAN_BACKEND §6.3](../PLAN_BACKEND_SENIORY.m
 
 | # | Decisión | Recomendación |
 |---|---|---|
-| 1 | Hosting de staging y producción | Elegir uno que permita región cercana a Colombia (o EE. UU.) y Postgres gestionado con respaldos; registrar en ADR-03. |
+| 1 | Hosting de staging y producción | Elegir uno que permita región cercana a Colombia (o EE. UU.) y Postgres gestionado con respaldos; registrar en ADR-04. |
 | 2 | Versión de PostgreSQL | La que ofrezca el hosting; la misma en local, pruebas y producción. |
 | 3 | Límites globales de peticiones | Empezar con 100 por minuto por IP y ajustar con datos reales. |

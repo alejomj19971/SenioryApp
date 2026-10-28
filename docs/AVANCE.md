@@ -5,7 +5,7 @@
 ## Dónde vamos
 
 > **Backend: M0 con 7 de 8 PR hechos (falta el despliegue a staging, que espera el hosting) y M1 (Identidad) en marcha: PR 3 de 7 hecho (dominio, repositorios y autenticación).**
-> Siguiente paso: **M1 · PR 4 (perfil, adultos mayores y consentimientos)**. Pendiente de ustedes: revisar y aceptar el [ADR-03](./ADR-03.md) y ver la CI en verde en GitHub.
+> Siguiente paso: **M1 · PR 4 (perfil, adultos mayores y consentimientos)**. Pendiente de ustedes: revisar y aceptar el [ADR-03](./ADR-03.md) (comunicación) y el [ADR-04](./ADR-04.md) (stack) y ver la CI en verde en GitHub.
 >
 > El frontend sigue siendo el prototipo del pitch con datos de ejemplo; su integración con el backend empieza en F0, después de M0.
 
@@ -24,7 +24,8 @@ Base de datos  ████████████████████  com
 | Documento | Estado |
 |---|---|
 | [ADR-01](./ADR-01.md) y [ADR-02](./ADR-02.md) | Vigentes. |
-| [ADR-03](./ADR-03.md) | **Borrador:** stack, persistencia, datos de salud en Teleasistencia, Mensajería, bolsas en Pagos, BFF, outbox y fronteras verificadas. Falta que lo acepten ambos. |
+| [ADR-03](./ADR-03.md) | **Borrador:** estrategia de comunicación. Asíncrona entre módulos (eventos por outbox) y síncrona solo donde la persona espera la respuesta; REST con OpenAPI 3.1 hacia el frontend y AsyncAPI 3.0 para los eventos. Falta que lo acepten ambos. |
+| [ADR-04](./ADR-04.md) (antes ADR-03) | **Borrador:** stack, persistencia, datos de salud en Teleasistencia, Mensajería, bolsas en Pagos, BFF, outbox y fronteras verificadas. Falta que lo acepten ambos. |
 | [Plan del backend](./PLAN_BACKEND_SENIORY.md) (M0–M11) | Completo. Planes detallados de [M0](./backend/M0-plataforma-y-compartido.md) y [M1](./backend/M1-identidad.md) **aprobados** (2026-10-22). |
 | [Plan del frontend](./PLAN_FRONTEND_SENIORY.md) (F0–F9) | Completo. Planes detallados de [F0](./frontend/F0-base-de-integracion.md) y [F1](./frontend/F1-identidad.md) **propuestos**. |
 | [Diseño de la base de datos](./backend/BASE_DE_DATOS.md) | Construido. Guía de estudio en PDF: [BASE_DE_DATOS-guia-de-estudio.pdf](./backend/BASE_DE_DATOS-guia-de-estudio.pdf). |
@@ -42,7 +43,7 @@ Base de datos  ████████████████████  com
 | M0 · PR 5 | Capa HTTP: problem+json, validación, `X-Request-Id`, autenticación que deniega por defecto, roles, límite de peticiones con IP real del BFF, `helmet`, CORS, logs con redacción, `/salud/listo` y Swagger. | ✅ commit `e417dbd` |
 | M0 · PR 6 | Reglas de arquitectura (`dependency-cruiser`, 7 reglas con ejemplos que las rompen), CI en GitHub Actions y Dependabot. | ✅ commit `617491a` |
 | M0 · PR 7 | `Dockerfile` y despliegue a staging. | **Bloqueado:** falta elegir el hosting |
-| M0 · PR 8 | Borrador del ADR-03. | ✅ commit `f8f895c` |
+| M0 · PR 8 | Borrador del ADR de stack (hoy ADR-04). | ✅ commit `f8f895c` |
 | M1 · PR 1 | Dominio de Identidad: `Correo`, `Contrasena` (nunca se filtra), `Credencial` con bloqueo progresivo, `SesionDeRefresco` con detección de robo, `Usuario` con rol inmutable, `AdultoMayor`, `Vinculo` y `Consentimiento`. | ✅ commit `9577fba` |
 | M1 · PR 2 | Repositorios de Identidad con Drizzle: conflictos traducidos a errores de dominio, bloqueo de fila para los intentos de inicio de sesión y las renovaciones simultáneas. | ✅ commit `3deb712` |
 | M1 · PR 3 | Autenticación: registro, inicio de sesión, renovación y cierre (`/auth/*`), argon2id, tokens de acceso JWT y de refresco rotativos con detección de robo, bloqueo progresivo, lista de contraseñas comunes y `IdentidadModule`. | ✅ commit `a9d06c7` |
@@ -71,7 +72,7 @@ Cada rama parte de la anterior. Se revisan con un PR encadenado por entrega (la 
 | 4 | `feat/m0-dominio-compartido` | M0 PR 3 y PR 4, y documentación de avance. |
 | 5 | `feat/m0-capa-http` | M0 PR 5. |
 | 6 | `feat/m0-arquitectura-y-ci` | M0 PR 6 (trae la CI). |
-| 7 | `docs/adr-03` | M0 PR 8: borrador del ADR-03. |
+| 7 | `docs/adr-03` | M0 PR 8: borrador del ADR de stack (hoy ADR-04; la rama conserva el nombre antiguo). |
 | 8 | `feat/m1-dominio` | M1 PR 1: dominio de Identidad. |
 | 9 | `feat/m1-persistencia` | M1 PR 2: repositorios. |
 | 10 | `feat/m1-autenticacion` (actual) | M1 PR 3: autenticación. |
@@ -112,5 +113,5 @@ Cada rama parte de la anterior. Se revisan con un PR encadenado por entrega (la 
 - Integrar Sentry cuando haya cuenta.
 - Renombrar `docs/backend/` y `docs/frontend/` para no confundirlas con las carpetas de código (propuesta: `docs/planes-backend/` y `docs/planes-frontend/`).
 - Documento de aprendizajes (pedido y aún sin hacer).
-- Aceptar el ADR-03 entre los dos y actualizar la imagen del diagrama de ADR-01 (datos de salud en Teleasistencia, Mensajería y outbox); el ADR-03 §3 ya trae la versión corregida.
+- Aceptar el ADR-03 y el ADR-04 entre los dos y actualizar la imagen del diagrama de ADR-01 (datos de salud en Teleasistencia, Mensajería y outbox); el ADR-04 §3 ya trae la versión corregida.
 - Revisar si los teléfonos de `frontend/data/cuidadores.json` son de personas reales, y la licencia de las fotos de la landing.
