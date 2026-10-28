@@ -511,7 +511,7 @@ M0 no cambia pantallas. Se deja documentado en `backend/README.md` cómo levanta
 | 5 ✅ | Capa HTTP: errores, validación, correlación, logs, guards, CORS, `helmet`, `throttler`, salud y Swagger. Sentry queda pendiente de la cuenta. | Probado con pruebas de API. |
 | 6 ✅ | Reglas de `dependency-cruiser` con sus archivos de ejemplo, CI en GitHub Actions (`.github/workflows/backend.yml`, acciones fijadas por SHA y permisos de solo lectura) y Dependabot semanal con una semana de espera por versión nueva. | La CI se valida a sí misma. |
 | 7 | `Dockerfile`, despliegue a staging y `backend/README.md`. | Depende del hosting elegido. |
-| 8 | Borrador del **ADR-03** (stack, decisiones de este plan, datos de salud en Teleasistencia, `mensajeria`). | Documento. |
+| 8 ✅ | Borrador del **[ADR-03](../ADR-03.md)** (stack, decisiones de este plan, datos de salud en Teleasistencia, `mensajeria`). | Documento. |
 
 ---
 

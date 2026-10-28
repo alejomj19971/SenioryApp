@@ -27,6 +27,7 @@ Abre [http://localhost:3000](http://localhost:3000).
 
 - [ADR-01: arquitectura y escenarios de calidad](docs/ADR-01.md)
 - [ADR-02: repositorio único y organización funcional del código](docs/ADR-02.md)
+- [ADR-03: stack del backend y decisiones de implementación](docs/ADR-03.md) (borrador)
 - [Avance del proyecto](docs/AVANCE.md)
 - [Plan del backend](docs/PLAN_BACKEND_SENIORY.md) y [planes por módulo](docs/backend/README.md)
 - [Plan del frontend](docs/PLAN_FRONTEND_SENIORY.md) y [planes por etapa](docs/frontend/README.md)

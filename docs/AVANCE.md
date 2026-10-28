@@ -4,13 +4,14 @@
 
 ## Dónde vamos
 
-> **Backend, módulo M0 (plataforma y compartido): PR 6 de 8 terminado.**
-> Siguiente paso: **abrir los PR en GitHub y ver la CI en verde**. Después, **PR 8 (borrador del ADR-03)**; el PR 7 (despliegue a staging) espera la elección del hosting.
+> **Backend, módulo M0 (plataforma y compartido): PR 8 terminado (borrador del ADR-03).**
+> M0 tiene 7 de 8 PR hechos: solo falta el **PR 7 (despliegue a staging)**, que espera la elección del hosting.
+> Siguiente paso: **revisar y aceptar el [ADR-03](./ADR-03.md)** entre los dos, ver la CI en verde en GitHub y empezar **M1 (Identidad)**.
 >
 > El frontend sigue siendo el prototipo del pitch con datos de ejemplo; su integración con el backend empieza en F0, después de M0.
 
 ```
-Backend   M0 ███████████████░░░░░  PR 6/8   ← aquí
+Backend   M0 █████████████████▌░░  7 de 8 PR (falta el despliegue)   ← aquí
           M1 … M11                 pendientes
 Frontend  F0 … F9                  planes F0 y F1 propuestos; nada construido
 Base de datos  ████████████████████  completa (adelantada)
@@ -22,7 +23,8 @@ Base de datos  ████████████████████  com
 
 | Documento | Estado |
 |---|---|
-| [ADR-01](./ADR-01.md) y [ADR-02](./ADR-02.md) | Vigentes. Pendiente registrar los cambios en un ADR-03 (ver «Pendientes»). |
+| [ADR-01](./ADR-01.md) y [ADR-02](./ADR-02.md) | Vigentes. |
+| [ADR-03](./ADR-03.md) | **Borrador:** stack, persistencia, datos de salud en Teleasistencia, Mensajería, bolsas en Pagos, BFF, outbox y fronteras verificadas. Falta que lo acepten ambos. |
 | [Plan del backend](./PLAN_BACKEND_SENIORY.md) (M0–M11) | Completo. Planes detallados de [M0](./backend/M0-plataforma-y-compartido.md) y [M1](./backend/M1-identidad.md) **aprobados** (2026-10-22). |
 | [Plan del frontend](./PLAN_FRONTEND_SENIORY.md) (F0–F9) | Completo. Planes detallados de [F0](./frontend/F0-base-de-integracion.md) y [F1](./frontend/F1-identidad.md) **propuestos**. |
 | [Diseño de la base de datos](./backend/BASE_DE_DATOS.md) | Construido. Guía de estudio en PDF: [BASE_DE_DATOS-guia-de-estudio.pdf](./backend/BASE_DE_DATOS-guia-de-estudio.pdf). |
@@ -40,7 +42,7 @@ Base de datos  ████████████████████  com
 | M0 · PR 5 | Capa HTTP: problem+json, validación, `X-Request-Id`, autenticación que deniega por defecto, roles, límite de peticiones con IP real del BFF, `helmet`, CORS, logs con redacción, `/salud/listo` y Swagger. | ✅ commit `e417dbd` |
 | M0 · PR 6 | Reglas de arquitectura (`dependency-cruiser`, 7 reglas con ejemplos que las rompen), CI en GitHub Actions y Dependabot. | ✅ commit `617491a` |
 | M0 · PR 7 | `Dockerfile` y despliegue a staging. | **Bloqueado:** falta elegir el hosting |
-| M0 · PR 8 | Borrador del ADR-03. | ⏭️ siguiente |
+| M0 · PR 8 | Borrador del ADR-03. | ✅ hecho, **sin commit** |
 | M1 → M11 | Identidad, directorio, pagos, reservas, notificaciones, teleasistencia, mensajería, verificación, despliegue, IA. | Pendientes, en ese orden |
 
 **Cifras actuales:** 482 pruebas (167 unitarias y de arquitectura, y 315 de integración y API contra Postgres real), cobertura del 97 %, lint y compilación limpios y 0 vulnerabilidades en las dependencias de producción.
@@ -102,5 +104,5 @@ Cada rama parte de la anterior. Se revisan con un PR encadenado por entrega (la 
 - Integrar Sentry cuando haya cuenta.
 - Renombrar `docs/backend/` y `docs/frontend/` para no confundirlas con las carpetas de código (propuesta: `docs/planes-backend/` y `docs/planes-frontend/`).
 - Documento de aprendizajes (pedido y aún sin hacer).
-- Corregir el diagrama de arquitectura (mover «Datos de salud» a Teleasistencia y agregar Mensajería) y registrar todos los cambios en el ADR-03.
+- Aceptar el ADR-03 entre los dos y actualizar la imagen del diagrama de ADR-01 (datos de salud en Teleasistencia, Mensajería y outbox); el ADR-03 §3 ya trae la versión corregida.
 - Revisar si los teléfonos de `frontend/data/cuidadores.json` son de personas reales, y la licencia de las fotos de la landing.

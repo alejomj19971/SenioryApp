@@ -9,7 +9,7 @@
 |---|---|
 | **Proyecto** | Seniory — *Creciendo y cuidando juntos* |
 | **Fecha** | 2026-10-21 |
-| **Estado** | Propuesta, pendiente de formalizar en un ADR-03 |
+| **Estado** | En ejecución. Decisiones formalizadas en el [ADR-03](./ADR-03.md) (borrador) |
 | **Base** | [ADR-01](./ADR-01.md) (estilo arquitectónico) · [ADR-02](./ADR-02.md) (repositorio único) · [PLAN_MVP_SENIORY](./PLAN_MVP_SENIORY.md) |
 | **Versión** | Reemplaza la primera versión de este plan (organizada por fases). Parte de lo que el frontend hace hoy. **Actualizado el 2026-10-26: es la aplicación real, no una demo** (ver «Aplicación real» en la sección 1 y los requisitos de lanzamiento de la sección 12). |
 | **Planes detallados** | Uno por módulo en [docs/backend/](./backend/README.md), alineados con el diagrama de arquitectura. |
@@ -279,7 +279,7 @@ El orden respeta las dependencias (sección 4.3) y adelanta lo que da confianza 
 - [ ] Outbox, despachador y prueba de entrega de un evento (incluida la entrega duplicada).
 - [ ] Manejo de errores, `problem+json`, correlación y logs.
 - [ ] CI y despliegue a staging.
-- [ ] Redactar el **ADR-03** con el stack y las decisiones de este documento.
+- [x] Redactar el **ADR-03** con el stack y las decisiones de este documento ([borrador](./ADR-03.md), pendiente de aceptar).
 
 **Terminado cuando:** además de la definición común, staging responde `/salud/listo`, una violación de las reglas de arquitectura rompe la CI y el outbox entrega un evento una sola vez aunque se reprocese.
 
@@ -608,7 +608,7 @@ Solo el puerto `ProveedorDeIA` y su adaptador, detrás de una frontera clara (AD
 
 - **Datos de salud.** El diagrama y el escenario E6 de ADR-01 los ubican en Identidad, pero medicamentos y signos vitales son de Teleasistencia. Decisión del 2026-10-22: **viven en Teleasistencia**; Identidad guarda vínculos y consentimientos. Hay que corregir el diagrama y registrarlo en el ADR-03.
 - **ADR-01 no lista `mensajeria` como módulo** aunque la mensajería es una funcionalidad (§1). Este plan la agrega.
-- **ADR-01 no contempla las bolsas de horas.** Se ubican en `pagos`; hay que registrarlo en el ADR-03.
+- **ADR-01 no contempla las bolsas de horas.** Se ubican en `pagos`; registrado en el [ADR-03](./ADR-03.md) (D5).
 - **ADR-01 §4.8 muestra los módulos bajo `backend/`;** aquí se agrega `src/` por convención de Nest.
 - **ADR-02** afirma que no hay workspaces. Si se comparten tipos como paquete, debe revisarse.
 - **E8** (solicitud abierta de cuidado) queda fuera hasta después del MVP.
