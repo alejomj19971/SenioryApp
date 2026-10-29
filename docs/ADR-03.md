@@ -22,7 +22,7 @@
 | Pregunta | Decisión |
 |---|---|
 | Estilo | **Asíncrono entre módulos**: un módulo publica un evento («`ServicioConfirmado`») y sigue; los interesados reaccionan después. Solo es síncrono cuando una persona espera la respuesta en pantalla. |
-| Tecnología | **REST** (JSON sobre HTTPS) entre el frontend y el backend. **Eventos por outbox transaccional** en PostgreSQL entre módulos. |
+| Tecnología | **REST** (JSON sobre HTTPS) entre el frontend y el backend. **Eventos por outbox transaccional** en PostgreSQL entre módulos. **SSE** para el chat y las alertas en vivo. **Webhooks** firmados para los avisos de la pasarela de pagos. |
 | Contrato | **OpenAPI 3.1** para la API REST y **AsyncAPI 3.0** para los eventos. |
 
 ## 3. Por qué la comunicación es asíncrona
@@ -99,11 +99,25 @@ Para que un mensaje o una alerta aparezca sin recargar la página:
 | WebSockets | ❌ | Es bidireccional, algo que no se necesita aquí. Exige su propio protocolo, autenticación y manejo de reconexión y de mensajes perdidos. Se reconsidera si el chat necesita señales muy frecuentes en ambos sentidos («está escribiendo…», presencia en línea, llamadas). |
 | Consultar cada pocos segundos (*polling*) | ❌ | Carga constante sobre el servidor y retrasa la alerta hasta la siguiente consulta. |
 
+### Sistemas externos: webhooks
+
+Un **webhook** es una petición HTTP que un sistema externo nos envía cuando algo pasa de su lado. Es comunicación asíncrona entrante: no la pedimos, nos avisan.
+
+- **Dónde se usa:** la **pasarela de pagos** avisa a Pagos el resultado de un cobro con un `POST` a nuestra API. Un pago con tarjeta o PSE puede tardar segundos o minutos en confirmarse, y la pasarela no puede quedarse esperando a que respondamos.
+- **Se verifica la firma** del aviso: un webhook sin firma válida se rechaza, así nadie puede fingir que un pago fue aprobado.
+- **Se procesa una sola vez:** cada aviso se guarda con `UNIQUE (proveedor, id_evento_externo)`, y si la pasarela lo reenvía, el repetido se ignora (E3: 0 cobros duplicados). Los estados del pago solo avanzan: un aviso tardío no devuelve a pendiente un pago aprobado.
+- **Su contrato** se declara en la sección `webhooks` de OpenAPI 3.1.
+
+| Opción | Decisión | Motivo |
+|---|---|---|
+| **Webhook** | ✅ | La pasarela avisa apenas tiene el resultado. Es como trabajan las pasarelas de pago. |
+| Consultar a la pasarela cada pocos segundos | ❌ Solo como respaldo | Muchas consultas inútiles y el pago se confirma con retraso. Se usa únicamente en la conciliación, para detectar avisos que nunca llegaron. |
+
 ## 5. Contratos de comunicación: OpenAPI
 
 | Formato | Tecnología | Decisión |
 |---|---|---|
-| **OpenAPI 3.1** | REST | ✅ **Elegido para la API** |
+| **OpenAPI 3.1** | REST y webhooks | ✅ **Elegido para la API** y para los webhooks que recibimos |
 | **AsyncAPI 3.0** | Mensajería y eventos | ✅ **Elegido para los eventos** (es el equivalente de OpenAPI para la comunicación asíncrona) |
 | WSDL | SOAP | ❌ Se descartó SOAP |
 | `.proto` | gRPC | ❌ Se descartó gRPC |
