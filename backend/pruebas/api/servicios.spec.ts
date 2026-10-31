@@ -10,7 +10,6 @@ import {
   type EmisorDeTokens,
 } from '../../src/identidad/aplicacion/puertos/salida/emisor-de-tokens.js';
 import type { UsuarioId } from '../../src/identidad/dominio/ids.js';
-import { ExpirarSolicitudes } from '../../src/reservas/aplicacion/casos-de-uso/expirar-solicitudes.js';
 import {
   como,
   conSesion,
@@ -26,6 +25,7 @@ import { crearAppDePrueba } from '../soporte/app.js';
 import { conectarBd, nuevoId } from '../soporte/bd.js';
 import { REVISOR_DE_PRUEBA } from '../soporte/directorio.js';
 import { RelojFalso } from '../soporte/dobles.js';
+import { expirarSolicitudesDe } from '../soporte/expiracion.js';
 
 // M4 §6 (API): el ciclo de vida del servicio con la matriz de autorización. El reloj está en el lunes 10 de
 // junio de 2030 a las 10:00 en Bogotá (15:00 UTC): hoy, la mañana está en curso y la tarde y la noche no han
@@ -228,7 +228,7 @@ describe('servicios (API)', () => {
   const eventosDe = async (servicioId: string) =>
     (
       await filas<{ tipo: string }>(
-        `select tipo from compartido.outbox where datos->>'servicioId' = $1 order by creado_en, id`,
+        `select tipo from compartido.outbox where datos->>'servicioId' = $1 and tipo like 'reservas.%' order by creado_en, id`,
         [servicioId],
       )
     ).map((e) => e.tipo);
@@ -863,17 +863,18 @@ describe('servicios (API)', () => {
 
   // ─── Expiración ────────────────────────────────────────────────────────────────────────────
   describe('expiración de solicitudes', () => {
-    const expirar = () =>
-      app.get(ExpirarSolicitudes, { strict: false }).ejecutar();
+    // Solo sobre los servicios de la prueba: la base se comparte con otros archivos que corren a la vez.
+    const expirar = (...ids: string[]) =>
+      expirarSolicitudesDe(app, ids).ejecutar();
 
     it('cancela con motivo «expirada», avisa, y la franja queda libre', async () => {
       const c = await nuevoCuidador();
       const id = await crearServicio(c);
       reloj.avanzar(2 * 60 * 60_000);
 
-      const resultado = await expirar();
+      const resultado = await expirar(id);
 
-      expect(resultado.expiradas).toBeGreaterThanOrEqual(1);
+      expect(resultado.expiradas).toBe(1);
       expect(resultado.fallidas).toBe(0);
       expect(await estadoEnBd(id)).toEqual({
         estado: 'cancelado',
@@ -895,10 +896,10 @@ describe('servicios (API)', () => {
       const id = await crearServicio(c, { fecha: HOY, jornada: 'tarde' });
 
       reloj.avanzar(29 * 60_000);
-      await expirar();
+      await expirar(id);
       const antes = (await estadoEnBd(id))?.estado;
       reloj.avanzar(2 * 60_000);
-      await expirar();
+      await expirar(id);
 
       expect(antes).toBe('solicitado');
       expect((await estadoEnBd(id))?.estado).toBe('cancelado');
@@ -912,8 +913,8 @@ describe('servicios (API)', () => {
       await accion('aceptar', aceptada, await c1.cookie());
       reloj.avanzar(60 * 60_000); // una hora: el plazo es de dos
 
-      await expirar();
-      await expirar();
+      await expirar(aceptada, vigente);
+      await expirar(aceptada, vigente);
 
       expect((await estadoEnBd(aceptada))?.estado).toBe('aceptado');
       expect((await estadoEnBd(vigente))?.estado).toBe('solicitado');
@@ -925,7 +926,7 @@ describe('servicios (API)', () => {
       await accion('aceptar', id, await c.cookie());
       reloj.avanzar(3 * 60 * 60_000);
 
-      await expirar();
+      await expirar(id);
 
       expect((await estadoEnBd(id))?.estado).toBe('aceptado');
     });

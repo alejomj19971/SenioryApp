@@ -68,6 +68,13 @@ const TABLA_DEL_PLAN: Arista[] = [
     actor: 'cuidador',
     hacia: 'finalizado',
   },
+  // M7: el pago del servicio no se hizo.
+  {
+    desde: 'aceptado',
+    accion: 'cancelar_por_pago',
+    actor: 'sistema',
+    hacia: 'cancelado',
+  },
 ];
 
 const clave = (a: Pick<Arista, 'desde' | 'accion' | 'actor'>) =>
@@ -97,7 +104,7 @@ describe('transicionar', () => {
   });
 
   describe('todas las demás combinaciones se rechazan', () => {
-    // Estado × acción × actor: 6 × 7 × 3 = 126 combinaciones; 8 son válidas.
+    // Estado × acción × actor: 6 × 8 × 3 = 144 combinaciones; 9 son válidas.
     const combinaciones = ESTADOS_DE_PARTIDA.flatMap((desde) =>
       ACCIONES_DE_SERVICIO.flatMap((accion) =>
         ACTORES.map((actor) => ({ desde, accion, actor })),
@@ -106,9 +113,9 @@ describe('transicionar', () => {
     const validas = new Set(TABLA_DEL_PLAN.map(clave));
     const invalidas = combinaciones.filter((c) => !validas.has(clave(c)));
 
-    it('hay 118 combinaciones inválidas', () => {
-      expect(combinaciones).toHaveLength(126);
-      expect(invalidas).toHaveLength(118);
+    it('hay 135 combinaciones inválidas', () => {
+      expect(combinaciones).toHaveLength(144);
+      expect(invalidas).toHaveLength(135);
     });
 
     it.each(invalidas)(

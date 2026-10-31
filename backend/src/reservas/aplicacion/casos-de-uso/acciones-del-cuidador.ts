@@ -3,6 +3,7 @@ import type { ConsultaDeDirectorio } from '../../../directorio/aplicacion/puerto
 import type { Servicio } from '../../dominio/servicio.js';
 import type { EjecutorDeAcciones } from '../servicios/ejecutor-de-acciones.js';
 import {
+  cobroDe,
   participantesDe,
   type EventosDeReservas,
 } from '../servicios/eventos-de-reservas.js';
@@ -38,7 +39,7 @@ export class AceptarServicio {
       anunciar: (servicio, ahora) =>
         this.eventos.publicar(
           'reservas.servicio_confirmado',
-          participantesDe(servicio),
+          { ...participantesDe(servicio), cobro: cobroDe(servicio) },
           ahora,
         ),
     });
@@ -75,6 +76,8 @@ export class IniciarServicio {
     private readonly ejecutor: EjecutorDeAcciones,
     private readonly eventos: EventosDeReservas,
     private readonly zonaHoraria: string,
+    // Con true (producción) el servicio no inicia hasta que Pagos avise que el pago está aprobado.
+    private readonly exigirPago: boolean,
   ) {}
 
   ejecutar(cuidadorUsuarioId: string, servicioId: string): Promise<Servicio> {
@@ -82,7 +85,12 @@ export class IniciarServicio {
       nombre: 'reservas.iniciar_servicio',
       rol: 'cuidador',
       aplicar: (servicio, ahora) =>
-        servicio.iniciar(cuidadorUsuarioId, ahora, this.zonaHoraria),
+        servicio.iniciar(
+          cuidadorUsuarioId,
+          ahora,
+          this.zonaHoraria,
+          this.exigirPago,
+        ),
       anunciar: (servicio, ahora) =>
         this.eventos.publicar(
           'reservas.servicio_iniciado',

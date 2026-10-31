@@ -16,6 +16,8 @@ import type { Configuracion } from './configuracion/variables-de-entorno.js';
 export const OPCIONES_DE_APLICACION: NestApplicationOptions = {
   // El cuerpo se lee con límite propio (abajo); los logs esperan a pino.
   bodyParser: false,
+  // Se conserva el cuerpo exacto que llegó: la firma de los avisos de la pasarela se calcula sobre esos bytes.
+  rawBody: true,
   bufferLogs: true,
 };
 

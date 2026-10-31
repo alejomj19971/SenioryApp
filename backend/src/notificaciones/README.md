@@ -4,7 +4,7 @@ Convierte lo que pasa en el sistema en avisos para las personas. Hoy avisa de ca
 
 ## Qué hace
 
-- **Reacciona a eventos** de Reservas (solicitado, confirmado, iniciado, finalizado y cancelado) y de Teleasistencia (alerta, toma omitida y lectura fuera de rango), y crea el aviso de cada parte, con su propio texto.
+- **Reacciona a eventos** de Reservas (solicitado, confirmado, iniciado, finalizado y cancelado) de Teleasistencia (alerta, toma omitida y lectura fuera de rango) y de Pagos (pago requerido, reembolso, compra de bolsa), y crea el aviso de cada parte, con su propio texto.
 - **Los envía** con una tarea programada (cada 2 s): tomar, enviar, guardar el resultado; reintenta lo que falla.
 - **La campana:** `GET /notificaciones` (cualquier persona con sesión ve solo los suyos).
 - No exporta nada: nadie lo llama, solo reacciona a eventos.
@@ -41,6 +41,19 @@ Un canal es un adaptador intercambiable (`CanalDeNotificacion`); agregar el real
 | `teleasistencia.lectura_fuera_de_rango` | Familia vinculada y cuidador en turno | **Alta**  | «Hay un registro para revisar» (sin decir cuál medida ni cuánto) |
 
 Cuando sale el primer aviso de una alerta, Notificaciones publica `notificaciones.notificacion_entregada` (solo para avisos de alertas): con él Teleasistencia marca la alerta como «notificada» y mide E11.
+
+## Los avisos de Pagos
+
+Los avisos de pago **no llevan montos**: dicen que hay algo por hacer y mandan a abrir Seniory.
+
+| Evento                    | A quién                       | Texto                                                                                        |
+| ------------------------- | ----------------------------- | -------------------------------------------------------------------------------------------- |
+| `pagos.pago_requerido`    | La familia que paga           | «Falta pagar tu servicio»: está confirmado, págalo para asegurarlo                           |
+| `pagos.pago_reembolsado`  | La familia                    | «Te devolvimos tu pago»                                                                      |
+| `pagos.pago_rechazado`    | La familia, **solo si era una compra de bolsa** | «No se completó tu compra» (distingue vencida de rechazada)                |
+| `pagos.bolsa_comprada`    | La familia                    | «Tu bolsa ya tiene saldo»                                                                    |
+
+Cuando falla el pago de un **servicio** no hay un aviso de pago aparte: Reservas lo cancela con motivo `pago_fallido` y el aviso de la cancelación ya lo explica a las dos partes (dos avisos por lo mismo serían ruido).
 
 ## Los avisos de cada cambio del servicio
 

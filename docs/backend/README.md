@@ -17,7 +17,7 @@ El marco general (stack, reglas de arquitectura, estándares y orden) está en [
 | M4 | Reservas | Reservas (máquina de estados) | [PLAN_BACKEND §M4](../PLAN_BACKEND_SENIORY.md) y [README del módulo](../../backend/src/reservas/README.md) | **Construido** (en revisión, [avance](../AVANCE.md)) |
 | M5 | Notificaciones | Notificaciones | [PLAN_BACKEND §M5](../PLAN_BACKEND_SENIORY.md) y [README del módulo](../../backend/src/notificaciones/README.md) | **Construido** (en revisión, [avance](../AVANCE.md)) |
 | M6 | Teleasistencia | Teleasistencia | [PLAN_BACKEND §M6](../PLAN_BACKEND_SENIORY.md) y [README del módulo](../../backend/src/teleasistencia/README.md) | **Construido** (en revisión, [avance](../AVANCE.md)) |
-| M7 | Pagos II: cobro, bolsas y liquidación | Pagos + pasarela de pagos | — | Pendiente |
+| M7 | Pagos II: cobro, bolsas y liquidación | Pagos + pasarela de pagos | [PLAN_BACKEND §M7](../PLAN_BACKEND_SENIORY.md) y [README del módulo](../../backend/src/pagos/README.md) | **Construido** (en revisión, [avance](../AVANCE.md)) |
 | M8 | Mensajería | *(no está en el diagrama, ver abajo)* | — | Pendiente |
 | M9 | Directorio II: registro y verificación | Directorio y verificación | — | Pendiente |
 | M10 | Endurecimiento y despliegue | — | — | Pendiente |

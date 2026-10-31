@@ -28,6 +28,7 @@ function entornoDeProduccion(
     ORIGENES_PERMITIDOS: 'https://app.seniory.co',
     SECRETO_BFF: SECRETO_VALIDO,
     COOKIES_SEGURAS: 'true',
+    REQUIERE_PAGO_APROBADO: 'true',
     ...extra,
   });
 }
@@ -63,6 +64,13 @@ describe('validarVariables', () => {
         canalesDeNotificacionSimulados: false,
         toleranciaDeTomaMinutos: 60,
         intervaloOmisionTomasMs: 60000,
+        pasarelaDePagos: 'deshabilitada',
+        secretoDePasarela: null,
+        dispersorDePagos: 'deshabilitado',
+        requierePagoAprobado: false,
+        minutosParaPagar: 120,
+        intervaloExpiracionPagosMs: 60000,
+        intervaloLiquidacionMs: 60000,
         sentryDsn: null,
         secretoBff: null,
         secretoJwtAcceso: SECRETO_JWT_VALIDO,
@@ -240,6 +248,88 @@ describe('validarVariables', () => {
         ).toContain('INTERVALO_EXPIRACION_SERVICIOS_MS');
       },
     );
+
+    it('exige el pago aprobado en staging y producción', () => {
+      for (const entorno of ['staging', 'production']) {
+        expect(
+          problemasDe(
+            entornoDeProduccion({
+              NODE_ENV: entorno,
+              REQUIERE_PAGO_APROBADO: 'false',
+            }),
+          ),
+        ).toEqual([
+          `REQUIERE_PAGO_APROBADO debe ser true en ${entorno} (un servicio no puede iniciar sin pago)`,
+        ]);
+      }
+    });
+
+    it('en producción no admite la pasarela ni el dispersor simulados', () => {
+      expect(
+        problemasDe(
+          entornoDeProduccion({
+            PASARELA_DE_PAGOS: 'simulada',
+            SECRETO_DE_PASARELA: SECRETO_VALIDO,
+            DISPERSOR_DE_PAGOS: 'simulado',
+          }),
+        ),
+      ).toEqual([
+        'En producción, PASARELA_DE_PAGOS no puede ser simulada (un pago de mentira se daría por cobrado)',
+        'En producción, DISPERSOR_DE_PAGOS no puede ser simulado (un pago al cuidador de mentira se daría por hecho)',
+      ]);
+    });
+
+    it('en staging admite la pasarela y el dispersor simulados', () => {
+      expect(
+        problemasDe(
+          entornoDeProduccion({
+            NODE_ENV: 'staging',
+            PASARELA_DE_PAGOS: 'simulada',
+            SECRETO_DE_PASARELA: SECRETO_VALIDO,
+            DISPERSOR_DE_PAGOS: 'simulado',
+          }),
+        ),
+      ).toEqual([]);
+    });
+
+    it('la pasarela simulada exige un secreto de 32 caracteres o más', () => {
+      expect(
+        problemasDe(entornoBase({ PASARELA_DE_PAGOS: 'simulada' })),
+      ).toEqual([
+        'SECRETO_DE_PASARELA es obligatorio con la pasarela simulada',
+      ]);
+      expect(
+        problemasDe(
+          entornoBase({
+            PASARELA_DE_PAGOS: 'simulada',
+            SECRETO_DE_PASARELA: 'corto',
+          }),
+        ),
+      ).toEqual(['SECRETO_DE_PASARELA debe tener al menos 32 caracteres']);
+    });
+
+    it.each([
+      ['INTERVALO_EXPIRACION_PAGOS_MS', 'los pagos sin pagar nunca vencerían'],
+      ['INTERVALO_LIQUIDACION_MS', 'las liquidaciones nunca se enviarían'],
+    ])('en producción no permite apagar %s', (variable, consecuencia) => {
+      expect(problemasDe(entornoDeProduccion({ [variable]: '0' }))).toEqual([
+        `En producción, ${variable} no puede ser 0 (${consecuencia})`,
+      ]);
+    });
+
+    it.each([
+      ['PASARELA_DE_PAGOS', 'wompi'],
+      ['DISPERSOR_DE_PAGOS', 'banco'],
+      ['REQUIERE_PAGO_APROBADO', 'quizas'],
+      ['MINUTOS_PARA_PAGAR', '0'],
+      ['MINUTOS_PARA_PAGAR', '1441'],
+      ['INTERVALO_EXPIRACION_PAGOS_MS', '-1'],
+      ['INTERVALO_LIQUIDACION_MS', '3600001'],
+    ])('rechaza %s = %s', (variable, valor) => {
+      expect(problemasDe(entornoBase({ [variable]: valor })).join()).toContain(
+        variable,
+      );
+    });
 
     it('en producción no permite apagar el envío de avisos', () => {
       expect(

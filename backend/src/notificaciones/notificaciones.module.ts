@@ -46,6 +46,12 @@ import { EntregarPendientes } from './aplicacion/casos-de-uso/entregar-pendiente
 import { ListarMisNotificaciones } from './aplicacion/casos-de-uso/listar-mis-notificaciones.js';
 import { AvisarCambioDeServicio } from './aplicacion/manejadores/avisar-cambio-de-servicio.js';
 import {
+  AvisarBolsaComprada,
+  AvisarCompraDeBolsaFallida,
+  AvisarPagoReembolsado,
+  AvisarPagoRequerido,
+} from './aplicacion/manejadores/avisar-de-pagos.js';
+import {
   AvisarAlerta,
   AvisarLecturaFueraDeRango,
   AvisarMedicamentoOmitido,
@@ -68,6 +74,7 @@ import { RepositorioNotificacionesDrizzle } from './infraestructura/salida/persi
 
 const MANEJADORES_DE_SERVICIO = Symbol('ManejadoresDeServicio');
 const MANEJADORES_DE_TELEASISTENCIA = Symbol('ManejadoresDeTeleasistencia');
+const MANEJADORES_DE_PAGOS = Symbol('ManejadoresDePagos');
 const SONDEO_DE_ENTREGAS = Symbol('SondeoDeEntregas');
 
 // Los eventos del ciclo de vida del servicio que generan avisos, cada uno con su nombre estable (el despachador
@@ -199,6 +206,16 @@ const EVENTOS_CON_AVISO = [
         new AvisarLecturaFueraDeRango(identidad, reservas, avisos),
       ],
     },
+    {
+      provide: MANEJADORES_DE_PAGOS,
+      inject: [CONSULTA_DE_RESERVAS, CrearAvisos],
+      useFactory: (reservas: ConsultaDeReservas, avisos: CrearAvisos) => [
+        new AvisarPagoRequerido(reservas, avisos),
+        new AvisarPagoReembolsado(reservas, avisos),
+        new AvisarCompraDeBolsaFallida(avisos),
+        new AvisarBolsaComprada(avisos),
+      ],
+    },
     // La tarea programada que envía los avisos pendientes (y reintenta los que fallaron).
     {
       provide: SONDEO_DE_ENTREGAS,
@@ -224,6 +241,8 @@ export class NotificacionesModule implements OnModuleInit {
     private readonly manejadores: AvisarCambioDeServicio<never>[],
     @Inject(MANEJADORES_DE_TELEASISTENCIA)
     private readonly manejadoresDeTeleasistencia: ManejadorDeEventos[],
+    @Inject(MANEJADORES_DE_PAGOS)
+    private readonly manejadoresDePagos: ManejadorDeEventos[],
     // Solo para que Nest lo cree y llame a sus ganchos de arranque y cierre.
     @Inject(SONDEO_DE_ENTREGAS) private readonly sondeo: SondeoPeriodico,
   ) {}
@@ -233,6 +252,9 @@ export class NotificacionesModule implements OnModuleInit {
       this.registro.registrar(manejador as never);
     }
     for (const manejador of this.manejadoresDeTeleasistencia) {
+      this.registro.registrar(manejador);
+    }
+    for (const manejador of this.manejadoresDePagos) {
       this.registro.registrar(manejador);
     }
   }

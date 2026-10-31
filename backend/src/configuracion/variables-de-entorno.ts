@@ -38,6 +38,15 @@ export type AlmacenDeArchivosConfigurado =
 export const CANALES_DE_RECUPERACION = ['consola', 'deshabilitado'] as const;
 export type CanalDeRecuperacion = (typeof CANALES_DE_RECUPERACION)[number];
 
+// Con qué se cobra y con qué se le paga al cuidador. «simulada» y «simulado» son solo para desarrollo y pruebas
+// (en producción no se admiten: un cobro que no existe no puede darse por hecho). «deshabilitada» responde «no
+// disponible» hasta que se elija proveedor (decisión abierta, docs/PENDIENTES.md).
+export const PASARELAS_DE_PAGOS = ['simulada', 'deshabilitada'] as const;
+export type PasarelaConfigurada = (typeof PASARELAS_DE_PAGOS)[number];
+
+export const DISPERSORES_DE_PAGOS = ['simulado', 'deshabilitado'] as const;
+export type DispersorConfigurado = (typeof DISPERSORES_DE_PAGOS)[number];
+
 const LARGO_MINIMO_SECRETO_BFF = 32;
 // 256 bits: el mínimo para firmar con HS256.
 const LARGO_MINIMO_SECRETO_JWT = 32;
@@ -140,6 +149,58 @@ export class VariablesDeEntorno {
   })
   CANALES_DE_NOTIFICACION_SIMULADOS: string = 'false';
 
+  // Con qué pasarela se cobra. «simulada» (solo desarrollo, pruebas y staging) acepta pagos de mentira firmados con
+  // SECRETO_DE_PASARELA; «deshabilitada» responde «no disponible» hasta que se elija proveedor.
+  @IsIn(PASARELAS_DE_PAGOS, {
+    message: `PASARELA_DE_PAGOS debe ser una de: ${PASARELAS_DE_PAGOS.join(', ')}`,
+  })
+  PASARELA_DE_PAGOS: PasarelaConfigurada = 'deshabilitada';
+
+  // Firma los avisos de la pasarela simulada (32 caracteres o más; obligatorio con la pasarela simulada).
+  @IsOptional()
+  @IsString()
+  SECRETO_DE_PASARELA?: string;
+
+  // Con qué se le paga al cuidador. «deshabilitado» deja las liquidaciones pendientes hasta que haya dispersor.
+  @IsIn(DISPERSORES_DE_PAGOS, {
+    message: `DISPERSOR_DE_PAGOS debe ser uno de: ${DISPERSORES_DE_PAGOS.join(', ')}`,
+  })
+  DISPERSOR_DE_PAGOS: DispersorConfigurado = 'deshabilitado';
+
+  // Si es true, un servicio solo puede iniciar con el pago aprobado. Obligatorio en staging y producción; en
+  // desarrollo puede apagarse para probar sin pagar.
+  @IsIn(['true', 'false'], {
+    message: 'REQUIERE_PAGO_APROBADO debe ser true o false',
+  })
+  REQUIERE_PAGO_APROBADO: string = 'false';
+
+  // Cuánto tiempo tiene la familia para pagar un servicio (o una bolsa) antes de que el pago expire.
+  @Type(() => Number)
+  @IsInt({ message: 'MINUTOS_PARA_PAGAR debe ser un número entero' })
+  @Min(1, { message: 'MINUTOS_PARA_PAGAR debe estar entre 1 y 1440' })
+  @Max(1440, { message: 'MINUTOS_PARA_PAGAR debe estar entre 1 y 1440' })
+  MINUTOS_PARA_PAGAR: number = 120;
+
+  // Cada cuánto se vencen los pagos sin pagar. 0 lo apaga (solo en pruebas).
+  @Type(() => Number)
+  @IsInt({ message: 'INTERVALO_EXPIRACION_PAGOS_MS debe ser un número entero' })
+  @Min(0, {
+    message: 'INTERVALO_EXPIRACION_PAGOS_MS debe estar entre 0 y 3600000',
+  })
+  @Max(3_600_000, {
+    message: 'INTERVALO_EXPIRACION_PAGOS_MS debe estar entre 0 y 3600000',
+  })
+  INTERVALO_EXPIRACION_PAGOS_MS: number = 60_000;
+
+  // Cada cuánto se envían al cuidador las liquidaciones pendientes. 0 lo apaga (solo en pruebas).
+  @Type(() => Number)
+  @IsInt({ message: 'INTERVALO_LIQUIDACION_MS debe ser un número entero' })
+  @Min(0, { message: 'INTERVALO_LIQUIDACION_MS debe estar entre 0 y 3600000' })
+  @Max(3_600_000, {
+    message: 'INTERVALO_LIQUIDACION_MS debe estar entre 0 y 3600000',
+  })
+  INTERVALO_LIQUIDACION_MS: number = 60_000;
+
   // Con qué se firman los tokens de acceso. Obligatorio en todos los entornos: un valor por defecto
   // en el código sería una llave pública.
   @IsString({ message: 'SECRETO_JWT_ACCESO es obligatorio' })
@@ -235,6 +296,13 @@ export interface Configuracion {
   toleranciaDeTomaMinutos: number;
   intervaloOmisionTomasMs: number;
   canalesDeNotificacionSimulados: boolean;
+  pasarelaDePagos: PasarelaConfigurada;
+  secretoDePasarela: string | null;
+  dispersorDePagos: DispersorConfigurado;
+  requierePagoAprobado: boolean;
+  minutosParaPagar: number;
+  intervaloExpiracionPagosMs: number;
+  intervaloLiquidacionMs: number;
   sentryDsn: string | null;
   secretoBff: string | null;
   secretoJwtAcceso: string;
@@ -339,6 +407,19 @@ function reglasAdicionales(variables: VariablesDeEntorno): string[] {
       );
     }
   }
+  if (variables.PASARELA_DE_PAGOS === 'simulada') {
+    if (variables.SECRETO_DE_PASARELA === undefined) {
+      problemas.push(
+        'SECRETO_DE_PASARELA es obligatorio con la pasarela simulada',
+      );
+    } else if (
+      variables.SECRETO_DE_PASARELA.length < LARGO_MINIMO_SECRETO_JWT
+    ) {
+      problemas.push(
+        `SECRETO_DE_PASARELA debe tener al menos ${LARGO_MINIMO_SECRETO_JWT} caracteres`,
+      );
+    }
+  }
   if (variables.URL_PUBLICA_DE_LA_API !== undefined) {
     try {
       new URL(variables.URL_PUBLICA_DE_LA_API);
@@ -361,6 +442,11 @@ function reglasAdicionales(variables: VariablesDeEntorno): string[] {
 
   if (exigeSecreto && variables.COOKIES_SEGURAS !== 'true') {
     problemas.push(`COOKIES_SEGURAS debe ser true en ${variables.NODE_ENV}`);
+  }
+  if (exigeSecreto && variables.REQUIERE_PAGO_APROBADO !== 'true') {
+    problemas.push(
+      `REQUIERE_PAGO_APROBADO debe ser true en ${variables.NODE_ENV} (un servicio no puede iniciar sin pago)`,
+    );
   }
 
   if (variables.NODE_ENV === 'production') {
@@ -411,6 +497,26 @@ function reglasAdicionales(variables: VariablesDeEntorno): string[] {
     if (variables.INTERVALO_EXPIRACION_SERVICIOS_MS === 0) {
       problemas.push(
         'En producción, INTERVALO_EXPIRACION_SERVICIOS_MS no puede ser 0 (las solicitudes sin respuesta nunca expirarían)',
+      );
+    }
+    if (variables.PASARELA_DE_PAGOS === 'simulada') {
+      problemas.push(
+        'En producción, PASARELA_DE_PAGOS no puede ser simulada (un pago de mentira se daría por cobrado)',
+      );
+    }
+    if (variables.DISPERSOR_DE_PAGOS === 'simulado') {
+      problemas.push(
+        'En producción, DISPERSOR_DE_PAGOS no puede ser simulado (un pago al cuidador de mentira se daría por hecho)',
+      );
+    }
+    if (variables.INTERVALO_EXPIRACION_PAGOS_MS === 0) {
+      problemas.push(
+        'En producción, INTERVALO_EXPIRACION_PAGOS_MS no puede ser 0 (los pagos sin pagar nunca vencerían)',
+      );
+    }
+    if (variables.INTERVALO_LIQUIDACION_MS === 0) {
+      problemas.push(
+        'En producción, INTERVALO_LIQUIDACION_MS no puede ser 0 (las liquidaciones nunca se enviarían)',
       );
     }
     if (variables.INTERVALO_SONDEO_OUTBOX_MS === 0) {
@@ -475,6 +581,13 @@ export function configuracionDesdeVariables(
     intervaloOmisionTomasMs: variables.INTERVALO_OMISION_TOMAS_MS,
     canalesDeNotificacionSimulados:
       variables.CANALES_DE_NOTIFICACION_SIMULADOS === 'true',
+    pasarelaDePagos: variables.PASARELA_DE_PAGOS,
+    secretoDePasarela: variables.SECRETO_DE_PASARELA ?? null,
+    dispersorDePagos: variables.DISPERSOR_DE_PAGOS,
+    requierePagoAprobado: variables.REQUIERE_PAGO_APROBADO === 'true',
+    minutosParaPagar: variables.MINUTOS_PARA_PAGAR,
+    intervaloExpiracionPagosMs: variables.INTERVALO_EXPIRACION_PAGOS_MS,
+    intervaloLiquidacionMs: variables.INTERVALO_LIQUIDACION_MS,
     sentryDsn: variables.SENTRY_DSN ?? null,
     secretoBff: variables.SECRETO_BFF ?? null,
     secretoJwtAcceso: variables.SECRETO_JWT_ACCESO,

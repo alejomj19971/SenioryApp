@@ -42,9 +42,12 @@ describe('esquema pagos', () => {
       });
     });
 
+    // La migración no inventa paquetes. Las pruebas que sí insertan los marcan con el prefijo «p-» o «prueba-», y se
+    // ignoran: la base se comparte entre archivos.
     it('no hay paquetes de bolsa hasta que el equipo empresarial los apruebe', async () => {
       const { rows } = await bd.query(
-        `select count(*)::int as total from pagos.paquetes_de_bolsa`,
+        `select count(*)::int as total from pagos.paquetes_de_bolsa
+         where codigo !~ '^(p|prueba)-'`,
       );
       expect(rows[0]?.total).toBe(0);
     });

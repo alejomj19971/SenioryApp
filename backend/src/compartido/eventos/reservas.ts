@@ -16,6 +16,18 @@ export type ServicioSolicitado = EventoDeIntegracion<
   }
 >;
 
+// Lo que Pagos necesita para cobrar un servicio confirmado: son los valores con los que se contrató (E10), en pesos
+// enteros. Pagos los recalcula con la política de precios de esa versión y se niega a cobrar si no cuadran.
+// Pagos no puede preguntarle a Reservas (Reservas ya depende de Pagos para cotizar), por eso viajan en el evento.
+export interface CondicionesDeCobro {
+  medioDePago: 'pasarela' | 'bolsa';
+  horas: number;
+  tarifaHora: number;
+  politicaVersion: number;
+  totalFamilia: number;
+  pagoProfesional: number;
+}
+
 // El servicio quedó confirmado: el cuidador aceptó o se aceptó automáticamente. Pagos cobra aquí (M7).
 export type ServicioConfirmado = EventoDeIntegracion<
   'reservas.servicio_confirmado',
@@ -24,6 +36,7 @@ export type ServicioConfirmado = EventoDeIntegracion<
     familiarId: string;
     cuidadorId: string;
     adultoMayorId: string;
+    cobro: CondicionesDeCobro;
   }
 >;
 
@@ -53,6 +66,7 @@ export const MOTIVOS_DE_CANCELACION = [
   'rechazada', // el cuidador dijo que no
   'expirada', // el cuidador no respondió a tiempo
   'cancelada_por_familia', // la familia canceló
+  'pago_fallido', // el pago se rechazó o venció
 ] as const;
 export type MotivoDeCancelacion = (typeof MOTIVOS_DE_CANCELACION)[number];
 

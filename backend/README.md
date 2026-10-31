@@ -36,7 +36,7 @@ API de Seniory: **monolito modular con arquitectura hexagonal** ([ADR-01](../doc
 | `npm run arquitectura` | Reglas de arquitectura (`dependency-cruiser`): fronteras entre módulos y capas. |
 | `npm run formato` | Da formato con Prettier (`formato:verificar` solo revisa). |
 | `npm test` | Pruebas unitarias (sin Docker). |
-| `npm run test:integracion` | Pruebas de integración y de API: 253 pruebas de restricciones de la base de datos contra un Postgres real y desechable (Testcontainers; requiere Docker). |
+| `npm run test:integracion` | Pruebas de integración y de API contra un Postgres real y desechable (Testcontainers; requiere Docker). Los archivos corren uno tras otro: comparten la base y varios usan colas globales (eventos, avisos, solicitudes y pagos por vencer). |
 | `npm run test:cobertura` | Todas las pruebas con cobertura. |
 
 Comprobar que la API está viva: `GET http://localhost:3001/salud` → `{"estado":"ok"}`.

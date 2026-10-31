@@ -6,8 +6,10 @@ import {
   type AlmacenDeArchivosConfigurado,
   type CanalDeRecuperacion,
   type Configuracion,
+  type DispersorConfigurado,
   type Entorno,
   type NivelDeLog,
+  type PasarelaConfigurada,
   type VariablesDeEntorno,
 } from './variables-de-entorno.js';
 
@@ -53,6 +55,21 @@ export const CONFIGURACION = Symbol('CONFIGURACION');
           ),
           CANALES_DE_NOTIFICACION_SIMULADOS: servicio.getOrThrow<string>(
             'CANALES_DE_NOTIFICACION_SIMULADOS',
+          ),
+          PASARELA_DE_PAGOS:
+            servicio.getOrThrow<PasarelaConfigurada>('PASARELA_DE_PAGOS'),
+          SECRETO_DE_PASARELA: servicio.get<string>('SECRETO_DE_PASARELA'),
+          DISPERSOR_DE_PAGOS:
+            servicio.getOrThrow<DispersorConfigurado>('DISPERSOR_DE_PAGOS'),
+          REQUIERE_PAGO_APROBADO: servicio.getOrThrow<string>(
+            'REQUIERE_PAGO_APROBADO',
+          ),
+          MINUTOS_PARA_PAGAR: servicio.getOrThrow<number>('MINUTOS_PARA_PAGAR'),
+          INTERVALO_EXPIRACION_PAGOS_MS: servicio.getOrThrow<number>(
+            'INTERVALO_EXPIRACION_PAGOS_MS',
+          ),
+          INTERVALO_LIQUIDACION_MS: servicio.getOrThrow<number>(
+            'INTERVALO_LIQUIDACION_MS',
           ),
           TOLERANCIA_DE_TOMA_MINUTOS: servicio.getOrThrow<number>(
             'TOLERANCIA_DE_TOMA_MINUTOS',

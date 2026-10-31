@@ -1,0 +1,1 @@
+ALTER TABLE "reservas"."servicios" ADD COLUMN "pagado_en" timestamp with time zone;

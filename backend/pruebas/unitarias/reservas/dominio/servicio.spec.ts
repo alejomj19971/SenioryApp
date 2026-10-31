@@ -543,6 +543,7 @@ describe('historial y versión', () => {
       horas: original.horas,
       estado: original.estado,
       medioDePago: original.medioDePago,
+      pagadoEn: original.pagadoEn,
       aceptacionAutomatica: original.aceptacionAutomatica,
       solicitudExpiraEn: original.solicitudExpiraEn,
       tarifaHora: original.tarifaHora,
@@ -629,5 +630,160 @@ describe('horasDeAnticipacion', () => {
     });
 
     expect(servicio.horasDeAnticipacion(AHORA_RESERVAS, ZONA)).toBe(0);
+  });
+});
+
+describe('el pago del servicio (M7)', () => {
+  describe('registrarPago', () => {
+    it('anota cuándo se aprobó el pago y sube la versión, sin cambiar el estado', () => {
+      const servicio = servicioEn('aceptado');
+      const version = servicio.version;
+      const momento = minutosDespues(AHORA_RESERVAS, 5);
+
+      expect(servicio.registrarPago(momento)).toBe(true);
+
+      expect(servicio.pagadoEn).toEqual(momento);
+      expect(servicio.estado).toBe('aceptado');
+      expect(servicio.version).toBe(version + 1);
+      expect(servicio.actualizadoEn).toEqual(momento);
+    });
+
+    it('no deja rastro en el historial: no es una transición', () => {
+      const servicio = servicioEn('aceptado');
+      const filas = servicio.transicionesPendientes.length;
+
+      servicio.registrarPago(AHORA_RESERVAS);
+
+      expect(servicio.transicionesPendientes).toHaveLength(filas);
+    });
+
+    it('anotarlo otra vez no cambia nada', () => {
+      const servicio = servicioEn('aceptado');
+      servicio.registrarPago(AHORA_RESERVAS);
+      const version = servicio.version;
+
+      expect(servicio.registrarPago(minutosDespues(AHORA_RESERVAS, 9))).toBe(
+        false,
+      );
+
+      expect(servicio.pagadoEn).toEqual(AHORA_RESERVAS);
+      expect(servicio.version).toBe(version);
+    });
+
+    it('un servicio cancelado no se marca como pagado: el dinero se devuelve por otro camino', () => {
+      const servicio = servicioEn('cancelado');
+
+      expect(servicio.registrarPago(AHORA_RESERVAS)).toBe(false);
+
+      expect(servicio.pagadoEn).toBeNull();
+    });
+
+    it('un servicio nuevo no está pagado', () => {
+      expect(servicioSolicitado().pagadoEn).toBeNull();
+    });
+  });
+
+  describe('iniciar exigiendo el pago', () => {
+    const iniciarCon = (servicio: Servicio, exigirPago: boolean) =>
+      servicio.iniciar(CUIDADOR_USUARIO_ID, AHORA_RESERVAS, ZONA, exigirPago);
+
+    it('sin el pago aprobado, no inicia', () => {
+      const servicio = servicioEn('aceptado', {
+        fecha: HOY_RESERVAS,
+        jornada: 'manana',
+      });
+
+      expect(() => iniciarCon(servicio, true)).toThrow(
+        expect.objectContaining({
+          constructor: ReglaDeNegocioIncumplida,
+          codigo: 'servicio.pago_pendiente',
+        }) as Error,
+      );
+      expect(servicio.estado).toBe('aceptado');
+      expect(servicio.version).toBe(2);
+    });
+
+    it('con el pago aprobado, inicia', () => {
+      const servicio = servicioEn('aceptado', {
+        fecha: HOY_RESERVAS,
+        jornada: 'manana',
+      });
+      servicio.registrarPago(AHORA_RESERVAS);
+
+      iniciarCon(servicio, true);
+
+      expect(servicio.estado).toBe('en_curso');
+    });
+
+    it('si no se exige el pago (desarrollo), inicia sin él', () => {
+      const servicio = servicioEn('aceptado', {
+        fecha: HOY_RESERVAS,
+        jornada: 'manana',
+      });
+
+      iniciarCon(servicio, false);
+
+      expect(servicio.estado).toBe('en_curso');
+    });
+
+    it('por omisión no exige el pago', () => {
+      const servicio = servicioEn('aceptado', {
+        fecha: HOY_RESERVAS,
+        jornada: 'manana',
+      });
+
+      servicio.iniciar(CUIDADOR_USUARIO_ID, AHORA_RESERVAS, ZONA);
+
+      expect(servicio.estado).toBe('en_curso');
+    });
+
+    it('la franja se comprueba antes que el pago', () => {
+      const servicio = servicioEn('aceptado');
+
+      expect(() => iniciarCon(servicio, true)).toThrow(
+        expect.objectContaining({
+          codigo: 'servicio.fuera_de_la_franja',
+        }) as Error,
+      );
+    });
+  });
+
+  describe('cancelarPorPago', () => {
+    it('cancela un servicio aceptado con motivo «pago_fallido», sin actor', () => {
+      const servicio = servicioEn('aceptado');
+      const momento = minutosDespues(AHORA_RESERVAS, 40);
+
+      servicio.cancelarPorPago(momento);
+
+      expect(servicio).toMatchObject({
+        estado: 'cancelado',
+        motivoDeCancelacion: 'pago_fallido',
+        canceladoPor: null,
+        canceladoEn: momento,
+        solicitudExpiraEn: null,
+      });
+      expect(servicio.transicionesPendientes.at(-1)).toEqual({
+        desde: 'aceptado',
+        hacia: 'cancelado',
+        accion: 'cancelar_por_pago',
+        actorId: null,
+        ocurridoEn: momento,
+      });
+    });
+
+    it.each(['solicitado', 'en_curso', 'finalizado', 'cancelado'] as const)(
+      'un servicio %s no se cancela por pago',
+      (estado) => {
+        const servicio = servicioEn(estado);
+        const version = servicio.version;
+
+        expect(() => servicio.cancelarPorPago(AHORA_RESERVAS)).toThrow(
+          ConflictoDeEstado,
+        );
+
+        expect(servicio.estado).toBe(estado);
+        expect(servicio.version).toBe(version);
+      },
+    );
   });
 });

@@ -22,6 +22,11 @@ export default defineConfig({
       INTERVALO_EXPIRACION_SERVICIOS_MS: '0',
       INTERVALO_ENTREGA_NOTIFICACIONES_MS: '0',
       INTERVALO_OMISION_TOMAS_MS: '0',
+      INTERVALO_EXPIRACION_PAGOS_MS: '0',
+      INTERVALO_LIQUIDACION_MS: '0',
+      PASARELA_DE_PAGOS: 'simulada',
+      SECRETO_DE_PASARELA: 'secreto-de-pasarela-solo-para-pruebas-0123',
+      DISPERSOR_DE_PAGOS: 'simulado',
     },
     projects: [
       {
@@ -48,6 +53,12 @@ export default defineConfig({
           hookTimeout: 180_000,
           // Un Postgres real y desechable por corrida, con todas las migraciones aplicadas.
           globalSetup: ['pruebas/soporte/global-setup-bd.ts'],
+          // Los archivos se turnan: comparten la base de datos, y varios usan colas globales (los eventos del outbox,
+          // los avisos por entregar, las solicitudes por expirar, los pagos por vencer). Corridos a la vez, un archivo
+          // entrega, cancela o vence lo que está esperando otro, con un reloj distinto, y las pruebas fallan una de
+          // cada tantas veces sin que nada esté mal. En serie son ~1,5 veces más lentos y siempre dan lo mismo.
+          // (El día que cada archivo tenga su propia base, vuelve a poder ir en paralelo.)
+          fileParallelism: false,
         },
       },
     ],

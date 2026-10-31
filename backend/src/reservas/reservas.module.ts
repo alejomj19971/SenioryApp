@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Inject, Module, type OnModuleInit } from '@nestjs/common';
 import {
   AUDITORIA,
   type Auditoria,
@@ -21,6 +21,7 @@ import {
   type UnidadDeTrabajo,
 } from '../compartido/aplicacion/puertos/unidad-de-trabajo.js';
 import { ContextoTransaccional } from '../compartido/infraestructura/base-de-datos/contexto-transaccional.js';
+import { RegistroDeManejadores } from '../compartido/infraestructura/outbox/registro-de-manejadores.js';
 import { CONFIGURACION } from '../configuracion/configuracion.module.js';
 import type { Configuracion } from '../configuracion/variables-de-entorno.js';
 import {
@@ -37,6 +38,10 @@ import {
   COTIZADOR_DE_SERVICIOS,
   type CotizadorDeServicios,
 } from '../pagos/aplicacion/puertos/entrada/cotizador-de-servicios.js';
+import {
+  CONSULTA_DE_PAGOS,
+  type ConsultaDePagos,
+} from '../pagos/aplicacion/puertos/entrada/consulta-de-pagos.js';
 import { PagosModule } from '../pagos/pagos.module.js';
 import {
   AceptarServicio,
@@ -53,6 +58,10 @@ import {
 } from './aplicacion/casos-de-uso/consultar-servicios.js';
 import { ExpirarSolicitudes } from './aplicacion/casos-de-uso/expirar-solicitudes.js';
 import { SolicitarServicio } from './aplicacion/casos-de-uso/solicitar-servicio.js';
+import {
+  CancelarServicioPorPagoFallido,
+  RegistrarPagoDelServicio,
+} from './aplicacion/manejadores/reaccionar-a-pagos.js';
 import {
   CONSULTA_DE_RESERVAS,
   type ConsultaDeReservas,
@@ -75,6 +84,8 @@ import { ServiciosController } from './infraestructura/entrada/http/servicios.co
 import { SondeoDeExpiraciones } from './infraestructura/entrada/programado/sondeo-de-expiraciones.js';
 import { RepositorioCalificacionesDrizzle } from './infraestructura/salida/persistencia/repositorio-calificaciones-drizzle.js';
 import { RepositorioServiciosDrizzle } from './infraestructura/salida/persistencia/repositorio-servicios-drizzle.js';
+
+const MANEJADORES_DE_PAGOS = Symbol('ManejadoresDePagos');
 
 // Módulo de Reservas (M4): contratación y ciclo de vida del servicio. Exporta SOLO `CONSULTA_DE_RESERVAS` (el
 // puerto de entrada para Pagos, Notificaciones, Teleasistencia y Mensajería). Repositorios y casos de uso son
@@ -162,6 +173,7 @@ import { RepositorioServiciosDrizzle } from './infraestructura/salida/persistenc
         CONSULTA_DE_IDENTIDAD,
         CONSULTA_DE_DIRECTORIO,
         COTIZADOR_DE_SERVICIOS,
+        CONSULTA_DE_PAGOS,
         UNIDAD_DE_TRABAJO,
         EventosDeReservas,
         AUDITORIA,
@@ -174,6 +186,7 @@ import { RepositorioServiciosDrizzle } from './infraestructura/salida/persistenc
         identidad: ConsultaDeIdentidad,
         directorio: ConsultaDeDirectorio,
         cotizador: CotizadorDeServicios,
+        pagos: ConsultaDePagos,
         unidadDeTrabajo: UnidadDeTrabajo,
         eventos: EventosDeReservas,
         auditoria: Auditoria,
@@ -186,6 +199,7 @@ import { RepositorioServiciosDrizzle } from './infraestructura/salida/persistenc
           identidad,
           directorio,
           cotizador,
+          pagos,
           unidadDeTrabajo,
           eventos,
           auditoria,
@@ -264,6 +278,7 @@ import { RepositorioServiciosDrizzle } from './infraestructura/salida/persistenc
           ejecutor,
           eventos,
           configuracion.zonaHorariaNegocio,
+          configuracion.requierePagoAprobado,
         ),
     },
     {
@@ -359,6 +374,20 @@ import { RepositorioServiciosDrizzle } from './infraestructura/salida/persistenc
         ),
     },
 
+    // Reacciona a los eventos de Pagos
+    {
+      provide: MANEJADORES_DE_PAGOS,
+      inject: [REPOSITORIO_SERVICIOS, EventosDeReservas, RELOJ],
+      useFactory: (
+        servicios: RepositorioServicios,
+        eventos: EventosDeReservas,
+        reloj: Reloj,
+      ) => [
+        new RegistrarPagoDelServicio(servicios, reloj),
+        new CancelarServicioPorPagoFallido(servicios, eventos, reloj),
+      ],
+    },
+
     // Lo que otros módulos pueden usar
     {
       provide: CONSULTA_DE_RESERVAS,
@@ -384,4 +413,19 @@ import { RepositorioServiciosDrizzle } from './infraestructura/salida/persistenc
   ],
   exports: [CONSULTA_DE_RESERVAS],
 })
-export class ReservasModule {}
+export class ReservasModule implements OnModuleInit {
+  constructor(
+    @Inject(RegistroDeManejadores)
+    private readonly registro: RegistroDeManejadores,
+    @Inject(MANEJADORES_DE_PAGOS)
+    private readonly manejadoresDePagos: (
+      RegistrarPagoDelServicio | CancelarServicioPorPagoFallido
+    )[],
+  ) {}
+
+  onModuleInit(): void {
+    for (const manejador of this.manejadoresDePagos) {
+      this.registro.registrar(manejador as never);
+    }
+  }
+}

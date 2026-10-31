@@ -13,7 +13,10 @@ import {
   validarVariables,
 } from '../../src/configuracion/variables-de-entorno.js';
 
-import { SECRETO_JWT_DE_PRUEBA } from './secretos.js';
+import {
+  SECRETO_DE_PASARELA_DE_PRUEBA,
+  SECRETO_JWT_DE_PRUEBA,
+} from './secretos.js';
 
 export interface OpcionesDeAppDePrueba {
   // Controladores extra, solo de prueba (por ejemplo, rutas que lanzan cada tipo de error).
@@ -39,6 +42,11 @@ export async function crearAppDePrueba(
       INTERVALO_EXPIRACION_SERVICIOS_MS: '0',
       INTERVALO_ENTREGA_NOTIFICACIONES_MS: '0',
       INTERVALO_OMISION_TOMAS_MS: '0',
+      INTERVALO_EXPIRACION_PAGOS_MS: '0',
+      INTERVALO_LIQUIDACION_MS: '0',
+      PASARELA_DE_PAGOS: 'simulada',
+      SECRETO_DE_PASARELA: SECRETO_DE_PASARELA_DE_PRUEBA,
+      DISPERSOR_DE_PAGOS: 'simulado',
       NIVEL_DE_LOG: 'error',
       ...opciones.variables,
     }),

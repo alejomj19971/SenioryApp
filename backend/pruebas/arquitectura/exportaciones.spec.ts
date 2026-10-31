@@ -8,6 +8,7 @@ import { CONSULTA_DE_IDENTIDAD } from '../../src/identidad/aplicacion/puertos/en
 import { CUENTAS_DE_CUIDADORES } from '../../src/identidad/aplicacion/puertos/entrada/cuentas-de-cuidadores.js';
 import { REPOSITORIO_USUARIOS } from '../../src/identidad/aplicacion/puertos/salida/repositorio-usuarios.js';
 import { IdentidadModule } from '../../src/identidad/identidad.module.js';
+import { CONSULTA_DE_PAGOS } from '../../src/pagos/aplicacion/puertos/entrada/consulta-de-pagos.js';
 import { COTIZADOR_DE_SERVICIOS } from '../../src/pagos/aplicacion/puertos/entrada/cotizador-de-servicios.js';
 import { PagosModule } from '../../src/pagos/pagos.module.js';
 import { CONSULTA_DE_RESERVAS } from '../../src/reservas/aplicacion/puertos/entrada/consulta-de-reservas.js';
@@ -55,7 +56,7 @@ const PERMITIDAS_POR_MODULO = [
   {
     nombre: 'PagosModule',
     modulo: PagosModule,
-    permitidas: [COTIZADOR_DE_SERVICIOS],
+    permitidas: [COTIZADOR_DE_SERVICIOS, CONSULTA_DE_PAGOS],
   },
   {
     // Solo reacciona a eventos: no ofrece nada a otros módulos.

@@ -412,6 +412,11 @@ describe('en producción', () => {
         INTERVALO_EXPIRACION_SERVICIOS_MS: '60000',
         INTERVALO_ENTREGA_NOTIFICACIONES_MS: '2000',
         INTERVALO_OMISION_TOMAS_MS: '60000',
+        INTERVALO_EXPIRACION_PAGOS_MS: '60000',
+        INTERVALO_LIQUIDACION_MS: '60000',
+        PASARELA_DE_PAGOS: 'deshabilitada',
+        DISPERSOR_DE_PAGOS: 'deshabilitado',
+        REQUIERE_PAGO_APROBADO: 'true',
       },
       ajustar: (constructor) =>
         constructor

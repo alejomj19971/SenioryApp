@@ -70,6 +70,8 @@ export interface DatosDeServicio {
   pagoProfesional: number;
   politicaVersion: number;
   claveDeIdempotencia: string;
+  // Cuándo Pagos avisó que el pago quedó aprobado; null mientras no.
+  pagadoEn: Date | null;
   solicitadoEn: Date;
   aceptadoEn: Date | null;
   iniciadoEn: Date | null;
@@ -157,6 +159,7 @@ export class Servicio {
         pagoProfesional: entrada.pagoProfesional,
         politicaVersion: entrada.politicaVersion,
         claveDeIdempotencia: entrada.claveDeIdempotencia,
+        pagadoEn: null,
         solicitadoEn: entrada.ahora,
         aceptadoEn: quedaAceptado ? entrada.ahora : null,
         iniciadoEn: null,
@@ -248,6 +251,9 @@ export class Servicio {
   get claveDeIdempotencia(): string {
     return this.datos.claveDeIdempotencia;
   }
+  get pagadoEn(): Date | null {
+    return this.datos.pagadoEn;
+  }
   get solicitadoEn(): Date {
     return this.datos.solicitadoEn;
   }
@@ -329,8 +335,37 @@ export class Servicio {
     this.cancelarCon('cancelada_por_familia', familiarUsuarioId, ahora);
   }
 
-  // El cuidador marca que empezó. Solo dentro de su franja (con un margen para quien llega un poco antes).
-  iniciar(cuidadorUsuarioId: string, ahora: Date, zonaHoraria: string): void {
+  // Pagos avisa que el pago quedó aprobado. Devuelve falso si no hay nada que anotar: ya estaba anotado, o el
+  // servicio se canceló mientras tanto (el dinero se devuelve por otro camino).
+  registrarPago(ahora: Date): boolean {
+    if (this.datos.pagadoEn !== null || this.datos.estado === 'cancelado') {
+      return false;
+    }
+    this.datos.pagadoEn = ahora;
+    this.datos.version += 1;
+    this.datos.actualizadoEn = ahora;
+    return true;
+  }
+
+  // Pagos avisa que el pago no se hizo (la pasarela lo rechazó, venció o el saldo de la bolsa no alcanzó).
+  cancelarPorPago(ahora: Date): void {
+    const estado = transicionar(
+      this.datos.estado,
+      'cancelar_por_pago',
+      'sistema',
+    );
+    this.mover(estado, 'cancelar_por_pago', null, ahora);
+    this.cancelarCon('pago_fallido', null, ahora);
+  }
+
+  // El cuidador marca que empezó. Solo dentro de su franja (con un margen para quien llega un poco antes). Con
+  // `exigirPago`, además, el pago tiene que estar aprobado: nadie presta un servicio que no se ha pagado.
+  iniciar(
+    cuidadorUsuarioId: string,
+    ahora: Date,
+    zonaHoraria: string,
+    exigirPago = false,
+  ): void {
     const estado = transicionar(this.datos.estado, 'iniciar', 'cuidador');
     if (
       !franjaContiene(
@@ -344,6 +379,12 @@ export class Servicio {
       throw new ReglaDeNegocioIncumplida(
         'El servicio solo puede iniciarse dentro de su franja',
         'servicio.fuera_de_la_franja',
+      );
+    }
+    if (exigirPago && this.datos.pagadoEn === null) {
+      throw new ReglaDeNegocioIncumplida(
+        'El servicio todavía no está pagado',
+        'servicio.pago_pendiente',
       );
     }
     this.mover(estado, 'iniciar', cuidadorUsuarioId, ahora);

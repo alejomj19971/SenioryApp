@@ -72,6 +72,8 @@ export const servicios = esquemaReservas.table(
     // Versión de la política de precios en `pagos`.
     politicaVersion: integer('politica_version').notNull(),
     claveIdempotencia: text('clave_idempotencia').notNull(),
+    // Cuándo Pagos avisó que el pago quedó aprobado. Con él se decide si el servicio puede iniciar.
+    pagadoEn: instante('pagado_en'),
     solicitadoEn: instante('solicitado_en').notNull().defaultNow(),
     aceptadoEn: instante('aceptado_en'),
     iniciadoEn: instante('iniciado_en'),

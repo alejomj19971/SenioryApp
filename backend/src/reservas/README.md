@@ -18,11 +18,12 @@ solicitado ── aceptar (cuidador) ───────▶ aceptado
 solicitado ── rechazar (cuidador) ──────▶ cancelado  (motivo «rechazada»)
 solicitado ── expirar (sistema) ────────▶ cancelado  (motivo «expirada»)
 solicitado / aceptado ── cancelar (familia) ▶ cancelado  (motivo «cancelada_por_familia»)
+aceptado ── cancelar_por_pago (sistema) ▶ cancelado  (motivo «pago_fallido»: el pago se rechazó o venció)
 aceptado ── iniciar (cuidador) ─────────▶ en_curso
 en_curso ── finalizar (cuidador) ───────▶ finalizado
 ```
 
-Es una función pura sobre una tabla (`maquina-de-estados.ts`); una prueba la compara con esta misma tabla y comprueba que las otras 118 combinaciones de estado × acción × actor se rechazan (403 si ese actor nunca puede hacerlo, 409 si el estado no lo admite). `finalizado` y `cancelado` son finales. Cada transición deja una fila en `historial_de_estados`.
+Es una función pura sobre una tabla (`maquina-de-estados.ts`); una prueba la compara con esta misma tabla y comprueba que las otras 135 combinaciones de estado × acción × actor se rechazan (403 si ese actor nunca puede hacerlo, 409 si el estado no lo admite). `finalizado` y `cancelado` son finales. Cada transición deja una fila en `historial_de_estados`.
 
 ## Reglas que conviene saber
 
@@ -36,10 +37,11 @@ Es una función pura sobre una tabla (`maquina-de-estados.ts`); una prueba la co
 | Sin doble reserva    | Un cuidador no puede tener dos servicios activos (solicitado, aceptado o en curso) en la misma fecha y franja: índice único parcial en la base. Si dos familias piden a la vez, **una recibe 201 y la otra 409** (`servicio.franja_ocupada`).                                   |
 | Idempotencia         | `Idempotency-Key` (8–100 caracteres) es obligatoria. El mismo reintento devuelve el mismo servicio (201 la primera vez, 200 después, aunque lleguen simultáneos); la misma clave con otra solicitud es 409.                                                                     |
 | Aceptación           | Por defecto el cuidador debe aceptar, dentro de **2 horas** (30 minutos si el servicio es para hoy). Solo si el propio cuidador activó la aceptación automática nace aceptado. Pasado el plazo ya no puede aceptar, aunque la tarea no haya corrido.                            |
-| Iniciar              | Solo dentro de la franja del servicio, o hasta 30 minutos antes. (Decisión abierta: check-in del cuidador, como hoy, o automático.)                                                                                                                                             |
-| Cancelar             | La familia, mientras esté solicitado o aceptado. El evento lleva las horas de anticipación; el reembolso lo decide Pagos con la política que defina el negocio (M7).                                                                                                            |
+| Iniciar              | Solo dentro de la franja del servicio, o hasta 30 minutos antes; con `REQUIERE_PAGO_APROBADO=true` además el **pago debe estar aprobado** (422 `servicio.pago_pendiente`). (Decisión abierta: check-in del cuidador, como hoy, o automático.)                                                                                                                                             |
+| Cancelar             | La familia, mientras esté solicitado o aceptado. El evento lleva las horas de anticipación; Pagos devuelve el dinero (hoy siempre todo: la política de cancelación tardía es una decisión abierta).                                                                                                            |
 | Calificar            | Solo la familia que contrató, solo un servicio finalizado y una sola vez. Crea la reseña del cuidador (Directorio) y suma el servicio a su contador.                                                                                                                            |
 | Concurrencia         | Cada acción toma la fila con `FOR NO KEY UPDATE` y guarda con bloqueo optimista por `version`: dos acciones simultáneas sobre el mismo servicio se atienden una tras otra o la segunda recibe 409.                                                                              |
+| Pago                 | Pagos cobra al confirmarse el servicio y avisa con eventos: `pago_aprobado` hace que Reservas anote `pagado_en`; `pago_rechazado` (la pasarela lo rechazó, venció o la bolsa no alcanzó) cancela el servicio **aceptado** con motivo `pago_fallido`. Uno ya iniciado se deja terminar. Pagar con la bolsa exige saldo desde que se pide el servicio (422 `bolsa.saldo_insuficiente`). |
 | Servicio ajeno       | Cada acción verifica quién es el actor y su relación con el servicio. Quien no es parte recibe **404**, igual que si no existiera.                                                                                                                                              |
 
 ## Lo que otros módulos pueden usar
@@ -52,7 +54,7 @@ Es una función pura sobre una tabla (`maquina-de-estados.ts`); una prueba la co
 | `cuidadorTieneServicioActivo(cuidadorId, adultoMayorId)` | Teleasistencia, **en cada acceso** | Verdadero con un servicio en curso, o aceptado cuya franja es ahora. Terminar o cancelar corta el acceso de inmediato |
 | `obtenerParticipantes(id)`                               | Mensajería                         | La cuenta del familiar y la del cuidador que pueden hablar en ese servicio                                            |
 
-Reservas usa: de Identidad, `esFamiliarVinculado`, `tieneConsentimientoVigente` y `obtenerAdultoMayor`; de Directorio, `obtenerCuidadorParaContratar`, `obtenerContactoDeCuidador` y `obtenerCuidadorPorUsuario`; de Pagos, `COTIZADOR_DE_SERVICIOS`.
+Reservas usa: de Identidad, `esFamiliarVinculado`, `tieneConsentimientoVigente` y `obtenerAdultoMayor`; de Directorio, `obtenerCuidadorParaContratar`, `obtenerContactoDeCuidador` y `obtenerCuidadorPorUsuario`; de Pagos, `COTIZADOR_DE_SERVICIOS` y `CONSULTA_DE_PAGOS` (¿alcanza la bolsa?). Pagos **no** puede consultar a Reservas (Reservas ya depende de Pagos): por eso el evento `servicio_confirmado` lleva las condiciones de cobro.
 
 ## Eventos
 
@@ -61,15 +63,17 @@ Contratos en [`compartido/eventos/reservas.ts`](../compartido/eventos/reservas.t
 | Evento                         | Cuándo                                          | Quién reacciona                                              |
 | ------------------------------ | ----------------------------------------------- | ------------------------------------------------------------ |
 | `reservas.servicio_solicitado` | La familia pide el servicio                     | Notificaciones avisa al cuidador (M5)                        |
-| `reservas.servicio_confirmado` | El cuidador acepta (o nace aceptado)            | Pagos cobra (M7); Notificaciones avisa a la familia          |
+| `reservas.servicio_confirmado` | El cuidador acepta (o nace aceptado); trae las condiciones de cobro | Pagos cobra (M7); Notificaciones avisa a la familia          |
 | `reservas.servicio_iniciado`   | El cuidador marca que inició                    | Notificaciones                                               |
 | `reservas.servicio_finalizado` | El cuidador marca que terminó                   | Directorio suma al contador del cuidador; Pagos liquida (M7) |
-| `reservas.servicio_cancelado`  | Rechazo, expiración o cancelación de la familia | Pagos decide el reembolso (M7); Notificaciones               |
+| `reservas.servicio_cancelado`  | Rechazo, expiración, cancelación de la familia o pago fallido | Pagos devuelve el dinero (M7); Notificaciones               |
 | `reservas.servicio_calificado` | La familia califica un servicio finalizado      | Directorio crea la reseña y recalcula el promedio            |
+
+Y Reservas **consume** `pagos.pago_aprobado` (anota `pagado_en`) y `pagos.pago_rechazado` (cancela por pago fallido).
 
 ## Variables de entorno
 
-`INTERVALO_EXPIRACION_SERVICIOS_MS` (por defecto 60 000: cada minuto). 0 la apaga, **solo en pruebas**; la configuración lo prohíbe en producción. Detalle en [`.env.ejemplo`](../../.env.ejemplo).
+`INTERVALO_EXPIRACION_SERVICIOS_MS` (por defecto 60 000: cada minuto). 0 la apaga, **solo en pruebas**; la configuración lo prohíbe en producción. `REQUIERE_PAGO_APROBADO` (obligatoria en staging y producción) exige el pago aprobado para iniciar. Detalle en [`.env.ejemplo`](../../.env.ejemplo).
 
 ## Estructura
 

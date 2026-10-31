@@ -4,13 +4,13 @@ import { RELOJ } from '../../src/compartido/aplicacion/puertos/reloj.js';
 import type { EventoDeIntegracion } from '../../src/compartido/eventos/evento-de-integracion.js';
 import { DespachadorDeEventos } from '../../src/compartido/infraestructura/outbox/despachador-de-eventos.js';
 import { RegistroDeManejadores } from '../../src/compartido/infraestructura/outbox/registro-de-manejadores.js';
-import { ExpirarSolicitudes } from '../../src/reservas/aplicacion/casos-de-uso/expirar-solicitudes.js';
 import { CrearAvisos } from '../../src/notificaciones/aplicacion/casos-de-uso/crear-avisos.js';
 import { EntregarPendientes } from '../../src/notificaciones/aplicacion/casos-de-uso/entregar-pendientes.js';
 import { como, SECRETO_BFF } from '../soporte/api.js';
 import { crearAppDePrueba } from '../soporte/app.js';
 import { conectarBd, nuevoId } from '../soporte/bd.js';
 import { RelojFalso } from '../soporte/dobles.js';
+import { expirarSolicitudesDe } from '../soporte/expiracion.js';
 import {
   nuevaFamilia,
   nuevoCuidador,
@@ -161,7 +161,7 @@ describe('notificaciones (API)', () => {
       });
     });
 
-    it('el recorrido completo deja 8 avisos: solicitado, confirmado, iniciado y finalizado × 2 partes', async () => {
+    it('el recorrido completo deja 9 avisos: solicitado, confirmado, iniciado y finalizado × 2 partes, y el de pago', async () => {
       const c = await nuevoCuidador(app, reloj);
       const id = await crearServicio(c, { fecha: HOY, jornada: 'manana' });
       await accion('aceptar', id, await c.cookie());
@@ -170,6 +170,8 @@ describe('notificaciones (API)', () => {
       await procesarEventos();
 
       expect(await tiposDe(id)).toEqual([
+        // Al confirmarse, Pagos le pide a la familia que pague (se paga con la pasarela).
+        'pago_requerido:familia',
         'servicio_confirmado:cuidador',
         'servicio_confirmado:familia',
         'servicio_finalizado:cuidador',
@@ -187,6 +189,7 @@ describe('notificaciones (API)', () => {
       await procesarEventos();
 
       expect(await tiposDe(id)).toEqual([
+        'pago_requerido:familia',
         'servicio_confirmado:cuidador',
         'servicio_confirmado:familia',
         'servicio_solicitado:cuidador',
@@ -225,7 +228,7 @@ describe('notificaciones (API)', () => {
       const c = await nuevoCuidador(app, reloj);
       const id = await crearServicio(c);
       reloj.avanzar(2 * 60 * 60_000);
-      await app.get(ExpirarSolicitudes, { strict: false }).ejecutar();
+      await expirarSolicitudesDe(app, [id]).ejecutar();
       await procesarEventos();
 
       const cancelados = (await avisosDe(id)).filter((a) =>
@@ -675,13 +678,27 @@ afterAll(async () => {
 
 // Envía TODO lo pendiente, no solo un lote: la base se comparte con las demás pruebas, que también dejan avisos
 // pendientes, y un lote de 50 podría no incluir los de esta. Devuelve cuántos avisos tomó en total.
+//
+// Otra prueba que corra al mismo tiempo (Teleasistencia también envía avisos) puede tener bloqueados los avisos que
+// quedan: el envío se los salta (`SKIP LOCKED`) y esta ronda tomaría cero aunque falten. Por eso, si al terminar
+// todavía hay avisos pendientes, espera un momento y vuelve a intentar unas pocas veces.
 async function entregarTodo(app: NestExpressApplication): Promise<number> {
   const caso = app.get(EntregarPendientes, { strict: false });
   let total = 0;
+  let reintentos = 0;
   for (let vuelta = 0; vuelta < 100; vuelta++) {
     const tomadas = await caso.ejecutar();
-    if (tomadas === 0) break;
-    total += tomadas;
+    if (tomadas > 0) {
+      total += tomadas;
+      reintentos = 0;
+      continue;
+    }
+    const { rows } = await bd.query(
+      "select 1 from notificaciones.notificaciones where estado = 'pendiente' and proximo_intento_en <= now() limit 1",
+    );
+    if (rows.length === 0 || reintentos >= 5) break;
+    reintentos += 1;
+    await new Promise((resolver) => setTimeout(resolver, 100));
   }
   return total;
 }

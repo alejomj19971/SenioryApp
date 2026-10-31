@@ -5,6 +5,7 @@ import type {
 import type { GeneradorDeIds } from '../../src/compartido/aplicacion/puertos/generador-de-ids.js';
 import type { PublicadorDeEventos } from '../../src/compartido/aplicacion/puertos/publicador-de-eventos.js';
 import type { Reloj } from '../../src/compartido/aplicacion/puertos/reloj.js';
+import type { UnidadDeTrabajo } from '../../src/compartido/aplicacion/puertos/unidad-de-trabajo.js';
 import type { Id } from '../../src/compartido/dominio/id.js';
 import type { EventoDeIntegracion } from '../../src/compartido/eventos/evento-de-integracion.js';
 
@@ -60,5 +61,13 @@ export class AuditoriaEnMemoria implements Auditoria {
   registrar(entrada: EntradaDeAuditoria): Promise<void> {
     this.entradas.push(entrada);
     return Promise.resolve();
+  }
+}
+
+// Una unidad de trabajo sin base de datos: ejecuta el trabajo tal cual. Si lanza, no hay nada que revertir (los
+// dobles en memoria no guardan nada hasta que el trabajo termina bien).
+export class UnidadDeTrabajoEnMemoria implements UnidadDeTrabajo {
+  ejecutar<T>(trabajo: () => Promise<T>): Promise<T> {
+    return trabajo();
   }
 }

@@ -73,10 +73,10 @@
 
 | | Pendiente |
 |---|---|
-| ⚖️🚀 | **Política de cancelación y reembolso.** El evento `servicio_cancelado` ya lleva las horas de anticipación para que Pagos (M7) la aplique. |
+| ⚖️🚀 | **Política de cancelación y reembolso.** El evento `servicio_cancelado` ya lleva las horas de anticipación; Pagos (M7) hoy **siempre devuelve todo**. Cuando el negocio la defina, se aplica en `ReembolsarServicioCancelado`. |
 | 🧑 | **Cómo pasa un servicio a «en curso»:** hoy el cuidador marca el inicio (check-in), solo dentro de su franja o hasta 30 minutos antes. Decidir si además debe ser automático. |
 | 🔧 | **Servicios aceptados que nunca se iniciaron** (el cuidador no llegó, o no marcó): hoy se quedan «aceptado» para siempre. Falta decidir qué pasa (marcar «no se presentó», avisar, reembolsar) — M10. |
-| 🔧🚀 | **Exigir el pago aprobado para iniciar** (`REQUIERE_PAGO_APROBADO`): lo activa M7, cuando exista el pago; hoy un servicio aceptado puede iniciar sin pago. |
+| 🔧 | **Exigir el pago aprobado para iniciar:** ya está hecho (`REQUIERE_PAGO_APROBADO`, obligatorio en staging y producción). En desarrollo viene apagado para poder probar sin pagar. |
 | 🔧 | Que el cuidador defina su propia `aceptacionAutomatica` (hoy es un campo del perfil que solo se cambia por base de datos o por el importador): llega con M9. |
 | 🧑 | **Anticipación máxima de 180 días** y **plazos de aceptación** (2 h, o 30 min si es para hoy) están en el dominio como constantes: confirmarlos con el equipo. |
 | 🔧 | Una franja de 6 h admite servicios de hasta 8 h (rango de la base de datos): decidir si las horas deben caber en la franja. |
@@ -91,7 +91,6 @@
 | 🧑🚀 | **Proveedor de correo y de SMS o WhatsApp.** Hoy el único canal real es la aplicación (la campana, `GET /notificaciones`); correo, SMS, WhatsApp y push no se registran hasta que haya proveedor. **Sin un canal confiable fuera de la app, una alerta de teleasistencia solo llegaría a quien tenga la app abierta: no se puede lanzar así.** |
 | 🔧🚀 | **Un adaptador por canal real** (`CanalDeNotificacion`) y probar el tiempo de entrega de alertas en staging con el canal real (E11): `entregada_en − creada_en` ya queda guardado en cada aviso. |
 | 🔧 | **Confirmación de entrega** de SMS y WhatsApp: hoy un canal con proveedor responde `enviada` (aceptado) y no pasa a `entregada`; falta el webhook del proveedor que lo confirme. |
-| 🔧 | Handlers de Pagos (`PagoAprobado`, `PagoRechazado`: M7) y de Teleasistencia (`AlertaGenerada`, `MedicamentoOmitido`, `LecturaFueraDeRango`: M6). El motor ya soporta la prioridad alta y los varios canales a la vez. |
 | 🔧 | **Preferencias de la persona** (qué canales usa) y **horario silencioso** (las alertas lo ignoran): la tabla `preferencias_de_notificacion` existe, falta la API y usarla al elegir canales. |
 | 🔧 | **Marcar como leídas** (la campana no sabe qué falta por ver): necesita una columna nueva. Y publicar `NotificacionEntregada`. |
 | 🧑 | Costo por mensaje de cada canal, para decidir cuáles son «normales» (hoy: app y correo) y cuáles solo para alertas (SMS, WhatsApp). |
@@ -113,14 +112,21 @@
 | 🔧 | Convenio real con un servicio de emergencias: solo con un acuerdo y su propio ADR (hoy no hay «línea de emergencia», ni simulada). |
 | 🔧 | Frontend (F5): `teleasistencia.ts`, `BotonAlerta` con clave de idempotencia y estado real, `ListaMedicamentos` optimista y `GraficaSignos` con estado vacío. |
 
-### M7 — Pagos II: cobro, bolsas y liquidación
+### M7 — Pagos II: cobro, bolsas y liquidación  *(backend construido)*
 
 | | Pendiente |
 |---|---|
-| 🔧 | Todo el módulo: cobro, bolsas de horas, liquidación al cuidador y el webhook de la pasarela. |
-| 🧑🚀 | **Pasarela de pagos** que acepte marketplace y dispersión al cuidador, y cómo se paga al cuidador. |
-| ⚖️🚀 | **Bolsa en pesos u horas**, sus paquetes y descuentos. |
-| ⚖️🚀 | Empresa constituida, cuenta comercial aprobada, facturación electrónica ante la DIAN y tratamiento de retenciones. |
+| 🧑🚀 | **Elegir la pasarela de pagos** (que acepte marketplace y devoluciones) y **cómo se le paga al cuidador** (transferencia, dispersión de la pasarela). Hoy hay una pasarela y un dispersor **simulados** (solo desarrollo, pruebas y staging; la configuración los prohíbe en producción) y uno **deshabilitado** que responde «no disponible». **Sin esto no se puede cobrar en producción:** con `REQUIERE_PAGO_APROBADO=true` ningún servicio podría iniciar. |
+| 🔧🚀 | **Un adaptador por proveedor** (`PasarelaDePagos` y `DispersorDePagos`): crear el cobro con el id del pago como referencia, consultar estado, reembolsar con clave de idempotencia, **verificar la firma sobre el cuerpo crudo** e interpretar el aviso. El adaptador debe quitar los datos de tarjeta antes de guardar el aviso. Probar el webhook real en staging. |
+| ⚖️🚀 | **Bolsa en pesos u horas, sus paquetes y descuentos.** La tabla de paquetes está **vacía** hasta que el negocio los apruebe (el saldo ya se lleva en pesos; `horas_referencia` es solo para mostrar). `GET /catalogo/bolsas` devuelve la lista vacía mientras tanto. |
+| ⚖️🚀 | **Política de cancelación tardía.** Hoy se devuelve todo siempre; si la familia debe perder algo, hay que decidir qué pasa con ese dinero (¿se liquida al cuidador, parcial?). `servicio_cancelado` ya trae `horasDeAnticipacion`. |
+| ⚖️🚀 | Empresa constituida, cuenta comercial aprobada, **facturación electrónica ante la DIAN** y tratamiento de retenciones. |
+| 🔧 | **Conciliación diaria** contra el reporte de la pasarela (tabla `conciliaciones`): hoy solo se recupera cada pago pendiente preguntándole su estado antes de vencerlo. Depende del reporte del proveedor. |
+| 🔧 | **Pagos tardíos y reembolsos fallidos** (`pagos.aprobacion_tardia`, `pagos.reembolso_tardio_fallido` en la auditoría): hoy los atiende una persona; falta una alarma (Sentry) y una pantalla para el administrador (M10). |
+| 🔧 | **Liquidaciones `fallidas`** (rechazo definitivo del dispersor): no se reintentan solas; falta la acción de administrador para corregir la cuenta y reintentar (`Liquidacion.reintentar` ya existe), y confirmar las `enviadas` por el webhook del dispersor. |
+| 🔧 | **Datos de la cuenta del cuidador** (banco, número, titular, cifrados): hoy el dispersor recibe solo el id del cuidador. Llega con M9 (registro del cuidador) y la elección del dispersor. |
+| 🔧 | Un pago de servicio con **cobro parcial o con propina**, y **reembolsos parciales**: no están en el alcance. |
+| 🔧 | Frontend (F3 y F4): `/bolsa` y la compra con `Idempotency-Key`, el enlace de pago, el estado «falta pagar» del servicio y la vista de liquidaciones del cuidador. |
 
 ### M8 — Mensajería
 

@@ -15,6 +15,7 @@ import {
 } from '../soporte/api.js';
 import { crearAppDePrueba } from '../soporte/app.js';
 import { conectarBd, nuevoId } from '../soporte/bd.js';
+import { esperarQue } from '../soporte/espera.js';
 import { RelojFalso } from '../soporte/dobles.js';
 import {
   nuevaFamilia,
@@ -82,11 +83,22 @@ describe('teleasistencia (API)', () => {
   const procesarEventos = () =>
     app.get(DespachadorDeEventos, { strict: false }).esperarEntregas();
 
-  // Envía TODO lo pendiente: la base se comparte con las demás pruebas, que también dejan avisos pendientes.
+  // Envía TODO lo pendiente: la base se comparte con las demás pruebas, que también dejan avisos pendientes. Si otra
+  // prueba que corre al mismo tiempo tiene bloqueados los que faltan (el envío se los salta), espera y reintenta.
   async function entregarTodo(): Promise<void> {
     const caso = app.get(EntregarPendientes, { strict: false });
+    let reintentos = 0;
     for (let vuelta = 0; vuelta < 100; vuelta++) {
-      if ((await caso.ejecutar()) === 0) break;
+      if ((await caso.ejecutar()) > 0) {
+        reintentos = 0;
+        continue;
+      }
+      const quedan = await filas(
+        "select 1 from notificaciones.notificaciones where estado = 'pendiente' and proximo_intento_en <= now() limit 1",
+      );
+      if (quedan.length === 0 || reintentos >= 5) break;
+      reintentos += 1;
+      await new Promise((resolver) => setTimeout(resolver, 100));
     }
   }
 
@@ -1343,13 +1355,19 @@ describe('teleasistencia (API)', () => {
       await entregarTodo();
       await procesarEventos();
 
-      const [fila] = await filas<{
-        estado: string;
-        generada_en: Date;
-        primera_entrega_en: Date | null;
-      }>(
-        'select estado, generada_en, primera_entrega_en from teleasistencia.alertas where id = $1',
-        [alertaId],
+      // Otro archivo de prueba que corra a la vez puede haber entregado este aviso (la cola es de toda la base) y
+      // estar todavía anotándolo: se espera a que la alerta llegue a «notificada» en lugar de suponer que ya pasó.
+      const [fila] = await esperarQue(
+        () =>
+          filas<{
+            estado: string;
+            generada_en: Date;
+            primera_entrega_en: Date | null;
+          }>(
+            'select estado, generada_en, primera_entrega_en from teleasistencia.alertas where id = $1',
+            [alertaId],
+          ),
+        ([actual]) => actual?.estado === 'notificada',
       );
 
       expect(fila?.estado).toBe('notificada');

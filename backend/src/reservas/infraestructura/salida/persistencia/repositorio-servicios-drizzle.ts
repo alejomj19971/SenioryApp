@@ -47,6 +47,7 @@ export class RepositorioServiciosDrizzle implements RepositorioServicios {
           pagoProfesional: servicio.pagoProfesional,
           politicaVersion: servicio.politicaVersion,
           claveIdempotencia: servicio.claveDeIdempotencia,
+          pagadoEn: servicio.pagadoEn,
           solicitadoEn: servicio.solicitadoEn,
           aceptadoEn: servicio.aceptadoEn,
           iniciadoEn: servicio.iniciadoEn,
@@ -89,6 +90,7 @@ export class RepositorioServiciosDrizzle implements RepositorioServicios {
         .set({
           estado: servicio.estado,
           solicitudExpiraEn: servicio.solicitudExpiraEn,
+          pagadoEn: servicio.pagadoEn,
           aceptadoEn: servicio.aceptadoEn,
           iniciadoEn: servicio.iniciadoEn,
           finalizadoEn: servicio.finalizadoEn,

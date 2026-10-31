@@ -103,6 +103,12 @@ function cancelado(rol: 'familia' | 'cuidador'): Plantilla {
           cuerpo: `El cuidador no alcanzó a responder tu solicitud para el ${momento}. Elige a otra persona en Seniory.`,
         };
       }
+      if (motivo === 'pago_fallido') {
+        return {
+          titulo: 'No se pudo cobrar tu servicio',
+          cuerpo: `El servicio del ${momento} se canceló porque el pago no se completó. Puedes pedirlo de nuevo en Seniory.`,
+        };
+      }
       return {
         titulo: 'Servicio cancelado',
         cuerpo: `Cancelaste el servicio del ${momento}.`,
@@ -118,6 +124,12 @@ function cancelado(rol: 'familia' | 'cuidador'): Plantilla {
       return {
         titulo: 'Una solicitud venció',
         cuerpo: `La solicitud para el ${momento} venció sin tu respuesta.`,
+      };
+    }
+    if (motivo === 'pago_fallido') {
+      return {
+        titulo: 'Se canceló un servicio',
+        cuerpo: `El servicio del ${momento} se canceló porque la familia no completó el pago.`,
       };
     }
     return {
@@ -184,6 +196,31 @@ PLANTILLAS['medicamento_omitido:destinatario'] = () => ({
 PLANTILLAS['lectura_fuera_de_rango:destinatario'] = () => ({
   titulo: 'Hay un registro para revisar',
   cuerpo: 'Hay un registro nuevo que conviene revisar. Ábrelo en Seniory.',
+});
+
+// Pagos. Los avisos no llevan montos: dicen que hay algo por hacer y mandan a abrir Seniory.
+PLANTILLAS['pago_requerido:familia'] = (p) => ({
+  titulo: 'Falta pagar tu servicio',
+  cuerpo: `Tu servicio del ${cuando(p)} está confirmado. Págalo en Seniory para asegurarlo.`,
+});
+PLANTILLAS['pago_reembolsado:familia'] = (p) => ({
+  titulo: 'Te devolvimos tu pago',
+  cuerpo: `Devolvimos el pago del servicio del ${cuando(p)}. Puedes verlo en Seniory.`,
+});
+PLANTILLAS['compra_de_bolsa_fallida:familia'] = (p) => {
+  const motivo = texto(p, 'motivo');
+  return {
+    titulo: 'No se completó tu compra',
+    cuerpo:
+      motivo === 'expirado'
+        ? 'El plazo para pagar tu bolsa de horas venció. Puedes intentarlo de nuevo en Seniory.'
+        : 'El pago de tu bolsa de horas no se completó. Puedes intentarlo de nuevo en Seniory.',
+  };
+};
+PLANTILLAS['bolsa_comprada:familia'] = () => ({
+  titulo: 'Tu bolsa ya tiene saldo',
+  cuerpo:
+    'Tu pago se aprobó y tu bolsa de horas ya tiene saldo. Úsala en Seniory.',
 });
 
 export const TIPOS_DE_AVISO = Object.keys(PLANTILLAS);

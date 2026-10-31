@@ -1,7 +1,10 @@
 import type { ContextoDePeticion } from '../../../compartido/aplicacion/puertos/contexto-de-peticion.js';
 import type { GeneradorDeIds } from '../../../compartido/aplicacion/puertos/generador-de-ids.js';
 import type { PublicadorDeEventos } from '../../../compartido/aplicacion/puertos/publicador-de-eventos.js';
-import type { EventoDeReservas } from '../../../compartido/eventos/reservas.js';
+import type {
+  CondicionesDeCobro,
+  EventoDeReservas,
+} from '../../../compartido/eventos/reservas.js';
 import type { Servicio } from '../../dominio/servicio.js';
 
 type DatosDe<Tipo extends EventoDeReservas['tipo']> = Extract<
@@ -16,6 +19,18 @@ export function participantesDe(servicio: Servicio) {
     familiarId: servicio.familiarId,
     cuidadorId: servicio.cuidadorId,
     adultoMayorId: servicio.adultoMayorId,
+  };
+}
+
+// Con qué condiciones se contrató el servicio: Pagos las recalcula y las compara antes de cobrar.
+export function cobroDe(servicio: Servicio): CondicionesDeCobro {
+  return {
+    medioDePago: servicio.medioDePago,
+    horas: servicio.horas,
+    tarifaHora: servicio.tarifaHora,
+    politicaVersion: servicio.politicaVersion,
+    totalFamilia: servicio.totalFamilia,
+    pagoProfesional: servicio.pagoProfesional,
   };
 }
 

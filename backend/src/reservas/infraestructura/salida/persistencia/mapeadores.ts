@@ -69,6 +69,7 @@ export function servicioDeFila(fila: typeof servicios.$inferSelect): Servicio {
     pagoProfesional: fila.pagoProfesional,
     politicaVersion: fila.politicaVersion,
     claveDeIdempotencia: fila.claveIdempotencia,
+    pagadoEn: fila.pagadoEn,
     solicitadoEn: fila.solicitadoEn,
     aceptadoEn: fila.aceptadoEn,
     iniciadoEn: fila.iniciadoEn,

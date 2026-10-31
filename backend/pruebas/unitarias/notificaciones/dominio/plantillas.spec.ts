@@ -31,8 +31,12 @@ describe('renderizarAviso', () => {
   it('hay una plantilla para cada parte de cada cambio del servicio', () => {
     expect([...TIPOS_DE_AVISO].sort()).toEqual([
       'alerta_generada:destinatario',
+      'bolsa_comprada:familia',
+      'compra_de_bolsa_fallida:familia',
       'lectura_fuera_de_rango:destinatario',
       'medicamento_omitido:destinatario',
+      'pago_reembolsado:familia',
+      'pago_requerido:familia',
       'servicio_cancelado:cuidador',
       'servicio_cancelado:familia',
       'servicio_confirmado:cuidador',
@@ -76,6 +80,8 @@ describe('renderizarAviso', () => {
       ['cuidador', 'rechazada', 'Rechazaste una solicitud'],
       ['cuidador', 'expirada', 'Una solicitud venció'],
       ['cuidador', 'cancelada_por_familia', 'La familia canceló el servicio'],
+      ['familia', 'pago_fallido', 'No se pudo cobrar tu servicio'],
+      ['cuidador', 'pago_fallido', 'Se canceló un servicio'],
     ])('%s / %s → «%s»', (rol, motivo, titulo) => {
       const aviso = renderizarAviso(
         `servicio_cancelado:${rol}`,

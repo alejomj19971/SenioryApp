@@ -12,12 +12,14 @@ import { FechaCivil } from '../../../compartido/dominio/fecha-civil.js';
 import { esJornada } from '../../../compartido/dominio/jornada.js';
 import type { ConsultaDeDirectorio } from '../../../directorio/aplicacion/puertos/entrada/consulta-de-directorio.js';
 import type { ConsultaDeIdentidad } from '../../../identidad/aplicacion/puertos/entrada/consulta-de-identidad.js';
+import type { ConsultaDePagos } from '../../../pagos/aplicacion/puertos/entrada/consulta-de-pagos.js';
 import type { CotizadorDeServicios } from '../../../pagos/aplicacion/puertos/entrada/cotizador-de-servicios.js';
 import type { ServicioId } from '../../dominio/ids.js';
 import { Servicio } from '../../dominio/servicio.js';
 import { medioDePagoDesdeTexto } from '../../dominio/valores-cerrados.js';
 import type { RepositorioServicios } from '../puertos/salida/repositorio-servicios.js';
 import {
+  cobroDe,
   participantesDe,
   type EventosDeReservas,
 } from '../servicios/eventos-de-reservas.js';
@@ -50,6 +52,7 @@ export class SolicitarServicio {
     private readonly identidad: ConsultaDeIdentidad,
     private readonly directorio: ConsultaDeDirectorio,
     private readonly cotizador: CotizadorDeServicios,
+    private readonly pagos: ConsultaDePagos,
     private readonly unidadDeTrabajo: UnidadDeTrabajo,
     private readonly eventos: EventosDeReservas,
     private readonly auditoria: Auditoria,
@@ -106,6 +109,17 @@ export class SolicitarServicio {
       entrada.cuidadorId,
       entrada.horas,
     );
+    // Pagar con la bolsa exige saldo desde ya: no tiene sentido pedirle al cuidador un servicio que la familia no
+    // puede cubrir. La reserva real se hace al confirmarse, cuando Pagos vuelve a comprobarlo.
+    if (
+      medioDePago === 'bolsa' &&
+      !(await this.pagos.bolsaAlcanzaPara(familiarId, cotizacion.totalFamilia))
+    ) {
+      throw new ReglaDeNegocioIncumplida(
+        'No tienes saldo suficiente en tu bolsa para este servicio',
+        'bolsa.saldo_insuficiente',
+      );
+    }
 
     const ahora = this.reloj.ahora();
     const servicio = Servicio.solicitar({
@@ -142,7 +156,7 @@ export class SolicitarServicio {
         if (servicio.estado === 'aceptado') {
           await this.eventos.publicar(
             'reservas.servicio_confirmado',
-            participantesDe(servicio),
+            { ...participantesDe(servicio), cobro: cobroDe(servicio) },
             ahora,
           );
         }
