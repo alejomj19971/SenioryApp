@@ -51,7 +51,7 @@ Base de datos  ████████████████████  com
 | M1 · PR 4 | Perfil (`/yo`), personas mayores, consentimientos y el primer puerto de entrada (`ConsultaDeIdentidad`), con eventos, auditoría y la matriz de autorización. | ✅ commit `5f5f7a2` (ya en `main`) |
 | M1 · PR 5 | `npm run crear-admin`, `npm run semillas` (Andrea y Doña Carmen, solo fuera de producción) y README del módulo. | ✅ commit `f61d471` (ya en `main`) |
 | M1 · PR 6 | Cambiar y recuperar la contraseña: `olvidé mi contraseña`, enlace de 30 minutos y un solo uso, cierre de todas las sesiones y puerto del canal de correo. | ✅ commit `d170900` (ya en `main`) |
-| M1 · PR 7 | Ajustes para el BFF: verificación de `Origin` contra CSRF (las llamadas del BFF no lo traen y se aceptan). | ✅ hecho, **sin commit** |
+| M1 · PR 7 | Ajustes para el BFF: verificación de `Origin` contra CSRF (las llamadas del BFF no lo traen y se aceptan). | ✅ commit `08103b6` (ya en `main`) |
 | M1 · PR 8 | Exportar y eliminar cuenta (opcional; puede pasar a M10). | ⏭️ siguiente |
 | M2 → M11 | Directorio, pagos, reservas, notificaciones, teleasistencia, mensajería, verificación, despliegue, IA. | Pendientes, en ese orden |
 
@@ -84,7 +84,7 @@ Cada rama parte de la anterior. Se revisan con un PR encadenado por entrega (la 
 | 11 | `feat/m1-perfil` | M1 PR 4 y un arreglo de dependencias (ya en `main`). |
 | 12 | `feat/m1-fixtures-y-admin` | M1 PR 5 (ya en `main`). |
 | 13 | `feat/m1-contrasena` | M1 PR 6 (ya en `main`). |
-| 14 | `feat/m1-bff` (actual) | M1 PR 7 y el archivo de pendientes. **Solo en local.** |
+| 14 | `feat/m1-bff` (actual) | M1 PR 7 y el archivo de pendientes (ya en `main`). |
 
 **La CI solo corre en el PR 6:** es la primera rama que tiene `.github/workflows/backend.yml`. Una vez fusionada en `main`, correrá en todos los PR que toquen `backend/`.
 
