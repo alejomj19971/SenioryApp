@@ -46,13 +46,20 @@
 | 🔧 | Rotar el secreto de firma de los tokens sin invalidar los de acceso vigentes: hoy acepta una sola clave. |
 | 🔧 | Reintentos del envío del enlace de recuperación (hoy, si el canal falla, la persona pide otro): llegan con Notificaciones (M5). |
 
-### M2 — Directorio (lectura)
+### M2 — Directorio (lectura)  *(backend construido)*
 
 | | Pendiente |
 |---|---|
-| 🔧 | Todo el módulo: búsqueda y perfiles de cuidadores verificados, reseñas y `GET /cuidadores`. |
-| 🧑 | **Límite de peticiones del directorio** para evitar el vaciado masivo (decisión abierta). |
-| 🧑 | Revisar si los teléfonos de `frontend/data/cuidadores.json` son de personas reales, y la **licencia de las fotos** de la landing. |
+| 🧑🚀 | **Cargar los primeros cuidadores reales** con `npm run cuidadores:importar`: quién revisa los documentos, en cuánto tiempo y con qué vigencia (procedimiento operativo), y el archivo revisado. Sin ellos, el directorio de producción está vacío por diseño. |
+| 🧑🚀 | **Almacén de archivos real** (bucket privado con URL firmadas) cuando haya hosting: hoy en producción la hoja de vida responde 503 (`ALMACEN_DE_ARCHIVOS=deshabilitado`); el almacén local es solo para desarrollo. |
+| 🔧🚀 | **Programar `npm run cuidadores:revisar-vigencias` cada día** (cron del hosting). Mientras no corra, un control vencido ya oculta el perfil al leerlo, pero la búsqueda lo seguiría listando hasta la revisión. |
+| 🔧 | **Fotos de los cuidadores:** hoy `fotoUrl` es un texto sin almacén detrás; se resuelve con el almacén real (M9, subida por el cuidador). |
+| 🔧 | La búsqueda normaliza el texto en la aplicación (sin `unaccent`) y usa `LIKE` sobre columnas normalizadas con índices `pg_trgm`. Revisar con `EXPLAIN` cuando haya volumen real. |
+| 🔧 | La ruta `GET /cuidadores/:id/hoja-de-vida` responde un 302 hacia el API: el BFF (F2) decide si lo sigue por el servidor o redirige al navegador. |
+| 🔧 | Frontend: `cuidadores.ts` y el buscador contra la API (F2). |
+| 🧑 | Revisar si los teléfonos de `frontend/data/cuidadores.json` son de personas reales, y la **licencia de las fotos** de la landing. Las semillas del backend usan nombres y teléfonos inventados, no esos datos. |
+
+*Resuelto en M2:* el directorio exige sesión y pasa por el límite global de peticiones (100 por minuto por IP); un límite propio y más estricto queda para M10 si hace falta.
 
 ### M3 — Pagos I: cotización
 

@@ -7,3 +7,6 @@ coverage/
 .env
 .env.*
 !.env.ejemplo
+
+# Archivos del almacén local de desarrollo (hojas de vida de prueba)
+archivos-locales/

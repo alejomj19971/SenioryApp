@@ -26,7 +26,9 @@
     "bd:abajo": "docker compose down",
     "bd:generar": "drizzle-kit generate",
     "crear-admin": "npm run build && node --env-file-if-exists=.env dist/identidad/infraestructura/entrada/consola/crear-administrador-cli.js",
-    "semillas": "npm run build && node --env-file-if-exists=.env dist/identidad/infraestructura/entrada/consola/semillas-cli.js",
+    "semillas": "npm run build && node --env-file-if-exists=.env dist/identidad/infraestructura/entrada/consola/semillas-cli.js && node --env-file-if-exists=.env dist/directorio/infraestructura/entrada/consola/semillas-de-directorio-cli.js",
+    "cuidadores:importar": "npm run build && node --env-file-if-exists=.env dist/directorio/infraestructura/entrada/consola/importar-cuidadores-cli.js",
+    "cuidadores:revisar-vigencias": "npm run build && node --env-file-if-exists=.env dist/directorio/infraestructura/entrada/consola/revisar-vigencias-cli.js",
     "bd:migrar": "npm run build && node --env-file-if-exists=.env dist/compartido/infraestructura/base-de-datos/migrar-cli.js"
   },
   "dependencies": {

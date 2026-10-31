@@ -53,6 +53,12 @@ export class Usuario {
     return Usuario.crear(datos, 'administrador');
   }
 
+  // Una cuenta de cuidador la crea Directorio al cargar a un cuidador ya verificado; nadie se registra
+  // solo con este rol (M9 abrirá la postulación).
+  static registrarCuidador(datos: DatosParaCrearUsuario): Usuario {
+    return Usuario.crear(datos, 'cuidador');
+  }
+
   // Para reconstruir desde la base de datos: los datos ya fueron validados al guardarse.
   static reconstruir(datos: DatosDeUsuario): Usuario {
     return new Usuario({ ...datos });

@@ -63,6 +63,7 @@ import type { DiccionarioDeContrasenasComunes } from './dominio/contrasena.js';
 import { ActualizarPerfilPropio } from './aplicacion/casos-de-uso/actualizar-perfil-propio.js';
 import { CambiarContrasena } from './aplicacion/casos-de-uso/cambiar-contrasena.js';
 import { CrearAdministrador } from './aplicacion/casos-de-uso/crear-administrador.js';
+import { CrearCuentaDeCuidador } from './aplicacion/casos-de-uso/crear-cuenta-de-cuidador.js';
 import { ObtenerAdultoMayor } from './aplicacion/casos-de-uso/obtener-adulto-mayor.js';
 import { ObtenerPerfilPropio } from './aplicacion/casos-de-uso/obtener-perfil-propio.js';
 import { OtorgarConsentimiento } from './aplicacion/casos-de-uso/otorgar-consentimiento.js';
@@ -70,6 +71,10 @@ import { RegistrarAdultoMayor } from './aplicacion/casos-de-uso/registrar-adulto
 import { RestablecerContrasena } from './aplicacion/casos-de-uso/restablecer-contrasena.js';
 import { RevocarConsentimiento } from './aplicacion/casos-de-uso/revocar-consentimiento.js';
 import { SolicitarRecuperacion } from './aplicacion/casos-de-uso/solicitar-recuperacion.js';
+import {
+  CUENTAS_DE_CUIDADORES,
+  type CuentasDeCuidadores,
+} from './aplicacion/puertos/entrada/cuentas-de-cuidadores.js';
 import {
   CONSULTA_DE_IDENTIDAD,
   type ConsultaDeIdentidad,
@@ -117,7 +122,7 @@ const MS_POR_MINUTO = 60_000;
 const MS_POR_DIA = 24 * 60 * MS_POR_MINUTO;
 
 // Módulo de Identidad (M1). Exporta SOLO lo que otros módulos pueden usar: el verificador de tokens
-// para el guard global y `CONSULTA_DE_IDENTIDAD`. Repositorios, hash y emisor
+// para el guard global, `CONSULTA_DE_IDENTIDAD` y `CUENTAS_DE_CUIDADORES`. Repositorios, hash y emisor
 // de tokens son privados: si otro módulo intenta inyectarlos, Nest falla al arrancar. Las clases se
 // crean con fábricas para que la capa de aplicación no dependa de decoradores de Nest.
 @Module({
@@ -660,6 +665,36 @@ const MS_POR_DIA = 24 * 60 * MS_POR_MINUTO;
 
     // Lo que otros módulos pueden usar
     {
+      provide: CUENTAS_DE_CUIDADORES,
+      inject: [
+        REPOSITORIO_USUARIOS,
+        HASH_DE_CONTRASENAS,
+        GENERADOR_DE_TOKENS_OPACOS,
+        DICCIONARIO_DE_CONTRASENAS,
+        AUDITORIA,
+        RELOJ,
+        GENERADOR_DE_IDS,
+      ],
+      useFactory: (
+        usuarios: RepositorioUsuarios,
+        hash: HashDeContrasenas,
+        tokensOpacos: GeneradorDeTokensOpacos,
+        comunes: DiccionarioDeContrasenasComunes,
+        auditoria: Auditoria,
+        reloj: Reloj,
+        ids: GeneradorDeIds,
+      ): CuentasDeCuidadores =>
+        new CrearCuentaDeCuidador(
+          usuarios,
+          hash,
+          tokensOpacos,
+          comunes,
+          auditoria,
+          reloj,
+          ids,
+        ),
+    },
+    {
       provide: CONSULTA_DE_IDENTIDAD,
       inject: [
         REPOSITORIO_USUARIOS,
@@ -687,6 +722,10 @@ const MS_POR_DIA = 24 * 60 * MS_POR_MINUTO;
         ),
     },
   ],
-  exports: [VERIFICADOR_DE_TOKENS, CONSULTA_DE_IDENTIDAD],
+  exports: [
+    VERIFICADOR_DE_TOKENS,
+    CONSULTA_DE_IDENTIDAD,
+    CUENTAS_DE_CUIDADORES,
+  ],
 })
 export class IdentidadModule {}

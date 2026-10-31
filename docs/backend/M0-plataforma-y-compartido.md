@@ -369,7 +369,7 @@ Flujo:
 | `sin-ciclos` | Cualquier dependencia circular. |
 | `dominio-puro` | Que `*/dominio/**` importe `aplicacion`, `infraestructura`, `@nestjs/*`, `class-validator`, `drizzle-orm`, `pg`, `express` u otro módulo (salvo `compartido/dominio`). Los decoradores de validación son de la capa REST; el dominio valida con sus objetos de valor. |
 | `aplicacion-sin-infraestructura` | Que `*/aplicacion/**` importe `infraestructura`. |
-| `frontera-de-modulo` | Que un módulo importe de otro algo distinto de `aplicacion/puertos/entrada`. |
+| `frontera-de-modulo` | Que un módulo importe de otro algo distinto de `aplicacion/puertos/entrada` y de su archivo `<modulo>.module.ts` (Nest lo necesita para poder inyectar los puertos; lo que ese módulo exporta lo vigila la regla de `exports`). |
 | `esquemas-privados` | Que el esquema de persistencia de un módulo se importe desde otro módulo. |
 | `eventos-por-contrato` | Que un manejador importe eventos de otro sitio que no sea `compartido/eventos`. |
 | `compartido-no-depende-de-modulos` | Que `compartido` importe cualquier módulo de negocio. |

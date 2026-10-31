@@ -1,6 +1,7 @@
 import { Module } from '@nestjs/common';
 import { VERIFICADOR_DE_TOKENS } from '../../src/compartido/aplicacion/puertos/verificador-de-tokens.js';
 import { CONSULTA_DE_IDENTIDAD } from '../../src/identidad/aplicacion/puertos/entrada/consulta-de-identidad.js';
+import { CUENTAS_DE_CUIDADORES } from '../../src/identidad/aplicacion/puertos/entrada/cuentas-de-cuidadores.js';
 import { REPOSITORIO_USUARIOS } from '../../src/identidad/aplicacion/puertos/salida/repositorio-usuarios.js';
 import { IdentidadModule } from '../../src/identidad/identidad.module.js';
 
@@ -32,7 +33,11 @@ const PERMITIDAS_POR_MODULO = [
   {
     nombre: 'IdentidadModule',
     modulo: IdentidadModule,
-    permitidas: [VERIFICADOR_DE_TOKENS, CONSULTA_DE_IDENTIDAD],
+    permitidas: [
+      VERIFICADOR_DE_TOKENS,
+      CONSULTA_DE_IDENTIDAD,
+      CUENTAS_DE_CUIDADORES,
+    ],
   },
 ] as const;
 

@@ -31,6 +31,10 @@ export const NIVELES_DE_LOG = [
 ] as const;
 export type NivelDeLog = (typeof NIVELES_DE_LOG)[number];
 
+export const ALMACENES_DE_ARCHIVOS = ['local', 'deshabilitado'] as const;
+export type AlmacenDeArchivosConfigurado =
+  (typeof ALMACENES_DE_ARCHIVOS)[number];
+
 export const CANALES_DE_RECUPERACION = ['consola', 'deshabilitado'] as const;
 export type CanalDeRecuperacion = (typeof CANALES_DE_RECUPERACION)[number];
 
@@ -126,6 +130,27 @@ export class VariablesDeEntorno {
   })
   CANAL_DE_RECUPERACION: CanalDeRecuperacion = 'deshabilitado';
 
+  // Dónde se guardan los archivos de los cuidadores (hoja de vida). «local» usa una carpeta del servidor
+  // (solo desarrollo, pruebas y staging: en producción no se admite). «deshabilitado» responde «no
+  // disponible» hasta que haya un almacén real, según el hosting.
+  @IsIn(ALMACENES_DE_ARCHIVOS, {
+    message: `ALMACEN_DE_ARCHIVOS debe ser uno de: ${ALMACENES_DE_ARCHIVOS.join(', ')}`,
+  })
+  ALMACEN_DE_ARCHIVOS: AlmacenDeArchivosConfigurado = 'deshabilitado';
+
+  @IsString()
+  DIRECTORIO_DE_ARCHIVOS: string = './archivos-locales';
+
+  // Con él se firman las direcciones temporales de los archivos (obligatorio con el almacén local).
+  @IsOptional()
+  @IsString()
+  SECRETO_DE_ARCHIVOS?: string;
+
+  // Dirección de la API a la que apuntan esas direcciones temporales; por defecto, el servidor local.
+  @IsOptional()
+  @IsString()
+  URL_PUBLICA_DE_LA_API?: string;
+
   // Versión del texto del consentimiento para tratar datos de salud que se pide aceptar.
   @Matches(/^[A-Za-z0-9][A-Za-z0-9._-]{0,19}$/, {
     message:
@@ -161,6 +186,10 @@ export interface Configuracion {
   versionPoliticaVigente: string;
   versionConsentimientoSaludVigente: string;
   canalDeRecuperacion: CanalDeRecuperacion;
+  almacenDeArchivos: AlmacenDeArchivosConfigurado;
+  directorioDeArchivos: string;
+  secretoDeArchivos: string | null;
+  urlPublicaDeLaApi: string;
 }
 
 export class ErrorDeConfiguracion extends Error {
@@ -240,6 +269,25 @@ function reglasAdicionales(variables: VariablesDeEntorno): string[] {
     }
   }
 
+  if (variables.ALMACEN_DE_ARCHIVOS === 'local') {
+    if (variables.SECRETO_DE_ARCHIVOS === undefined) {
+      problemas.push('SECRETO_DE_ARCHIVOS es obligatorio con el almacén local');
+    } else if (
+      variables.SECRETO_DE_ARCHIVOS.length < LARGO_MINIMO_SECRETO_JWT
+    ) {
+      problemas.push(
+        `SECRETO_DE_ARCHIVOS debe tener al menos ${LARGO_MINIMO_SECRETO_JWT} caracteres`,
+      );
+    }
+  }
+  if (variables.URL_PUBLICA_DE_LA_API !== undefined) {
+    try {
+      new URL(variables.URL_PUBLICA_DE_LA_API);
+    } catch {
+      problemas.push('URL_PUBLICA_DE_LA_API no es una dirección válida');
+    }
+  }
+
   const exigeSecreto =
     variables.NODE_ENV === 'staging' || variables.NODE_ENV === 'production';
   if (exigeSecreto) {
@@ -274,6 +322,11 @@ function reglasAdicionales(variables: VariablesDeEntorno): string[] {
     ) {
       problemas.push(
         'En producción, NIVEL_DE_LOG no puede ser debug ni trace (podrían registrarse datos personales)',
+      );
+    }
+    if (variables.ALMACEN_DE_ARCHIVOS === 'local') {
+      problemas.push(
+        'En producción, ALMACEN_DE_ARCHIVOS no puede ser local (el disco del servidor pierde los archivos al desplegar)',
       );
     }
     if (variables.CANAL_DE_RECUPERACION === 'consola') {
@@ -347,5 +400,12 @@ export function configuracionDesdeVariables(
     versionConsentimientoSaludVigente:
       variables.VERSION_CONSENTIMIENTO_SALUD_VIGENTE,
     canalDeRecuperacion: variables.CANAL_DE_RECUPERACION,
+    almacenDeArchivos: variables.ALMACEN_DE_ARCHIVOS,
+    directorioDeArchivos: variables.DIRECTORIO_DE_ARCHIVOS,
+    secretoDeArchivos: variables.SECRETO_DE_ARCHIVOS ?? null,
+    urlPublicaDeLaApi: (
+      variables.URL_PUBLICA_DE_LA_API ??
+      `http://localhost:${variables.PUERTO}/api/v1`
+    ).replace(/\/+$/, ''),
   };
 }

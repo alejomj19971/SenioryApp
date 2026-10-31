@@ -25,7 +25,9 @@ API de Seniory: **monolito modular con arquitectura hexagonal** ([ADR-01](../doc
 | `npm run bd:arriba` | Enciende Postgres en Docker (puerto **5434**). `bd:abajo` lo apaga. |
 | `npm run bd:migrar` | Aplica las migraciones a esa base. |
 | `npm run crear-admin` | Crea un administrador. Lee `ADMIN_NOMBRE`, `ADMIN_CORREO` y `ADMIN_CONTRASENA` del entorno. Sirve en todos los entornos. |
-| `npm run semillas` | Crea datos de ejemplo (la familiar Andrea y Doña Carmen). Pide `CONTRASENA_DE_PRUEBA`; **se niega a correr en producción**. |
+| `npm run semillas` | Crea datos de ejemplo (la familiar Andrea y Doña Carmen, y 9 cuidadores). Pide `CONTRASENA_DE_PRUEBA`; **se niega a correr en producción**. |
+| `npm run cuidadores:importar -- ruta.json` | Carga cuidadores **reales** con sus tres controles ya revisados. Formato y reglas en el [README de Directorio](./src/directorio/README.md). |
+| `npm run cuidadores:revisar-vigencias` | Oculta a los cuidadores a quienes se les venció un control. Programarlo una vez al día. |
 | `npm run bd:generar` | Genera una migración nueva desde los esquemas (`-- --custom --name=…` para SQL a mano). |
 | `npm run dev` | Arranca la API con recarga en `http://localhost:3001`. |
 | `npm run build` | Compila a `dist/`. |

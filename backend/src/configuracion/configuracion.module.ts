@@ -3,6 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import {
   configuracionDesdeVariables,
   validarVariables,
+  type AlmacenDeArchivosConfigurado,
   type CanalDeRecuperacion,
   type Configuracion,
   type Entorno,
@@ -58,6 +59,15 @@ export const CONFIGURACION = Symbol('CONFIGURACION');
           VERSION_POLITICA_VIGENTE: servicio.getOrThrow<string>(
             'VERSION_POLITICA_VIGENTE',
           ),
+          ALMACEN_DE_ARCHIVOS:
+            servicio.getOrThrow<AlmacenDeArchivosConfigurado>(
+              'ALMACEN_DE_ARCHIVOS',
+            ),
+          DIRECTORIO_DE_ARCHIVOS: servicio.getOrThrow<string>(
+            'DIRECTORIO_DE_ARCHIVOS',
+          ),
+          SECRETO_DE_ARCHIVOS: servicio.get<string>('SECRETO_DE_ARCHIVOS'),
+          URL_PUBLICA_DE_LA_API: servicio.get<string>('URL_PUBLICA_DE_LA_API'),
           CANAL_DE_RECUPERACION: servicio.getOrThrow<CanalDeRecuperacion>(
             'CANAL_DE_RECUPERACION',
           ),

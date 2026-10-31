@@ -68,6 +68,10 @@ describe('validarVariables', () => {
         versionPoliticaVigente: 'v1',
         versionConsentimientoSaludVigente: 'v1',
         canalDeRecuperacion: 'deshabilitado',
+        almacenDeArchivos: 'deshabilitado',
+        directorioDeArchivos: './archivos-locales',
+        secretoDeArchivos: null,
+        urlPublicaDeLaApi: 'http://localhost:3001/api/v1',
       });
     });
 
@@ -341,6 +345,74 @@ describe('validarVariables', () => {
         configuracionDesdeVariables(validarVariables(entornoBase()))
           .canalDeRecuperacion,
       ).toBe('deshabilitado');
+    });
+
+    it('el almacén de archivos es «deshabilitado» por defecto: no se finge que se guarda algo', () => {
+      expect(
+        configuracionDesdeVariables(validarVariables(entornoBase()))
+          .almacenDeArchivos,
+      ).toBe('deshabilitado');
+    });
+
+    it('el almacén local exige el secreto de firma de 32 caracteres o más', () => {
+      expect(
+        problemasDe(entornoBase({ ALMACEN_DE_ARCHIVOS: 'local' })).join(),
+      ).toContain('SECRETO_DE_ARCHIVOS es obligatorio');
+      expect(
+        problemasDe(
+          entornoBase({
+            ALMACEN_DE_ARCHIVOS: 'local',
+            SECRETO_DE_ARCHIVOS: 'corto',
+          }),
+        ).join(),
+      ).toContain('al menos 32');
+      expect(
+        problemasDe(
+          entornoBase({
+            ALMACEN_DE_ARCHIVOS: 'local',
+            SECRETO_DE_ARCHIVOS: 'a'.repeat(32),
+          }),
+        ),
+      ).toEqual([]);
+    });
+
+    it('en producción rechaza el almacén local: el disco del servidor pierde los archivos', () => {
+      expect(
+        problemasDe(
+          entornoDeProduccion({
+            ALMACEN_DE_ARCHIVOS: 'local',
+            SECRETO_DE_ARCHIVOS: 'a'.repeat(32),
+          }),
+        ).join(),
+      ).toContain('ALMACEN_DE_ARCHIVOS no puede ser local');
+    });
+
+    it('rechaza un almacén desconocido y una dirección pública inválida', () => {
+      expect(
+        problemasDe(entornoBase({ ALMACEN_DE_ARCHIVOS: 'nube' })).join(),
+      ).toContain('ALMACEN_DE_ARCHIVOS');
+      expect(
+        problemasDe(
+          entornoBase({ URL_PUBLICA_DE_LA_API: 'no es una url' }),
+        ).join(),
+      ).toContain('URL_PUBLICA_DE_LA_API');
+    });
+
+    it('la dirección pública por defecto sigue el puerto, y se le quita la barra final', () => {
+      expect(
+        configuracionDesdeVariables(
+          validarVariables(entornoBase({ PUERTO: '4000' })),
+        ).urlPublicaDeLaApi,
+      ).toBe('http://localhost:4000/api/v1');
+      expect(
+        configuracionDesdeVariables(
+          validarVariables(
+            entornoBase({
+              URL_PUBLICA_DE_LA_API: 'https://api.seniory.co/api/v1/',
+            }),
+          ),
+        ).urlPublicaDeLaApi,
+      ).toBe('https://api.seniory.co/api/v1');
     });
 
     it('rechaza un canal de recuperación desconocido', () => {

@@ -48,12 +48,16 @@ module.exports = {
     {
       name: 'frontera-de-modulo',
       comment:
-        'Un módulo solo puede usar de otro sus puertos de entrada (aplicacion/puertos/entrada). Todo lo demás es privado (E13).',
+        'Un módulo solo puede usar de otro sus puertos de entrada (aplicacion/puertos/entrada) y, para que Nest pueda inyectarlos, importar su archivo <modulo>.module.ts (lo que exporta lo vigila pruebas/arquitectura/exportaciones.spec.ts). Todo lo demás es privado (E13).',
       severity: 'error',
       from: { path: MODULO },
       to: {
         path: CUALQUIER_MODULO,
-        pathNot: [`${RAIZ}$1/`, `${RAIZ}[^/]+/aplicacion/puertos/entrada/`],
+        pathNot: [
+          `${RAIZ}$1/`,
+          `${RAIZ}[^/]+/aplicacion/puertos/entrada/`,
+          `${RAIZ}[^/]+/[^/]+\\.module\\.ts$`,
+        ],
       },
     },
     {
