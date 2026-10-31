@@ -198,6 +198,16 @@ Que cada persona entre a Seniory con su propia cuenta, con un rol, y que el sist
 | El token en el outbox | El enlace **no** viaja como evento: un evento no puede llevar un secreto. Cuando exista Notificaciones (M5) el envío se moverá allí con reintentos (hoy, si el canal falla, la persona vuelve a pedir otro enlace). |
 | Limpieza de enlaces vencidos | El repositorio ya trae `eliminarVencidosAntesDe`; la tarea programada diaria (junto con la de sesiones) llega en M10. |
 
+**Construido en el PR 7** (ajustes para el BFF):
+
+| Pieza | Cómo quedó |
+|---|---|
+| `GuardDeOrigen` | Guard global, **el primero** de la cadena. En toda petición que no sea `GET`, `HEAD` u `OPTIONS`: sin `Origin` se acepta (así llama el BFF, de servidor a servidor); con `Origin` tiene que ser **exactamente** uno de `ORIGENES_PERMITIDOS`, o responde 403 `origen_no_permitido`. Un puerto, un esquema, un subdominio, una barra final, las mayúsculas, `null` o un valor vacío distintos no pasan. |
+| Por qué basta | Los navegadores envían `Origin` en todo `POST`, `PATCH` y `DELETE` entre sitios, y una página ajena no puede quitarlo ni cambiarlo. Con `SameSite=Lax` en las cookies son dos defensas contra CSRF. El inicio de sesión y el registro también quedan protegidos. |
+| Swagger | Fuera de producción se acepta además el **origen propio de la API** (igual al `Host` de la petición), para que «Try it out» funcione. En producción no se admite. |
+| Pruebas | 20 casos, entre ellos 9 formas de origen no permitido, PATCH y DELETE, que el controlador no se ejecuta, y producción. Se verificó que **14 fallan si se quita el guard**. |
+| Ya estaba hecho | La ventana de gracia de 30 s al renovar el refresco (PR 3) y la IP del cliente con `X-Cliente-IP` y el secreto del BFF (M0). Con este PR queda cerrada la lista de ajustes para el BFF. |
+
 **Para quien ya tenga un `.env` local (PR 3):** hay que agregar `SECRETO_JWT_ACCESO` (genera uno con el comando de `.env.ejemplo`) y `COOKIES_SEGURAS=false`; sin ellos la aplicación no arranca.
 
 ### 4.2 Casos de uso
@@ -451,7 +461,7 @@ Ya no hay una versión de demostración: el recorrido que sigue el frontend es e
 | 4 ✅ | Perfil, adultos mayores, consentimientos, `ConsultaDeIdentidad`, eventos, auditoría y matriz de autorización. |
 | 5 ✅ | Fixtures de desarrollo, `crear-admin` y documentación del módulo. |
 | 6 ✅ | Cambiar y recuperar la contraseña (`olvidé mi contraseña`), con el puerto del canal de envío. |
-| 7 | Ajustes para el BFF: ventana de gracia del refresco, `Origin` opcional y `X-Cliente-IP` (con pruebas). El trabajo de pantallas va en [F1](../frontend/F1-identidad.md). |
+| 7 ✅ | Ajustes para el BFF: ventana de gracia del refresco, `Origin` opcional y `X-Cliente-IP` (con pruebas). El trabajo de pantallas va en [F1](../frontend/F1-identidad.md). |
 | 8 | *(Opcional, o en M10)* Exportar y eliminar cuenta. |
 
 ---

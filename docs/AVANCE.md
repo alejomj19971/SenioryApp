@@ -4,14 +4,14 @@
 
 ## Dónde vamos
 
-> **Backend: M0 con 7 de 8 PR hechos (falta el despliegue a staging, que espera el hosting) y M1 (Identidad) en marcha: PR 6 de 8 hecho (… datos de ejemplo, administradores y recuperación de contraseña).**
-> Siguiente paso: **M1 · PR 7 (ajustes para el BFF)**. Pendiente de ustedes: revisar y aceptar el [ADR-03](./ADR-03.md) (comunicación) y el [ADR-04](./ADR-04.md) (stack) y ver la CI en verde en GitHub.
+> **Backend: M0 con 7 de 8 PR hechos (falta el despliegue a staging, que espera el hosting) y M1 (Identidad) en marcha: PR 7 de 8 hecho (… recuperación de contraseña y ajustes para el BFF).**
+> Siguiente paso: **M1 · PR 8 (exportar y eliminar cuenta, opcional) o pasar a M2 (Directorio)**. Pendiente de ustedes: revisar y aceptar el [ADR-03](./ADR-03.md) (comunicación) y el [ADR-04](./ADR-04.md) (stack) y ver la CI en verde en GitHub.
 >
 > El frontend sigue siendo el prototipo del pitch con datos de ejemplo; su integración con el backend empieza en F0, después de M0.
 
 ```
 Backend   M0 █████████████████▌░░  7 de 8 PR (falta el despliegue)
-          M1 ████████████████░░░░  PR 6 de 8 (… semillas, admin y recuperar contraseña)   ← aquí
+          M1 ██████████████████░░  PR 7 de 8 (… recuperar contraseña y ajustes para el BFF)   ← aquí
           M2 … M11                 pendientes
 Frontend  F0 … F9                  planes F0 y F1 propuestos; nada construido
 Base de datos  ████████████████████  completa (adelantada)
@@ -26,6 +26,7 @@ Base de datos  ████████████████████  com
 | [ADR-01](./ADR-01.md) y [ADR-02](./ADR-02.md) | Vigentes. |
 | [ADR-03](./ADR-03.md) | **Borrador:** estrategia de comunicación. Asíncrona entre módulos (eventos por outbox) y síncrona solo donde la persona espera la respuesta; REST con OpenAPI 3.1 hacia el frontend y AsyncAPI 3.0 para los eventos. Falta que lo acepten ambos. |
 | [ADR-04](./ADR-04.md) (antes ADR-03) | **Borrador:** stack, persistencia, datos de salud en Teleasistencia, Mensajería, bolsas en Pagos, BFF, outbox y fronteras verificadas. Falta que lo acepten ambos. |
+| [Pendientes por etapa](./PENDIENTES.md) | Lo que falta de cada etapa del plan (decisiones, legal, código). Se actualiza en cada PR. |
 | [Plan del backend](./PLAN_BACKEND_SENIORY.md) (M0–M11) | Completo. Planes detallados de [M0](./backend/M0-plataforma-y-compartido.md) y [M1](./backend/M1-identidad.md) **aprobados** (2026-10-22). |
 | [Plan del frontend](./PLAN_FRONTEND_SENIORY.md) (F0–F9) | Completo. Planes detallados de [F0](./frontend/F0-base-de-integracion.md) y [F1](./frontend/F1-identidad.md) **propuestos**. |
 | [Diseño de la base de datos](./backend/BASE_DE_DATOS.md) | Construido. Guía de estudio en PDF: [BASE_DE_DATOS-guia-de-estudio.pdf](./backend/BASE_DE_DATOS-guia-de-estudio.pdf). |
@@ -50,10 +51,11 @@ Base de datos  ████████████████████  com
 | M1 · PR 4 | Perfil (`/yo`), personas mayores, consentimientos y el primer puerto de entrada (`ConsultaDeIdentidad`), con eventos, auditoría y la matriz de autorización. | ✅ commit `5f5f7a2` (ya en `main`) |
 | M1 · PR 5 | `npm run crear-admin`, `npm run semillas` (Andrea y Doña Carmen, solo fuera de producción) y README del módulo. | ✅ commit `f61d471` (ya en `main`) |
 | M1 · PR 6 | Cambiar y recuperar la contraseña: `olvidé mi contraseña`, enlace de 30 minutos y un solo uso, cierre de todas las sesiones y puerto del canal de correo. | ✅ commit `d170900` (ya en `main`) |
-| M1 · PR 7 → 8 | Ajustes para el BFF (verificación de `Origin`); exportar y eliminar cuenta (opcional). | ⏭️ siguiente: PR 7 |
+| M1 · PR 7 | Ajustes para el BFF: verificación de `Origin` contra CSRF (las llamadas del BFF no lo traen y se aceptan). | ✅ hecho, **sin commit** |
+| M1 · PR 8 | Exportar y eliminar cuenta (opcional; puede pasar a M10). | ⏭️ siguiente |
 | M2 → M11 | Directorio, pagos, reservas, notificaciones, teleasistencia, mensajería, verificación, despliegue, IA. | Pendientes, en ese orden |
 
-**Cifras actuales:** 941 pruebas (unitarias y de arquitectura, y de integración y API contra Postgres real), cobertura del 98 %, lint y compilación limpios y 0 vulnerabilidades en las dependencias de producción.
+**Cifras actuales:** 1062 pruebas (unitarias y de arquitectura, y de integración y API contra Postgres real), cobertura del 98 %, lint y compilación limpios y 0 vulnerabilidades en las dependencias de producción.
 
 ### Frontend (`frontend/`)
 
@@ -81,7 +83,8 @@ Cada rama parte de la anterior. Se revisan con un PR encadenado por entrega (la 
 | 10 | `feat/m1-autenticacion` | M1 PR 3: autenticación (ya está en `main`). |
 | 11 | `feat/m1-perfil` | M1 PR 4 y un arreglo de dependencias (ya en `main`). |
 | 12 | `feat/m1-fixtures-y-admin` | M1 PR 5 (ya en `main`). |
-| 13 | `feat/m1-contrasena` (actual) | M1 PR 6 (ya en `main`). |
+| 13 | `feat/m1-contrasena` | M1 PR 6 (ya en `main`). |
+| 14 | `feat/m1-bff` (actual) | M1 PR 7 y el archivo de pendientes. **Solo en local.** |
 
 **La CI solo corre en el PR 6:** es la primera rama que tiene `.github/workflows/backend.yml`. Una vez fusionada en `main`, correrá en todos los PR que toquen `backend/`.
 

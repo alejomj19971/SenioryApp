@@ -24,6 +24,46 @@ import {
 
 export const COOKIE_DE_ACCESO = 'seniory_acceso';
 
+// Los métodos que no cambian nada: un sitio ajeno puede provocarlos, pero no puede leer la respuesta
+// (CORS) ni causa daño.
+const METODOS_SEGUROS = new Set(['GET', 'HEAD', 'OPTIONS']);
+
+// Defensa contra CSRF (junto con `SameSite=Lax` en las cookies, M1 §4.4): en una petición que cambia
+// algo, si el navegador declara de qué sitio viene (`Origin`), tiene que ser uno de los permitidos.
+//
+// Las llamadas del BFF de Next son de servidor a servidor y NO traen ese encabezado: se aceptan (la
+// autenticación sigue siendo obligatoria). Los navegadores SÍ lo envían en todo `POST`, `PATCH` o
+// `DELETE` entre sitios, así que una página ajena no puede esquivar esta comprobación.
+@Injectable()
+export class GuardDeOrigen implements CanActivate {
+  constructor(
+    @Inject(CONFIGURACION) private readonly configuracion: Configuracion,
+  ) {}
+
+  canActivate(contexto: ExecutionContext): boolean {
+    const peticion = contexto.switchToHttp().getRequest<Request>();
+    if (METODOS_SEGUROS.has(peticion.method)) return true;
+    const origen = peticion.headers.origin;
+    if (origen === undefined) return true; // llamada del BFF
+    if (this.configuracion.origenesPermitidos.includes(origen)) return true;
+    if (
+      !this.configuracion.esProduccion &&
+      origen === this.origenPropio(peticion)
+    ) {
+      // La documentación de Swagger (solo fuera de producción) llama a la API desde su propio origen.
+      return true;
+    }
+    throw new SinPermiso(
+      'La petición viene de un sitio no permitido',
+      'origen_no_permitido',
+    );
+  }
+
+  private origenPropio(peticion: Request): string {
+    return `${peticion.protocol}://${peticion.get('host') ?? ''}`;
+  }
+}
+
 // Global y DENIEGA POR DEFECTO (M0 §4.10): una ruta nueva que olvide @Publico() queda protegida,
 // nunca expuesta. Lee el token de la cookie que pone el frontend; fuera de producción también
 // acepta `Authorization: Bearer` para probar la API con herramientas como Swagger o curl.

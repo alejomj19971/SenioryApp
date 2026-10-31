@@ -7,6 +7,7 @@ import { FiltroDeErrores } from './compartido/http/filtro-de-errores.js';
 import {
   GuardDeAutenticacion,
   GuardDeLimiteDePeticiones,
+  GuardDeOrigen,
   GuardDeRoles,
 } from './compartido/http/guardias.js';
 import { opcionesDeLogs } from './compartido/http/logs.js';
@@ -37,7 +38,8 @@ const PETICIONES_POR_MINUTO = 100; // por IP; las rutas de /auth tienen límites
   ],
   controllers: [SaludController],
   providers: [
-    // Se ejecutan en este orden: límite de peticiones, autenticación y roles.
+    // Se ejecutan en este orden: origen, límite de peticiones, autenticación y roles.
+    { provide: APP_GUARD, useClass: GuardDeOrigen },
     { provide: APP_GUARD, useClass: GuardDeLimiteDePeticiones },
     { provide: APP_GUARD, useClass: GuardDeAutenticacion },
     { provide: APP_GUARD, useClass: GuardDeRoles },
