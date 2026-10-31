@@ -1,3 +1,4 @@
+import "server-only";
 import medicamentosData from "@/data/medicamentos.json";
 import signosVitalesData from "@/data/signos-vitales.json";
 import type { LecturaSignos, Medicamento } from "@/lib/types";

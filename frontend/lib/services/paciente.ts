@@ -1,3 +1,4 @@
+import "server-only";
 import familiaData from "@/data/familia.json";
 import { obtenerCuidador } from "@/lib/services/cuidadores";
 import type { AdultoMayor, Cuidador, Familiar } from "@/lib/types";

@@ -36,6 +36,17 @@ updates:
       day: monday
       timezone: America/Bogota
     open-pull-requests-limit: 5
+    groups:
+      react:
+        patterns: ['react', 'react-dom']
+    ignore:
+      # eslint-config-next trae eslint-plugin-react, que todavía no funciona con ESLint 10
+      # («contextOrFilename.getFilename is not a function»). Revisar cuando lo soporte.
+      - dependency-name: eslint
+        update-types: ['version-update:semver-major']
+      # Los tipos deben coincidir con el Node del runtime (24).
+      - dependency-name: '@types/node'
+        update-types: ['version-update:semver-major']
     cooldown:
       default-days: 7
 

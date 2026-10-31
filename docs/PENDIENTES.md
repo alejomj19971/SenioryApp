@@ -131,9 +131,9 @@ El prototipo del pitch funciona con datos de ejemplo. **Ninguna pantalla está c
 
 | Etapa | Pendiente |
 |---|---|
-| F0 — Base de integración | 🔧 Cliente HTTP, configuración, servicios `server-only` y `proxy.ts`. **Se puede construir ya.** |
-| F1 — Identidad | 🔧 Registro, inicio de sesión, **olvidé mi contraseña**, cambiar contraseña, alta del adulto mayor y consentimiento. |
+| F1 — Identidad | 🔧 `instrumentation.ts` que impida arrancar en producción sin `SENIORY_API_URL` y `SENIORY_BFF_SECRETO` (va con el primer código que llama al backend). Registro, inicio de sesión, **olvidé mi contraseña**, cambiar contraseña, alta del adulto mayor y consentimiento. |
 | F2 a F9 | 🔧 Una por cada módulo M2 a M9 (directorio, cotización, contratación con vista mínima del cuidador, avisos, teleasistencia, pagos y bolsas, mensajes, administración). |
+| 🔧 | **Vulnerabilidades de las dependencias del frontend** (`npm audit`: 15 en producción, casi todas por `shadcn` y `zod`; arreglarlas obliga a subir `shadcn` a una versión mayor). `shadcn` es una herramienta de desarrollo y no debería estar en `dependencies`. |
 | 🧑 | **Pruebas de usabilidad** con adultos mayores y familiares reales (E4, E5). |
 | 🧑 | Quitar de la landing los textos y cifras de demostración. |
 | 🧑 | Decidir **dominios y cookies**: subdominios del mismo sitio (`app.…` y `api.…`) o reescrituras. |

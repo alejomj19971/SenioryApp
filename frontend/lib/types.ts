@@ -1,3 +1,5 @@
+import type { ResumenServicio } from "@/lib/pricing";
+
 export type Especialidad =
   | "auxiliar"
   | "enfermeria"
@@ -83,4 +85,22 @@ export interface Mensaje {
   autor: "familiar" | "cuidador";
   texto: string;
   fecha: string; // ISO
+}
+
+// Contratación (F0 §4.4): estos tipos cruzan entre el servidor y los componentes cliente, así que
+// viven aquí y no en el servicio, que es solo de servidor.
+export interface DatosContratacion {
+  cuidadorId: string;
+  fecha: string; // AAAA-MM-DD
+  jornada: Jornada;
+  horas: number;
+}
+
+export interface ContratacionConfirmada {
+  id: string;
+  cuidadorNombre: string;
+  fecha: string;
+  jornada: Jornada;
+  horas: number;
+  resumen: ResumenServicio;
 }

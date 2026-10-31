@@ -1,36 +1,47 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Seniory — Frontend
 
-## Getting Started
+Aplicación web (Next.js 16, App Router) de Seniory. **Actúa como BFF** (*backend for frontend*): el navegador solo habla con este servidor, y este llama al backend ([`../backend`](../backend)) de servidor a servidor. Planes: [PLAN_FRONTEND](../docs/PLAN_FRONTEND_SENIORY.md), [F0](../docs/frontend/F0-base-de-integracion.md) y [F1](../docs/frontend/F1-identidad.md).
 
-First, run the development server:
+> **Estado:** hoy las pantallas siguen siendo el prototipo del pitch, con datos de ejemplo en `data/*.json`. La **base para conectarlas al backend (F0) ya está construida**; cada módulo F*n* conecta sus pantallas y borra el JSON que reemplaza.
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+> **Next.js 16 tiene cambios incompatibles con versiones anteriores.** Antes de escribir código lee la guía correspondiente en `node_modules/next/dist/docs/` (ver [AGENTS.md](./AGENTS.md)).
+
+## Requisitos
+
+- Node **24.22.1** (`nvm use 24.22.1`).
+- Para los recorridos de punta a punta: `npx playwright install chromium` (una sola vez).
+
+## Comandos
+
+| Comando | Qué hace |
+|---|---|
+| `npm install` | Instala dependencias. |
+| `cp .env.ejemplo .env.local` | Configuración local (no se sube a git). Hace falta cuando una pantalla llama al backend (F1 en adelante). |
+| `npm run dev` | Servidor de desarrollo en <http://localhost:3000>. |
+| `npm run build` / `npm start` | Compila y ejecuta. |
+| `npm run lint` | ESLint. |
+| `npm test` | Pruebas unitarias y de componentes (Vitest). `npm run test:observar` las repite al guardar. |
+| `npm run test:recorrido` | Recorridos de punta a punta (Playwright, navegador móvil). Levanta su propio servidor en el puerto 3100. |
+
+## Estructura
+
+```text
+frontend/
+├─ proxy.ts                 ← un identificador de correlación por petición (F1 suma la sesión)
+├─ app/                     ← rutas (App Router); app/app/error.tsx es el error de la aplicación
+├─ components/              ← componentes visuales
+├─ lib/
+│  ├─ services/             ← PUERTOS de datos: solo de servidor (`server-only`)
+│  ├─ acciones/             ← acciones de servidor ('use server'): validan y devuelven errores como valor
+│  ├─ api/                  ← cliente HTTP hacia el backend y `ErrorDeApi` (solo de servidor)
+│  ├─ configuracion.ts      ← variables de entorno validadas (solo de servidor)
+│  └─ types.ts              ← tipos que cruzan entre el servidor y el navegador
+├─ data/                    ← datos de ejemplo del prototipo; se borran módulo por módulo
+└─ pruebas/{unitarias,recorrido}/
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Reglas que verifica una prueba
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
-
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- Ningún archivo de `app/` o `components/` importa `@/data` ni `@/lib/api`.
+- Ningún componente cliente importa un servicio: empaquetaría los datos al navegador.
+- Todos los módulos de servidor llevan `import "server-only"`.

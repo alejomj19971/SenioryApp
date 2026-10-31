@@ -9,7 +9,7 @@ import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { buttonVariants } from "@/components/ui/button";
 import { useContratacion } from "@/components/contratacion/contratacion-provider";
-import { confirmarContratacion } from "@/lib/services/contratacion";
+import { confirmarContratacionAccion } from "@/lib/acciones/contratacion";
 import { calcularServicio } from "@/lib/pricing";
 import { cn } from "@/lib/utils";
 import type { Cuidador, Jornada } from "@/lib/types";
@@ -38,6 +38,7 @@ export function FormularioContratacion({ cuidador }: { cuidador: Cuidador }) {
   const [jornada, setJornada] = useState<Jornada>(cuidador.disponibilidad[0] ?? "manana");
   const [horas, setHoras] = useState(1);
   const [usarBolsa, setUsarBolsa] = useState(false);
+  const [mensajeDeError, setMensajeDeError] = useState<string | null>(null);
 
   const resumen = useMemo(
     () => calcularServicio(cuidador.tarifaHora, horas),
@@ -53,13 +54,18 @@ export function FormularioContratacion({ cuidador }: { cuidador: Cuidador }) {
 
   function confirmar() {
     startTransition(async () => {
-      const contratacion = await confirmarContratacion({
+      const resultado = await confirmarContratacionAccion({
         cuidadorId: cuidador.id,
         fecha: fechaISO,
         jornada,
         horas,
       });
-      setContratacionActual(contratacion);
+      if (!resultado.ok) {
+        setMensajeDeError(resultado.mensaje);
+        return;
+      }
+      setMensajeDeError(null);
+      setContratacionActual(resultado.contratacion);
       router.push("/app/contratar/confirmacion");
     });
   }
@@ -101,6 +107,11 @@ export function FormularioContratacion({ cuidador }: { cuidador: Cuidador }) {
       <ResumenCosto resumen={resumen} />
 
       <div className="fixed inset-x-0 bottom-16 z-20 mx-auto w-full max-w-md border-t border-border bg-background/95 p-4 backdrop-blur">
+        {mensajeDeError !== null && (
+          <p role="alert" className="mb-3 text-center text-base font-medium text-destructive">
+            {mensajeDeError}
+          </p>
+        )}
         <button
           type="button"
           onClick={confirmar}

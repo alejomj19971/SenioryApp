@@ -1,3 +1,4 @@
+import "server-only";
 import mensajesData from "@/data/mensajes.json";
 import type { Mensaje } from "@/lib/types";
 

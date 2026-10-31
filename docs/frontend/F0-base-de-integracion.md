@@ -5,7 +5,7 @@
 | **Módulo** | F0 (primero del [plan del frontend](../PLAN_FRONTEND_SENIORY.md)) |
 | **Requiere en el backend** | M0 (solo `GET /salud`) |
 | **Tamaño** | M |
-| **Estado** | Propuesta (reformulada el 2026-10-26: aplicación real, sin modo demostración) |
+| **Estado** | **Construido** (2026-10-31) · ver [§10](#10-construido) |
 
 ---
 
@@ -246,3 +246,40 @@ Además de la [definición común](../PLAN_FRONTEND_SENIORY.md):
 |---|---|---|
 | 1 | Carpeta de pruebas del frontend | `frontend/pruebas/`, igual que el backend. |
 | 2 | Tiempo máximo por petición | 8 s; ajustar con mediciones reales en staging. |
+
+---
+
+## 10. Construido
+
+**F0 terminado el 2026-10-31.** Las cuatro entregas del plan, con 94 pruebas unitarias y 2 recorridos.
+
+| Pieza | Cómo quedó |
+|---|---|
+| Red de seguridad | Vitest (`npm test`) y Playwright (`npm run test:recorrido`, con un navegador móvil). El recorrido principal se escribió **primero** contra el prototipo y sigue pasando después de todos los cambios; hay un segundo recorrido que cancela la alerta. |
+| Servicios solo de servidor | Los cinco de `lib/services` llevan `import "server-only"`. `ContratacionConfirmada` y `DatosContratacion` pasaron a `lib/types.ts`. Se verificó en el build que **los datos de ejemplo ya no viajan en el JavaScript del navegador**. |
+| Regla de capas | Una prueba recorre `app/` y `components/`: ninguno importa `@/data` ni `@/lib/api`, ningún componente cliente importa un servicio, y todos los módulos de servidor llevan la marca. |
+| Acción de servidor | `confirmarContratacionAccion` valida (horas enteras de 1 a 8, jornada, fecha real incluido el 29 de febrero, cuidador) y devuelve los errores como valor; el formulario los muestra con `role="alert"`. |
+| Configuración | `lib/configuracion.ts`: `urlDelBackend()`, `secretoBff()` (32 caracteres o más) y `validarConfiguracion()`, que informa **todos** los problemas juntos. El mensaje dice qué variable falta y nunca incluye un secreto. |
+| `ErrorDeApi` | Se construye desde un `problem+json` (con errores por campo y correlación), desde un HTML de 502 y desde una falla de red; nunca copia el cuerpo ni el mensaje original (podrían traer direcciones internas). |
+| Cliente HTTP | `pedirAlBackend`, `leerDelBackend` (401 → `/ingresar`, 404 → no encontrado) y `escribirEnBackend` (los errores esperados vuelven como valor). Manda el secreto del BFF, el `X-Request-Id`, la IP del navegador (solo si tiene forma de IP) y **solo** la cookie de acceso; nunca `Origin`. Tiempo máximo de 8 s. |
+| `proxy.ts` | Un `x-request-id` nuevo por petición, en los encabezados de la **petición** (no de la respuesta); reemplaza el que mande el cliente. |
+| `error.tsx` | En `/app`: mensaje claro, «Reintentar» (`retry`), «Ir al inicio» y el código de soporte si hay `digest`. Nunca muestra `error.message`. |
+
+**Verificación manual del cliente HTTP** (la del §8), contra el backend real:
+
+| Situación | Resultado |
+|---|---|
+| Backend encendido | Responde 401 (el esperado, sin sesión) en 18 ms: llegaron los encabezados y el secreto. |
+| Backend apagado | Error «No pudimos conectar con el servicio» en 11 ms. |
+| Backend que acepta la conexión y no contesta | Error «tardó demasiado en responder» a los **8,0 s**. |
+
+**Desviaciones del plan**
+
+| Plan | Lo construido | Por qué |
+|---|---|---|
+| `@vitejs/plugin-react` y `vite-tsconfig-paths` | Ninguno de los dos. Vitest 5 resuelve los alias con `resolve.tsconfigPaths` y transforma JSX solo. | El plugin de React pide Babel 8 y choca con `shadcn` (Babel 7); el otro ya viene incluido en Vite. |
+| `instrumentation.ts` que impide arrancar en producción sin las variables | **No se agregó todavía.** Va con el primer código que llama al backend (F1). | Hoy ninguna pantalla usa el backend: exigir las variables haría fallar el despliegue del prototipo que ya está publicado. |
+| `openapi-typescript` | No se instaló; llega con F1. | Nada lo usa todavía. |
+| «Cliente HTTP contra `/salud`» | Se probó contra `POST /auth/refresh` (responde 401). | `/salud` no cuelga de `/api/v1` (la URL base del cliente). |
+
+**Dependencias que Dependabot había roto en `main` y se corrigieron:** ESLint 10 (`eslint-plugin-react` aún no lo soporta: «getFilename is not a function») volvió a la 9; `react` 19.3.1 con `react-dom` 19.2.8 (tienen que ser la misma versión) quedó en 19.3.1 las dos; y los tipos de Node a la 24. Dependabot ya no sube esas versiones mayores y agrupa `react` con `react-dom`.

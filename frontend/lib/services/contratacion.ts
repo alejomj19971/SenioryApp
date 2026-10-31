@@ -1,22 +1,7 @@
-import { calcularServicio, type ResumenServicio } from "@/lib/pricing";
+import "server-only";
+import { calcularServicio } from "@/lib/pricing";
 import { obtenerCuidador } from "@/lib/services/cuidadores";
-import type { Jornada } from "@/lib/types";
-
-export interface DatosContratacion {
-  cuidadorId: string;
-  fecha: string; // ISO
-  jornada: Jornada;
-  horas: number;
-}
-
-export interface ContratacionConfirmada {
-  id: string;
-  cuidadorNombre: string;
-  fecha: string;
-  jornada: Jornada;
-  horas: number;
-  resumen: ResumenServicio;
-}
+import type { ContratacionConfirmada, DatosContratacion } from "@/lib/types";
 
 export async function confirmarContratacion(
   datos: DatosContratacion,

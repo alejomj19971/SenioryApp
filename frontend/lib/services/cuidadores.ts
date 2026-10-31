@@ -1,3 +1,4 @@
+import "server-only";
 import cuidadoresData from "@/data/cuidadores.json";
 import type { Cuidador, FiltrosCuidador } from "@/lib/types";
 

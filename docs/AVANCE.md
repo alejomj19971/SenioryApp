@@ -7,13 +7,14 @@
 > **Backend: M0 con 7 de 8 PR hechos (falta el despliegue a staging, que espera el hosting) y M1 (Identidad) en marcha: PR 7 de 8 hecho (… recuperación de contraseña y ajustes para el BFF).**
 > Siguiente paso: **M1 · PR 8 (exportar y eliminar cuenta, opcional) o pasar a M2 (Directorio)**. Pendiente de ustedes: revisar y aceptar el [ADR-03](./ADR-03.md) (comunicación) y el [ADR-04](./ADR-04.md) (stack) y ver la CI en verde en GitHub.
 >
-> El frontend sigue siendo el prototipo del pitch con datos de ejemplo; su integración con el backend empieza en F0, después de M0.
+> El frontend sigue siendo el prototipo del pitch con datos de ejemplo, pero **F0 (la base para conectarlo al backend) ya está construida**. Siguiente en el frontend: **F1 (identidad)**.
 
 ```
 Backend   M0 █████████████████▌░░  7 de 8 PR (falta el despliegue)
           M1 ██████████████████░░  PR 7 de 8 (… recuperar contraseña y ajustes para el BFF)   ← aquí
           M2 … M11                 pendientes
-Frontend  F0 … F9                  planes F0 y F1 propuestos; nada construido
+Frontend  F0 ████████████████████  construido   ← aquí
+          F1 … F9                  pendientes (F1 siguiente)
 Base de datos  ████████████████████  completa (adelantada)
 ```
 
@@ -62,7 +63,7 @@ Base de datos  ████████████████████  com
 | Entrega | Estado |
 |---|---|
 | Prototipo del pitch (landing, directorio, contratación, teleasistencia, mensajes) con datos en `frontend/data/*.json` | Funciona en local; no es la aplicación final. |
-| F0 · Base de integración con el backend | Plan propuesto; empieza cuando M0 tenga la capa HTTP. |
+| F0 · Base de integración con el backend | ✅ Construido: red de seguridad (Vitest y Playwright), servicios solo de servidor, acción de servidor para la contratación, cliente HTTP, `proxy.ts` y `error.tsx`. 94 pruebas unitarias y 2 recorridos. |
 | F1–F9 | Pendientes. Cada F*n* conecta las pantallas al módulo M*n* y borra el JSON que reemplaza. |
 
 ### Ramas (todas en GitHub; las 4 últimas desde el 28 de octubre)

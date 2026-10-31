@@ -1,7 +1,7 @@
 "use client";
 
 import { createContext, useContext, useMemo, useState, type ReactNode } from "react";
-import type { ContratacionConfirmada } from "@/lib/services/contratacion";
+import type { ContratacionConfirmada } from "@/lib/types";
 
 interface ContratacionContextValor {
   contratacionActual: ContratacionConfirmada | null;
