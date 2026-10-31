@@ -127,7 +127,7 @@ function cancelado(rol: 'familia' | 'cuidador'): Plantilla {
   };
 }
 
-const PLANTILLAS: Readonly<Record<string, Plantilla>> = {
+const PLANTILLAS: Record<string, Plantilla> = {
   'servicio_solicitado:cuidador': (p) => ({
     titulo: 'Nueva solicitud de servicio',
     cuerpo: `Tienes una solicitud para el ${cuando(p)}, por ${horas(p)}. Respóndela en Seniory antes de que venza el plazo.`,
@@ -166,6 +166,25 @@ const PLANTILLAS: Readonly<Record<string, Plantilla>> = {
   'servicio_cancelado:familia': cancelado('familia'),
   'servicio_cancelado:cuidador': cancelado('cuidador'),
 };
+
+// Teleasistencia. Estos avisos salen por SMS, correo y WhatsApp, canales que no son confiables para datos de
+// salud (Ley 1581): por eso dicen que hay algo que mirar y mandan a abrir Seniory, sin decir qué medicamento ni qué
+// lectura. Solo la alerta lleva el nombre de la persona: sin él, no se sabría de quién es el pedido de ayuda.
+PLANTILLAS['alerta_generada:destinatario'] = (p) => {
+  const nombre = texto(p, 'nombre');
+  return {
+    titulo: `Alerta de ${nombre}`,
+    cuerpo: `${nombre} pidió ayuda desde Seniory. Abre la aplicación para ver los detalles. Si es una emergencia, llama al 123.`,
+  };
+};
+PLANTILLAS['medicamento_omitido:destinatario'] = () => ({
+  titulo: 'Hay una toma sin registrar',
+  cuerpo: 'Hay una toma pendiente de registrar. Revísala en Seniory.',
+});
+PLANTILLAS['lectura_fuera_de_rango:destinatario'] = () => ({
+  titulo: 'Hay un registro para revisar',
+  cuerpo: 'Hay un registro nuevo que conviene revisar. Ábrelo en Seniory.',
+});
 
 export const TIPOS_DE_AVISO = Object.keys(PLANTILLAS);
 

@@ -4,7 +4,7 @@ Convierte lo que pasa en el sistema en avisos para las personas. Hoy avisa de ca
 
 ## Qué hace
 
-- **Reacciona a eventos** de Reservas (solicitado, confirmado, iniciado, finalizado y cancelado) y crea el aviso de cada parte, con su propio texto.
+- **Reacciona a eventos** de Reservas (solicitado, confirmado, iniciado, finalizado y cancelado) y de Teleasistencia (alerta, toma omitida y lectura fuera de rango), y crea el aviso de cada parte, con su propio texto.
 - **Los envía** con una tarea programada (cada 2 s): tomar, enviar, guardar el resultado; reintenta lo que falla.
 - **La campana:** `GET /notificaciones` (cualquier persona con sesión ve solo los suyos).
 - No exporta nada: nadie lo llama, solo reacciona a eventos.
@@ -20,17 +20,27 @@ Un canal es un adaptador intercambiable (`CanalDeNotificacion`); agregar el real
 
 ## Reglas que conviene saber
 
-| Tema                     | Regla                                                                                                                                                                                                                                             |
-| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Un aviso por canal       | Cada canal es una notificación aparte, con su estado (`pendiente` → `enviada` / `entregada` / `fallida`), sus intentos y su reintento.                                                                                                            |
-| Normal vs. alta          | Un aviso **normal** sale por la aplicación y el correo. Una **alerta** (prioridad alta) sale por **todos** los canales disponibles **a la vez**, para que llegue por al menos uno. SMS y WhatsApp cuestan por mensaje y se reservan para alertas. |
-| Sin duplicados           | La base ignora un aviso con el mismo evento, destinatario, tipo y canal: reprocesar un evento no repite nada (y el despachador ya entrega cada evento una vez por manejador).                                                                     |
-| Reintentos               | Hasta 5 intentos, con espera creciente (30 s, 2 min, 10 min, 30 min). Agotados, queda `fallida`. Un fallo que reintentar no arregla (la persona no tiene teléfono) queda `fallida` de una vez.                                                    |
-| Alerta sin entregar      | Si una alerta queda `fallida` en **todos** sus canales y por ninguno salió, se deja constancia (`notificaciones.alerta_sin_entregar` en la auditoría y un error en el log; Sentry cuando exista). Un aviso por alerta, no uno por canal.          |
-| Envío sin transacción    | El envío NUNCA ocurre con una transacción abierta: se toma el aviso (reservándolo, `FOR UPDATE SKIP LOCKED`), se envía, y se guarda el resultado. Un proveedor lento no retiene la base, y varias instancias no se pisan.                         |
-| Minimización (Ley 1581)  | Los textos solo dicen **fecha, franja y horas**: nada de nombres ni de salud, porque SMS, correo y WhatsApp no son confiables para datos clínicos. Texto plano, sin HTML. Una prueba revisa todas las plantillas.                                 |
-| Límite                   | Máximo 60 avisos **normales** por persona y hora (un error en un manejador no debe inundar a nadie). Las alertas nunca se descartan.                                                                                                              |
-| Privacidad de la campana | El destinatario sale de la sesión, nunca de un parámetro: un parámetro `destinatarioId` se rechaza (400).                                                                                                                                         |
+| Tema                     | Regla                                                                                                                                                                                                                                                                                                                                   |
+| ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Un aviso por canal       | Cada canal es una notificación aparte, con su estado (`pendiente` → `enviada` / `entregada` / `fallida`), sus intentos y su reintento.                                                                                                                                                                                                  |
+| Normal vs. alta          | Un aviso **normal** sale por la aplicación y el correo. Una **alerta** (prioridad alta) sale por **todos** los canales disponibles **a la vez**, para que llegue por al menos uno. SMS y WhatsApp cuestan por mensaje y se reservan para alertas.                                                                                       |
+| Sin duplicados           | La base ignora un aviso con el mismo evento, destinatario, tipo y canal: reprocesar un evento no repite nada (y el despachador ya entrega cada evento una vez por manejador).                                                                                                                                                           |
+| Reintentos               | Hasta 5 intentos, con espera creciente (30 s, 2 min, 10 min, 30 min). Agotados, queda `fallida`. Un fallo que reintentar no arregla (la persona no tiene teléfono) queda `fallida` de una vez.                                                                                                                                          |
+| Alerta sin entregar      | Si una alerta queda `fallida` en **todos** sus canales y por ninguno salió, se deja constancia (`notificaciones.alerta_sin_entregar` en la auditoría y un error en el log; Sentry cuando exista). Un aviso por alerta, no uno por canal.                                                                                                |
+| Envío sin transacción    | El envío NUNCA ocurre con una transacción abierta: se toma el aviso (reservándolo, `FOR UPDATE SKIP LOCKED`), se envía, y se guarda el resultado. Un proveedor lento no retiene la base, y varias instancias no se pisan.                                                                                                               |
+| Minimización (Ley 1581)  | Los textos solo dicen **fecha, franja y horas**, o que hay algo que mirar: nada de salud, porque SMS, correo y WhatsApp no son confiables para datos clínicos. La **única excepción** es la alerta, que lleva el nombre de la persona (sin él no se sabría de quién es). Texto plano, sin HTML. Una prueba revisa todas las plantillas. |
+| Límite                   | Máximo 60 avisos **normales** por persona y hora (un error en un manejador no debe inundar a nadie). Las alertas nunca se descartan.                                                                                                                                                                                                    |
+| Privacidad de la campana | El destinatario sale de la sesión, nunca de un parámetro: un parámetro `destinatarioId` se rechaza (400).                                                                                                                                                                                                                               |
+
+## Los avisos de Teleasistencia
+
+| Evento                                  | A quién                               | Prioridad | Texto                                                            |
+| --------------------------------------- | ------------------------------------- | --------- | ---------------------------------------------------------------- |
+| `teleasistencia.alerta_generada`        | Los destinatarios que trae el evento  | **Alta**  | «Alerta de {nombre}» … «Si es una emergencia, llama al 123.»     |
+| `teleasistencia.medicamento_omitido`    | Familia vinculada y cuidador en turno | Normal    | «Hay una toma sin registrar» (sin decir cuál medicamento)        |
+| `teleasistencia.lectura_fuera_de_rango` | Familia vinculada y cuidador en turno | **Alta**  | «Hay un registro para revisar» (sin decir cuál medida ni cuánto) |
+
+Cuando sale el primer aviso de una alerta, Notificaciones publica `notificaciones.notificacion_entregada` (solo para avisos de alertas): con él Teleasistencia marca la alerta como «notificada» y mide E11.
 
 ## Los avisos de cada cambio del servicio
 

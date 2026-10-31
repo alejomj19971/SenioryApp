@@ -38,6 +38,7 @@ export async function crearAppDePrueba(
       INTERVALO_SONDEO_OUTBOX_MS: '0',
       INTERVALO_EXPIRACION_SERVICIOS_MS: '0',
       INTERVALO_ENTREGA_NOTIFICACIONES_MS: '0',
+      INTERVALO_OMISION_TOMAS_MS: '0',
       NIVEL_DE_LOG: 'error',
       ...opciones.variables,
     }),

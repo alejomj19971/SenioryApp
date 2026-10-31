@@ -98,14 +98,20 @@
 | 🔧 | **Sentry** para la alarma «alerta sin entregar» (hoy: auditoría y error en el log). |
 | 🔧 | La tabla `fallidas` del plan no hace falta: el estado `fallida` y el historial de `intentos_de_envio` ya lo cubren. |
 
-### M6 — Teleasistencia
+### M6 — Teleasistencia  *(backend construido)*
 
 | | Pendiente |
 |---|---|
-| 🔧 | Todo el módulo: alerta, medicamentos, signos vitales y tiempo real (SSE). |
-| ⚖️🚀 | **Rangos de signos vitales y tolerancia de medicamentos**, definidos por un profesional de salud. |
-| ⚖️🚀 | **Aviso de alcance** (no es un servicio de emergencias ni un dispositivo médico) revisado por asesoría legal. |
-| 🧑 | Cifrado de las columnas clínicas y plazos de retención. |
+| 🧑🚀 | **Umbrales clínicos:** los rangos por defecto (presión 90–140 / 60–90, pulso 50–100, glucosa 70–180) son **provisionales**, de uso general; un profesional de salud debe definirlos antes de lanzar. La **tolerancia de toma** (60 min) también está abierta. |
+| ⚖️🚀 | **Aviso de alcance:** Teleasistencia **no** es un servicio de emergencias ni un dispositivo médico. La pantalla de la alerta debe decir a quién se avisó y ofrecer llamar al 123; revisarlo con asesoría legal. |
+| 🧑 | **Cifrado de columnas clínicas** y plazos de retención y supresión de lecturas (decisión abierta, M10). |
+| 🔧🚀 | **El canal confiable fuera de la app** (M5) es lo que hace útil una alerta: hoy solo llega a quien tenga Seniory abierta. Probar E11 en staging con el canal real. |
+| 🔧 | **Eventos en vivo (SSE)** `GET /adultos-mayores/:id/eventos`: no se construyó. Necesita la infraestructura de SSE que también usa Mensajería (M8); mientras tanto la interfaz consulta el resumen. Cuando exista debe verificar el acceso en cada reconexión (revocar el consentimiento corta el flujo). |
+| 🔧 | La persona mayor con **cuenta propia** (rol `adulto_mayor`) no tiene acceso: la política solo contempla a la familia y al cuidador. Decidir si la tendrá. |
+| 🔧 | Alertas **automáticas** por una lectura fuera de rango o una toma omitida (los orígenes `signos` y `medicamento` existen en la base pero hoy solo avisan por notificación). |
+| 🔧 | Editar un medicamento (hoy se agrega y se desactiva) y la **auditoría de lectura masiva** (alertar si alguien consulta demasiados). |
+| 🔧 | Convenio real con un servicio de emergencias: solo con un acuerdo y su propio ADR (hoy no hay «línea de emergencia», ni simulada). |
+| 🔧 | Frontend (F5): `teleasistencia.ts`, `BotonAlerta` con clave de idempotencia y estado real, `ListaMedicamentos` optimista y `GraficaSignos` con estado vacío. |
 
 ### M7 — Pagos II: cobro, bolsas y liquidación
 

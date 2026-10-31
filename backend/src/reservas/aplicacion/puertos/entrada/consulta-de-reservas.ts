@@ -36,6 +36,12 @@ export interface ConsultaDeReservas {
     adultoMayorId: string,
   ): Promise<boolean>;
 
+  // Teleasistencia: a quién avisar de una alerta además de la familia. El cuidador cuyo servicio (aceptado o en
+  // curso) tiene hoy la franja de esta persona; null si nadie está con ella ahora.
+  obtenerCuidadorEnTurno(
+    adultoMayorId: string,
+  ): Promise<{ cuidadorId: string; cuidadorUsuarioId: string | null } | null>;
+
   // Mensajería: quiénes pueden hablar en el chat de ese servicio. Null si no existe.
   obtenerParticipantes(
     servicioId: string,

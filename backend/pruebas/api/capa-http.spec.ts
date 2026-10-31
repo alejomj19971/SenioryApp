@@ -411,6 +411,7 @@ describe('en producción', () => {
         INTERVALO_SONDEO_OUTBOX_MS: '1000',
         INTERVALO_EXPIRACION_SERVICIOS_MS: '60000',
         INTERVALO_ENTREGA_NOTIFICACIONES_MS: '2000',
+        INTERVALO_OMISION_TOMAS_MS: '60000',
       },
       ajustar: (constructor) =>
         constructor

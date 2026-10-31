@@ -4,6 +4,7 @@ import type { Reloj } from '../../../compartido/aplicacion/puertos/reloj.js';
 import type { UnidadDeTrabajo } from '../../../compartido/aplicacion/puertos/unidad-de-trabajo.js';
 import type { ConsultaDeIdentidad } from '../../../identidad/aplicacion/puertos/entrada/consulta-de-identidad.js';
 import type { Notificacion } from '../../dominio/notificacion.js';
+import type { EventosDeNotificaciones } from '../servicios/eventos-de-notificaciones.js';
 import { renderizarAviso } from '../../dominio/plantillas.js';
 import type { Canal } from '../../dominio/valores-cerrados.js';
 import {
@@ -39,6 +40,7 @@ export class EntregarPendientes {
     private readonly unidadDeTrabajo: UnidadDeTrabajo,
     private readonly auditoria: Auditoria,
     private readonly reloj: Reloj,
+    private readonly eventos: EventosDeNotificaciones,
   ) {
     this.canales = new Map(canales.map((c) => [c.canal, c]));
   }
@@ -79,12 +81,35 @@ export class EntregarPendientes {
       }
       intento = { resultado: 'error', respuesta: motivo, intentadoEn: ahora };
     }
-    await this.unidadDeTrabajo.ejecutar(() =>
-      this.notificaciones.registrarIntento(aviso, intento),
-    );
+    await this.unidadDeTrabajo.ejecutar(async () => {
+      await this.notificaciones.registrarIntento(aviso, intento);
+      await this.anunciarSiEsDeUnaAlerta(aviso);
+    });
     if (aviso.prioridad === 'alta' && aviso.estado === 'fallida') {
       await this.revisarAlertaSinEntregar(aviso);
     }
+  }
+
+  // El primer aviso de una alerta que sale le avisa a Teleasistencia (con ella mide E11). Va en la MISMA
+  // transacción que el resultado del envío: o quedan los dos o ninguno.
+  private async anunciarSiEsDeUnaAlerta(aviso: Notificacion): Promise<void> {
+    const alertaId = aviso.parametros.alertaId;
+    if (!aviso.salio() || typeof alertaId !== 'string') return;
+    await this.eventos.publicar(
+      'notificaciones.notificacion_entregada',
+      {
+        notificacionId: aviso.id,
+        destinatarioId: aviso.destinatarioId,
+        canal: aviso.canal,
+        alertaId,
+        entregadaEn: (
+          aviso.entregadaEn ??
+          aviso.enviadaEn ??
+          this.reloj.ahora()
+        ).toISOString(),
+      },
+      this.reloj.ahora(),
+    );
   }
 
   private async enviar(aviso: Notificacion) {

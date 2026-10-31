@@ -30,6 +30,9 @@ describe('fechaLegible', () => {
 describe('renderizarAviso', () => {
   it('hay una plantilla para cada parte de cada cambio del servicio', () => {
     expect([...TIPOS_DE_AVISO].sort()).toEqual([
+      'alerta_generada:destinatario',
+      'lectura_fuera_de_rango:destinatario',
+      'medicamento_omitido:destinatario',
       'servicio_cancelado:cuidador',
       'servicio_cancelado:familia',
       'servicio_confirmado:cuidador',
@@ -95,13 +98,15 @@ describe('renderizarAviso', () => {
   describe('minimización: ningún aviso lleva datos clínicos ni nombres (Ley 1581)', () => {
     const motivos = ['rechazada', 'expirada', 'cancelada_por_familia'];
     const todos = TIPOS_DE_AVISO.flatMap((tipo) =>
-      motivos.map((motivo) => renderizarAviso(tipo, con({ motivo }))),
+      motivos.map((motivo) =>
+        renderizarAviso(tipo, con({ motivo, nombre: 'Doña Carmen' })),
+      ),
     );
 
     it('ninguno menciona salud', () => {
       for (const { titulo, cuerpo } of todos) {
         expect(`${titulo} ${cuerpo}`).not.toMatch(
-          /medicament|presi[oó]n|glucosa|pulso|signos|diagn[oó]stic|enfermedad|alerta|ca[ií]da/i,
+          /medicament|presi[oó]n|glucosa|pulso|signos|diagn[oó]stic|enfermedad|ca[ií]da/i,
         );
       }
     });
@@ -191,4 +196,44 @@ describe('renderizarAviso', () => {
       );
     });
   });
+});
+
+describe('avisos de Teleasistencia', () => {
+  it('la alerta lleva el nombre de la persona (sin él no se sabría de quién es) y recuerda el 123', () => {
+    expect(
+      renderizarAviso('alerta_generada:destinatario', {
+        alertaId: 'a-1',
+        nombre: 'Doña Carmen',
+      }),
+    ).toEqual({
+      titulo: 'Alerta de Doña Carmen',
+      cuerpo:
+        'Doña Carmen pidió ayuda desde Seniory. Abre la aplicación para ver los detalles. Si es una emergencia, llama al 123.',
+    });
+  });
+
+  it('la alerta sin nombre no se arma', () => {
+    expect(() =>
+      renderizarAviso('alerta_generada:destinatario', { alertaId: 'a-1' }),
+    ).toThrow(
+      expect.objectContaining({
+        codigo: 'plantilla.parametro_faltante',
+      }) as Error,
+    );
+  });
+
+  it.each([
+    'medicamento_omitido:destinatario',
+    'lectura_fuera_de_rango:destinatario',
+  ])(
+    '%s no dice qué medicamento ni qué lectura: solo manda a abrir Seniory',
+    (tipo) => {
+      const { titulo, cuerpo } = renderizarAviso(tipo, {});
+
+      expect(`${titulo} ${cuerpo}`).toMatch(/Seniory/);
+      expect(`${titulo} ${cuerpo}`).not.toMatch(
+        /\d|mg|presi[oó]n|glucosa|pulso|az[uú]car|fuera de rango|alto|bajo/i,
+      );
+    },
+  );
 });

@@ -54,6 +54,12 @@ export const CONFIGURACION = Symbol('CONFIGURACION');
           CANALES_DE_NOTIFICACION_SIMULADOS: servicio.getOrThrow<string>(
             'CANALES_DE_NOTIFICACION_SIMULADOS',
           ),
+          TOLERANCIA_DE_TOMA_MINUTOS: servicio.getOrThrow<number>(
+            'TOLERANCIA_DE_TOMA_MINUTOS',
+          ),
+          INTERVALO_OMISION_TOMAS_MS: servicio.getOrThrow<number>(
+            'INTERVALO_OMISION_TOMAS_MS',
+          ),
           SENTRY_DSN: servicio.get<string>('SENTRY_DSN'),
           SECRETO_BFF: servicio.get<string>('SECRETO_BFF'),
           SECRETO_JWT_ACCESO: servicio.getOrThrow<string>('SECRETO_JWT_ACCESO'),

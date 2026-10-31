@@ -4,15 +4,24 @@ import {
   type Auditoria,
 } from '../compartido/aplicacion/puertos/auditoria.js';
 import {
+  CONTEXTO_DE_PETICION,
+  type ContextoDePeticion,
+} from '../compartido/aplicacion/puertos/contexto-de-peticion.js';
+import {
   GENERADOR_DE_IDS,
   type GeneradorDeIds,
 } from '../compartido/aplicacion/puertos/generador-de-ids.js';
+import {
+  PUBLICADOR_DE_EVENTOS,
+  type PublicadorDeEventos,
+} from '../compartido/aplicacion/puertos/publicador-de-eventos.js';
 import { RELOJ, type Reloj } from '../compartido/aplicacion/puertos/reloj.js';
 import {
   UNIDAD_DE_TRABAJO,
   type UnidadDeTrabajo,
 } from '../compartido/aplicacion/puertos/unidad-de-trabajo.js';
 import { ContextoTransaccional } from '../compartido/infraestructura/base-de-datos/contexto-transaccional.js';
+import type { ManejadorDeEventos } from '../compartido/aplicacion/puertos/manejador-de-eventos.js';
 import { RegistroDeManejadores } from '../compartido/infraestructura/outbox/registro-de-manejadores.js';
 import { SondeoPeriodico } from '../compartido/infraestructura/sondeo-periodico.js';
 import { CONFIGURACION } from '../configuracion/configuracion.module.js';
@@ -37,6 +46,12 @@ import { EntregarPendientes } from './aplicacion/casos-de-uso/entregar-pendiente
 import { ListarMisNotificaciones } from './aplicacion/casos-de-uso/listar-mis-notificaciones.js';
 import { AvisarCambioDeServicio } from './aplicacion/manejadores/avisar-cambio-de-servicio.js';
 import {
+  AvisarAlerta,
+  AvisarLecturaFueraDeRango,
+  AvisarMedicamentoOmitido,
+} from './aplicacion/manejadores/avisar-de-teleasistencia.js';
+import { EventosDeNotificaciones } from './aplicacion/servicios/eventos-de-notificaciones.js';
+import {
   CANALES_DE_NOTIFICACION,
   type CanalDeNotificacion,
 } from './aplicacion/puertos/salida/canal-de-notificacion.js';
@@ -52,6 +67,7 @@ import {
 import { RepositorioNotificacionesDrizzle } from './infraestructura/salida/persistencia/repositorio-notificaciones-drizzle.js';
 
 const MANEJADORES_DE_SERVICIO = Symbol('ManejadoresDeServicio');
+const MANEJADORES_DE_TELEASISTENCIA = Symbol('ManejadoresDeTeleasistencia');
 const SONDEO_DE_ENTREGAS = Symbol('SondeoDeEntregas');
 
 // Los eventos del ciclo de vida del servicio que generan avisos, cada uno con su nombre estable (el despachador
@@ -107,6 +123,15 @@ const EVENTOS_CON_AVISO = [
       ) => new CrearAvisos(notificaciones, canales, ids, reloj),
     },
     {
+      provide: EventosDeNotificaciones,
+      inject: [PUBLICADOR_DE_EVENTOS, GENERADOR_DE_IDS, CONTEXTO_DE_PETICION],
+      useFactory: (
+        publicador: PublicadorDeEventos,
+        ids: GeneradorDeIds,
+        contexto: ContextoDePeticion,
+      ) => new EventosDeNotificaciones(publicador, ids, contexto),
+    },
+    {
       provide: EntregarPendientes,
       inject: [
         REPOSITORIO_NOTIFICACIONES,
@@ -115,6 +140,7 @@ const EVENTOS_CON_AVISO = [
         UNIDAD_DE_TRABAJO,
         AUDITORIA,
         RELOJ,
+        EventosDeNotificaciones,
       ],
       useFactory: (
         notificaciones: RepositorioNotificaciones,
@@ -123,6 +149,7 @@ const EVENTOS_CON_AVISO = [
         unidadDeTrabajo: UnidadDeTrabajo,
         auditoria: Auditoria,
         reloj: Reloj,
+        eventos: EventosDeNotificaciones,
       ) =>
         new EntregarPendientes(
           notificaciones,
@@ -131,6 +158,7 @@ const EVENTOS_CON_AVISO = [
           unidadDeTrabajo,
           auditoria,
           reloj,
+          eventos,
         ),
     },
     {
@@ -158,6 +186,19 @@ const EVENTOS_CON_AVISO = [
             ),
         ),
     },
+    {
+      provide: MANEJADORES_DE_TELEASISTENCIA,
+      inject: [CONSULTA_DE_IDENTIDAD, CONSULTA_DE_RESERVAS, CrearAvisos],
+      useFactory: (
+        identidad: ConsultaDeIdentidad,
+        reservas: ConsultaDeReservas,
+        avisos: CrearAvisos,
+      ) => [
+        new AvisarAlerta(identidad, avisos),
+        new AvisarMedicamentoOmitido(identidad, reservas, avisos),
+        new AvisarLecturaFueraDeRango(identidad, reservas, avisos),
+      ],
+    },
     // La tarea programada que envía los avisos pendientes (y reintenta los que fallaron).
     {
       provide: SONDEO_DE_ENTREGAS,
@@ -181,6 +222,8 @@ export class NotificacionesModule implements OnModuleInit {
     private readonly registro: RegistroDeManejadores,
     @Inject(MANEJADORES_DE_SERVICIO)
     private readonly manejadores: AvisarCambioDeServicio<never>[],
+    @Inject(MANEJADORES_DE_TELEASISTENCIA)
+    private readonly manejadoresDeTeleasistencia: ManejadorDeEventos[],
     // Solo para que Nest lo cree y llame a sus ganchos de arranque y cierre.
     @Inject(SONDEO_DE_ENTREGAS) private readonly sondeo: SondeoPeriodico,
   ) {}
@@ -188,6 +231,9 @@ export class NotificacionesModule implements OnModuleInit {
   onModuleInit(): void {
     for (const manejador of this.manejadores) {
       this.registro.registrar(manejador as never);
+    }
+    for (const manejador of this.manejadoresDeTeleasistencia) {
+      this.registro.registrar(manejador);
     }
   }
 }

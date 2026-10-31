@@ -26,6 +26,7 @@ export type Peticion = (ruta: string) => request.Test;
 export interface Cliente {
   get: Peticion;
   post: Peticion;
+  put: Peticion;
   patch: Peticion;
   delete: Peticion;
 }
@@ -37,6 +38,7 @@ export function como(app: NestExpressApplication, ip = nuevaIp()): Cliente {
   return {
     get: (ruta) => conIp(servidor().get(ruta)),
     post: (ruta) => conIp(servidor().post(ruta)),
+    put: (ruta) => conIp(servidor().put(ruta)),
     patch: (ruta) => conIp(servidor().patch(ruta)),
     delete: (ruta) => conIp(servidor().delete(ruta)),
   };

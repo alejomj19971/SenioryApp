@@ -114,6 +114,25 @@ export class VariablesDeEntorno {
   })
   INTERVALO_ENTREGA_NOTIFICACIONES_MS: number = 2_000;
 
+  // Cuánto se espera después de la hora de una toma antes de darla por omitida (decisión abierta: lo fija el
+  // equipo con un profesional de salud). Debe ser mayor que cero.
+  @Type(() => Number)
+  @IsInt({ message: 'TOLERANCIA_DE_TOMA_MINUTOS debe ser un número entero' })
+  @Min(1, { message: 'TOLERANCIA_DE_TOMA_MINUTOS debe estar entre 1 y 720' })
+  @Max(720, { message: 'TOLERANCIA_DE_TOMA_MINUTOS debe estar entre 1 y 720' })
+  TOLERANCIA_DE_TOMA_MINUTOS: number = 60;
+
+  // Cada cuánto se revisan las tomas vencidas. 0 lo apaga (solo en pruebas).
+  @Type(() => Number)
+  @IsInt({ message: 'INTERVALO_OMISION_TOMAS_MS debe ser un número entero' })
+  @Min(0, {
+    message: 'INTERVALO_OMISION_TOMAS_MS debe estar entre 0 y 3600000',
+  })
+  @Max(3_600_000, {
+    message: 'INTERVALO_OMISION_TOMAS_MS debe estar entre 0 y 3600000',
+  })
+  INTERVALO_OMISION_TOMAS_MS: number = 60_000;
+
   // Finge los canales de correo, SMS, WhatsApp y push (solo escribe en el log) mientras no haya proveedores.
   // SOLO desarrollo y pruebas: en producción un aviso que no sale no puede darse por enviado.
   @IsIn(['true', 'false'], {
@@ -213,6 +232,8 @@ export interface Configuracion {
   intervaloSondeoOutboxMs: number;
   intervaloExpiracionServiciosMs: number;
   intervaloEntregaNotificacionesMs: number;
+  toleranciaDeTomaMinutos: number;
+  intervaloOmisionTomasMs: number;
   canalesDeNotificacionSimulados: boolean;
   sentryDsn: string | null;
   secretoBff: string | null;
@@ -372,6 +393,11 @@ function reglasAdicionales(variables: VariablesDeEntorno): string[] {
         'En producción, CANAL_DE_RECUPERACION no puede ser consola (el enlace de recuperación quedaría escrito en el log)',
       );
     }
+    if (variables.INTERVALO_OMISION_TOMAS_MS === 0) {
+      problemas.push(
+        'En producción, INTERVALO_OMISION_TOMAS_MS no puede ser 0 (las tomas vencidas nunca se marcarían como omitidas)',
+      );
+    }
     if (variables.INTERVALO_ENTREGA_NOTIFICACIONES_MS === 0) {
       problemas.push(
         'En producción, INTERVALO_ENTREGA_NOTIFICACIONES_MS no puede ser 0 (los avisos nunca se enviarían)',
@@ -445,6 +471,8 @@ export function configuracionDesdeVariables(
     intervaloExpiracionServiciosMs: variables.INTERVALO_EXPIRACION_SERVICIOS_MS,
     intervaloEntregaNotificacionesMs:
       variables.INTERVALO_ENTREGA_NOTIFICACIONES_MS,
+    toleranciaDeTomaMinutos: variables.TOLERANCIA_DE_TOMA_MINUTOS,
+    intervaloOmisionTomasMs: variables.INTERVALO_OMISION_TOMAS_MS,
     canalesDeNotificacionSimulados:
       variables.CANALES_DE_NOTIFICACION_SIMULADOS === 'true',
     sentryDsn: variables.SENTRY_DSN ?? null,

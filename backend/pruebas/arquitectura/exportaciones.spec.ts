@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { TeleasistenciaModule } from '../../src/teleasistencia/teleasistencia.module.js';
 import { NotificacionesModule } from '../../src/notificaciones/notificaciones.module.js';
 import { CONSULTA_DE_DIRECTORIO } from '../../src/directorio/aplicacion/puertos/entrada/consulta-de-directorio.js';
 import { DirectorioModule } from '../../src/directorio/directorio.module.js';
@@ -60,6 +61,12 @@ const PERMITIDAS_POR_MODULO = [
     // Solo reacciona a eventos: no ofrece nada a otros módulos.
     nombre: 'NotificacionesModule',
     modulo: NotificacionesModule,
+    permitidas: [],
+  },
+  {
+    // Guarda datos de salud: no ofrece nada a otros módulos, que solo se enteran por eventos sin datos clínicos.
+    nombre: 'TeleasistenciaModule',
+    modulo: TeleasistenciaModule,
     permitidas: [],
   },
   {

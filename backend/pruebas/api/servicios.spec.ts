@@ -74,6 +74,7 @@ describe('servicios (API)', () => {
     cliente = {
       get: (ruta) => como(app).get(ruta),
       post: (ruta) => como(app).post(ruta),
+      put: (ruta) => como(app).put(ruta),
       patch: (ruta) => como(app).patch(ruta),
       delete: (ruta) => como(app).delete(ruta),
     };

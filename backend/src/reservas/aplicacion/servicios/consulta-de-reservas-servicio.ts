@@ -53,6 +53,31 @@ export class ConsultaDeReservasServicio implements ConsultaDeReservas {
     );
   }
 
+  async obtenerCuidadorEnTurno(
+    adultoMayorId: string,
+  ): Promise<{ cuidadorId: string; cuidadorUsuarioId: string | null } | null> {
+    const ahora = this.reloj.ahora();
+    // Desde ayer: la noche de ayer sigue en curso hasta las 06:00 de hoy.
+    const desde = FechaCivil.hoy(this.reloj, this.zonaHoraria).sumarDias(-1);
+    const activos = await this.servicios.listarActivosDeAdultoMayor(
+      adultoMayorId,
+      desde,
+    );
+    const enTurno = activos.find(
+      (servicio) =>
+        servicio.estado === 'en_curso' ||
+        servicio.estaEnTurno(ahora, this.zonaHoraria),
+    );
+    if (enTurno === undefined) return null;
+    const contacto = await this.directorio.obtenerContactoDeCuidador(
+      enTurno.cuidadorId,
+    );
+    return {
+      cuidadorId: enTurno.cuidadorId,
+      cuidadorUsuarioId: contacto?.usuarioId ?? null,
+    };
+  }
+
   async obtenerParticipantes(
     servicioId: string,
   ): Promise<ParticipantesDelServicio | null> {

@@ -166,6 +166,7 @@ describe('verificación de Origin en producción', () => {
         INTERVALO_SONDEO_OUTBOX_MS: '1000',
         INTERVALO_EXPIRACION_SERVICIOS_MS: '60000',
         INTERVALO_ENTREGA_NOTIFICACIONES_MS: '2000',
+        INTERVALO_OMISION_TOMAS_MS: '60000',
       },
       // Producción exige el sondeo encendido. Con el reloj en 1970 no toma ningún evento de las demás
       // pruebas, que comparten la base.

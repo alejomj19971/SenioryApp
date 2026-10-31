@@ -61,6 +61,8 @@ describe('validarVariables', () => {
         intervaloExpiracionServiciosMs: 60000,
         intervaloEntregaNotificacionesMs: 2000,
         canalesDeNotificacionSimulados: false,
+        toleranciaDeTomaMinutos: 60,
+        intervaloOmisionTomasMs: 60000,
         sentryDsn: null,
         secretoBff: null,
         secretoJwtAcceso: SECRETO_JWT_VALIDO,
@@ -291,6 +293,36 @@ describe('validarVariables', () => {
         ).join(),
       ).toContain('CANALES_DE_NOTIFICACION_SIMULADOS');
     });
+
+    it('en producción no permite apagar la revisión de tomas vencidas', () => {
+      expect(
+        problemasDe(entornoDeProduccion({ INTERVALO_OMISION_TOMAS_MS: '0' })),
+      ).toEqual([
+        'En producción, INTERVALO_OMISION_TOMAS_MS no puede ser 0 (las tomas vencidas nunca se marcarían como omitidas)',
+      ]);
+    });
+
+    it.each(['0', '721', '1.5', 'un-rato'])(
+      'rechaza la tolerancia de toma %s',
+      (valor) => {
+        expect(
+          problemasDe(
+            entornoBase({ TOLERANCIA_DE_TOMA_MINUTOS: valor }),
+          ).join(),
+        ).toContain('TOLERANCIA_DE_TOMA_MINUTOS');
+      },
+    );
+
+    it.each(['-1', '3600001', 'seguido'])(
+      'rechaza el intervalo de omisión %s',
+      (valor) => {
+        expect(
+          problemasDe(
+            entornoBase({ INTERVALO_OMISION_TOMAS_MS: valor }),
+          ).join(),
+        ).toContain('INTERVALO_OMISION_TOMAS_MS');
+      },
+    );
 
     it('rechaza un SECRETO_BFF corto', () => {
       expect(

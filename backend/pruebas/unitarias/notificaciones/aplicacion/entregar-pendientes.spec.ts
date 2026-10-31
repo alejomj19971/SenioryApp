@@ -4,7 +4,13 @@ import { EntregarPendientes } from '../../../../src/notificaciones/aplicacion/ca
 import { FalloDeEnvio } from '../../../../src/notificaciones/aplicacion/puertos/salida/canal-de-notificacion.js';
 import { MAXIMO_DE_INTENTOS } from '../../../../src/notificaciones/dominio/notificacion.js';
 import type { Notificacion } from '../../../../src/notificaciones/dominio/notificacion.js';
-import { AuditoriaEnMemoria, RelojFalso } from '../../../soporte/dobles.js';
+import { EventosDeNotificaciones } from '../../../../src/notificaciones/aplicacion/servicios/eventos-de-notificaciones.js';
+import {
+  AuditoriaEnMemoria,
+  GeneradorDeIdsSecuencial,
+  PublicadorDeEventosEnMemoria,
+  RelojFalso,
+} from '../../../soporte/dobles.js';
 import {
   avisoDePrueba,
   CanalFalso,
@@ -26,6 +32,7 @@ function montar(canales: CanalFalso[], contacto: Contacto | null = CONTACTO) {
   const identidad = {
     obtenerContacto: () => Promise.resolve(contacto),
   } as unknown as ConsultaDeIdentidad;
+  const publicador = new PublicadorDeEventosEnMemoria();
   const caso = new EntregarPendientes(
     repositorio,
     canales,
@@ -33,8 +40,11 @@ function montar(canales: CanalFalso[], contacto: Contacto | null = CONTACTO) {
     { ejecutar: (trabajo) => trabajo() },
     auditoria,
     reloj,
+    new EventosDeNotificaciones(publicador, new GeneradorDeIdsSecuencial(), {
+      idDeCorrelacion: () => '0198aaaa-0000-7000-8000-0000000000c0',
+    }),
   );
-  return { caso, repositorio, reloj, auditoria };
+  return { caso, repositorio, reloj, auditoria, publicador };
 }
 
 async function guardar(
@@ -298,6 +308,71 @@ describe('EntregarPendientes', () => {
 
       expect(porCorreo.estado).toBe('pendiente');
       expect(porApp.estado).toBe('entregada');
+    });
+  });
+
+  describe('evento «notificación entregada» (E11)', () => {
+    const deAlerta = (canal: 'app' | 'sms' = 'app') =>
+      avisoDePrueba({
+        canal,
+        prioridad: 'alta',
+        tipo: 'alerta_generada:destinatario',
+        parametros: { alertaId: 'alerta-1', nombre: 'Doña Carmen' },
+      });
+
+    it('al salir el aviso de una alerta, anuncia cuándo y por qué canal', async () => {
+      const { caso, repositorio, publicador } = montar([new CanalFalso('app')]);
+      const aviso = deAlerta();
+      await guardar(repositorio, aviso);
+
+      await caso.ejecutar();
+
+      expect(
+        publicador.deTipo('notificaciones.notificacion_entregada'),
+      ).toEqual([
+        expect.objectContaining({
+          datos: {
+            notificacionId: aviso.id,
+            destinatarioId: aviso.destinatarioId,
+            canal: 'app',
+            alertaId: 'alerta-1',
+            entregadaEn: AHORA,
+          },
+        }),
+      ]);
+    });
+
+    it('también cuando el proveedor solo aceptó el mensaje (enviada)', async () => {
+      const sms = new CanalFalso('sms');
+      sms.respuesta = () => Promise.resolve('enviada');
+      const { caso, repositorio, publicador } = montar([sms]);
+      await guardar(repositorio, deAlerta('sms'));
+
+      await caso.ejecutar();
+
+      expect(
+        publicador.deTipo('notificaciones.notificacion_entregada'),
+      ).toHaveLength(1);
+    });
+
+    it('si el envío falla, no anuncia nada', async () => {
+      const sms = new CanalFalso('sms');
+      sms.respuesta = () => Promise.reject(new Error('caído'));
+      const { caso, repositorio, publicador } = montar([sms]);
+      await guardar(repositorio, deAlerta('sms'));
+
+      await caso.ejecutar();
+
+      expect(publicador.eventos).toEqual([]);
+    });
+
+    it('un aviso que no es de una alerta no anuncia nada (sin ruido en el outbox)', async () => {
+      const { caso, repositorio, publicador } = montar([new CanalFalso('app')]);
+      await guardar(repositorio, avisoDePrueba({ canal: 'app' }));
+
+      await caso.ejecutar();
+
+      expect(publicador.eventos).toEqual([]);
     });
   });
 
