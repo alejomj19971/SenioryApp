@@ -3,3 +3,6 @@
 /docs/img/
 
 .DS_Store
+
+# dependencias y cachés de herramientas (cada paquete tiene su propio .gitignore)
+node_modules/
