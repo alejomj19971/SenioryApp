@@ -61,12 +61,13 @@
 
 *Resuelto en M2:* el directorio exige sesión y pasa por el límite global de peticiones (100 por minuto por IP); un límite propio y más estricto queda para M10 si hace falta.
 
-### M3 — Pagos I: cotización
+### M3 — Pagos I: cotización  *(backend construido)*
 
 | | Pendiente |
 |---|---|
-| 🔧 | Todo el módulo: `POST /pagos/cotizaciones` y la política de precios versionada. |
-| ⚖️ | **Comisiones aprobadas** (8 % a la familia y 10 % al cuidador hoy son «ilustrativas»). |
+| ⚖️🚀 | **Comisiones aprobadas** (8 % a la familia y 10 % al cuidador de la política 1 son «ilustrativas»). Cambiarlas es insertar una política nueva con otra versión y fecha de inicio; no hace falta tocar código. |
+| 🔧 | Frontend (F3): verificar `lib/pricing.ts` contra `backend/pruebas/vectores/precios.json` y corregir el pago al profesional a `subtotal − round(subtotal × 0,1)` (hoy difiere con montos de pesos sueltos). |
+| 🔧 | Pantalla o comando para que un administrador cree una política nueva sin SQL (M10). |
 
 ### M4 — Reservas
 

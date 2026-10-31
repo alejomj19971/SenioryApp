@@ -20,6 +20,7 @@ import {
 import type { Configuracion } from './configuracion/variables-de-entorno.js';
 import { DirectorioModule } from './directorio/directorio.module.js';
 import { IdentidadModule } from './identidad/identidad.module.js';
+import { PagosModule } from './pagos/pagos.module.js';
 import { SaludController } from './salud/salud.controller.js';
 
 const PETICIONES_POR_MINUTO = 100; // por IP; las rutas de /auth tienen límites más estrictos
@@ -37,6 +38,7 @@ const PETICIONES_POR_MINUTO = 100; // por IP; las rutas de /auth tienen límites
     CompartidoModule,
     IdentidadModule,
     DirectorioModule,
+    PagosModule,
   ],
   controllers: [SaludController],
   providers: [

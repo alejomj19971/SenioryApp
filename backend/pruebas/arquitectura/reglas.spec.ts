@@ -49,9 +49,11 @@ function violacionesEn(carpeta: string): Violacion[] {
 const corto = (ruta: string) => ruta.replace(`${EJEMPLOS}/`, '');
 
 describe('reglas de arquitectura', () => {
+  // Analiza todo src/ (cientos de archivos): con la suite completa corriendo en paralelo puede pasar de los 5 s
+  // que Vitest da por defecto.
   it('src/ cumple todas las reglas', () => {
     expect(violacionesEn('src')).toEqual([]);
-  });
+  }, 30_000);
 
   describe('cada regla detecta su ejemplo', () => {
     const violaciones = violacionesEn(EJEMPLOS).map((v) => ({

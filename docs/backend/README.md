@@ -13,7 +13,7 @@ El marco general (stack, reglas de arquitectura, estándares y orden) está en [
 | M0 | Plataforma y compartido | `compartido/`, API REST, eventos internos, base de datos | [M0-plataforma-y-compartido.md](./M0-plataforma-y-compartido.md) | **En construcción:** PR 1–4 de 8 hechos ([avance](../AVANCE.md)) |
 | M1 | Identidad | Identidad y usuarios | [M1-identidad.md](./M1-identidad.md) | Plan aprobado (2026-10-22) |
 | M2 | Directorio (lectura) | Directorio y verificación | [PLAN_BACKEND §M2](../PLAN_BACKEND_SENIORY.md) y [README del módulo](../../backend/src/directorio/README.md) | **Construido** (en revisión, [avance](../AVANCE.md)) |
-| M3 | Pagos I: cotización | Pagos | — | Pendiente |
+| M3 | Pagos I: cotización | Pagos | [PLAN_BACKEND §M3](../PLAN_BACKEND_SENIORY.md) y [README del módulo](../../backend/src/pagos/README.md) | **Construido** (en revisión, [avance](../AVANCE.md)) |
 | M4 | Reservas | Reservas (máquina de estados) | — | Pendiente |
 | M5 | Notificaciones | Notificaciones | — | Pendiente |
 | M6 | Teleasistencia | Teleasistencia | — | Pendiente |

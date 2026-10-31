@@ -1,0 +1,2255 @@
+{
+  "descripcion": "Vectores de calcularServicio. Los usan el backend (pagos/dominio) y, desde F3, el frontend (lib/pricing.ts). Dinero en pesos COP enteros; comisiones en puntos básicos; la mitad se redondea hacia arriba; pagoProfesional = subtotal - comisión del profesional.",
+  "vectores": [
+    {
+      "tarifaHora": 18000,
+      "horas": 1,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 18000,
+        "cargoFamilia": 1440,
+        "totalFamilia": 19440,
+        "pagoProfesional": 16200,
+        "ingresoPlataforma": 3240
+      }
+    },
+    {
+      "tarifaHora": 18000,
+      "horas": 2,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 36000,
+        "cargoFamilia": 2880,
+        "totalFamilia": 38880,
+        "pagoProfesional": 32400,
+        "ingresoPlataforma": 6480
+      }
+    },
+    {
+      "tarifaHora": 18000,
+      "horas": 3,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 54000,
+        "cargoFamilia": 4320,
+        "totalFamilia": 58320,
+        "pagoProfesional": 48600,
+        "ingresoPlataforma": 9720
+      }
+    },
+    {
+      "tarifaHora": 18000,
+      "horas": 4,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 72000,
+        "cargoFamilia": 5760,
+        "totalFamilia": 77760,
+        "pagoProfesional": 64800,
+        "ingresoPlataforma": 12960
+      }
+    },
+    {
+      "tarifaHora": 18000,
+      "horas": 5,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 90000,
+        "cargoFamilia": 7200,
+        "totalFamilia": 97200,
+        "pagoProfesional": 81000,
+        "ingresoPlataforma": 16200
+      }
+    },
+    {
+      "tarifaHora": 18000,
+      "horas": 6,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 108000,
+        "cargoFamilia": 8640,
+        "totalFamilia": 116640,
+        "pagoProfesional": 97200,
+        "ingresoPlataforma": 19440
+      }
+    },
+    {
+      "tarifaHora": 18000,
+      "horas": 7,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 126000,
+        "cargoFamilia": 10080,
+        "totalFamilia": 136080,
+        "pagoProfesional": 113400,
+        "ingresoPlataforma": 22680
+      }
+    },
+    {
+      "tarifaHora": 18000,
+      "horas": 8,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 144000,
+        "cargoFamilia": 11520,
+        "totalFamilia": 155520,
+        "pagoProfesional": 129600,
+        "ingresoPlataforma": 25920
+      }
+    },
+    {
+      "tarifaHora": 19000,
+      "horas": 1,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 19000,
+        "cargoFamilia": 1520,
+        "totalFamilia": 20520,
+        "pagoProfesional": 17100,
+        "ingresoPlataforma": 3420
+      }
+    },
+    {
+      "tarifaHora": 19000,
+      "horas": 2,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 38000,
+        "cargoFamilia": 3040,
+        "totalFamilia": 41040,
+        "pagoProfesional": 34200,
+        "ingresoPlataforma": 6840
+      }
+    },
+    {
+      "tarifaHora": 19000,
+      "horas": 3,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 57000,
+        "cargoFamilia": 4560,
+        "totalFamilia": 61560,
+        "pagoProfesional": 51300,
+        "ingresoPlataforma": 10260
+      }
+    },
+    {
+      "tarifaHora": 19000,
+      "horas": 4,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 76000,
+        "cargoFamilia": 6080,
+        "totalFamilia": 82080,
+        "pagoProfesional": 68400,
+        "ingresoPlataforma": 13680
+      }
+    },
+    {
+      "tarifaHora": 19000,
+      "horas": 5,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 95000,
+        "cargoFamilia": 7600,
+        "totalFamilia": 102600,
+        "pagoProfesional": 85500,
+        "ingresoPlataforma": 17100
+      }
+    },
+    {
+      "tarifaHora": 19000,
+      "horas": 6,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 114000,
+        "cargoFamilia": 9120,
+        "totalFamilia": 123120,
+        "pagoProfesional": 102600,
+        "ingresoPlataforma": 20520
+      }
+    },
+    {
+      "tarifaHora": 19000,
+      "horas": 7,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 133000,
+        "cargoFamilia": 10640,
+        "totalFamilia": 143640,
+        "pagoProfesional": 119700,
+        "ingresoPlataforma": 23940
+      }
+    },
+    {
+      "tarifaHora": 19000,
+      "horas": 8,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 152000,
+        "cargoFamilia": 12160,
+        "totalFamilia": 164160,
+        "pagoProfesional": 136800,
+        "ingresoPlataforma": 27360
+      }
+    },
+    {
+      "tarifaHora": 20000,
+      "horas": 1,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 20000,
+        "cargoFamilia": 1600,
+        "totalFamilia": 21600,
+        "pagoProfesional": 18000,
+        "ingresoPlataforma": 3600
+      }
+    },
+    {
+      "tarifaHora": 20000,
+      "horas": 2,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 40000,
+        "cargoFamilia": 3200,
+        "totalFamilia": 43200,
+        "pagoProfesional": 36000,
+        "ingresoPlataforma": 7200
+      }
+    },
+    {
+      "tarifaHora": 20000,
+      "horas": 3,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 60000,
+        "cargoFamilia": 4800,
+        "totalFamilia": 64800,
+        "pagoProfesional": 54000,
+        "ingresoPlataforma": 10800
+      }
+    },
+    {
+      "tarifaHora": 20000,
+      "horas": 4,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 80000,
+        "cargoFamilia": 6400,
+        "totalFamilia": 86400,
+        "pagoProfesional": 72000,
+        "ingresoPlataforma": 14400
+      }
+    },
+    {
+      "tarifaHora": 20000,
+      "horas": 5,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 100000,
+        "cargoFamilia": 8000,
+        "totalFamilia": 108000,
+        "pagoProfesional": 90000,
+        "ingresoPlataforma": 18000
+      }
+    },
+    {
+      "tarifaHora": 20000,
+      "horas": 6,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 120000,
+        "cargoFamilia": 9600,
+        "totalFamilia": 129600,
+        "pagoProfesional": 108000,
+        "ingresoPlataforma": 21600
+      }
+    },
+    {
+      "tarifaHora": 20000,
+      "horas": 7,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 140000,
+        "cargoFamilia": 11200,
+        "totalFamilia": 151200,
+        "pagoProfesional": 126000,
+        "ingresoPlataforma": 25200
+      }
+    },
+    {
+      "tarifaHora": 20000,
+      "horas": 8,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 160000,
+        "cargoFamilia": 12800,
+        "totalFamilia": 172800,
+        "pagoProfesional": 144000,
+        "ingresoPlataforma": 28800
+      }
+    },
+    {
+      "tarifaHora": 21000,
+      "horas": 1,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 21000,
+        "cargoFamilia": 1680,
+        "totalFamilia": 22680,
+        "pagoProfesional": 18900,
+        "ingresoPlataforma": 3780
+      }
+    },
+    {
+      "tarifaHora": 21000,
+      "horas": 2,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 42000,
+        "cargoFamilia": 3360,
+        "totalFamilia": 45360,
+        "pagoProfesional": 37800,
+        "ingresoPlataforma": 7560
+      }
+    },
+    {
+      "tarifaHora": 21000,
+      "horas": 3,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 63000,
+        "cargoFamilia": 5040,
+        "totalFamilia": 68040,
+        "pagoProfesional": 56700,
+        "ingresoPlataforma": 11340
+      }
+    },
+    {
+      "tarifaHora": 21000,
+      "horas": 4,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 84000,
+        "cargoFamilia": 6720,
+        "totalFamilia": 90720,
+        "pagoProfesional": 75600,
+        "ingresoPlataforma": 15120
+      }
+    },
+    {
+      "tarifaHora": 21000,
+      "horas": 5,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 105000,
+        "cargoFamilia": 8400,
+        "totalFamilia": 113400,
+        "pagoProfesional": 94500,
+        "ingresoPlataforma": 18900
+      }
+    },
+    {
+      "tarifaHora": 21000,
+      "horas": 6,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 126000,
+        "cargoFamilia": 10080,
+        "totalFamilia": 136080,
+        "pagoProfesional": 113400,
+        "ingresoPlataforma": 22680
+      }
+    },
+    {
+      "tarifaHora": 21000,
+      "horas": 7,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 147000,
+        "cargoFamilia": 11760,
+        "totalFamilia": 158760,
+        "pagoProfesional": 132300,
+        "ingresoPlataforma": 26460
+      }
+    },
+    {
+      "tarifaHora": 21000,
+      "horas": 8,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 168000,
+        "cargoFamilia": 13440,
+        "totalFamilia": 181440,
+        "pagoProfesional": 151200,
+        "ingresoPlataforma": 30240
+      }
+    },
+    {
+      "tarifaHora": 22000,
+      "horas": 1,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 22000,
+        "cargoFamilia": 1760,
+        "totalFamilia": 23760,
+        "pagoProfesional": 19800,
+        "ingresoPlataforma": 3960
+      }
+    },
+    {
+      "tarifaHora": 22000,
+      "horas": 2,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 44000,
+        "cargoFamilia": 3520,
+        "totalFamilia": 47520,
+        "pagoProfesional": 39600,
+        "ingresoPlataforma": 7920
+      }
+    },
+    {
+      "tarifaHora": 22000,
+      "horas": 3,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 66000,
+        "cargoFamilia": 5280,
+        "totalFamilia": 71280,
+        "pagoProfesional": 59400,
+        "ingresoPlataforma": 11880
+      }
+    },
+    {
+      "tarifaHora": 22000,
+      "horas": 4,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 88000,
+        "cargoFamilia": 7040,
+        "totalFamilia": 95040,
+        "pagoProfesional": 79200,
+        "ingresoPlataforma": 15840
+      }
+    },
+    {
+      "tarifaHora": 22000,
+      "horas": 5,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 110000,
+        "cargoFamilia": 8800,
+        "totalFamilia": 118800,
+        "pagoProfesional": 99000,
+        "ingresoPlataforma": 19800
+      }
+    },
+    {
+      "tarifaHora": 22000,
+      "horas": 6,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 132000,
+        "cargoFamilia": 10560,
+        "totalFamilia": 142560,
+        "pagoProfesional": 118800,
+        "ingresoPlataforma": 23760
+      }
+    },
+    {
+      "tarifaHora": 22000,
+      "horas": 7,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 154000,
+        "cargoFamilia": 12320,
+        "totalFamilia": 166320,
+        "pagoProfesional": 138600,
+        "ingresoPlataforma": 27720
+      }
+    },
+    {
+      "tarifaHora": 22000,
+      "horas": 8,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 176000,
+        "cargoFamilia": 14080,
+        "totalFamilia": 190080,
+        "pagoProfesional": 158400,
+        "ingresoPlataforma": 31680
+      }
+    },
+    {
+      "tarifaHora": 23000,
+      "horas": 1,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 23000,
+        "cargoFamilia": 1840,
+        "totalFamilia": 24840,
+        "pagoProfesional": 20700,
+        "ingresoPlataforma": 4140
+      }
+    },
+    {
+      "tarifaHora": 23000,
+      "horas": 2,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 46000,
+        "cargoFamilia": 3680,
+        "totalFamilia": 49680,
+        "pagoProfesional": 41400,
+        "ingresoPlataforma": 8280
+      }
+    },
+    {
+      "tarifaHora": 23000,
+      "horas": 3,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 69000,
+        "cargoFamilia": 5520,
+        "totalFamilia": 74520,
+        "pagoProfesional": 62100,
+        "ingresoPlataforma": 12420
+      }
+    },
+    {
+      "tarifaHora": 23000,
+      "horas": 4,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 92000,
+        "cargoFamilia": 7360,
+        "totalFamilia": 99360,
+        "pagoProfesional": 82800,
+        "ingresoPlataforma": 16560
+      }
+    },
+    {
+      "tarifaHora": 23000,
+      "horas": 5,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 115000,
+        "cargoFamilia": 9200,
+        "totalFamilia": 124200,
+        "pagoProfesional": 103500,
+        "ingresoPlataforma": 20700
+      }
+    },
+    {
+      "tarifaHora": 23000,
+      "horas": 6,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 138000,
+        "cargoFamilia": 11040,
+        "totalFamilia": 149040,
+        "pagoProfesional": 124200,
+        "ingresoPlataforma": 24840
+      }
+    },
+    {
+      "tarifaHora": 23000,
+      "horas": 7,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 161000,
+        "cargoFamilia": 12880,
+        "totalFamilia": 173880,
+        "pagoProfesional": 144900,
+        "ingresoPlataforma": 28980
+      }
+    },
+    {
+      "tarifaHora": 23000,
+      "horas": 8,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 184000,
+        "cargoFamilia": 14720,
+        "totalFamilia": 198720,
+        "pagoProfesional": 165600,
+        "ingresoPlataforma": 33120
+      }
+    },
+    {
+      "tarifaHora": 24000,
+      "horas": 1,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 24000,
+        "cargoFamilia": 1920,
+        "totalFamilia": 25920,
+        "pagoProfesional": 21600,
+        "ingresoPlataforma": 4320
+      }
+    },
+    {
+      "tarifaHora": 24000,
+      "horas": 2,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 48000,
+        "cargoFamilia": 3840,
+        "totalFamilia": 51840,
+        "pagoProfesional": 43200,
+        "ingresoPlataforma": 8640
+      }
+    },
+    {
+      "tarifaHora": 24000,
+      "horas": 3,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 72000,
+        "cargoFamilia": 5760,
+        "totalFamilia": 77760,
+        "pagoProfesional": 64800,
+        "ingresoPlataforma": 12960
+      }
+    },
+    {
+      "tarifaHora": 24000,
+      "horas": 4,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 96000,
+        "cargoFamilia": 7680,
+        "totalFamilia": 103680,
+        "pagoProfesional": 86400,
+        "ingresoPlataforma": 17280
+      }
+    },
+    {
+      "tarifaHora": 24000,
+      "horas": 5,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 120000,
+        "cargoFamilia": 9600,
+        "totalFamilia": 129600,
+        "pagoProfesional": 108000,
+        "ingresoPlataforma": 21600
+      }
+    },
+    {
+      "tarifaHora": 24000,
+      "horas": 6,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 144000,
+        "cargoFamilia": 11520,
+        "totalFamilia": 155520,
+        "pagoProfesional": 129600,
+        "ingresoPlataforma": 25920
+      }
+    },
+    {
+      "tarifaHora": 24000,
+      "horas": 7,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 168000,
+        "cargoFamilia": 13440,
+        "totalFamilia": 181440,
+        "pagoProfesional": 151200,
+        "ingresoPlataforma": 30240
+      }
+    },
+    {
+      "tarifaHora": 24000,
+      "horas": 8,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 192000,
+        "cargoFamilia": 15360,
+        "totalFamilia": 207360,
+        "pagoProfesional": 172800,
+        "ingresoPlataforma": 34560
+      }
+    },
+    {
+      "tarifaHora": 25000,
+      "horas": 1,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 25000,
+        "cargoFamilia": 2000,
+        "totalFamilia": 27000,
+        "pagoProfesional": 22500,
+        "ingresoPlataforma": 4500
+      }
+    },
+    {
+      "tarifaHora": 25000,
+      "horas": 2,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 50000,
+        "cargoFamilia": 4000,
+        "totalFamilia": 54000,
+        "pagoProfesional": 45000,
+        "ingresoPlataforma": 9000
+      }
+    },
+    {
+      "tarifaHora": 25000,
+      "horas": 3,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 75000,
+        "cargoFamilia": 6000,
+        "totalFamilia": 81000,
+        "pagoProfesional": 67500,
+        "ingresoPlataforma": 13500
+      }
+    },
+    {
+      "tarifaHora": 25000,
+      "horas": 4,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 100000,
+        "cargoFamilia": 8000,
+        "totalFamilia": 108000,
+        "pagoProfesional": 90000,
+        "ingresoPlataforma": 18000
+      }
+    },
+    {
+      "tarifaHora": 25000,
+      "horas": 5,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 125000,
+        "cargoFamilia": 10000,
+        "totalFamilia": 135000,
+        "pagoProfesional": 112500,
+        "ingresoPlataforma": 22500
+      }
+    },
+    {
+      "tarifaHora": 25000,
+      "horas": 6,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 150000,
+        "cargoFamilia": 12000,
+        "totalFamilia": 162000,
+        "pagoProfesional": 135000,
+        "ingresoPlataforma": 27000
+      }
+    },
+    {
+      "tarifaHora": 25000,
+      "horas": 7,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 175000,
+        "cargoFamilia": 14000,
+        "totalFamilia": 189000,
+        "pagoProfesional": 157500,
+        "ingresoPlataforma": 31500
+      }
+    },
+    {
+      "tarifaHora": 25000,
+      "horas": 8,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 200000,
+        "cargoFamilia": 16000,
+        "totalFamilia": 216000,
+        "pagoProfesional": 180000,
+        "ingresoPlataforma": 36000
+      }
+    },
+    {
+      "tarifaHora": 26000,
+      "horas": 1,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 26000,
+        "cargoFamilia": 2080,
+        "totalFamilia": 28080,
+        "pagoProfesional": 23400,
+        "ingresoPlataforma": 4680
+      }
+    },
+    {
+      "tarifaHora": 26000,
+      "horas": 2,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 52000,
+        "cargoFamilia": 4160,
+        "totalFamilia": 56160,
+        "pagoProfesional": 46800,
+        "ingresoPlataforma": 9360
+      }
+    },
+    {
+      "tarifaHora": 26000,
+      "horas": 3,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 78000,
+        "cargoFamilia": 6240,
+        "totalFamilia": 84240,
+        "pagoProfesional": 70200,
+        "ingresoPlataforma": 14040
+      }
+    },
+    {
+      "tarifaHora": 26000,
+      "horas": 4,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 104000,
+        "cargoFamilia": 8320,
+        "totalFamilia": 112320,
+        "pagoProfesional": 93600,
+        "ingresoPlataforma": 18720
+      }
+    },
+    {
+      "tarifaHora": 26000,
+      "horas": 5,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 130000,
+        "cargoFamilia": 10400,
+        "totalFamilia": 140400,
+        "pagoProfesional": 117000,
+        "ingresoPlataforma": 23400
+      }
+    },
+    {
+      "tarifaHora": 26000,
+      "horas": 6,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 156000,
+        "cargoFamilia": 12480,
+        "totalFamilia": 168480,
+        "pagoProfesional": 140400,
+        "ingresoPlataforma": 28080
+      }
+    },
+    {
+      "tarifaHora": 26000,
+      "horas": 7,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 182000,
+        "cargoFamilia": 14560,
+        "totalFamilia": 196560,
+        "pagoProfesional": 163800,
+        "ingresoPlataforma": 32760
+      }
+    },
+    {
+      "tarifaHora": 26000,
+      "horas": 8,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 208000,
+        "cargoFamilia": 16640,
+        "totalFamilia": 224640,
+        "pagoProfesional": 187200,
+        "ingresoPlataforma": 37440
+      }
+    },
+    {
+      "tarifaHora": 27000,
+      "horas": 1,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 27000,
+        "cargoFamilia": 2160,
+        "totalFamilia": 29160,
+        "pagoProfesional": 24300,
+        "ingresoPlataforma": 4860
+      }
+    },
+    {
+      "tarifaHora": 27000,
+      "horas": 2,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 54000,
+        "cargoFamilia": 4320,
+        "totalFamilia": 58320,
+        "pagoProfesional": 48600,
+        "ingresoPlataforma": 9720
+      }
+    },
+    {
+      "tarifaHora": 27000,
+      "horas": 3,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 81000,
+        "cargoFamilia": 6480,
+        "totalFamilia": 87480,
+        "pagoProfesional": 72900,
+        "ingresoPlataforma": 14580
+      }
+    },
+    {
+      "tarifaHora": 27000,
+      "horas": 4,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 108000,
+        "cargoFamilia": 8640,
+        "totalFamilia": 116640,
+        "pagoProfesional": 97200,
+        "ingresoPlataforma": 19440
+      }
+    },
+    {
+      "tarifaHora": 27000,
+      "horas": 5,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 135000,
+        "cargoFamilia": 10800,
+        "totalFamilia": 145800,
+        "pagoProfesional": 121500,
+        "ingresoPlataforma": 24300
+      }
+    },
+    {
+      "tarifaHora": 27000,
+      "horas": 6,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 162000,
+        "cargoFamilia": 12960,
+        "totalFamilia": 174960,
+        "pagoProfesional": 145800,
+        "ingresoPlataforma": 29160
+      }
+    },
+    {
+      "tarifaHora": 27000,
+      "horas": 7,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 189000,
+        "cargoFamilia": 15120,
+        "totalFamilia": 204120,
+        "pagoProfesional": 170100,
+        "ingresoPlataforma": 34020
+      }
+    },
+    {
+      "tarifaHora": 27000,
+      "horas": 8,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 216000,
+        "cargoFamilia": 17280,
+        "totalFamilia": 233280,
+        "pagoProfesional": 194400,
+        "ingresoPlataforma": 38880
+      }
+    },
+    {
+      "tarifaHora": 28000,
+      "horas": 1,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 28000,
+        "cargoFamilia": 2240,
+        "totalFamilia": 30240,
+        "pagoProfesional": 25200,
+        "ingresoPlataforma": 5040
+      }
+    },
+    {
+      "tarifaHora": 28000,
+      "horas": 2,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 56000,
+        "cargoFamilia": 4480,
+        "totalFamilia": 60480,
+        "pagoProfesional": 50400,
+        "ingresoPlataforma": 10080
+      }
+    },
+    {
+      "tarifaHora": 28000,
+      "horas": 3,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 84000,
+        "cargoFamilia": 6720,
+        "totalFamilia": 90720,
+        "pagoProfesional": 75600,
+        "ingresoPlataforma": 15120
+      }
+    },
+    {
+      "tarifaHora": 28000,
+      "horas": 4,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 112000,
+        "cargoFamilia": 8960,
+        "totalFamilia": 120960,
+        "pagoProfesional": 100800,
+        "ingresoPlataforma": 20160
+      }
+    },
+    {
+      "tarifaHora": 28000,
+      "horas": 5,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 140000,
+        "cargoFamilia": 11200,
+        "totalFamilia": 151200,
+        "pagoProfesional": 126000,
+        "ingresoPlataforma": 25200
+      }
+    },
+    {
+      "tarifaHora": 28000,
+      "horas": 6,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 168000,
+        "cargoFamilia": 13440,
+        "totalFamilia": 181440,
+        "pagoProfesional": 151200,
+        "ingresoPlataforma": 30240
+      }
+    },
+    {
+      "tarifaHora": 28000,
+      "horas": 7,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 196000,
+        "cargoFamilia": 15680,
+        "totalFamilia": 211680,
+        "pagoProfesional": 176400,
+        "ingresoPlataforma": 35280
+      }
+    },
+    {
+      "tarifaHora": 28000,
+      "horas": 8,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 224000,
+        "cargoFamilia": 17920,
+        "totalFamilia": 241920,
+        "pagoProfesional": 201600,
+        "ingresoPlataforma": 40320
+      }
+    },
+    {
+      "tarifaHora": 29000,
+      "horas": 1,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 29000,
+        "cargoFamilia": 2320,
+        "totalFamilia": 31320,
+        "pagoProfesional": 26100,
+        "ingresoPlataforma": 5220
+      }
+    },
+    {
+      "tarifaHora": 29000,
+      "horas": 2,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 58000,
+        "cargoFamilia": 4640,
+        "totalFamilia": 62640,
+        "pagoProfesional": 52200,
+        "ingresoPlataforma": 10440
+      }
+    },
+    {
+      "tarifaHora": 29000,
+      "horas": 3,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 87000,
+        "cargoFamilia": 6960,
+        "totalFamilia": 93960,
+        "pagoProfesional": 78300,
+        "ingresoPlataforma": 15660
+      }
+    },
+    {
+      "tarifaHora": 29000,
+      "horas": 4,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 116000,
+        "cargoFamilia": 9280,
+        "totalFamilia": 125280,
+        "pagoProfesional": 104400,
+        "ingresoPlataforma": 20880
+      }
+    },
+    {
+      "tarifaHora": 29000,
+      "horas": 5,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 145000,
+        "cargoFamilia": 11600,
+        "totalFamilia": 156600,
+        "pagoProfesional": 130500,
+        "ingresoPlataforma": 26100
+      }
+    },
+    {
+      "tarifaHora": 29000,
+      "horas": 6,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 174000,
+        "cargoFamilia": 13920,
+        "totalFamilia": 187920,
+        "pagoProfesional": 156600,
+        "ingresoPlataforma": 31320
+      }
+    },
+    {
+      "tarifaHora": 29000,
+      "horas": 7,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 203000,
+        "cargoFamilia": 16240,
+        "totalFamilia": 219240,
+        "pagoProfesional": 182700,
+        "ingresoPlataforma": 36540
+      }
+    },
+    {
+      "tarifaHora": 29000,
+      "horas": 8,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 232000,
+        "cargoFamilia": 18560,
+        "totalFamilia": 250560,
+        "pagoProfesional": 208800,
+        "ingresoPlataforma": 41760
+      }
+    },
+    {
+      "tarifaHora": 30000,
+      "horas": 1,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 30000,
+        "cargoFamilia": 2400,
+        "totalFamilia": 32400,
+        "pagoProfesional": 27000,
+        "ingresoPlataforma": 5400
+      }
+    },
+    {
+      "tarifaHora": 30000,
+      "horas": 2,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 60000,
+        "cargoFamilia": 4800,
+        "totalFamilia": 64800,
+        "pagoProfesional": 54000,
+        "ingresoPlataforma": 10800
+      }
+    },
+    {
+      "tarifaHora": 30000,
+      "horas": 3,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 90000,
+        "cargoFamilia": 7200,
+        "totalFamilia": 97200,
+        "pagoProfesional": 81000,
+        "ingresoPlataforma": 16200
+      }
+    },
+    {
+      "tarifaHora": 30000,
+      "horas": 4,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 120000,
+        "cargoFamilia": 9600,
+        "totalFamilia": 129600,
+        "pagoProfesional": 108000,
+        "ingresoPlataforma": 21600
+      }
+    },
+    {
+      "tarifaHora": 30000,
+      "horas": 5,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 150000,
+        "cargoFamilia": 12000,
+        "totalFamilia": 162000,
+        "pagoProfesional": 135000,
+        "ingresoPlataforma": 27000
+      }
+    },
+    {
+      "tarifaHora": 30000,
+      "horas": 6,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 180000,
+        "cargoFamilia": 14400,
+        "totalFamilia": 194400,
+        "pagoProfesional": 162000,
+        "ingresoPlataforma": 32400
+      }
+    },
+    {
+      "tarifaHora": 30000,
+      "horas": 7,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 210000,
+        "cargoFamilia": 16800,
+        "totalFamilia": 226800,
+        "pagoProfesional": 189000,
+        "ingresoPlataforma": 37800
+      }
+    },
+    {
+      "tarifaHora": 30000,
+      "horas": 8,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 240000,
+        "cargoFamilia": 19200,
+        "totalFamilia": 259200,
+        "pagoProfesional": 216000,
+        "ingresoPlataforma": 43200
+      }
+    },
+    {
+      "tarifaHora": 31000,
+      "horas": 1,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 31000,
+        "cargoFamilia": 2480,
+        "totalFamilia": 33480,
+        "pagoProfesional": 27900,
+        "ingresoPlataforma": 5580
+      }
+    },
+    {
+      "tarifaHora": 31000,
+      "horas": 2,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 62000,
+        "cargoFamilia": 4960,
+        "totalFamilia": 66960,
+        "pagoProfesional": 55800,
+        "ingresoPlataforma": 11160
+      }
+    },
+    {
+      "tarifaHora": 31000,
+      "horas": 3,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 93000,
+        "cargoFamilia": 7440,
+        "totalFamilia": 100440,
+        "pagoProfesional": 83700,
+        "ingresoPlataforma": 16740
+      }
+    },
+    {
+      "tarifaHora": 31000,
+      "horas": 4,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 124000,
+        "cargoFamilia": 9920,
+        "totalFamilia": 133920,
+        "pagoProfesional": 111600,
+        "ingresoPlataforma": 22320
+      }
+    },
+    {
+      "tarifaHora": 31000,
+      "horas": 5,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 155000,
+        "cargoFamilia": 12400,
+        "totalFamilia": 167400,
+        "pagoProfesional": 139500,
+        "ingresoPlataforma": 27900
+      }
+    },
+    {
+      "tarifaHora": 31000,
+      "horas": 6,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 186000,
+        "cargoFamilia": 14880,
+        "totalFamilia": 200880,
+        "pagoProfesional": 167400,
+        "ingresoPlataforma": 33480
+      }
+    },
+    {
+      "tarifaHora": 31000,
+      "horas": 7,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 217000,
+        "cargoFamilia": 17360,
+        "totalFamilia": 234360,
+        "pagoProfesional": 195300,
+        "ingresoPlataforma": 39060
+      }
+    },
+    {
+      "tarifaHora": 31000,
+      "horas": 8,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 248000,
+        "cargoFamilia": 19840,
+        "totalFamilia": 267840,
+        "pagoProfesional": 223200,
+        "ingresoPlataforma": 44640
+      }
+    },
+    {
+      "tarifaHora": 32000,
+      "horas": 1,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 32000,
+        "cargoFamilia": 2560,
+        "totalFamilia": 34560,
+        "pagoProfesional": 28800,
+        "ingresoPlataforma": 5760
+      }
+    },
+    {
+      "tarifaHora": 32000,
+      "horas": 2,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 64000,
+        "cargoFamilia": 5120,
+        "totalFamilia": 69120,
+        "pagoProfesional": 57600,
+        "ingresoPlataforma": 11520
+      }
+    },
+    {
+      "tarifaHora": 32000,
+      "horas": 3,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 96000,
+        "cargoFamilia": 7680,
+        "totalFamilia": 103680,
+        "pagoProfesional": 86400,
+        "ingresoPlataforma": 17280
+      }
+    },
+    {
+      "tarifaHora": 32000,
+      "horas": 4,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 128000,
+        "cargoFamilia": 10240,
+        "totalFamilia": 138240,
+        "pagoProfesional": 115200,
+        "ingresoPlataforma": 23040
+      }
+    },
+    {
+      "tarifaHora": 32000,
+      "horas": 5,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 160000,
+        "cargoFamilia": 12800,
+        "totalFamilia": 172800,
+        "pagoProfesional": 144000,
+        "ingresoPlataforma": 28800
+      }
+    },
+    {
+      "tarifaHora": 32000,
+      "horas": 6,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 192000,
+        "cargoFamilia": 15360,
+        "totalFamilia": 207360,
+        "pagoProfesional": 172800,
+        "ingresoPlataforma": 34560
+      }
+    },
+    {
+      "tarifaHora": 32000,
+      "horas": 7,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 224000,
+        "cargoFamilia": 17920,
+        "totalFamilia": 241920,
+        "pagoProfesional": 201600,
+        "ingresoPlataforma": 40320
+      }
+    },
+    {
+      "tarifaHora": 32000,
+      "horas": 8,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 256000,
+        "cargoFamilia": 20480,
+        "totalFamilia": 276480,
+        "pagoProfesional": 230400,
+        "ingresoPlataforma": 46080
+      }
+    },
+    {
+      "tarifaHora": 33000,
+      "horas": 1,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 33000,
+        "cargoFamilia": 2640,
+        "totalFamilia": 35640,
+        "pagoProfesional": 29700,
+        "ingresoPlataforma": 5940
+      }
+    },
+    {
+      "tarifaHora": 33000,
+      "horas": 2,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 66000,
+        "cargoFamilia": 5280,
+        "totalFamilia": 71280,
+        "pagoProfesional": 59400,
+        "ingresoPlataforma": 11880
+      }
+    },
+    {
+      "tarifaHora": 33000,
+      "horas": 3,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 99000,
+        "cargoFamilia": 7920,
+        "totalFamilia": 106920,
+        "pagoProfesional": 89100,
+        "ingresoPlataforma": 17820
+      }
+    },
+    {
+      "tarifaHora": 33000,
+      "horas": 4,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 132000,
+        "cargoFamilia": 10560,
+        "totalFamilia": 142560,
+        "pagoProfesional": 118800,
+        "ingresoPlataforma": 23760
+      }
+    },
+    {
+      "tarifaHora": 33000,
+      "horas": 5,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 165000,
+        "cargoFamilia": 13200,
+        "totalFamilia": 178200,
+        "pagoProfesional": 148500,
+        "ingresoPlataforma": 29700
+      }
+    },
+    {
+      "tarifaHora": 33000,
+      "horas": 6,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 198000,
+        "cargoFamilia": 15840,
+        "totalFamilia": 213840,
+        "pagoProfesional": 178200,
+        "ingresoPlataforma": 35640
+      }
+    },
+    {
+      "tarifaHora": 33000,
+      "horas": 7,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 231000,
+        "cargoFamilia": 18480,
+        "totalFamilia": 249480,
+        "pagoProfesional": 207900,
+        "ingresoPlataforma": 41580
+      }
+    },
+    {
+      "tarifaHora": 33000,
+      "horas": 8,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 264000,
+        "cargoFamilia": 21120,
+        "totalFamilia": 285120,
+        "pagoProfesional": 237600,
+        "ingresoPlataforma": 47520
+      }
+    },
+    {
+      "tarifaHora": 34000,
+      "horas": 1,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 34000,
+        "cargoFamilia": 2720,
+        "totalFamilia": 36720,
+        "pagoProfesional": 30600,
+        "ingresoPlataforma": 6120
+      }
+    },
+    {
+      "tarifaHora": 34000,
+      "horas": 2,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 68000,
+        "cargoFamilia": 5440,
+        "totalFamilia": 73440,
+        "pagoProfesional": 61200,
+        "ingresoPlataforma": 12240
+      }
+    },
+    {
+      "tarifaHora": 34000,
+      "horas": 3,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 102000,
+        "cargoFamilia": 8160,
+        "totalFamilia": 110160,
+        "pagoProfesional": 91800,
+        "ingresoPlataforma": 18360
+      }
+    },
+    {
+      "tarifaHora": 34000,
+      "horas": 4,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 136000,
+        "cargoFamilia": 10880,
+        "totalFamilia": 146880,
+        "pagoProfesional": 122400,
+        "ingresoPlataforma": 24480
+      }
+    },
+    {
+      "tarifaHora": 34000,
+      "horas": 5,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 170000,
+        "cargoFamilia": 13600,
+        "totalFamilia": 183600,
+        "pagoProfesional": 153000,
+        "ingresoPlataforma": 30600
+      }
+    },
+    {
+      "tarifaHora": 34000,
+      "horas": 6,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 204000,
+        "cargoFamilia": 16320,
+        "totalFamilia": 220320,
+        "pagoProfesional": 183600,
+        "ingresoPlataforma": 36720
+      }
+    },
+    {
+      "tarifaHora": 34000,
+      "horas": 7,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 238000,
+        "cargoFamilia": 19040,
+        "totalFamilia": 257040,
+        "pagoProfesional": 214200,
+        "ingresoPlataforma": 42840
+      }
+    },
+    {
+      "tarifaHora": 34000,
+      "horas": 8,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 272000,
+        "cargoFamilia": 21760,
+        "totalFamilia": 293760,
+        "pagoProfesional": 244800,
+        "ingresoPlataforma": 48960
+      }
+    },
+    {
+      "tarifaHora": 35000,
+      "horas": 1,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 35000,
+        "cargoFamilia": 2800,
+        "totalFamilia": 37800,
+        "pagoProfesional": 31500,
+        "ingresoPlataforma": 6300
+      }
+    },
+    {
+      "tarifaHora": 35000,
+      "horas": 2,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 70000,
+        "cargoFamilia": 5600,
+        "totalFamilia": 75600,
+        "pagoProfesional": 63000,
+        "ingresoPlataforma": 12600
+      }
+    },
+    {
+      "tarifaHora": 35000,
+      "horas": 3,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 105000,
+        "cargoFamilia": 8400,
+        "totalFamilia": 113400,
+        "pagoProfesional": 94500,
+        "ingresoPlataforma": 18900
+      }
+    },
+    {
+      "tarifaHora": 35000,
+      "horas": 4,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 140000,
+        "cargoFamilia": 11200,
+        "totalFamilia": 151200,
+        "pagoProfesional": 126000,
+        "ingresoPlataforma": 25200
+      }
+    },
+    {
+      "tarifaHora": 35000,
+      "horas": 5,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 175000,
+        "cargoFamilia": 14000,
+        "totalFamilia": 189000,
+        "pagoProfesional": 157500,
+        "ingresoPlataforma": 31500
+      }
+    },
+    {
+      "tarifaHora": 35000,
+      "horas": 6,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 210000,
+        "cargoFamilia": 16800,
+        "totalFamilia": 226800,
+        "pagoProfesional": 189000,
+        "ingresoPlataforma": 37800
+      }
+    },
+    {
+      "tarifaHora": 35000,
+      "horas": 7,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 245000,
+        "cargoFamilia": 19600,
+        "totalFamilia": 264600,
+        "pagoProfesional": 220500,
+        "ingresoPlataforma": 44100
+      }
+    },
+    {
+      "tarifaHora": 35000,
+      "horas": 8,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 280000,
+        "cargoFamilia": 22400,
+        "totalFamilia": 302400,
+        "pagoProfesional": 252000,
+        "ingresoPlataforma": 50400
+      }
+    },
+    {
+      "tarifaHora": 5,
+      "horas": 1,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 5,
+        "cargoFamilia": 0,
+        "totalFamilia": 5,
+        "pagoProfesional": 4,
+        "ingresoPlataforma": 1
+      }
+    },
+    {
+      "tarifaHora": 15,
+      "horas": 1,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 15,
+        "cargoFamilia": 1,
+        "totalFamilia": 16,
+        "pagoProfesional": 13,
+        "ingresoPlataforma": 3
+      }
+    },
+    {
+      "tarifaHora": 1,
+      "horas": 1,
+      "politica": {
+        "comisionFamiliaBps": 800,
+        "comisionProfesionalBps": 1000
+      },
+      "esperado": {
+        "subtotal": 1,
+        "cargoFamilia": 0,
+        "totalFamilia": 1,
+        "pagoProfesional": 1,
+        "ingresoPlataforma": 0
+      }
+    },
+    {
+      "tarifaHora": 20000,
+      "horas": 1,
+      "politica": {
+        "comisionFamiliaBps": 750,
+        "comisionProfesionalBps": 1250
+      },
+      "esperado": {
+        "subtotal": 20000,
+        "cargoFamilia": 1500,
+        "totalFamilia": 21500,
+        "pagoProfesional": 17500,
+        "ingresoPlataforma": 4000
+      }
+    },
+    {
+      "tarifaHora": 20000,
+      "horas": 3,
+      "politica": {
+        "comisionFamiliaBps": 0,
+        "comisionProfesionalBps": 0
+      },
+      "esperado": {
+        "subtotal": 60000,
+        "cargoFamilia": 0,
+        "totalFamilia": 60000,
+        "pagoProfesional": 60000,
+        "ingresoPlataforma": 0
+      }
+    },
+    {
+      "tarifaHora": 20000,
+      "horas": 3,
+      "politica": {
+        "comisionFamiliaBps": 10000,
+        "comisionProfesionalBps": 10000
+      },
+      "esperado": {
+        "subtotal": 60000,
+        "cargoFamilia": 60000,
+        "totalFamilia": 120000,
+        "pagoProfesional": 0,
+        "ingresoPlataforma": 120000
+      }
+    }
+  ]
+}

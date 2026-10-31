@@ -4,16 +4,17 @@
 
 ## Dónde vamos
 
-> **Backend: M0 con 7 de 8 PR hechos (falta el despliegue a staging, que espera el hosting), M1 (Identidad) con 7 de 8 y M2 (Directorio) construido, en revisión.**
-> Siguiente paso: **M3 (cotización)**. Se construye todo el backend antes de seguir con el frontend; los datos reales (cuidadores, verificaciones) llegan después por los procesos del propio sistema. Pendiente de ustedes: revisar y aceptar el [ADR-03](./ADR-03.md) (comunicación) y el [ADR-04](./ADR-04.md) (stack) y ver la CI en verde en GitHub.
+> **Backend: M0 con 7 de 8 PR hechos (falta el despliegue a staging, que espera el hosting), M1 (Identidad) con 7 de 8, M2 (Directorio) en `main` y M3 (cotización) construido, en revisión.**
+> Siguiente paso: **M4 (reservas)**. Se construye todo el backend antes de seguir con el frontend; los datos reales (cuidadores, verificaciones) llegan después por los procesos del propio sistema. Pendiente de ustedes: revisar y aceptar el [ADR-03](./ADR-03.md) (comunicación) y el [ADR-04](./ADR-04.md) (stack) y ver la CI en verde en GitHub.
 >
 > El frontend sigue siendo el prototipo del pitch con datos de ejemplo, pero **F0 (la base para conectarlo al backend) ya está construida**. Siguiente en el frontend: **F1 (identidad)**.
 
 ```
 Backend   M0 █████████████████▌░░  7 de 8 PR (falta el despliegue)
           M1 ██████████████████░░  PR 7 de 8 (… recuperar contraseña y ajustes para el BFF)
-          M2 ████████████████████  construido (en revisión)   ← aquí
-          M3 … M11                 pendientes
+          M2 ████████████████████  construido
+          M3 ████████████████████  construido (en revisión)   ← aquí
+          M4 … M11                 pendientes
 Frontend  F0 ████████████████████  construido   ← aquí
           F1 … F9                  pendientes (F1 siguiente)
 Base de datos  ████████████████████  completa (adelantada)
@@ -55,10 +56,11 @@ Base de datos  ████████████████████  com
 | M1 · PR 6 | Cambiar y recuperar la contraseña: `olvidé mi contraseña`, enlace de 30 minutos y un solo uso, cierre de todas las sesiones y puerto del canal de correo. | ✅ commit `d170900` (ya en `main`) |
 | M1 · PR 7 | Ajustes para el BFF: verificación de `Origin` contra CSRF (las llamadas del BFF no lo traen y se aceptan). | ✅ commit `08103b6` (ya en `main`) |
 | M1 · PR 8 | Exportar y eliminar cuenta (opcional; puede pasar a M10). | ⏭️ siguiente |
-| M2 | Directorio: búsqueda con filtros y paginación por cursor, perfiles con reseñas, hoja de vida con dirección firmada, `CONSULTA_DE_DIRECTORIO`, reseñas desde el evento de Reservas, carga de cuidadores reales (`cuidadores:importar`), revisión diaria de vigencias, semillas de desarrollo y `CUENTAS_DE_CUIDADORES` en Identidad. Ver el [README del módulo](../backend/src/directorio/README.md). | ⏳ en revisión (rama `feat/m2-directorio`) |
-| M3 → M11 | Cotización, reservas, notificaciones, teleasistencia, cobro, mensajería, verificación, despliegue, IA. | Pendientes, en ese orden |
+| M2 | Directorio: búsqueda con filtros y paginación por cursor, perfiles con reseñas, hoja de vida con dirección firmada, `CONSULTA_DE_DIRECTORIO`, reseñas desde el evento de Reservas, carga de cuidadores reales (`cuidadores:importar`), revisión diaria de vigencias, semillas de desarrollo y `CUENTAS_DE_CUIDADORES` en Identidad. Ver el [README del módulo](../backend/src/directorio/README.md). | ✅ commit `64c5a24` (ya en `main`) |
+| M3 | Cotización: `calcularServicio` (función pura, pesos enteros), política de precios versionada, `POST /pagos/cotizaciones` (la familia no ve el pago al profesional), `COTIZADOR_DE_SERVICIOS` para Reservas y 150 vectores compartidos con el frontend. Ver el [README del módulo](../backend/src/pagos/README.md). | ⏳ en revisión (rama `feat/m3-cotizacion`) |
+| M4 → M11 | Reservas, notificaciones, teleasistencia, cobro, mensajería, verificación, despliegue, IA. | Pendientes, en ese orden |
 
-**Cifras actuales:** 1321 pruebas (unitarias y de arquitectura, y de integración y API contra Postgres real), cobertura del 97 %, lint y compilación limpios y 0 vulnerabilidades en las dependencias de producción.
+**Cifras actuales:** 1540 pruebas (unitarias y de arquitectura, y de integración y API contra Postgres real), cobertura del 97 %, lint y compilación limpios y 0 vulnerabilidades en las dependencias de producción.
 
 ### Frontend (`frontend/`)
 
@@ -88,7 +90,8 @@ Cada rama parte de la anterior. Se revisan con un PR encadenado por entrega (la 
 | 12 | `feat/m1-fixtures-y-admin` | M1 PR 5 (ya en `main`). |
 | 13 | `feat/m1-contrasena` | M1 PR 6 (ya en `main`). |
 | 14 | `feat/m1-bff` | M1 PR 7 y el archivo de pendientes (ya en `main`). |
-| 15 | `feat/m2-directorio` (actual) | M2: el directorio de cuidadores. |
+| 15 | `feat/m2-directorio` | M2: el directorio de cuidadores (ya en `main`). |
+| 16 | `feat/m3-cotizacion` (actual) | M3: la cotización de servicios. |
 
 **La CI solo corre en el PR 6:** es la primera rama que tiene `.github/workflows/backend.yml`. Una vez fusionada en `main`, correrá en todos los PR que toquen `backend/`.
 

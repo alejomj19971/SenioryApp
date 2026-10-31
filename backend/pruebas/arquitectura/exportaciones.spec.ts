@@ -1,9 +1,13 @@
 import { Module } from '@nestjs/common';
+import { CONSULTA_DE_DIRECTORIO } from '../../src/directorio/aplicacion/puertos/entrada/consulta-de-directorio.js';
+import { DirectorioModule } from '../../src/directorio/directorio.module.js';
 import { VERIFICADOR_DE_TOKENS } from '../../src/compartido/aplicacion/puertos/verificador-de-tokens.js';
 import { CONSULTA_DE_IDENTIDAD } from '../../src/identidad/aplicacion/puertos/entrada/consulta-de-identidad.js';
 import { CUENTAS_DE_CUIDADORES } from '../../src/identidad/aplicacion/puertos/entrada/cuentas-de-cuidadores.js';
 import { REPOSITORIO_USUARIOS } from '../../src/identidad/aplicacion/puertos/salida/repositorio-usuarios.js';
 import { IdentidadModule } from '../../src/identidad/identidad.module.js';
+import { COTIZADOR_DE_SERVICIOS } from '../../src/pagos/aplicacion/puertos/entrada/cotizador-de-servicios.js';
+import { PagosModule } from '../../src/pagos/pagos.module.js';
 
 // Regla `exports-solo-puertos-de-entrada` (M0 §4.9): lo que un módulo de negocio exporta en Nest es
 // su frontera. Solo pueden salir los puertos de entrada (lo que otros módulos pueden usar) y los
@@ -38,6 +42,16 @@ const PERMITIDAS_POR_MODULO = [
       CONSULTA_DE_IDENTIDAD,
       CUENTAS_DE_CUIDADORES,
     ],
+  },
+  {
+    nombre: 'DirectorioModule',
+    modulo: DirectorioModule,
+    permitidas: [CONSULTA_DE_DIRECTORIO],
+  },
+  {
+    nombre: 'PagosModule',
+    modulo: PagosModule,
+    permitidas: [COTIZADOR_DE_SERVICIOS],
   },
 ] as const;
 
