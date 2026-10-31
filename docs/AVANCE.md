@@ -48,7 +48,7 @@ Base de datos  ████████████████████  com
 | M1 · PR 2 | Repositorios de Identidad con Drizzle: conflictos traducidos a errores de dominio, bloqueo de fila para los intentos de inicio de sesión y las renovaciones simultáneas. | ✅ commit `3deb712` |
 | M1 · PR 3 | Autenticación: registro, inicio de sesión, renovación y cierre (`/auth/*`), argon2id, tokens de acceso JWT y de refresco rotativos con detección de robo, bloqueo progresivo, lista de contraseñas comunes y `IdentidadModule`. | ✅ commit `a9d06c7` |
 | M1 · PR 4 | Perfil (`/yo`), personas mayores, consentimientos y el primer puerto de entrada (`ConsultaDeIdentidad`), con eventos, auditoría y la matriz de autorización. | ✅ commit `5f5f7a2` (ya en `main`) |
-| M1 · PR 5 | `npm run crear-admin`, `npm run semillas` (Andrea y Doña Carmen, solo fuera de producción) y README del módulo. | ✅ hecho, **sin commit** |
+| M1 · PR 5 | `npm run crear-admin`, `npm run semillas` (Andrea y Doña Carmen, solo fuera de producción) y README del módulo. | ✅ commit `f61d471` (ya en `main`) |
 | M1 · PR 6 → 7 | Ajustes para el BFF (verificación de `Origin`); exportar y eliminar cuenta (opcional). | ⏭️ siguiente: PR 6 |
 | M2 → M11 | Directorio, pagos, reservas, notificaciones, teleasistencia, mensajería, verificación, despliegue, IA. | Pendientes, en ese orden |
 
@@ -79,7 +79,7 @@ Cada rama parte de la anterior. Se revisan con un PR encadenado por entrega (la 
 | 9 | `feat/m1-persistencia` | M1 PR 2: repositorios. |
 | 10 | `feat/m1-autenticacion` | M1 PR 3: autenticación (ya está en `main`). |
 | 11 | `feat/m1-perfil` | M1 PR 4 y un arreglo de dependencias (ya en `main`). |
-| 12 | `feat/m1-fixtures-y-admin` (actual) | M1 PR 5. **Solo en local.** |
+| 12 | `feat/m1-fixtures-y-admin` (actual) | M1 PR 5 (ya en `main`). |
 
 **La CI solo corre en el PR 6:** es la primera rama que tiene `.github/workflows/backend.yml`. Una vez fusionada en `main`, correrá en todos los PR que toquen `backend/`.
 
