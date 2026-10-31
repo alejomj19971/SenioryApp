@@ -1,0 +1,71 @@
+# Módulo Notificaciones
+
+Convierte lo que pasa en el sistema en avisos para las personas. Hoy avisa de cada cambio del servicio (E9) a la familia y al cuidador; las alertas de teleasistencia (E11) se enchufan en M6. Plan: [docs/PLAN_BACKEND_SENIORY.md, M5](../../../docs/PLAN_BACKEND_SENIORY.md).
+
+## Qué hace
+
+- **Reacciona a eventos** de Reservas (solicitado, confirmado, iniciado, finalizado y cancelado) y crea el aviso de cada parte, con su propio texto.
+- **Los envía** con una tarea programada (cada 2 s): tomar, enviar, guardar el resultado; reintenta lo que falla.
+- **La campana:** `GET /notificaciones` (cualquier persona con sesión ve solo los suyos).
+- No exporta nada: nadie lo llama, solo reacciona a eventos.
+
+## Canales
+
+| Canal                               | Estado hoy                                                                                                                                                                                                                                                        |
+| ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `app` (la campana)                  | **Real.** El aviso guardado ES el mensaje; se entrega al instante.                                                                                                                                                                                                |
+| `correo`, `sms`, `whatsapp`, `push` | **Sin proveedor** (decisión abierta). No se registran: no se finge que existen. Con `CANALES_DE_NOTIFICACION_SIMULADOS=true` (solo desarrollo y pruebas) se simulan escribiendo el título en el log; la configuración **no deja arrancar en producción** con eso. |
+
+Un canal es un adaptador intercambiable (`CanalDeNotificacion`); agregar el real es escribir uno y registrarlo en el módulo.
+
+## Reglas que conviene saber
+
+| Tema                     | Regla                                                                                                                                                                                                                                             |
+| ------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Un aviso por canal       | Cada canal es una notificación aparte, con su estado (`pendiente` → `enviada` / `entregada` / `fallida`), sus intentos y su reintento.                                                                                                            |
+| Normal vs. alta          | Un aviso **normal** sale por la aplicación y el correo. Una **alerta** (prioridad alta) sale por **todos** los canales disponibles **a la vez**, para que llegue por al menos uno. SMS y WhatsApp cuestan por mensaje y se reservan para alertas. |
+| Sin duplicados           | La base ignora un aviso con el mismo evento, destinatario, tipo y canal: reprocesar un evento no repite nada (y el despachador ya entrega cada evento una vez por manejador).                                                                     |
+| Reintentos               | Hasta 5 intentos, con espera creciente (30 s, 2 min, 10 min, 30 min). Agotados, queda `fallida`. Un fallo que reintentar no arregla (la persona no tiene teléfono) queda `fallida` de una vez.                                                    |
+| Alerta sin entregar      | Si una alerta queda `fallida` en **todos** sus canales y por ninguno salió, se deja constancia (`notificaciones.alerta_sin_entregar` en la auditoría y un error en el log; Sentry cuando exista). Un aviso por alerta, no uno por canal.          |
+| Envío sin transacción    | El envío NUNCA ocurre con una transacción abierta: se toma el aviso (reservándolo, `FOR UPDATE SKIP LOCKED`), se envía, y se guarda el resultado. Un proveedor lento no retiene la base, y varias instancias no se pisan.                         |
+| Minimización (Ley 1581)  | Los textos solo dicen **fecha, franja y horas**: nada de nombres ni de salud, porque SMS, correo y WhatsApp no son confiables para datos clínicos. Texto plano, sin HTML. Una prueba revisa todas las plantillas.                                 |
+| Límite                   | Máximo 60 avisos **normales** por persona y hora (un error en un manejador no debe inundar a nadie). Las alertas nunca se descartan.                                                                                                              |
+| Privacidad de la campana | El destinatario sale de la sesión, nunca de un parámetro: un parámetro `destinatarioId` se rechaza (400).                                                                                                                                         |
+
+## Los avisos de cada cambio del servicio
+
+| Evento                         | A la familia                                  | Al cuidador                   |
+| ------------------------------ | --------------------------------------------- | ----------------------------- |
+| `reservas.servicio_solicitado` | «Solicitud enviada»                           | «Nueva solicitud de servicio» |
+| `reservas.servicio_confirmado` | «Servicio confirmado»                         | «Servicio confirmado»         |
+| `reservas.servicio_iniciado`   | «El servicio comenzó»                         | «Iniciaste el servicio»       |
+| `reservas.servicio_finalizado` | «Servicio finalizado» (invita a calificar)    | «Servicio finalizado»         |
+| `reservas.servicio_cancelado`  | Según el motivo: rechazada, venció, o canceló | Según el motivo               |
+
+Los textos viven en [`dominio/plantillas.ts`](./dominio/plantillas.ts), con un tipo `evento:rol` (por ejemplo `servicio_confirmado:familia`).
+
+## Variables de entorno
+
+`INTERVALO_ENTREGA_NOTIFICACIONES_MS` (por defecto 2 000; 0 apaga el envío, **solo en pruebas**) y `CANALES_DE_NOTIFICACION_SIMULADOS` (por defecto `false`). Ambas se validan al arrancar: en producción no se admite 0 ni `true`. Detalle en [`.env.ejemplo`](../../.env.ejemplo).
+
+## Para agregar un aviso nuevo (por ejemplo, las alertas de M6)
+
+1. Una plantilla en `dominio/plantillas.ts` (sin datos clínicos).
+2. Un manejador del evento que llame a `CrearAvisos` con `prioridad: 'alta'` si es una alerta.
+3. Registrarlo en `notificaciones.module.ts`.
+
+El envío, los reintentos y la alarma de «sin entregar» ya funcionan para cualquier aviso.
+
+## Estructura
+
+```text
+notificaciones/
+├─ dominio/                       ← Notificacion (estados, reintentos), plantillas en español
+├─ aplicacion/
+│  ├─ casos-de-uso/               ← crear avisos, entregar pendientes, listar mis notificaciones
+│  ├─ manejadores/                ← reacción a los eventos de Reservas
+│  └─ puertos/salida/             ← canales y repositorio
+└─ infraestructura/
+   ├─ entrada/http/               ← GET /notificaciones
+   └─ salida/{canales,persistencia}/
+```

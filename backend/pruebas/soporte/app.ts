@@ -37,6 +37,7 @@ export async function crearAppDePrueba(
       COOKIES_SEGURAS: 'false',
       INTERVALO_SONDEO_OUTBOX_MS: '0',
       INTERVALO_EXPIRACION_SERVICIOS_MS: '0',
+      INTERVALO_ENTREGA_NOTIFICACIONES_MS: '0',
       NIVEL_DE_LOG: 'error',
       ...opciones.variables,
     }),

@@ -59,6 +59,8 @@ describe('validarVariables', () => {
         zonaHorariaNegocio: 'America/Bogota',
         intervaloSondeoOutboxMs: 1000,
         intervaloExpiracionServiciosMs: 60000,
+        intervaloEntregaNotificacionesMs: 2000,
+        canalesDeNotificacionSimulados: false,
         sentryDsn: null,
         secretoBff: null,
         secretoJwtAcceso: SECRETO_JWT_VALIDO,
@@ -236,6 +238,59 @@ describe('validarVariables', () => {
         ).toContain('INTERVALO_EXPIRACION_SERVICIOS_MS');
       },
     );
+
+    it('en producción no permite apagar el envío de avisos', () => {
+      expect(
+        problemasDe(
+          entornoDeProduccion({ INTERVALO_ENTREGA_NOTIFICACIONES_MS: '0' }),
+        ),
+      ).toEqual([
+        'En producción, INTERVALO_ENTREGA_NOTIFICACIONES_MS no puede ser 0 (los avisos nunca se enviarían)',
+      ]);
+    });
+
+    it('en producción no admite los canales simulados', () => {
+      expect(
+        problemasDe(
+          entornoDeProduccion({ CANALES_DE_NOTIFICACION_SIMULADOS: 'true' }),
+        ),
+      ).toEqual([
+        'En producción, CANALES_DE_NOTIFICACION_SIMULADOS no puede ser true (un aviso que no sale se daría por enviado)',
+      ]);
+    });
+
+    it('los canales simulados están apagados por defecto y se pueden encender fuera de producción', () => {
+      expect(
+        configuracionDesdeVariables(validarVariables(entornoBase()))
+          .canalesDeNotificacionSimulados,
+      ).toBe(false);
+      expect(
+        configuracionDesdeVariables(
+          validarVariables(
+            entornoBase({ CANALES_DE_NOTIFICACION_SIMULADOS: 'true' }),
+          ),
+        ).canalesDeNotificacionSimulados,
+      ).toBe(true);
+    });
+
+    it.each(['-1', '60001', '1.5', 'rapido'])(
+      'rechaza el intervalo de envío de avisos %s',
+      (intervalo) => {
+        expect(
+          problemasDe(
+            entornoBase({ INTERVALO_ENTREGA_NOTIFICACIONES_MS: intervalo }),
+          ).join(),
+        ).toContain('INTERVALO_ENTREGA_NOTIFICACIONES_MS');
+      },
+    );
+
+    it('rechaza un valor de canales simulados que no sea true o false', () => {
+      expect(
+        problemasDe(
+          entornoBase({ CANALES_DE_NOTIFICACION_SIMULADOS: 'quizas' }),
+        ).join(),
+      ).toContain('CANALES_DE_NOTIFICACION_SIMULADOS');
+    });
 
     it('rechaza un SECRETO_BFF corto', () => {
       expect(

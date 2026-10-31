@@ -20,6 +20,7 @@ import {
 import type { Configuracion } from './configuracion/variables-de-entorno.js';
 import { DirectorioModule } from './directorio/directorio.module.js';
 import { IdentidadModule } from './identidad/identidad.module.js';
+import { NotificacionesModule } from './notificaciones/notificaciones.module.js';
 import { PagosModule } from './pagos/pagos.module.js';
 import { ReservasModule } from './reservas/reservas.module.js';
 import { SaludController } from './salud/salud.controller.js';
@@ -41,6 +42,7 @@ const PETICIONES_POR_MINUTO = 100; // por IP; las rutas de /auth tienen límites
     DirectorioModule,
     PagosModule,
     ReservasModule,
+    NotificacionesModule,
   ],
   controllers: [SaludController],
   providers: [

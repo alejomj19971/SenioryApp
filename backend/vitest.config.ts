@@ -20,6 +20,7 @@ export default defineConfig({
       // las pruebas del outbox controlan el despachador directamente.
       INTERVALO_SONDEO_OUTBOX_MS: '0',
       INTERVALO_EXPIRACION_SERVICIOS_MS: '0',
+      INTERVALO_ENTREGA_NOTIFICACIONES_MS: '0',
     },
     projects: [
       {

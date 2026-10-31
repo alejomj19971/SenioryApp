@@ -100,6 +100,27 @@ export class VariablesDeEntorno {
   })
   INTERVALO_EXPIRACION_SERVICIOS_MS: number = 60_000;
 
+  // Cada cuánto se envían los avisos pendientes. Corto, porque una alerta no puede esperar. 0 lo apaga (solo en
+  // pruebas).
+  @Type(() => Number)
+  @IsInt({
+    message: 'INTERVALO_ENTREGA_NOTIFICACIONES_MS debe ser un número entero',
+  })
+  @Min(0, {
+    message: 'INTERVALO_ENTREGA_NOTIFICACIONES_MS debe estar entre 0 y 60000',
+  })
+  @Max(60_000, {
+    message: 'INTERVALO_ENTREGA_NOTIFICACIONES_MS debe estar entre 0 y 60000',
+  })
+  INTERVALO_ENTREGA_NOTIFICACIONES_MS: number = 2_000;
+
+  // Finge los canales de correo, SMS, WhatsApp y push (solo escribe en el log) mientras no haya proveedores.
+  // SOLO desarrollo y pruebas: en producción un aviso que no sale no puede darse por enviado.
+  @IsIn(['true', 'false'], {
+    message: 'CANALES_DE_NOTIFICACION_SIMULADOS debe ser true o false',
+  })
+  CANALES_DE_NOTIFICACION_SIMULADOS: string = 'false';
+
   // Con qué se firman los tokens de acceso. Obligatorio en todos los entornos: un valor por defecto
   // en el código sería una llave pública.
   @IsString({ message: 'SECRETO_JWT_ACCESO es obligatorio' })
@@ -191,6 +212,8 @@ export interface Configuracion {
   zonaHorariaNegocio: string;
   intervaloSondeoOutboxMs: number;
   intervaloExpiracionServiciosMs: number;
+  intervaloEntregaNotificacionesMs: number;
+  canalesDeNotificacionSimulados: boolean;
   sentryDsn: string | null;
   secretoBff: string | null;
   secretoJwtAcceso: string;
@@ -349,6 +372,16 @@ function reglasAdicionales(variables: VariablesDeEntorno): string[] {
         'En producción, CANAL_DE_RECUPERACION no puede ser consola (el enlace de recuperación quedaría escrito en el log)',
       );
     }
+    if (variables.INTERVALO_ENTREGA_NOTIFICACIONES_MS === 0) {
+      problemas.push(
+        'En producción, INTERVALO_ENTREGA_NOTIFICACIONES_MS no puede ser 0 (los avisos nunca se enviarían)',
+      );
+    }
+    if (variables.CANALES_DE_NOTIFICACION_SIMULADOS === 'true') {
+      problemas.push(
+        'En producción, CANALES_DE_NOTIFICACION_SIMULADOS no puede ser true (un aviso que no sale se daría por enviado)',
+      );
+    }
     if (variables.INTERVALO_EXPIRACION_SERVICIOS_MS === 0) {
       problemas.push(
         'En producción, INTERVALO_EXPIRACION_SERVICIOS_MS no puede ser 0 (las solicitudes sin respuesta nunca expirarían)',
@@ -410,6 +443,10 @@ export function configuracionDesdeVariables(
     zonaHorariaNegocio: variables.ZONA_HORARIA_NEGOCIO,
     intervaloSondeoOutboxMs: variables.INTERVALO_SONDEO_OUTBOX_MS,
     intervaloExpiracionServiciosMs: variables.INTERVALO_EXPIRACION_SERVICIOS_MS,
+    intervaloEntregaNotificacionesMs:
+      variables.INTERVALO_ENTREGA_NOTIFICACIONES_MS,
+    canalesDeNotificacionSimulados:
+      variables.CANALES_DE_NOTIFICACION_SIMULADOS === 'true',
     sentryDsn: variables.SENTRY_DSN ?? null,
     secretoBff: variables.SECRETO_BFF ?? null,
     secretoJwtAcceso: variables.SECRETO_JWT_ACCESO,

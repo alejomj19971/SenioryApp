@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { NotificacionesModule } from '../../src/notificaciones/notificaciones.module.js';
 import { CONSULTA_DE_DIRECTORIO } from '../../src/directorio/aplicacion/puertos/entrada/consulta-de-directorio.js';
 import { DirectorioModule } from '../../src/directorio/directorio.module.js';
 import { VERIFICADOR_DE_TOKENS } from '../../src/compartido/aplicacion/puertos/verificador-de-tokens.js';
@@ -54,6 +55,12 @@ const PERMITIDAS_POR_MODULO = [
     nombre: 'PagosModule',
     modulo: PagosModule,
     permitidas: [COTIZADOR_DE_SERVICIOS],
+  },
+  {
+    // Solo reacciona a eventos: no ofrece nada a otros módulos.
+    nombre: 'NotificacionesModule',
+    modulo: NotificacionesModule,
+    permitidas: [],
   },
   {
     nombre: 'ReservasModule',

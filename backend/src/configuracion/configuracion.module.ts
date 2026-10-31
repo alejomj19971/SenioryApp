@@ -48,6 +48,12 @@ export const CONFIGURACION = Symbol('CONFIGURACION');
           INTERVALO_EXPIRACION_SERVICIOS_MS: servicio.getOrThrow<number>(
             'INTERVALO_EXPIRACION_SERVICIOS_MS',
           ),
+          INTERVALO_ENTREGA_NOTIFICACIONES_MS: servicio.getOrThrow<number>(
+            'INTERVALO_ENTREGA_NOTIFICACIONES_MS',
+          ),
+          CANALES_DE_NOTIFICACION_SIMULADOS: servicio.getOrThrow<string>(
+            'CANALES_DE_NOTIFICACION_SIMULADOS',
+          ),
           SENTRY_DSN: servicio.get<string>('SENTRY_DSN'),
           SECRETO_BFF: servicio.get<string>('SECRETO_BFF'),
           SECRETO_JWT_ACCESO: servicio.getOrThrow<string>('SECRETO_JWT_ACCESO'),

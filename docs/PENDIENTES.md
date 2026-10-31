@@ -84,12 +84,19 @@
 | 🧑 | Horas exactas de cada franja (mañana 06–12, tarde 12–18, noche 18–06): decididas el 2026-10-26; confirmar con el negocio. |
 | ⚖️ | Evaluar un seguro de responsabilidad civil y el manejo de quejas entre familias y cuidadores. |
 
-### M5 — Notificaciones
+### M5 — Notificaciones  *(backend construido)*
 
 | | Pendiente |
 |---|---|
-| 🔧🚀 | Todo el módulo, con **un canal real y confiable** (SMS o WhatsApp Business, este con plantillas aprobadas por Meta) probado en staging con E11. |
-| 🧑🚀 | **Proveedor de correo y de SMS o WhatsApp.** |
+| 🧑🚀 | **Proveedor de correo y de SMS o WhatsApp.** Hoy el único canal real es la aplicación (la campana, `GET /notificaciones`); correo, SMS, WhatsApp y push no se registran hasta que haya proveedor. **Sin un canal confiable fuera de la app, una alerta de teleasistencia solo llegaría a quien tenga la app abierta: no se puede lanzar así.** |
+| 🔧🚀 | **Un adaptador por canal real** (`CanalDeNotificacion`) y probar el tiempo de entrega de alertas en staging con el canal real (E11): `entregada_en − creada_en` ya queda guardado en cada aviso. |
+| 🔧 | **Confirmación de entrega** de SMS y WhatsApp: hoy un canal con proveedor responde `enviada` (aceptado) y no pasa a `entregada`; falta el webhook del proveedor que lo confirme. |
+| 🔧 | Handlers de Pagos (`PagoAprobado`, `PagoRechazado`: M7) y de Teleasistencia (`AlertaGenerada`, `MedicamentoOmitido`, `LecturaFueraDeRango`: M6). El motor ya soporta la prioridad alta y los varios canales a la vez. |
+| 🔧 | **Preferencias de la persona** (qué canales usa) y **horario silencioso** (las alertas lo ignoran): la tabla `preferencias_de_notificacion` existe, falta la API y usarla al elegir canales. |
+| 🔧 | **Marcar como leídas** (la campana no sabe qué falta por ver): necesita una columna nueva. Y publicar `NotificacionEntregada`. |
+| 🧑 | Costo por mensaje de cada canal, para decidir cuáles son «normales» (hoy: app y correo) y cuáles solo para alertas (SMS, WhatsApp). |
+| 🔧 | **Sentry** para la alarma «alerta sin entregar» (hoy: auditoría y error en el log). |
+| 🔧 | La tabla `fallidas` del plan no hace falta: el estado `fallida` y el historial de `intentos_de_envio` ya lo cubren. |
 
 ### M6 — Teleasistencia
 
