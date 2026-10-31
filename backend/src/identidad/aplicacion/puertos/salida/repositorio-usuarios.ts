@@ -15,6 +15,12 @@ export interface RepositorioUsuarios {
   actualizar(usuario: Usuario): Promise<void>;
 
   buscarPorId(id: UsuarioId): Promise<Usuario | null>;
+
+  // Igual que `buscarPorId`, pero bloquea al usuario y su credencial hasta que termine la
+  // transacción. Lo usa quien después llama a `actualizar` (por ejemplo, cambiar el perfil): sin el
+  // bloqueo, guardar una copia vieja de la credencial borraría un intento fallido de inicio de sesión
+  // ocurrido entre la lectura y la escritura. Debe llamarse dentro de una unidad de trabajo.
+  buscarPorIdParaActualizar(id: UsuarioId): Promise<Usuario | null>;
   buscarPorCorreo(correo: Correo): Promise<Usuario | null>;
 
   // Igual que `buscarPorCorreo`, pero bloquea la credencial hasta que termine la transacción. Es lo

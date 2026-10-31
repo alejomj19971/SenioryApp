@@ -135,7 +135,31 @@ Que cada persona entre a Seniory con su propia cuenta, con un rol, y que el sist
 | Pruebas de `Origin` y de matriz de autorización | Quedan para los PR 6 y 4. | Dependen de código que aún no existe. |
 | Prueba de logs de punta a punta | Se prueba la redacción con las opciones reales de `opcionesDeLogs` sobre un servidor mínimo. | La salida estándar no se puede leer de forma fiable dentro de las pruebas. Se verificó que la prueba falla si se quita la redacción de `set-cookie` o de `contrasena`. |
 
-**Para quien ya tenga un `.env` local:** hay que agregar `SECRETO_JWT_ACCESO` (genera uno con el comando de `.env.ejemplo`) y `COOKIES_SEGURAS=false`; sin ellos la aplicación no arranca.
+**Construido en el PR 4** (perfil, personas mayores y consentimientos):
+
+| Pieza | Cómo quedó |
+|---|---|
+| Endpoints | `GET /yo` (perfil y personas mayores vinculadas, con edad, parentesco, responsabilidad y si hay consentimiento de salud); `PATCH /yo` (nombre y teléfono; `null` borra el teléfono); `POST /adultos-mayores`; `GET /adultos-mayores/:id`; `POST /adultos-mayores/:id/consentimientos`; `DELETE /consentimientos/:id`. El id del perfil sale siempre del token, nunca de la ruta. |
+| Registrar una persona mayor | Crea la persona y el vínculo de responsable **en una sola transacción**, con los eventos `adulto_mayor_registrado` y `vinculo_creado`. La edad se calcula con la fecha de hoy en Bogotá. |
+| IDOR | Una persona o un consentimiento ajenos responden **404 idéntico** al de uno que no existe (misma respuesta, sin el nombre), y el intento queda auditado como `denegado`. Un rol que no usa la ruta recibe 403; un id que no es UUID, 400. |
+| Consentimiento | Lo otorga un familiar vinculado (como `representante`) o la propia persona (`titular`). Exige la versión vigente del texto (`VERSION_CONSENTIMIENTO_SALUD_VIGENTE`) y que la calidad declarada sea la que le corresponde. Revocarlo es inmediato; después se puede otorgar uno nuevo. |
+| Concurrencia | Dos consentimientos simultáneos dejan uno vigente y un 409. Dos revocaciones simultáneas dejan una revocación y **un solo** evento (el consentimiento se lee con `FOR NO KEY UPDATE`). Cambiar el perfil lee al usuario con el mismo bloqueo: sin él, guardar la credencial leída borraría un intento fallido de inicio de sesión ocurrido en medio. Las dos pruebas de concurrencia se verificaron quitando los bloqueos: fallan. |
+| `ConsultaDeIdentidad` | Primer puerto de entrada de Identidad: `obtenerContacto`, `obtenerAdultoMayor`, `esFamiliarVinculado`, `tieneConsentimientoVigente` y `listarFamiliaresVinculados`. Solo IDs y datos mínimos. `IdentidadModule` ya exporta `CONSULTA_DE_IDENTIDAD` y `VERIFICADOR_DE_TOKENS`, y nada más. Una cuenta eliminada no tiene contacto. |
+| Eventos | `adulto_mayor_registrado`, `vinculo_creado`, `consentimiento_otorgado` y `consentimiento_revocado`, con sus tipos en `compartido/eventos/identidad.ts`. Solo IDs y la finalidad. Un servicio común (`EventosDeIdentidad`) arma el sobre. |
+| Auditoría | `actualizar_perfil` (solo qué campos cambiaron), `registrar_adulto_mayor`, `crear_vinculo`, `consultar_adulto_mayor` (solo los denegados), `otorgar_consentimiento` y `revocar_consentimiento` (permitidos y denegados). Nunca valores personales. |
+| Matriz de autorización | Sin sesión → 401; cuidador y administrador en rutas de familiares → 403; familiar ajeno → 404. Se prueba ruta por ruta. |
+| Variable nueva | `VERSION_CONSENTIMIENTO_SALUD_VIGENTE` (por defecto `v1`; la política legal real la redactará un abogado). |
+
+**Desviaciones del plan en el PR 4**
+
+| Plan | Lo construido | Por qué |
+|---|---|---|
+| `POST /vinculos` | No existe en este PR. El único vínculo que se crea es el de responsable al registrar a la persona. | Vincular a otro familiar necesita una invitación o aprobación del responsable (quién autoriza es una decisión de producto y legal, decisión 1 de §10). Los PR siguientes no lo necesitan para empezar. |
+| Los contratos `openapi.json` y AsyncAPI versionados (ADR-03) | Quedan para un PR aparte. | Piden activar el plugin de `@nestjs/swagger`, un script de exportación que corra sobre lo compilado y un paso en la CI; es trabajo propio y no depende de este. |
+
+**Corrección en la infraestructura de pruebas:** las pruebas de integración fallaban de forma intermitente («connection timeout») porque los archivos corren en paralelo y cada aplicación abre hasta 10 conexiones: con las 100 que Postgres permite por defecto no alcanzaba. El contenedor de pruebas ahora admite 400.
+
+**Para quien ya tenga un `.env` local (PR 3):** hay que agregar `SECRETO_JWT_ACCESO` (genera uno con el comando de `.env.ejemplo`) y `COOKIES_SEGURAS=false`; sin ellos la aplicación no arranca.
 
 ### 4.2 Casos de uso
 
@@ -379,7 +403,7 @@ Ya no hay una versión de demostración: el recorrido que sigue el frontend es e
 | 1 ✅ | Dominio: objetos de valor, `Usuario` con `Credencial`, `SesionDeRefresco`, `AdultoMayor`, `Vinculo`, `Consentimiento`, con pruebas unitarias. |
 | 2 ✅ | Persistencia: esquema `identidad`, migración, repositorios y pruebas de integración. El esquema y la migración ya existían (base de datos construida por adelantado): este PR agrega los repositorios. |
 | 3 ✅ | Autenticación: hash, tokens, `VerificadorDeTokens`, casos de uso de registro, inicio, renovación y cierre de sesión, endpoints de `/auth`, límites por ruta y pruebas de API. |
-| 4 | Perfil, adultos mayores, consentimientos, `ConsultaDeIdentidad`, eventos, auditoría y matriz de autorización. |
+| 4 ✅ | Perfil, adultos mayores, consentimientos, `ConsultaDeIdentidad`, eventos, auditoría y matriz de autorización. |
 | 5 | Fixtures de desarrollo, `crear-admin` y documentación del módulo. |
 | 6 | Ajustes para el BFF: ventana de gracia del refresco, `Origin` opcional y `X-Cliente-IP` (con pruebas). El trabajo de pantallas va en [F1](../frontend/F1-identidad.md). |
 | 7 | *(Opcional, o en M10)* Exportar y eliminar cuenta. |

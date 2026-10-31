@@ -88,6 +88,10 @@ export class RepositorioUsuariosDrizzle implements RepositorioUsuarios {
     return this.buscar(eq(usuarios.id, id), false);
   }
 
+  buscarPorIdParaActualizar(id: UsuarioId): Promise<Usuario | null> {
+    return this.buscar(eq(usuarios.id, id), true);
+  }
+
   buscarPorCorreo(correo: Correo): Promise<Usuario | null> {
     return this.buscar(eq(usuarios.correo, correo.valor), false);
   }

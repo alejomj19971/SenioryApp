@@ -66,6 +66,7 @@ describe('validarVariables', () => {
         duracionRefrescoDias: 30,
         cookiesSeguras: false,
         versionPoliticaVigente: 'v1',
+        versionConsentimientoSaludVigente: 'v1',
       });
     });
 
@@ -333,6 +334,14 @@ describe('validarVariables', () => {
         ).toContain('COOKIES_SEGURAS debe ser true');
       },
     );
+
+    it('rechaza una versión del consentimiento de salud con formato inválido', () => {
+      expect(
+        problemasDe(
+          entornoBase({ VERSION_CONSENTIMIENTO_SALUD_VIGENTE: 'v 1!' }),
+        ).join(),
+      ).toContain('VERSION_CONSENTIMIENTO_SALUD_VIGENTE');
+    });
 
     it('rechaza una versión de política con formato inválido', () => {
       expect(

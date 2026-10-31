@@ -13,6 +13,13 @@ export interface RepositorioConsentimientos {
 
   buscarPorId(id: ConsentimientoId): Promise<Consentimiento | null>;
 
+  // Igual que `buscarPorId`, pero bloquea la fila hasta que termine la transacción: dos revocaciones
+  // simultáneas se atienden una tras otra y la segunda ya ve que está revocado. Debe llamarse dentro
+  // de una unidad de trabajo.
+  buscarPorIdParaActualizar(
+    id: ConsentimientoId,
+  ): Promise<Consentimiento | null>;
+
   buscarVigente(
     adultoMayorId: AdultoMayorId,
     finalidad: FinalidadDeConsentimiento,

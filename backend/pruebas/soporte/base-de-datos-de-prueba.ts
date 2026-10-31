@@ -25,6 +25,9 @@ export async function iniciarBaseDeDatosDePrueba(): Promise<BaseDeDatosDePrueba>
     .withDatabase('seniory_prueba')
     .withUsername('seniory')
     .withPassword('seniory')
+    // Los archivos de pruebas corren en paralelo y cada aplicación abre hasta 10 conexiones: con las 100 de
+    // Postgres por defecto, a veces una prueba no conseguía conexión («connection timeout»).
+    .withCommand(['postgres', '-c', 'max_connections=400'])
     .start();
 
   const url = contenedor.getConnectionUri();

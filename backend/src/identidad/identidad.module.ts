@@ -52,7 +52,38 @@ import {
 } from './aplicacion/puertos/salida/repositorio-usuarios.js';
 import { EmisorDeSesiones } from './aplicacion/servicios/emisor-de-sesiones.js';
 import type { DiccionarioDeContrasenasComunes } from './dominio/contrasena.js';
+import { ActualizarPerfilPropio } from './aplicacion/casos-de-uso/actualizar-perfil-propio.js';
+import { ObtenerAdultoMayor } from './aplicacion/casos-de-uso/obtener-adulto-mayor.js';
+import { ObtenerPerfilPropio } from './aplicacion/casos-de-uso/obtener-perfil-propio.js';
+import { OtorgarConsentimiento } from './aplicacion/casos-de-uso/otorgar-consentimiento.js';
+import { RegistrarAdultoMayor } from './aplicacion/casos-de-uso/registrar-adulto-mayor.js';
+import { RevocarConsentimiento } from './aplicacion/casos-de-uso/revocar-consentimiento.js';
+import {
+  CONSULTA_DE_IDENTIDAD,
+  type ConsultaDeIdentidad,
+} from './aplicacion/puertos/entrada/consulta-de-identidad.js';
+import {
+  REPOSITORIO_ADULTOS_MAYORES,
+  type RepositorioAdultosMayores,
+} from './aplicacion/puertos/salida/repositorio-adultos-mayores.js';
+import {
+  REPOSITORIO_CONSENTIMIENTOS,
+  type RepositorioConsentimientos,
+} from './aplicacion/puertos/salida/repositorio-consentimientos.js';
+import {
+  REPOSITORIO_VINCULOS,
+  type RepositorioVinculos,
+} from './aplicacion/puertos/salida/repositorio-vinculos.js';
+import { ConsultaDeIdentidadServicio } from './aplicacion/servicios/consulta-de-identidad-servicio.js';
+import { EventosDeIdentidad } from './aplicacion/servicios/eventos-de-identidad.js';
+import { VistasDeAdultosMayores } from './aplicacion/servicios/vistas-de-adultos-mayores.js';
+import { AdultosMayoresController } from './infraestructura/entrada/http/adultos-mayores.controller.js';
 import { AuthController } from './infraestructura/entrada/http/auth.controller.js';
+import { ConsentimientosController } from './infraestructura/entrada/http/consentimientos.controller.js';
+import { PerfilController } from './infraestructura/entrada/http/perfil.controller.js';
+import { RepositorioAdultosMayoresDrizzle } from './infraestructura/salida/persistencia/repositorio-adultos-mayores-drizzle.js';
+import { RepositorioConsentimientosDrizzle } from './infraestructura/salida/persistencia/repositorio-consentimientos-drizzle.js';
+import { RepositorioVinculosDrizzle } from './infraestructura/salida/persistencia/repositorio-vinculos-drizzle.js';
 import { DiccionarioDeContrasenasComunesDeArchivo } from './infraestructura/salida/contrasenas/diccionario-de-contrasenas-comunes.js';
 import { RepositorioAceptacionesDePoliticaDrizzle } from './infraestructura/salida/persistencia/repositorio-aceptaciones-de-politica-drizzle.js';
 import { RepositorioSesionesDrizzle } from './infraestructura/salida/persistencia/repositorio-sesiones-drizzle.js';
@@ -66,12 +97,17 @@ const TOKENS_JWT = Symbol('TokensJwt');
 const MS_POR_MINUTO = 60_000;
 const MS_POR_DIA = 24 * 60 * MS_POR_MINUTO;
 
-// Módulo de Identidad (M1). Exporta SOLO lo que otros módulos pueden usar: hoy, el verificador de
-// tokens para el guard global; `CONSULTA_DE_IDENTIDAD` llega con el PR 4. Repositorios, hash y emisor
+// Módulo de Identidad (M1). Exporta SOLO lo que otros módulos pueden usar: el verificador de tokens
+// para el guard global y `CONSULTA_DE_IDENTIDAD`. Repositorios, hash y emisor
 // de tokens son privados: si otro módulo intenta inyectarlos, Nest falla al arrancar. Las clases se
 // crean con fábricas para que la capa de aplicación no dependa de decoradores de Nest.
 @Module({
-  controllers: [AuthController],
+  controllers: [
+    AuthController,
+    PerfilController,
+    AdultosMayoresController,
+    ConsentimientosController,
+  ],
   providers: [
     // Persistencia
     {
@@ -91,6 +127,25 @@ const MS_POR_DIA = 24 * 60 * MS_POR_MINUTO;
       inject: [ContextoTransaccional],
       useFactory: (contexto: ContextoTransaccional) =>
         new RepositorioAceptacionesDePoliticaDrizzle(contexto),
+    },
+
+    {
+      provide: REPOSITORIO_ADULTOS_MAYORES,
+      inject: [ContextoTransaccional],
+      useFactory: (contexto: ContextoTransaccional) =>
+        new RepositorioAdultosMayoresDrizzle(contexto),
+    },
+    {
+      provide: REPOSITORIO_VINCULOS,
+      inject: [ContextoTransaccional],
+      useFactory: (contexto: ContextoTransaccional) =>
+        new RepositorioVinculosDrizzle(contexto),
+    },
+    {
+      provide: REPOSITORIO_CONSENTIMIENTOS,
+      inject: [ContextoTransaccional],
+      useFactory: (contexto: ContextoTransaccional) =>
+        new RepositorioConsentimientosDrizzle(contexto),
     },
 
     // Seguridad
@@ -158,11 +213,10 @@ const MS_POR_DIA = 24 * 60 * MS_POR_MINUTO;
         DICCIONARIO_DE_CONTRASENAS,
         EmisorDeSesiones,
         UNIDAD_DE_TRABAJO,
-        PUBLICADOR_DE_EVENTOS,
+        EventosDeIdentidad,
         AUDITORIA,
         RELOJ,
         GENERADOR_DE_IDS,
-        CONTEXTO_DE_PETICION,
         CONFIGURACION,
       ],
       useFactory: (
@@ -172,11 +226,10 @@ const MS_POR_DIA = 24 * 60 * MS_POR_MINUTO;
         comunes: DiccionarioDeContrasenasComunes,
         sesiones: EmisorDeSesiones,
         unidadDeTrabajo: UnidadDeTrabajo,
-        publicador: PublicadorDeEventos,
+        eventos: EventosDeIdentidad,
         auditoria: Auditoria,
         reloj: Reloj,
         ids: GeneradorDeIds,
-        contexto: ContextoDePeticion,
         configuracion: Configuracion,
       ) =>
         new RegistrarFamiliar(
@@ -186,11 +239,10 @@ const MS_POR_DIA = 24 * 60 * MS_POR_MINUTO;
           comunes,
           sesiones,
           unidadDeTrabajo,
-          publicador,
+          eventos,
           auditoria,
           reloj,
           ids,
-          contexto,
           configuracion.versionPoliticaVigente,
         ),
     },
@@ -275,7 +327,199 @@ const MS_POR_DIA = 24 * 60 * MS_POR_MINUTO;
           reloj,
         ),
     },
+    // Perfil, personas mayores y consentimientos
+    {
+      provide: EventosDeIdentidad,
+      inject: [PUBLICADOR_DE_EVENTOS, GENERADOR_DE_IDS, CONTEXTO_DE_PETICION],
+      useFactory: (
+        publicador: PublicadorDeEventos,
+        ids: GeneradorDeIds,
+        contexto: ContextoDePeticion,
+      ) => new EventosDeIdentidad(publicador, ids, contexto),
+    },
+    {
+      provide: VistasDeAdultosMayores,
+      inject: [
+        REPOSITORIO_ADULTOS_MAYORES,
+        REPOSITORIO_CONSENTIMIENTOS,
+        RELOJ,
+        CONFIGURACION,
+      ],
+      useFactory: (
+        adultosMayores: RepositorioAdultosMayores,
+        consentimientos: RepositorioConsentimientos,
+        reloj: Reloj,
+        configuracion: Configuracion,
+      ) =>
+        new VistasDeAdultosMayores(
+          adultosMayores,
+          consentimientos,
+          reloj,
+          configuracion.zonaHorariaNegocio,
+        ),
+    },
+    {
+      provide: ObtenerPerfilPropio,
+      inject: [
+        REPOSITORIO_USUARIOS,
+        REPOSITORIO_VINCULOS,
+        VistasDeAdultosMayores,
+      ],
+      useFactory: (
+        usuarios: RepositorioUsuarios,
+        vinculos: RepositorioVinculos,
+        vistas: VistasDeAdultosMayores,
+      ) => new ObtenerPerfilPropio(usuarios, vinculos, vistas),
+    },
+    {
+      provide: ActualizarPerfilPropio,
+      inject: [REPOSITORIO_USUARIOS, UNIDAD_DE_TRABAJO, AUDITORIA, RELOJ],
+      useFactory: (
+        usuarios: RepositorioUsuarios,
+        unidadDeTrabajo: UnidadDeTrabajo,
+        auditoria: Auditoria,
+        reloj: Reloj,
+      ) =>
+        new ActualizarPerfilPropio(usuarios, unidadDeTrabajo, auditoria, reloj),
+    },
+    {
+      provide: RegistrarAdultoMayor,
+      inject: [
+        REPOSITORIO_ADULTOS_MAYORES,
+        REPOSITORIO_VINCULOS,
+        UNIDAD_DE_TRABAJO,
+        EventosDeIdentidad,
+        AUDITORIA,
+        RELOJ,
+        GENERADOR_DE_IDS,
+        CONFIGURACION,
+      ],
+      useFactory: (
+        adultosMayores: RepositorioAdultosMayores,
+        vinculos: RepositorioVinculos,
+        unidadDeTrabajo: UnidadDeTrabajo,
+        eventos: EventosDeIdentidad,
+        auditoria: Auditoria,
+        reloj: Reloj,
+        ids: GeneradorDeIds,
+        configuracion: Configuracion,
+      ) =>
+        new RegistrarAdultoMayor(
+          adultosMayores,
+          vinculos,
+          unidadDeTrabajo,
+          eventos,
+          auditoria,
+          reloj,
+          ids,
+          configuracion.zonaHorariaNegocio,
+        ),
+    },
+    {
+      provide: ObtenerAdultoMayor,
+      inject: [REPOSITORIO_VINCULOS, VistasDeAdultosMayores, AUDITORIA],
+      useFactory: (
+        vinculos: RepositorioVinculos,
+        vistas: VistasDeAdultosMayores,
+        auditoria: Auditoria,
+      ) => new ObtenerAdultoMayor(vinculos, vistas, auditoria),
+    },
+    {
+      provide: OtorgarConsentimiento,
+      inject: [
+        REPOSITORIO_ADULTOS_MAYORES,
+        REPOSITORIO_VINCULOS,
+        REPOSITORIO_CONSENTIMIENTOS,
+        UNIDAD_DE_TRABAJO,
+        EventosDeIdentidad,
+        AUDITORIA,
+        RELOJ,
+        GENERADOR_DE_IDS,
+        CONFIGURACION,
+      ],
+      useFactory: (
+        adultosMayores: RepositorioAdultosMayores,
+        vinculos: RepositorioVinculos,
+        consentimientos: RepositorioConsentimientos,
+        unidadDeTrabajo: UnidadDeTrabajo,
+        eventos: EventosDeIdentidad,
+        auditoria: Auditoria,
+        reloj: Reloj,
+        ids: GeneradorDeIds,
+        configuracion: Configuracion,
+      ) =>
+        new OtorgarConsentimiento(
+          adultosMayores,
+          vinculos,
+          consentimientos,
+          unidadDeTrabajo,
+          eventos,
+          auditoria,
+          reloj,
+          ids,
+          configuracion.versionConsentimientoSaludVigente,
+        ),
+    },
+    {
+      provide: RevocarConsentimiento,
+      inject: [
+        REPOSITORIO_ADULTOS_MAYORES,
+        REPOSITORIO_VINCULOS,
+        REPOSITORIO_CONSENTIMIENTOS,
+        UNIDAD_DE_TRABAJO,
+        EventosDeIdentidad,
+        AUDITORIA,
+        RELOJ,
+      ],
+      useFactory: (
+        adultosMayores: RepositorioAdultosMayores,
+        vinculos: RepositorioVinculos,
+        consentimientos: RepositorioConsentimientos,
+        unidadDeTrabajo: UnidadDeTrabajo,
+        eventos: EventosDeIdentidad,
+        auditoria: Auditoria,
+        reloj: Reloj,
+      ) =>
+        new RevocarConsentimiento(
+          adultosMayores,
+          vinculos,
+          consentimientos,
+          unidadDeTrabajo,
+          eventos,
+          auditoria,
+          reloj,
+        ),
+    },
+
+    // Lo que otros módulos pueden usar
+    {
+      provide: CONSULTA_DE_IDENTIDAD,
+      inject: [
+        REPOSITORIO_USUARIOS,
+        REPOSITORIO_ADULTOS_MAYORES,
+        REPOSITORIO_VINCULOS,
+        REPOSITORIO_CONSENTIMIENTOS,
+        RELOJ,
+        CONFIGURACION,
+      ],
+      useFactory: (
+        usuarios: RepositorioUsuarios,
+        adultosMayores: RepositorioAdultosMayores,
+        vinculos: RepositorioVinculos,
+        consentimientos: RepositorioConsentimientos,
+        reloj: Reloj,
+        configuracion: Configuracion,
+      ): ConsultaDeIdentidad =>
+        new ConsultaDeIdentidadServicio(
+          usuarios,
+          adultosMayores,
+          vinculos,
+          consentimientos,
+          reloj,
+          configuracion.zonaHorariaNegocio,
+        ),
+    },
   ],
-  exports: [VERIFICADOR_DE_TOKENS],
+  exports: [VERIFICADOR_DE_TOKENS, CONSULTA_DE_IDENTIDAD],
 })
 export class IdentidadModule {}

@@ -115,6 +115,13 @@ export class VariablesDeEntorno {
   })
   VERSION_POLITICA_VIGENTE: string = 'v1';
 
+  // Versión del texto del consentimiento para tratar datos de salud que se pide aceptar.
+  @Matches(/^[A-Za-z0-9][A-Za-z0-9._-]{0,19}$/, {
+    message:
+      'VERSION_CONSENTIMIENTO_SALUD_VIGENTE no es una versión válida (ej. v1)',
+  })
+  VERSION_CONSENTIMIENTO_SALUD_VIGENTE: string = 'v1';
+
   @IsOptional()
   @IsString()
   SENTRY_DSN?: string;
@@ -141,6 +148,7 @@ export interface Configuracion {
   duracionRefrescoDias: number;
   cookiesSeguras: boolean;
   versionPoliticaVigente: string;
+  versionConsentimientoSaludVigente: string;
 }
 
 export class ErrorDeConfiguracion extends Error {
@@ -319,5 +327,7 @@ export function configuracionDesdeVariables(
     duracionRefrescoDias: variables.DURACION_REFRESCO_DIAS,
     cookiesSeguras: variables.COOKIES_SEGURAS === 'true',
     versionPoliticaVigente: variables.VERSION_POLITICA_VIGENTE,
+    versionConsentimientoSaludVigente:
+      variables.VERSION_CONSENTIMIENTO_SALUD_VIGENTE,
   };
 }

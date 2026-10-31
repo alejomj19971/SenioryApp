@@ -53,13 +53,28 @@ export class RepositorioConsentimientosDrizzle implements RepositorioConsentimie
     }
   }
 
-  async buscarPorId(id: ConsentimientoId): Promise<Consentimiento | null> {
-    const filas = await this.contexto
+  buscarPorId(id: ConsentimientoId): Promise<Consentimiento | null> {
+    return this.buscar(id, false);
+  }
+
+  buscarPorIdParaActualizar(
+    id: ConsentimientoId,
+  ): Promise<Consentimiento | null> {
+    return this.buscar(id, true);
+  }
+
+  private async buscar(
+    id: ConsentimientoId,
+    bloquear: boolean,
+  ): Promise<Consentimiento | null> {
+    const consulta = this.contexto
       .conexion()
       .select()
       .from(consentimientos)
       .where(eq(consentimientos.id, id))
       .limit(1);
+    // NO KEY UPDATE: no estorba a quien inserte filas que apuntan a este consentimiento.
+    const filas = await (bloquear ? consulta.for('no key update') : consulta);
     const fila = filas[0];
     return fila === undefined ? null : consentimientoDeFila(fila);
   }

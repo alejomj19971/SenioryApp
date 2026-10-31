@@ -57,6 +57,9 @@ export const CONFIGURACION = Symbol('CONFIGURACION');
           VERSION_POLITICA_VIGENTE: servicio.getOrThrow<string>(
             'VERSION_POLITICA_VIGENTE',
           ),
+          VERSION_CONSENTIMIENTO_SALUD_VIGENTE: servicio.getOrThrow<string>(
+            'VERSION_CONSENTIMIENTO_SALUD_VIGENTE',
+          ),
         };
         return configuracionDesdeVariables(variables);
       },

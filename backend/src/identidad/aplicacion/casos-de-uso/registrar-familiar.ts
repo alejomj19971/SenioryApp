@@ -1,11 +1,8 @@
 import type { Auditoria } from '../../../compartido/aplicacion/puertos/auditoria.js';
-import type { ContextoDePeticion } from '../../../compartido/aplicacion/puertos/contexto-de-peticion.js';
 import type { GeneradorDeIds } from '../../../compartido/aplicacion/puertos/generador-de-ids.js';
-import type { PublicadorDeEventos } from '../../../compartido/aplicacion/puertos/publicador-de-eventos.js';
 import type { Reloj } from '../../../compartido/aplicacion/puertos/reloj.js';
 import type { UnidadDeTrabajo } from '../../../compartido/aplicacion/puertos/unidad-de-trabajo.js';
 import { ErrorDeValidacion } from '../../../compartido/dominio/errores.js';
-import type { UsuarioRegistrado } from '../../../compartido/eventos/identidad.js';
 import { AceptacionDePolitica } from '../../dominio/aceptacion-de-politica.js';
 import {
   Contrasena,
@@ -24,6 +21,7 @@ import type {
   EmisorDeSesiones,
   TokensDeSesion,
 } from '../servicios/emisor-de-sesiones.js';
+import type { EventosDeIdentidad } from '../servicios/eventos-de-identidad.js';
 import { vistaDeUsuario, type VistaDeUsuario } from '../vistas.js';
 
 export interface EntradaDeRegistro {
@@ -50,11 +48,10 @@ export class RegistrarFamiliar {
     private readonly comunes: DiccionarioDeContrasenasComunes,
     private readonly sesiones: EmisorDeSesiones,
     private readonly unidadDeTrabajo: UnidadDeTrabajo,
-    private readonly publicador: PublicadorDeEventos,
+    private readonly eventos: EventosDeIdentidad,
     private readonly auditoria: Auditoria,
     private readonly reloj: Reloj,
     private readonly ids: GeneradorDeIds,
-    private readonly contexto: ContextoDePeticion,
     private readonly versionDePoliticaVigente: string,
   ) {}
 
@@ -101,15 +98,11 @@ export class RegistrarFamiliar {
         }),
       );
       const { tokens } = await this.sesiones.emitir(usuario, ahora);
-      const evento: UsuarioRegistrado = {
-        id: this.ids.nuevo(),
-        tipo: 'identidad.usuario_registrado',
-        version: 1,
-        ocurridoEn: ahora.toISOString(),
-        idDeCorrelacion: this.contexto.idDeCorrelacion(),
-        datos: { usuarioId, rol: usuario.rol },
-      };
-      await this.publicador.publicar(evento);
+      await this.eventos.publicar(
+        'identidad.usuario_registrado',
+        { usuarioId, rol: usuario.rol },
+        ahora,
+      );
       return tokens;
     });
 
