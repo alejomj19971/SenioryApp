@@ -53,6 +53,7 @@ import {
 import { EmisorDeSesiones } from './aplicacion/servicios/emisor-de-sesiones.js';
 import type { DiccionarioDeContrasenasComunes } from './dominio/contrasena.js';
 import { ActualizarPerfilPropio } from './aplicacion/casos-de-uso/actualizar-perfil-propio.js';
+import { CrearAdministrador } from './aplicacion/casos-de-uso/crear-administrador.js';
 import { ObtenerAdultoMayor } from './aplicacion/casos-de-uso/obtener-adulto-mayor.js';
 import { ObtenerPerfilPropio } from './aplicacion/casos-de-uso/obtener-perfil-propio.js';
 import { OtorgarConsentimiento } from './aplicacion/casos-de-uso/otorgar-consentimiento.js';
@@ -84,7 +85,10 @@ import { PerfilController } from './infraestructura/entrada/http/perfil.controll
 import { RepositorioAdultosMayoresDrizzle } from './infraestructura/salida/persistencia/repositorio-adultos-mayores-drizzle.js';
 import { RepositorioConsentimientosDrizzle } from './infraestructura/salida/persistencia/repositorio-consentimientos-drizzle.js';
 import { RepositorioVinculosDrizzle } from './infraestructura/salida/persistencia/repositorio-vinculos-drizzle.js';
-import { DiccionarioDeContrasenasComunesDeArchivo } from './infraestructura/salida/contrasenas/diccionario-de-contrasenas-comunes.js';
+import {
+  DICCIONARIO_DE_CONTRASENAS,
+  DiccionarioDeContrasenasComunesDeArchivo,
+} from './infraestructura/salida/contrasenas/diccionario-de-contrasenas-comunes.js';
 import { RepositorioAceptacionesDePoliticaDrizzle } from './infraestructura/salida/persistencia/repositorio-aceptaciones-de-politica-drizzle.js';
 import { RepositorioSesionesDrizzle } from './infraestructura/salida/persistencia/repositorio-sesiones-drizzle.js';
 import { RepositorioUsuariosDrizzle } from './infraestructura/salida/persistencia/repositorio-usuarios-drizzle.js';
@@ -92,7 +96,6 @@ import { GeneradorDeTokensOpacosAleatorio } from './infraestructura/salida/segur
 import { HashDeContrasenasArgon2 } from './infraestructura/salida/seguridad/hash-de-contrasenas-argon2.js';
 import { TokensJwt } from './infraestructura/salida/seguridad/tokens-jwt.js';
 
-const DICCIONARIO_DE_CONTRASENAS = Symbol('DiccionarioDeContrasenasComunes');
 const TOKENS_JWT = Symbol('TokensJwt');
 const MS_POR_MINUTO = 60_000;
 const MS_POR_DIA = 24 * 60 * MS_POR_MINUTO;
@@ -489,6 +492,28 @@ const MS_POR_DIA = 24 * 60 * MS_POR_MINUTO;
           auditoria,
           reloj,
         ),
+    },
+
+    // Lo que corre desde la consola del servidor (npm run crear-admin); no tiene ruta en la API.
+    {
+      provide: CrearAdministrador,
+      inject: [
+        REPOSITORIO_USUARIOS,
+        HASH_DE_CONTRASENAS,
+        DICCIONARIO_DE_CONTRASENAS,
+        AUDITORIA,
+        RELOJ,
+        GENERADOR_DE_IDS,
+      ],
+      useFactory: (
+        usuarios: RepositorioUsuarios,
+        hash: HashDeContrasenas,
+        comunes: DiccionarioDeContrasenasComunes,
+        auditoria: Auditoria,
+        reloj: Reloj,
+        ids: GeneradorDeIds,
+      ) =>
+        new CrearAdministrador(usuarios, hash, comunes, auditoria, reloj, ids),
     },
 
     // Lo que otros módulos pueden usar

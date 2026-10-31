@@ -55,7 +55,8 @@ export default defineConfig({
         'src/main.ts',
         'src/**/*.module.ts',
         'src/**/*.esquema.ts',
-        'src/**/migrar-cli.ts',
+        // Puntos de entrada de la consola: solo leen el entorno y llaman a funciones que sí se prueban.
+        'src/**/*-cli.ts',
       ],
       // Umbrales de M0 §4.11: `npm run test:cobertura` falla si bajan.
       thresholds: {

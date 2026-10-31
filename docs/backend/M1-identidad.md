@@ -159,6 +159,23 @@ Que cada persona entre a Seniory con su propia cuenta, con un rol, y que el sist
 
 **Corrección en la infraestructura de pruebas:** las pruebas de integración fallaban de forma intermitente («connection timeout») porque los archivos corren en paralelo y cada aplicación abre hasta 10 conexiones: con las 100 que Postgres permite por defecto no alcanzaba. El contenedor de pruebas ahora admite 400.
 
+**Construido en el PR 5** (datos de ejemplo, administradores y README del módulo):
+
+| Pieza | Cómo quedó |
+|---|---|
+| `npm run crear-admin` | Caso de uso `CrearAdministrador` (mismas reglas de contraseña que el registro) más un comando de consola que levanta la aplicación sin servidor HTTP. Lee `ADMIN_NOMBRE`, `ADMIN_CORREO` y `ADMIN_CONTRASENA` del entorno: la contraseña **no** va como argumento (quedaría en el historial y en la lista de procesos). Queda auditado con actor `null` (lo hace el servidor, no una persona). No tiene ruta en la API. |
+| `npm run semillas` | Crea a Andrea (`andrea@prueba.seniory.invalid`), a Doña Carmen, su vínculo de responsable, la aceptación de la política y el consentimiento `v1`. Los IDs son UUID v5 derivados de `f-andrea` y `am-carmen`: siempre los mismos, y repetir el comando no duplica nada ni toca la contraseña de Andrea. Exige `CONTRASENA_DE_PRUEBA` (sin valor por defecto, y con las mismas reglas de contraseña) y **se niega a correr con `NODE_ENV=production`**. |
+| Prueba de punta a punta | Los dos comandos se corrieron desde la consola contra una base temporal: crear, repetir, variables que faltan y correo repetido. Las pruebas de integración cubren la lógica con la aplicación completa. |
+| README del módulo | `backend/src/identidad/README.md`: reglas, `ConsultaDeIdentidad`, eventos, comandos y estructura. |
+
+**Desviaciones del plan en el PR 5**
+
+| Plan | Lo construido | Por qué |
+|---|---|---|
+| Administrador con contraseña de un solo uso que se cambia al primer ingreso | La contraseña que se da al crearlo es la definitiva. | No existe cambio de contraseña en M1 (ni recuperación: necesita el canal de correo, M5). Falta decidirlo: hay que agregar «cambiar contraseña» y una marca de «debe cambiarla» antes de producción. |
+| Autenticación en dos pasos | Sin cambios: sigue siendo la decisión 4, antes de producción (M10). | — |
+| `npm run semillas` para todos los módulos | Hoy solo siembra Identidad. | Cada módulo siembra lo suyo; un comando general los llamará cuando existan (M2 en adelante). |
+
 **Para quien ya tenga un `.env` local (PR 3):** hay que agregar `SECRETO_JWT_ACCESO` (genera uno con el comando de `.env.ejemplo`) y `COOKIES_SEGURAS=false`; sin ellos la aplicación no arranca.
 
 ### 4.2 Casos de uso
@@ -404,7 +421,7 @@ Ya no hay una versión de demostración: el recorrido que sigue el frontend es e
 | 2 ✅ | Persistencia: esquema `identidad`, migración, repositorios y pruebas de integración. El esquema y la migración ya existían (base de datos construida por adelantado): este PR agrega los repositorios. |
 | 3 ✅ | Autenticación: hash, tokens, `VerificadorDeTokens`, casos de uso de registro, inicio, renovación y cierre de sesión, endpoints de `/auth`, límites por ruta y pruebas de API. |
 | 4 ✅ | Perfil, adultos mayores, consentimientos, `ConsultaDeIdentidad`, eventos, auditoría y matriz de autorización. |
-| 5 | Fixtures de desarrollo, `crear-admin` y documentación del módulo. |
+| 5 ✅ | Fixtures de desarrollo, `crear-admin` y documentación del módulo. |
 | 6 | Ajustes para el BFF: ventana de gracia del refresco, `Origin` opcional y `X-Cliente-IP` (con pruebas). El trabajo de pantallas va en [F1](../frontend/F1-identidad.md). |
 | 7 | *(Opcional, o en M10)* Exportar y eliminar cuenta. |
 

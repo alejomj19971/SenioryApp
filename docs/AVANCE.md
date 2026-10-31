@@ -4,14 +4,14 @@
 
 ## Dónde vamos
 
-> **Backend: M0 con 7 de 8 PR hechos (falta el despliegue a staging, que espera el hosting) y M1 (Identidad) en marcha: PR 4 de 7 hecho (dominio, repositorios, autenticación, perfil y consentimientos).**
-> Siguiente paso: **M1 · PR 5 (fixtures de desarrollo y `crear-admin`)**. Pendiente de ustedes: revisar y aceptar el [ADR-03](./ADR-03.md) (comunicación) y el [ADR-04](./ADR-04.md) (stack) y ver la CI en verde en GitHub.
+> **Backend: M0 con 7 de 8 PR hechos (falta el despliegue a staging, que espera el hosting) y M1 (Identidad) en marcha: PR 5 de 7 hecho (dominio, repositorios, autenticación, perfil, consentimientos, datos de ejemplo y administradores).**
+> Siguiente paso: **M1 · PR 6 (ajustes para el BFF)**. Pendiente de ustedes: revisar y aceptar el [ADR-03](./ADR-03.md) (comunicación) y el [ADR-04](./ADR-04.md) (stack) y ver la CI en verde en GitHub.
 >
 > El frontend sigue siendo el prototipo del pitch con datos de ejemplo; su integración con el backend empieza en F0, después de M0.
 
 ```
 Backend   M0 █████████████████▌░░  7 de 8 PR (falta el despliegue)
-          M1 ████████████░░░░░░░░  PR 4 de 7 (… autenticación, perfil y consentimientos)   ← aquí
+          M1 ███████████████░░░░░  PR 5 de 7 (… perfil, consentimientos, semillas y admin)   ← aquí
           M2 … M11                 pendientes
 Frontend  F0 … F9                  planes F0 y F1 propuestos; nada construido
 Base de datos  ████████████████████  completa (adelantada)
@@ -48,7 +48,8 @@ Base de datos  ████████████████████  com
 | M1 · PR 2 | Repositorios de Identidad con Drizzle: conflictos traducidos a errores de dominio, bloqueo de fila para los intentos de inicio de sesión y las renovaciones simultáneas. | ✅ commit `3deb712` |
 | M1 · PR 3 | Autenticación: registro, inicio de sesión, renovación y cierre (`/auth/*`), argon2id, tokens de acceso JWT y de refresco rotativos con detección de robo, bloqueo progresivo, lista de contraseñas comunes y `IdentidadModule`. | ✅ commit `a9d06c7` |
 | M1 · PR 4 | Perfil (`/yo`), personas mayores, consentimientos y el primer puerto de entrada (`ConsultaDeIdentidad`), con eventos, auditoría y la matriz de autorización. | ✅ commit `5f5f7a2` (ya en `main`) |
-| M1 · PR 5 → 7 | Fixtures de desarrollo y `crear-admin`; ajustes para el BFF; exportar y eliminar cuenta. | ⏭️ siguiente: PR 5 |
+| M1 · PR 5 | `npm run crear-admin`, `npm run semillas` (Andrea y Doña Carmen, solo fuera de producción) y README del módulo. | ✅ hecho, **sin commit** |
+| M1 · PR 6 → 7 | Ajustes para el BFF (verificación de `Origin`); exportar y eliminar cuenta (opcional). | ⏭️ siguiente: PR 6 |
 | M2 → M11 | Directorio, pagos, reservas, notificaciones, teleasistencia, mensajería, verificación, despliegue, IA. | Pendientes, en ese orden |
 
 **Cifras actuales:** 941 pruebas (unitarias y de arquitectura, y de integración y API contra Postgres real), cobertura del 98 %, lint y compilación limpios y 0 vulnerabilidades en las dependencias de producción.
@@ -77,7 +78,8 @@ Cada rama parte de la anterior. Se revisan con un PR encadenado por entrega (la 
 | 8 | `feat/m1-dominio` | M1 PR 1: dominio de Identidad. |
 | 9 | `feat/m1-persistencia` | M1 PR 2: repositorios. |
 | 10 | `feat/m1-autenticacion` | M1 PR 3: autenticación (ya está en `main`). |
-| 11 | `feat/m1-perfil` (actual) | M1 PR 4 y un arreglo de dependencias (ya en `main`). |
+| 11 | `feat/m1-perfil` | M1 PR 4 y un arreglo de dependencias (ya en `main`). |
+| 12 | `feat/m1-fixtures-y-admin` (actual) | M1 PR 5. **Solo en local.** |
 
 **La CI solo corre en el PR 6:** es la primera rama que tiene `.github/workflows/backend.yml`. Una vez fusionada en `main`, correrá en todos los PR que toquen `backend/`.
 

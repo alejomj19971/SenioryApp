@@ -25,6 +25,8 @@
     "bd:arriba": "docker compose up -d --wait",
     "bd:abajo": "docker compose down",
     "bd:generar": "drizzle-kit generate",
+    "crear-admin": "npm run build && node --env-file-if-exists=.env dist/identidad/infraestructura/entrada/consola/crear-administrador-cli.js",
+    "semillas": "npm run build && node --env-file-if-exists=.env dist/identidad/infraestructura/entrada/consola/semillas-cli.js",
     "bd:migrar": "npm run build && node --env-file-if-exists=.env dist/compartido/infraestructura/base-de-datos/migrar-cli.js"
   },
   "dependencies": {
