@@ -49,7 +49,7 @@ Base de datos  ████████████████████  com
 | M1 · PR 3 | Autenticación: registro, inicio de sesión, renovación y cierre (`/auth/*`), argon2id, tokens de acceso JWT y de refresco rotativos con detección de robo, bloqueo progresivo, lista de contraseñas comunes y `IdentidadModule`. | ✅ commit `a9d06c7` |
 | M1 · PR 4 | Perfil (`/yo`), personas mayores, consentimientos y el primer puerto de entrada (`ConsultaDeIdentidad`), con eventos, auditoría y la matriz de autorización. | ✅ commit `5f5f7a2` (ya en `main`) |
 | M1 · PR 5 | `npm run crear-admin`, `npm run semillas` (Andrea y Doña Carmen, solo fuera de producción) y README del módulo. | ✅ commit `f61d471` (ya en `main`) |
-| M1 · PR 6 | Cambiar y recuperar la contraseña: `olvidé mi contraseña`, enlace de 30 minutos y un solo uso, cierre de todas las sesiones y puerto del canal de correo. | ✅ hecho, **sin commit** |
+| M1 · PR 6 | Cambiar y recuperar la contraseña: `olvidé mi contraseña`, enlace de 30 minutos y un solo uso, cierre de todas las sesiones y puerto del canal de correo. | ✅ commit `d170900` (ya en `main`) |
 | M1 · PR 7 → 8 | Ajustes para el BFF (verificación de `Origin`); exportar y eliminar cuenta (opcional). | ⏭️ siguiente: PR 7 |
 | M2 → M11 | Directorio, pagos, reservas, notificaciones, teleasistencia, mensajería, verificación, despliegue, IA. | Pendientes, en ese orden |
 
@@ -81,7 +81,7 @@ Cada rama parte de la anterior. Se revisan con un PR encadenado por entrega (la 
 | 10 | `feat/m1-autenticacion` | M1 PR 3: autenticación (ya está en `main`). |
 | 11 | `feat/m1-perfil` | M1 PR 4 y un arreglo de dependencias (ya en `main`). |
 | 12 | `feat/m1-fixtures-y-admin` | M1 PR 5 (ya en `main`). |
-| 13 | `feat/m1-contrasena` (actual) | M1 PR 6. **Solo en local.** |
+| 13 | `feat/m1-contrasena` (actual) | M1 PR 6 (ya en `main`). |
 
 **La CI solo corre en el PR 6:** es la primera rama que tiene `.github/workflows/backend.yml`. Una vez fusionada en `main`, correrá en todos los PR que toquen `backend/`.
 
