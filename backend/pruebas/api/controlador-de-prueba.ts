@@ -21,6 +21,7 @@ import {
   NoAutenticado,
   RecursoNoEncontrado,
   ReglaDeNegocioIncumplida,
+  ServicioNoDisponible,
   SinPermiso,
 } from '../../src/compartido/dominio/errores.js';
 import {
@@ -67,6 +68,11 @@ const ERRORES = {
     new ReglaDeNegocioIncumplida(
       'No se puede reservar para una fecha pasada',
       'reservas.fecha_pasada',
+    ),
+  no_disponible: () =>
+    new ServicioNoDisponible(
+      'El envío de correos no está disponible',
+      'correo.no_disponible',
     ),
   inesperado: () => new Error('detalle interno secreto: contraseña=abc'),
 } as const;

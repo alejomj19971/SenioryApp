@@ -4,14 +4,14 @@
 
 ## Dónde vamos
 
-> **Backend: M0 con 7 de 8 PR hechos (falta el despliegue a staging, que espera el hosting) y M1 (Identidad) en marcha: PR 5 de 7 hecho (dominio, repositorios, autenticación, perfil, consentimientos, datos de ejemplo y administradores).**
-> Siguiente paso: **M1 · PR 6 (ajustes para el BFF)**. Pendiente de ustedes: revisar y aceptar el [ADR-03](./ADR-03.md) (comunicación) y el [ADR-04](./ADR-04.md) (stack) y ver la CI en verde en GitHub.
+> **Backend: M0 con 7 de 8 PR hechos (falta el despliegue a staging, que espera el hosting) y M1 (Identidad) en marcha: PR 6 de 8 hecho (… datos de ejemplo, administradores y recuperación de contraseña).**
+> Siguiente paso: **M1 · PR 7 (ajustes para el BFF)**. Pendiente de ustedes: revisar y aceptar el [ADR-03](./ADR-03.md) (comunicación) y el [ADR-04](./ADR-04.md) (stack) y ver la CI en verde en GitHub.
 >
 > El frontend sigue siendo el prototipo del pitch con datos de ejemplo; su integración con el backend empieza en F0, después de M0.
 
 ```
 Backend   M0 █████████████████▌░░  7 de 8 PR (falta el despliegue)
-          M1 ███████████████░░░░░  PR 5 de 7 (… perfil, consentimientos, semillas y admin)   ← aquí
+          M1 ████████████████░░░░  PR 6 de 8 (… semillas, admin y recuperar contraseña)   ← aquí
           M2 … M11                 pendientes
 Frontend  F0 … F9                  planes F0 y F1 propuestos; nada construido
 Base de datos  ████████████████████  completa (adelantada)
@@ -37,7 +37,7 @@ Base de datos  ████████████████████  com
 |---|---|---|
 | M0 · PR 1 | Proyecto NestJS 12, TypeScript estricto, oxlint, Prettier, Vitest, Node 24, `/salud`. | ✅ commit `d8383f0` |
 | M0 · PR 2 | Configuración validada con arranque seguro en producción, Postgres en Docker (puerto 5434), Drizzle y migrador. | ✅ commit `1b8b6b6` |
-| Base de datos | 8 esquemas, 37 tablas, 10 migraciones, 3 triggers, 253 pruebas de restricciones. Se adelantó: estaba repartida entre los módulos. | ✅ commit `45e00b2` |
+| Base de datos | 8 esquemas, 38 tablas, 11 migraciones, 3 triggers, 258 pruebas de restricciones. Se adelantó: estaba repartida entre los módulos. | ✅ commit `45e00b2` |
 | M0 · PR 3 | Dominio compartido: `Dinero`, `FechaCivil`, `Id`, errores, puertos y sobre de eventos. | ✅ commit `e9eaaad` |
 | M0 · PR 4 | Unidad de trabajo, outbox, despachador, sondeo y auditoría. | ✅ commit `1bfbc75` |
 | M0 · PR 5 | Capa HTTP: problem+json, validación, `X-Request-Id`, autenticación que deniega por defecto, roles, límite de peticiones con IP real del BFF, `helmet`, CORS, logs con redacción, `/salud/listo` y Swagger. | ✅ commit `e417dbd` |
@@ -49,7 +49,8 @@ Base de datos  ████████████████████  com
 | M1 · PR 3 | Autenticación: registro, inicio de sesión, renovación y cierre (`/auth/*`), argon2id, tokens de acceso JWT y de refresco rotativos con detección de robo, bloqueo progresivo, lista de contraseñas comunes y `IdentidadModule`. | ✅ commit `a9d06c7` |
 | M1 · PR 4 | Perfil (`/yo`), personas mayores, consentimientos y el primer puerto de entrada (`ConsultaDeIdentidad`), con eventos, auditoría y la matriz de autorización. | ✅ commit `5f5f7a2` (ya en `main`) |
 | M1 · PR 5 | `npm run crear-admin`, `npm run semillas` (Andrea y Doña Carmen, solo fuera de producción) y README del módulo. | ✅ commit `f61d471` (ya en `main`) |
-| M1 · PR 6 → 7 | Ajustes para el BFF (verificación de `Origin`); exportar y eliminar cuenta (opcional). | ⏭️ siguiente: PR 6 |
+| M1 · PR 6 | Cambiar y recuperar la contraseña: `olvidé mi contraseña`, enlace de 30 minutos y un solo uso, cierre de todas las sesiones y puerto del canal de correo. | ✅ hecho, **sin commit** |
+| M1 · PR 7 → 8 | Ajustes para el BFF (verificación de `Origin`); exportar y eliminar cuenta (opcional). | ⏭️ siguiente: PR 7 |
 | M2 → M11 | Directorio, pagos, reservas, notificaciones, teleasistencia, mensajería, verificación, despliegue, IA. | Pendientes, en ese orden |
 
 **Cifras actuales:** 941 pruebas (unitarias y de arquitectura, y de integración y API contra Postgres real), cobertura del 98 %, lint y compilación limpios y 0 vulnerabilidades en las dependencias de producción.
@@ -79,7 +80,8 @@ Cada rama parte de la anterior. Se revisan con un PR encadenado por entrega (la 
 | 9 | `feat/m1-persistencia` | M1 PR 2: repositorios. |
 | 10 | `feat/m1-autenticacion` | M1 PR 3: autenticación (ya está en `main`). |
 | 11 | `feat/m1-perfil` | M1 PR 4 y un arreglo de dependencias (ya en `main`). |
-| 12 | `feat/m1-fixtures-y-admin` (actual) | M1 PR 5 (ya en `main`). |
+| 12 | `feat/m1-fixtures-y-admin` | M1 PR 5 (ya en `main`). |
+| 13 | `feat/m1-contrasena` (actual) | M1 PR 6. **Solo en local.** |
 
 **La CI solo corre en el PR 6:** es la primera rama que tiene `.github/workflows/backend.yml`. Una vez fusionada en `main`, correrá en todos los PR que toquen `backend/`.
 
@@ -102,6 +104,7 @@ Cada rama parte de la anterior. Se revisan con un PR encadenado por entrega (la 
 |---|---|---|
 | Hosting de staging y producción | Equipo | M0 PR 7, M10 |
 | Cuenta de Sentry (plan gratuito) y su `SENTRY_DSN` | Equipo | Reporte de errores antes de producción (M10) |
+| **Proveedor de correo** (para recuperar la contraseña, y luego los avisos) | Equipo | **Lanzamiento**: sin él, `olvidé mi contraseña` responde 503 en producción (M5) |
 | Pasarela de pagos (que acepte marketplace y pagos al cuidador) | Empresarial | M7 |
 | Bolsa en pesos u horas, y sus paquetes y descuentos | Empresarial | M7 |
 | Política de cancelación y reembolso | Empresarial + legal | M4, M7 |

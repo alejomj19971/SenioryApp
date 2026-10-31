@@ -46,7 +46,7 @@ Entre el 22 y el 27 de octubre de 2026 se construyó el **módulo M0** (platafor
 
 ### D2. Persistencia: PostgreSQL 17 y Drizzle ORM, un esquema por módulo
 
-- Un **esquema de Postgres por módulo**: 8 esquemas y 37 tablas.
+- Un **esquema de Postgres por módulo**: 8 esquemas y 38 tablas.
 - **Sin claves foráneas entre esquemas.** Entre módulos solo se guardan IDs; la coherencia se mantiene con puertos y eventos (D7). Una prueba lo verifica.
 - Las reglas críticas las hace cumplir **también la base**, con `CHECK`, índices únicos parciales y tres triggers:
   - no hay doble reserva de un cuidador en la misma franja;

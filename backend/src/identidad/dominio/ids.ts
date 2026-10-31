@@ -7,5 +7,6 @@ export type AdultoMayorId = Id<'AdultoMayor'>;
 export type VinculoId = Id<'Vinculo'>;
 export type ConsentimientoId = Id<'Consentimiento'>;
 export type SesionDeRefrescoId = Id<'SesionDeRefresco'>;
+export type TokenDeRecuperacionId = Id<'TokenDeRecuperacion'>;
 // Todas las sesiones que descienden de un mismo inicio de sesión comparten familia.
 export type FamiliaDeSesionesId = Id<'FamiliaDeSesiones'>;

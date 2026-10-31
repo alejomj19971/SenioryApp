@@ -8,6 +8,7 @@ import { Correo } from '../../../dominio/correo.js';
 import { Credencial } from '../../../dominio/credencial.js';
 import { NombrePersona } from '../../../dominio/nombre-persona.js';
 import { SesionDeRefresco } from '../../../dominio/sesion-de-refresco.js';
+import { TokenDeRecuperacion } from '../../../dominio/token-de-recuperacion.js';
 import { TelefonoE164 } from '../../../dominio/telefono-e164.js';
 import { Usuario, type EstadoDeUsuario } from '../../../dominio/usuario.js';
 import {
@@ -23,6 +24,7 @@ import type {
   consentimientos,
   credenciales,
   sesionesRefresco,
+  tokensDeRecuperacion,
   usuarios,
   vinculos,
 } from './identidad.esquema.js';
@@ -86,6 +88,19 @@ export function usuarioDeFilas(
     creadoEn: fila.creadoEn,
     actualizadoEn: fila.actualizadoEn,
     credencial: credencialDeFila(credencial),
+  });
+}
+
+export function tokenDeRecuperacionDeFila(
+  fila: typeof tokensDeRecuperacion.$inferSelect,
+): TokenDeRecuperacion {
+  return TokenDeRecuperacion.reconstruir({
+    id: id(fila.id),
+    usuarioId: id(fila.usuarioId),
+    hashDelToken: fila.hashDelToken,
+    creadoEn: fila.creadoEn,
+    expiraEn: fila.expiraEn,
+    usadoEn: fila.usadoEn,
   });
 }
 

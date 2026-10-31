@@ -21,13 +21,20 @@ import {
   type ResultadoDeAutenticacion,
 } from '../../../aplicacion/casos-de-uso/registrar-familiar.js';
 import { RenovarSesion } from '../../../aplicacion/casos-de-uso/renovar-sesion.js';
+import { RestablecerContrasena } from '../../../aplicacion/casos-de-uso/restablecer-contrasena.js';
+import { SolicitarRecuperacion } from '../../../aplicacion/casos-de-uso/solicitar-recuperacion.js';
 import type { VistaDeUsuario } from '../../../aplicacion/vistas.js';
 import {
   borrarCookiesDeSesion,
   COOKIE_DE_REFRESCO,
   escribirCookiesDeSesion,
 } from './cookies-de-sesion.js';
-import { InicioDeSesionDto, RegistroDto } from './dto-de-autenticacion.js';
+import {
+  InicioDeSesionDto,
+  RegistroDto,
+  RestablecimientoDeContrasenaDto,
+  SolicitudDeRecuperacionDto,
+} from './dto-de-autenticacion.js';
 
 const UN_MINUTO_MS = 60_000;
 
@@ -44,6 +51,10 @@ export class AuthController {
     @Inject(IniciarSesion) private readonly iniciar: IniciarSesion,
     @Inject(RenovarSesion) private readonly renovar: RenovarSesion,
     @Inject(CerrarSesion) private readonly cerrar: CerrarSesion,
+    @Inject(SolicitarRecuperacion)
+    private readonly solicitarRecuperacion: SolicitarRecuperacion,
+    @Inject(RestablecerContrasena)
+    private readonly restablecer: RestablecerContrasena,
     @Inject(CONFIGURACION) private readonly configuracion: Configuracion,
   ) {}
 
@@ -108,6 +119,33 @@ export class AuthController {
   ): Promise<void> {
     await this.cerrar.ejecutar(tokenDeRefrescoDe(peticion));
     borrarCookiesDeSesion(respuesta, this.configuracion.cookiesSeguras);
+  }
+
+  // «Olvidé mi contraseña». Responde 202 exista o no la cuenta (así no sirve para averiguar qué correos
+  // tienen cuenta); 503 si todavía no hay un canal para enviar el enlace. Límite estricto por IP: cada
+  // llamada puede significar un correo a una dirección ajena.
+  @Publico()
+  @Throttle({ default: { limit: 3, ttl: UN_MINUTO_MS } })
+  @HttpCode(HttpStatus.ACCEPTED)
+  @Post('olvide-contrasena')
+  async olvideContrasena(
+    @Body() cuerpo: SolicitudDeRecuperacionDto,
+  ): Promise<void> {
+    await this.solicitarRecuperacion.ejecutar(cuerpo.correo);
+  }
+
+  // Elegir una contraseña nueva con el enlace del correo. No inicia sesión: se entra con la nueva.
+  @Publico()
+  @Throttle({ default: { limit: 5, ttl: UN_MINUTO_MS } })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @Post('restablecer-contrasena')
+  async restablecerContrasena(
+    @Body() cuerpo: RestablecimientoDeContrasenaDto,
+  ): Promise<void> {
+    await this.restablecer.ejecutar({
+      token: cuerpo.token,
+      contrasenaNueva: cuerpo.contrasenaNueva,
+    });
   }
 
   private conSesion(

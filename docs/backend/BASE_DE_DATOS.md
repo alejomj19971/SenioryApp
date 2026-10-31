@@ -4,7 +4,7 @@
 |---|---|
 | **Motor** | PostgreSQL 17 (misma versión mayor en local, pruebas y hosting) |
 | **Fecha** | 2026-10-24 |
-| **Estado** | **Construida** el 2026-10-26 (rama `feat/base-de-datos`): 8 esquemas, 37 tablas, 10 migraciones y 253 pruebas de restricciones contra un Postgres real |
+| **Estado** | **Construida** el 2026-10-26 (rama `feat/base-de-datos`): 8 esquemas, 38 tablas, 11 migraciones y 258 pruebas de restricciones contra un Postgres real |
 | **Base** | [ADR-01](../ADR-01.md) (un esquema por módulo, ningún módulo lee las tablas de otro, E13) · [PLAN_BACKEND](../PLAN_BACKEND_SENIORY.md) · planes de cada módulo en esta carpeta |
 
 Este documento es el diseño **lógico** completo y **ya está implementado**: los esquemas Drizzle viven en `backend/src/<modulo>/infraestructura/salida/persistencia/<modulo>.esquema.ts` y las migraciones en `backend/drizzle/`. Se construyeron todas juntas, una migración por módulo y en el orden de dependencias, para tener la base completa y probada desde el principio; cada módulo ajusta lo que necesite con migraciones nuevas cuando llegue su turno.
@@ -25,11 +25,11 @@ Este documento es el diseño **lógico** completo y **ya está implementado**: l
 
 ## 1. Mapa general
 
-8 esquemas y 37 tablas. **Las flechas entre esquemas son referencias por ID sin clave foránea**: cada módulo es dueño de sus datos y solo conoce los IDs de los demás.
+8 esquemas y 38 tablas. **Las flechas entre esquemas son referencias por ID sin clave foránea**: cada módulo es dueño de sus datos y solo conoce los IDs de los demás.
 
 ```mermaid
 flowchart LR
-    subgraph identidad["identidad (7)"]
+    subgraph identidad["identidad (8)"]
         U[usuarios]
         AM[adultos_mayores]
     end
@@ -72,7 +72,7 @@ flowchart LR
 | Esquema | Módulo | Tablas | ¿Datos sensibles? |
 |---|---|---|---|
 | `compartido` | M0 | `outbox`, `eventos_consumidos`, `auditoria` | Auditoría (IDs, sin datos personales) |
-| `identidad` | M1 | `usuarios`, `credenciales`, `sesiones_refresco`, `adultos_mayores`, `vinculos`, `consentimientos`, `aceptaciones_de_politica` | Datos personales |
+| `identidad` | M1 | `usuarios`, `credenciales`, `sesiones_refresco`, `tokens_de_recuperacion`, `adultos_mayores`, `vinculos`, `consentimientos`, `aceptaciones_de_politica` | Datos personales |
 | `directorio` | M2, M9 | `cuidadores`, `verificaciones`, `documentos`, `resenas` | Datos personales y documentos de identidad |
 | `pagos` | M3, M7 | `politicas_de_precios`, `pagos`, `eventos_de_pasarela`, `paquetes_de_bolsa`, `bolsas`, `movimientos_de_bolsa`, `liquidaciones`, `conciliaciones` | Datos financieros (sin tarjetas) |
 | `reservas` | M4 | `franjas`, `servicios`, `historial_de_estados`, `calificaciones` | — |
@@ -205,6 +205,7 @@ erDiagram
 | **usuarios** | `id`, `correo` citext, `nombre` text, `telefono` text null, `rol` text, `estado` text, `correo_verificado_en` timestamptz null, `creado_en`, `actualizado_en` | `UNIQUE (correo)`; `rol IN ('familiar','adulto_mayor','cuidador','administrador')`; `estado IN ('activo','eliminado')`; `char_length(nombre) BETWEEN 1 AND 100`; E.164 en `telefono` |
 | **credenciales** | `usuario_id` PK/FK, `hash` text, `intentos_fallidos` smallint, `bloqueado_hasta` timestamptz null, `actualizado_en` | `intentos_fallidos >= 0`; `ON DELETE CASCADE` desde `usuarios` |
 | **sesiones_refresco** | `id`, `usuario_id` FK, `familia_id` uuid, `hash_del_token` bytea, `emitida_en`, `expira_en`, `reemplazada_en` null, `reemplazada_por` uuid null (FK a la misma tabla), `revocada_en` null | `UNIQUE (hash_del_token)`; índices `(familia_id)` y `(usuario_id)`; `expira_en > emitida_en` |
+| **tokens_de_recuperacion** | `id`, `usuario_id` FK (borrado en cascada), `hash_del_token` bytea, `creado_en`, `expira_en`, `usado_en` null | `UNIQUE (hash_del_token)`; `octet_length(hash_del_token) = 32` (solo cabe un SHA-256, nunca el token en claro); `expira_en > creado_en`; índice `(usuario_id, creado_en)`. Sirve una sola vez y por 30 minutos (migración 0010) |
 | **adultos_mayores** | `id`, `nombre`, `fecha_de_nacimiento` date, `foto_url` null, `usuario_id` uuid null FK, `creado_por` uuid FK, `creado_en`, `actualizado_en` | `UNIQUE (usuario_id)` (nulos permitidos); la edad se calcula, no se guarda |
 | **vinculos** | `id`, `familiar_id` FK, `adulto_mayor_id` FK, `parentesco` text, `es_responsable` bool, `estado` text, `creado_en`, `revocado_en` null | Único parcial `(familiar_id, adulto_mayor_id) WHERE estado = 'activo'`; `parentesco IN ('hijo_hija','nieto_nieta','conyuge','hermano_hermana','otro')`; `estado IN ('activo','revocado')` |
 | **consentimientos** | `id`, `adulto_mayor_id` FK, `finalidad` text, `otorgado_por` FK, `calidad` text, `version_del_texto` text, `otorgado_en`, `revocado_en` null | Único parcial `(adulto_mayor_id, finalidad) WHERE revocado_en IS NULL`; `calidad IN ('titular','representante')`; `finalidad IN ('datos_de_salud')` |

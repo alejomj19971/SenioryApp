@@ -94,6 +94,31 @@ export const sesionesRefresco = esquemaIdentidad.table(
   ],
 );
 
+// Enlaces para recuperar la contraseña. Solo se guarda el hash del token (el token viaja únicamente en
+// el enlace que recibe la persona) y cada enlace sirve una sola vez y por poco tiempo.
+export const tokensDeRecuperacion = esquemaIdentidad.table(
+  'tokens_de_recuperacion',
+  {
+    id: uuid('id').primaryKey(),
+    usuarioId: uuid('usuario_id')
+      .notNull()
+      .references(() => usuarios.id, { onDelete: 'cascade' }),
+    hashDelToken: bytea('hash_del_token').notNull(),
+    creadoEn: instante('creado_en').notNull().defaultNow(),
+    expiraEn: instante('expira_en').notNull(),
+    usadoEn: instante('usado_en'),
+  },
+  (t) => [
+    unique('tokens_de_recuperacion_hash_unico').on(t.hashDelToken),
+    check(
+      'tokens_de_recuperacion_hash_valido',
+      sql`octet_length(hash_del_token) = 32`,
+    ),
+    check('tokens_de_recuperacion_vigencia_valida', sql`expira_en > creado_en`),
+    index('tokens_de_recuperacion_usuario_idx').on(t.usuarioId, t.creadoEn),
+  ],
+);
+
 export const adultosMayores = esquemaIdentidad.table(
   'adultos_mayores',
   {

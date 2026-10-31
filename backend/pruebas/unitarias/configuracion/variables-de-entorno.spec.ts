@@ -67,6 +67,7 @@ describe('validarVariables', () => {
         cookiesSeguras: false,
         versionPoliticaVigente: 'v1',
         versionConsentimientoSaludVigente: 'v1',
+        canalDeRecuperacion: 'deshabilitado',
       });
     });
 
@@ -332,6 +333,41 @@ describe('validarVariables', () => {
             }),
           ).join(),
         ).toContain('COOKIES_SEGURAS debe ser true');
+      },
+    );
+
+    it('el canal de recuperación es «deshabilitado» por defecto: no se finge un envío que no existe', () => {
+      expect(
+        configuracionDesdeVariables(validarVariables(entornoBase()))
+          .canalDeRecuperacion,
+      ).toBe('deshabilitado');
+    });
+
+    it('rechaza un canal de recuperación desconocido', () => {
+      expect(
+        problemasDe(entornoBase({ CANAL_DE_RECUPERACION: 'paloma' })).join(),
+      ).toContain('CANAL_DE_RECUPERACION');
+    });
+
+    it('en producción rechaza el canal «consola»: el enlace quedaría escrito en el log', () => {
+      expect(
+        problemasDe(
+          entornoDeProduccion({ CANAL_DE_RECUPERACION: 'consola' }),
+        ).join(),
+      ).toContain('CANAL_DE_RECUPERACION no puede ser consola');
+    });
+
+    it.each(['development', 'test', 'staging'])(
+      'en %s admite el canal «consola»',
+      (entorno) => {
+        expect(
+          problemasDe(
+            entornoDeProduccion({
+              NODE_ENV: entorno,
+              CANAL_DE_RECUPERACION: 'consola',
+            }),
+          ),
+        ).toEqual([]);
       },
     );
 

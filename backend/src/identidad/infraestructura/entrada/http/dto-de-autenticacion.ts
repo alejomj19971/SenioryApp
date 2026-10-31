@@ -49,6 +49,40 @@ export class RegistroDto {
   versionPolitica!: string;
 }
 
+export class SolicitudDeRecuperacionDto {
+  // Sin validar el formato del correo: un correo mal escrito responde igual que uno sin cuenta.
+  @IsString({ message: 'El correo es obligatorio' })
+  @MaxLength(254, { message: 'El correo no es válido' })
+  correo!: string;
+}
+
+export class RestablecimientoDeContrasenaDto {
+  // El token del enlace: 43 caracteres. Un largo muy distinto no puede ser un enlace nuestro.
+  @IsString({ message: 'El enlace no es válido' })
+  @Length(20, 200, { message: 'El enlace no es válido' })
+  token!: string;
+
+  @IsString({ message: 'La contraseña es obligatoria' })
+  @MaxLength(TOPE_DE_CONTRASENA, {
+    message: 'La contraseña debe tener entre 10 y 128 caracteres',
+  })
+  contrasenaNueva!: string;
+}
+
+export class CambioDeContrasenaDto {
+  @IsString({ message: 'La contraseña actual es obligatoria' })
+  @MaxLength(TOPE_DE_CONTRASENA, {
+    message: 'La contraseña actual no es válida',
+  })
+  contrasenaActual!: string;
+
+  @IsString({ message: 'La contraseña nueva es obligatoria' })
+  @MaxLength(TOPE_DE_CONTRASENA, {
+    message: 'La contraseña debe tener entre 10 y 128 caracteres',
+  })
+  contrasenaNueva!: string;
+}
+
 export class InicioDeSesionDto {
   @IsString({ message: 'El correo es obligatorio' })
   @MaxLength(254, { message: 'El correo no es válido' })

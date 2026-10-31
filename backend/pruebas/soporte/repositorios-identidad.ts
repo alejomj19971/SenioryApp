@@ -13,6 +13,7 @@ import { RepositorioAceptacionesDePoliticaDrizzle } from '../../src/identidad/in
 import { RepositorioAdultosMayoresDrizzle } from '../../src/identidad/infraestructura/salida/persistencia/repositorio-adultos-mayores-drizzle.js';
 import { RepositorioConsentimientosDrizzle } from '../../src/identidad/infraestructura/salida/persistencia/repositorio-consentimientos-drizzle.js';
 import { RepositorioSesionesDrizzle } from '../../src/identidad/infraestructura/salida/persistencia/repositorio-sesiones-drizzle.js';
+import { RepositorioTokensDeRecuperacionDrizzle } from '../../src/identidad/infraestructura/salida/persistencia/repositorio-tokens-de-recuperacion-drizzle.js';
 import { RepositorioUsuariosDrizzle } from '../../src/identidad/infraestructura/salida/persistencia/repositorio-usuarios-drizzle.js';
 import { RepositorioVinculosDrizzle } from '../../src/identidad/infraestructura/salida/persistencia/repositorio-vinculos-drizzle.js';
 import { conectarDrizzle } from './bd.js';
@@ -27,6 +28,7 @@ export function montarRepositoriosDeIdentidad() {
     contexto,
     usuarios: new RepositorioUsuariosDrizzle(contexto),
     sesiones: new RepositorioSesionesDrizzle(contexto),
+    tokensDeRecuperacion: new RepositorioTokensDeRecuperacionDrizzle(contexto),
     adultosMayores: new RepositorioAdultosMayoresDrizzle(contexto),
     vinculos: new RepositorioVinculosDrizzle(contexto),
     consentimientos: new RepositorioConsentimientosDrizzle(contexto),

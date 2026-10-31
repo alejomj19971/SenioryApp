@@ -111,6 +111,17 @@ export class Credencial {
     this.datos.actualizadoEn = ahora;
   }
 
+  // La persona eligió una contraseña nueva (recuperó la cuenta o la cambió). A diferencia de
+  // `cambiarHash`, también levanta el bloqueo y reinicia los intentos: quien acaba de demostrar que
+  // controla su correo (o su contraseña actual) no tiene por qué seguir fuera.
+  restablecer(hash: string, ahora: Date): void {
+    exigirHash(hash);
+    this.datos.hash = hash;
+    this.datos.intentosFallidos = 0;
+    this.datos.bloqueadoHasta = null;
+    this.datos.actualizadoEn = ahora;
+  }
+
   // Cambia el hash (por ejemplo, al subir los parámetros de argon2). No toca el control de intentos.
   cambiarHash(hash: string, ahora: Date): void {
     exigirHash(hash);

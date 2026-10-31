@@ -31,6 +31,9 @@ export const NIVELES_DE_LOG = [
 ] as const;
 export type NivelDeLog = (typeof NIVELES_DE_LOG)[number];
 
+export const CANALES_DE_RECUPERACION = ['consola', 'deshabilitado'] as const;
+export type CanalDeRecuperacion = (typeof CANALES_DE_RECUPERACION)[number];
+
 const LARGO_MINIMO_SECRETO_BFF = 32;
 // 256 bits: el mínimo para firmar con HS256.
 const LARGO_MINIMO_SECRETO_JWT = 32;
@@ -115,6 +118,14 @@ export class VariablesDeEntorno {
   })
   VERSION_POLITICA_VIGENTE: string = 'v1';
 
+  // Por dónde llega el enlace para recuperar la contraseña. «consola» lo escribe en el log del servidor
+  // (solo desarrollo y pruebas: en producción no se admite). «deshabilitado» deja la recuperación
+  // respondiendo «no disponible» hasta que exista un canal real de correo (M5).
+  @IsIn(CANALES_DE_RECUPERACION, {
+    message: `CANAL_DE_RECUPERACION debe ser uno de: ${CANALES_DE_RECUPERACION.join(', ')}`,
+  })
+  CANAL_DE_RECUPERACION: CanalDeRecuperacion = 'deshabilitado';
+
   // Versión del texto del consentimiento para tratar datos de salud que se pide aceptar.
   @Matches(/^[A-Za-z0-9][A-Za-z0-9._-]{0,19}$/, {
     message:
@@ -149,6 +160,7 @@ export interface Configuracion {
   cookiesSeguras: boolean;
   versionPoliticaVigente: string;
   versionConsentimientoSaludVigente: string;
+  canalDeRecuperacion: CanalDeRecuperacion;
 }
 
 export class ErrorDeConfiguracion extends Error {
@@ -264,6 +276,11 @@ function reglasAdicionales(variables: VariablesDeEntorno): string[] {
         'En producción, NIVEL_DE_LOG no puede ser debug ni trace (podrían registrarse datos personales)',
       );
     }
+    if (variables.CANAL_DE_RECUPERACION === 'consola') {
+      problemas.push(
+        'En producción, CANAL_DE_RECUPERACION no puede ser consola (el enlace de recuperación quedaría escrito en el log)',
+      );
+    }
     if (variables.INTERVALO_SONDEO_OUTBOX_MS === 0) {
       problemas.push(
         'En producción, INTERVALO_SONDEO_OUTBOX_MS no puede ser 0 (los eventos pendientes nunca se entregarían)',
@@ -329,5 +346,6 @@ export function configuracionDesdeVariables(
     versionPoliticaVigente: variables.VERSION_POLITICA_VIGENTE,
     versionConsentimientoSaludVigente:
       variables.VERSION_CONSENTIMIENTO_SALUD_VIGENTE,
+    canalDeRecuperacion: variables.CANAL_DE_RECUPERACION,
   };
 }

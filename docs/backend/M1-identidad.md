@@ -176,6 +176,28 @@ Que cada persona entre a Seniory con su propia cuenta, con un rol, y que el sist
 | Autenticación en dos pasos | Sin cambios: sigue siendo la decisión 4, antes de producción (M10). | — |
 | `npm run semillas` para todos los módulos | Hoy solo siembra Identidad. | Cada módulo siembra lo suyo; un comando general los llamará cuando existan (M2 en adelante). |
 
+**Construido en el PR 6** (cambiar y recuperar la contraseña):
+
+| Pieza | Cómo quedó |
+|---|---|
+| Endpoints | `POST /auth/olvide-contrasena` (3/min por IP), `POST /auth/restablecer-contrasena` (5/min) y `PATCH /yo/contrasena` (5/min, con sesión). |
+| Tabla nueva | `identidad.tokens_de_recuperacion` (migración 0010): solo el SHA-256 del token (`CHECK` de 32 bytes: guardar el token en claro es imposible), `expira_en > creado_en`, único por hash. Quedan 38 tablas. |
+| Olvidé mi contraseña | Responde **202 exista o no la cuenta** (y también con un correo mal escrito): si no, serviría para averiguar qué correos tienen cuenta. El enlace tiene un token de 256 bits, **vence a los 30 minutos**, sirve **una sola vez** y pedir otro invalida el anterior. No manda otro correo antes de un minuto (no sirve para llenar un buzón ajeno). El envío no se espera (un correo lento delataría las cuentas que existen); si falla, queda auditado como `error`. |
+| Restablecer | El enlace vencido, usado, inventado o de una cuenta eliminada responde **exactamente lo mismo** (400 `recuperacion.enlace_no_valido`); el motivo real solo queda en la auditoría. Una contraseña débil se rechaza **sin gastar** el enlace. Al terminar: se **cierran todas las sesiones** de la cuenta, se levanta el bloqueo por intentos fallidos y se gastan los demás enlaces pendientes. No inicia sesión. Dos usos simultáneos del mismo enlace: uno gana, el otro recibe 400. |
+| Cambiar con la contraseña actual | Cierra las sesiones de todos los dispositivos y deja una nueva para quien la cambió. Equivocarse con la actual **cuenta como intento fallido** de inicio de sesión: este endpoint no sirve para adivinar la contraseña con una sesión robada (5 errores bloquean la cuenta). La nueva no puede ser igual a la actual. |
+| Canal de envío | Puerto `EnviadorDeRecuperacion`. `CANAL_DE_RECUPERACION`: `consola` escribe el enlace en el log (**solo desarrollo y pruebas; la configuración lo rechaza en producción**) y `deshabilitado` (por defecto) responde **503** a todas las cuentas hasta que exista un correo real (M5). Nada se simula en producción. |
+| Error nuevo | `ServicioNoDisponible` (503) en `compartido`: una función que hoy no puede cumplirse se dice, no se finge. |
+| Auditoría | `solicitar_recuperacion` (permitido, denegado con motivo o error de envío), `restablecer_contrasena` y `cambiar_contrasena`. Nunca el token ni las contraseñas. |
+
+**Desviaciones y límites del PR 6**
+
+| Tema | Decisión |
+|---|---|
+| Contraseña de un solo uso del administrador, a cambiar al primer ingreso | **Sigue pendiente (M10, junto con la autenticación en dos pasos).** Exigirlo en el servidor obligaría a que el guard global conozca esa marca en cada token. Mientras tanto un administrador puede cambiarla con `PATCH /yo/contrasena`. |
+| Correo real | **Falta.** No hay proveedor de correo elegido: sin él, en producción `/auth/olvide-contrasena` responde 503. Es el requisito para lanzar (decisión abierta del equipo). |
+| El token en el outbox | El enlace **no** viaja como evento: un evento no puede llevar un secreto. Cuando exista Notificaciones (M5) el envío se moverá allí con reintentos (hoy, si el canal falla, la persona vuelve a pedir otro enlace). |
+| Limpieza de enlaces vencidos | El repositorio ya trae `eliminarVencidosAntesDe`; la tarea programada diaria (junto con la de sesiones) llega en M10. |
+
 **Para quien ya tenga un `.env` local (PR 3):** hay que agregar `SECRETO_JWT_ACCESO` (genera uno con el comando de `.env.ejemplo`) y `COOKIES_SEGURAS=false`; sin ellos la aplicación no arranca.
 
 ### 4.2 Casos de uso
@@ -191,6 +213,9 @@ Que cada persona entre a Seniory con su propia cuenta, con un rol, y que el sist
 | `RegistrarAdultoMayor` | familiar | nombre, fecha de nacimiento, parentesco | adulto mayor y vínculo de responsable, en una transacción | 400 |
 | `OtorgarConsentimiento` | familiar vinculado o el adulto mayor | finalidad, versión del texto, calidad | consentimiento vigente | 404 si no hay vínculo; 409 si ya hay uno vigente |
 | `RevocarConsentimiento` | quien puede otorgarlo | id del consentimiento | revocado | 404 |
+| `SolicitarRecuperacion` | público, 3/min por IP | correo | 202 siempre (503 si no hay canal) |
+| `RestablecerContrasena` | público con el enlace del correo | token, contraseña nueva | contraseña cambiada y todas las sesiones cerradas | 400 enlace no válido o contraseña débil |
+| `CambiarContrasena` | autenticado | contraseña actual y nueva | contraseña cambiada, demás sesiones cerradas y una sesión nueva | 400 contraseña actual incorrecta |
 | `CrearAdministrador` | línea de comandos | nombre, correo, contraseña desde variables de entorno | usuario `administrador` | 409 |
 
 Los derechos de exportar y suprimir datos (Ley 1581) se diseñan aquí, pero se pueden implementar en M10 si el tiempo aprieta: `ExportarMisDatos` y `EliminarMiCuenta` (anonimiza nombre, correo y teléfono, revoca sesiones y vínculos, emite `CuentaEliminada`).
@@ -257,6 +282,9 @@ Todas bajo `/api/v1`. Respuestas de error en `problem+json` (M0).
 | `POST /auth/login` | público, límite 10/min por IP | `{ correo, contrasena }` | 200 `{ usuario }` + cookies |
 | `POST /auth/refresh` | cookie de refresco | — | 204 + cookies nuevas |
 | `POST /auth/logout` | público con cookie de refresco | — | 204, cookies borradas |
+| `POST /auth/olvide-contrasena` | público, límite 3/min por IP | `{ correo }` | 202 (siempre igual) · 503 sin canal de correo |
+| `POST /auth/restablecer-contrasena` | público, límite 5/min por IP | `{ token, contrasenaNueva }` | 204 · 400 enlace no válido |
+| `PATCH /yo/contrasena` | autenticado, límite 5/min por IP | `{ contrasenaActual, contrasenaNueva }` | 204 + cookies nuevas |
 | `GET /yo` | autenticado | — | 200 (ejemplo abajo) |
 | `PATCH /yo` | autenticado | `{ nombre?, telefono? }` | 200 `{ usuario }` |
 | `POST /adultos-mayores` | familiar | `{ nombre, fechaDeNacimiento, parentesco }` | 201 `{ adultoMayor }` |
@@ -422,8 +450,9 @@ Ya no hay una versión de demostración: el recorrido que sigue el frontend es e
 | 3 ✅ | Autenticación: hash, tokens, `VerificadorDeTokens`, casos de uso de registro, inicio, renovación y cierre de sesión, endpoints de `/auth`, límites por ruta y pruebas de API. |
 | 4 ✅ | Perfil, adultos mayores, consentimientos, `ConsultaDeIdentidad`, eventos, auditoría y matriz de autorización. |
 | 5 ✅ | Fixtures de desarrollo, `crear-admin` y documentación del módulo. |
-| 6 | Ajustes para el BFF: ventana de gracia del refresco, `Origin` opcional y `X-Cliente-IP` (con pruebas). El trabajo de pantallas va en [F1](../frontend/F1-identidad.md). |
-| 7 | *(Opcional, o en M10)* Exportar y eliminar cuenta. |
+| 6 ✅ | Cambiar y recuperar la contraseña (`olvidé mi contraseña`), con el puerto del canal de envío. |
+| 7 | Ajustes para el BFF: ventana de gracia del refresco, `Origin` opcional y `X-Cliente-IP` (con pruebas). El trabajo de pantallas va en [F1](../frontend/F1-identidad.md). |
+| 8 | *(Opcional, o en M10)* Exportar y eliminar cuenta. |
 
 ---
 

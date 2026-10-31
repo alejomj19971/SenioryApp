@@ -33,6 +33,8 @@ Que cada familiar entre a Seniory con su propia cuenta y que «Hola, Andrea» y 
 | Backend (M1) | Uso en F1 |
 |---|---|
 | `POST /auth/registro`, `/auth/login`, `/auth/refresh`, `/auth/logout` | Acciones de servidor y `proxy.ts`. |
+| `POST /auth/olvide-contrasena`, `POST /auth/restablecer-contrasena` | Pantallas «Olvidé mi contraseña» (pide el correo y siempre muestra «si hay una cuenta, te enviamos un enlace») y `/restablecer-contrasena?token=…`. Si responde 503, la pantalla dice que no está disponible por ahora. |
+| `PATCH /yo/contrasena` | Pantalla «Cambiar contraseña» en el perfil; la respuesta trae las cookies nuevas y el BFF debe reenviarlas. |
 | `GET /yo` | `verificarSesion()` y `paciente.ts`. |
 | `POST /adultos-mayores`, `POST /adultos-mayores/:id/consentimientos` | Pantallas de bienvenida. |
 | Errores 400 (por campo), 401 (genérico), 409 (correo registrado), 429 (demasiados intentos) | Mensajes en los formularios. |

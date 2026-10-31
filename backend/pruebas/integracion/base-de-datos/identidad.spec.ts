@@ -217,6 +217,110 @@ describe('esquema identidad', () => {
     });
   });
 
+  describe('tokens de recuperación de contraseña', () => {
+    const hashAleatorio = () =>
+      Buffer.from(
+        nuevoId().replaceAll('-', '') + nuevoId().replaceAll('-', ''),
+        'hex',
+      );
+    const token = (
+      usuarioId: string,
+      cambios: Record<string, unknown> = {},
+    ) => ({
+      id: nuevoId(),
+      usuario_id: usuarioId,
+      hash_del_token: hashAleatorio(),
+      expira_en: new Date(Date.now() + 1_800_000).toISOString(),
+      ...cambios,
+    });
+
+    it('acepta un token válido', async () => {
+      const u = usuarioValido();
+      await insertar(bd, 'identidad.usuarios', u);
+
+      await insertar(bd, 'identidad.tokens_de_recuperacion', token(u.id));
+    });
+
+    it('rechaza dos tokens con el mismo hash', async () => {
+      const u = usuarioValido();
+      await insertar(bd, 'identidad.usuarios', u);
+      const hash = hashAleatorio();
+      await insertar(
+        bd,
+        'identidad.tokens_de_recuperacion',
+        token(u.id, { hash_del_token: hash }),
+      );
+
+      const r = await rechazo(() =>
+        insertar(
+          bd,
+          'identidad.tokens_de_recuperacion',
+          token(u.id, { hash_del_token: hash }),
+        ),
+      );
+
+      expect(r).toMatchObject({
+        codigo: UNICA,
+        restriccion: 'tokens_de_recuperacion_hash_unico',
+      });
+    });
+
+    it('rechaza un hash que no es un SHA-256 (32 bytes): guardar el token en claro es el error más grave', async () => {
+      const u = usuarioValido();
+      await insertar(bd, 'identidad.usuarios', u);
+
+      const r = await rechazo(() =>
+        insertar(
+          bd,
+          'identidad.tokens_de_recuperacion',
+          token(u.id, { hash_del_token: Buffer.from('un-token-en-claro') }),
+        ),
+      );
+
+      expect(r.restriccion).toBe('tokens_de_recuperacion_hash_valido');
+    });
+
+    it('rechaza un token que expira antes de crearse', async () => {
+      const u = usuarioValido();
+      await insertar(bd, 'identidad.usuarios', u);
+
+      const r = await rechazo(() =>
+        insertar(
+          bd,
+          'identidad.tokens_de_recuperacion',
+          token(u.id, {
+            creado_en: '2026-10-10T10:00:00Z',
+            expira_en: '2026-10-10T09:00:00Z',
+          }),
+        ),
+      );
+
+      expect(r.restriccion).toBe('tokens_de_recuperacion_vigencia_valida');
+    });
+
+    it('rechaza un token de un usuario inexistente', async () => {
+      const r = await rechazo(() =>
+        insertar(bd, 'identidad.tokens_de_recuperacion', token(nuevoId())),
+      );
+
+      expect(r.codigo).toBe(FORANEA);
+    });
+
+    it('al eliminar al usuario se borran sus tokens', async () => {
+      const u = usuarioValido();
+      await insertar(bd, 'identidad.usuarios', u);
+      await insertar(bd, 'identidad.tokens_de_recuperacion', token(u.id));
+
+      await bd.query('delete from identidad.usuarios where id = $1', [u.id]);
+
+      const { rows } = await bd.query(
+        'select 1 from identidad.tokens_de_recuperacion where usuario_id = $1',
+        [u.id],
+      );
+      expect(rows).toHaveLength(0);
+    });
+  });
+
   describe('personas mayores', () => {
     it('una persona mayor solo puede tener una cuenta propia', async () => {
       const { familiar } = await familiarConPersona();

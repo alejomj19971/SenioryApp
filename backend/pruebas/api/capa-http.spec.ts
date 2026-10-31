@@ -222,6 +222,12 @@ describe('capa HTTP', () => {
         'El cuidador ya tiene un servicio en esa franja',
       ],
       [
+        'no_disponible',
+        503,
+        'correo.no_disponible',
+        'El envío de correos no está disponible',
+      ],
+      [
         'regla',
         422,
         'reservas.fecha_pasada',

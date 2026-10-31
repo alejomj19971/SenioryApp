@@ -4,7 +4,7 @@ Cada archivo de esta carpeta es el **plan detallado de un módulo**: lo que se c
 
 El marco general (stack, reglas de arquitectura, estándares y orden) está en [PLAN_BACKEND_SENIORY.md](../PLAN_BACKEND_SENIORY.md). La arquitectura de referencia es [ADR-01](../ADR-01.md) y su diagrama.
 
-**Diseño de la base de datos** (los 8 esquemas y 37 tablas de todos los módulos, **ya construida**): [BASE_DE_DATOS.md](./BASE_DE_DATOS.md).
+**Diseño de la base de datos** (los 8 esquemas y 38 tablas de todos los módulos, **ya construida**): [BASE_DE_DATOS.md](./BASE_DE_DATOS.md).
 
 ## Estado
 

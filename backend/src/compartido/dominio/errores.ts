@@ -50,6 +50,17 @@ export class NoAutenticado extends ErrorDeDominio {
   }
 }
 
+// Una función que hoy no puede cumplirse porque falta algo del entorno (por ejemplo, el canal para
+// enviar correos). Es honesto: se avisa, no se finge que funcionó.
+export class ServicioNoDisponible extends ErrorDeDominio {
+  constructor(
+    mensaje = 'Esta función no está disponible por ahora',
+    codigo = 'servicio_no_disponible',
+  ) {
+    super(mensaje, codigo);
+  }
+}
+
 // Hay sesión, pero el rol o el vínculo no alcanzan para esta acción.
 export class SinPermiso extends ErrorDeDominio {
   constructor(

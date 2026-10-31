@@ -6,7 +6,7 @@ import {
 import type { ContextoTransaccional } from '../../../../compartido/infraestructura/base-de-datos/contexto-transaccional.js';
 import { esViolacionDeUnicidad } from '../../../../compartido/infraestructura/base-de-datos/errores-de-postgres.js';
 import type { RepositorioSesiones } from '../../../aplicacion/puertos/salida/repositorio-sesiones.js';
-import type { FamiliaDeSesionesId } from '../../../dominio/ids.js';
+import type { FamiliaDeSesionesId, UsuarioId } from '../../../dominio/ids.js';
 import type { SesionDeRefresco } from '../../../dominio/sesion-de-refresco.js';
 import { sesionesRefresco } from './identidad.esquema.js';
 import { sesionDeFila } from './mapeadores.js';
@@ -89,6 +89,24 @@ export class RepositorioSesionesDrizzle implements RepositorioSesiones {
       .where(
         and(
           eq(sesionesRefresco.familiaId, familiaId),
+          isNull(sesionesRefresco.revocadaEn),
+        ),
+      )
+      .returning({ id: sesionesRefresco.id });
+    return revocadas.length;
+  }
+
+  async revocarTodasDeUsuario(
+    usuarioId: UsuarioId,
+    ahora: Date,
+  ): Promise<number> {
+    const revocadas = await this.contexto
+      .conexion()
+      .update(sesionesRefresco)
+      .set({ revocadaEn: ahora })
+      .where(
+        and(
+          eq(sesionesRefresco.usuarioId, usuarioId),
           isNull(sesionesRefresco.revocadaEn),
         ),
       )

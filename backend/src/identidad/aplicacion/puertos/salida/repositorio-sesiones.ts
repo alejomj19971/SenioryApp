@@ -1,4 +1,4 @@
-import type { FamiliaDeSesionesId } from '../../../dominio/ids.js';
+import type { FamiliaDeSesionesId, UsuarioId } from '../../../dominio/ids.js';
 import type { SesionDeRefresco } from '../../../dominio/sesion-de-refresco.js';
 
 export interface RepositorioSesiones {
@@ -15,6 +15,10 @@ export interface RepositorioSesiones {
 
   // Revoca todas las sesiones todavía no revocadas de la familia. Devuelve cuántas.
   revocarFamilia(familiaId: FamiliaDeSesionesId, ahora: Date): Promise<number>;
+
+  // Revoca todas las sesiones todavía no revocadas del usuario, en todos sus dispositivos. Se usa al
+  // cambiar la contraseña: quien tuviera una sesión abierta (incluido un ladrón) queda fuera.
+  revocarTodasDeUsuario(usuarioId: UsuarioId, ahora: Date): Promise<number>;
 
   // Borra las sesiones que vencieron antes de `limite` (tarea diaria de limpieza). Devuelve cuántas.
   eliminarVencidasAntesDe(limite: Date): Promise<number>;

@@ -71,6 +71,13 @@
       "when": 1793056743618,
       "tag": "0009_indices_descendentes",
       "breakpoints": true
+    },
+    {
+      "idx": 10,
+      "version": "7",
+      "when": 1793455227824,
+      "tag": "0010_identidad_recuperacion_de_contrasena",
+      "breakpoints": true
     }
   ]
 }

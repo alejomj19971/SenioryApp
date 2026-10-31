@@ -232,4 +232,54 @@ describe('Credencial', () => {
       expect(credencial.hash).toBe(HASH_DE_PRUEBA);
     });
   });
+
+  describe('restablecer', () => {
+    const HASH_NUEVO = '$argon2id$v=19$m=19456,t=2,p=1$bnVldm8$bnVldm8';
+
+    it('cambia el hash, levanta el bloqueo y reinicia los intentos', () => {
+      const reloj = new RelojFalso();
+      const credencial = credencialDePrueba(idDePrueba(), reloj.ahora());
+      fallar(credencial, reloj, 5);
+      expect(credencial.estaBloqueada(reloj.ahora())).toBe(true);
+      reloj.avanzar(MINUTO);
+
+      credencial.restablecer(HASH_NUEVO, reloj.ahora());
+
+      expect(credencial.hash).toBe(HASH_NUEVO);
+      expect(credencial.intentosFallidos).toBe(0);
+      expect(credencial.bloqueadoHasta).toBeNull();
+      expect(credencial.estaBloqueada(reloj.ahora())).toBe(false);
+      expect(credencial.actualizadoEn).toEqual(reloj.ahora());
+    });
+
+    it('después de restablecer, el bloqueo progresivo vuelve a empezar desde 15 minutos', () => {
+      const reloj = new RelojFalso();
+      const credencial = credencialDePrueba(idDePrueba(), reloj.ahora());
+      fallar(credencial, reloj, 5);
+      reloj.avanzar(BLOQUEO_INICIAL_MS + 1);
+      fallar(credencial, reloj, 5); // segundo bloqueo: 30 min
+      credencial.restablecer(HASH_NUEVO, reloj.ahora());
+
+      const resultado = fallar(credencial, reloj, 5);
+
+      expect(resultado?.bloqueadoHasta).toEqual(
+        new Date(reloj.ahora().getTime() + BLOQUEO_INICIAL_MS),
+      );
+    });
+
+    it('rechaza un hash inválido (la contraseña en claro) y no cambia nada', () => {
+      const reloj = new RelojFalso();
+      const credencial = credencialDePrueba(idDePrueba(), reloj.ahora());
+      fallar(credencial, reloj, 3);
+
+      expect(() =>
+        credencial.restablecer('una contraseña en claro', reloj.ahora()),
+      ).toThrow(
+        expect.objectContaining({ codigo: 'credencial.hash_invalido' }),
+      );
+
+      expect(credencial.hash).toBe(HASH_DE_PRUEBA);
+      expect(credencial.intentosFallidos).toBe(3);
+    });
+  });
 });

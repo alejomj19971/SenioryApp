@@ -18,6 +18,7 @@ import {
   NoAutenticado,
   RecursoNoEncontrado,
   ReglaDeNegocioIncumplida,
+  ServicioNoDisponible,
   SinPermiso,
 } from '../dominio/errores.js';
 import { idDeCorrelacionDe } from './datos-de-la-peticion.js';
@@ -47,6 +48,7 @@ const TITULOS: Record<number, string> = {
   422: 'La operación no cumple una regla del servicio',
   429: 'Demasiadas solicitudes; intenta de nuevo en un momento',
   500: 'Ocurrió un error inesperado',
+  503: 'Esta función no está disponible por ahora',
 };
 
 const CODIGOS_HTTP: Record<number, string> = {
@@ -69,6 +71,7 @@ function estadoDe(error: ErrorDeDominio): number {
   if (error instanceof RecursoNoEncontrado) return 404;
   if (error instanceof ConflictoDeEstado) return 409;
   if (error instanceof ReglaDeNegocioIncumplida) return 422;
+  if (error instanceof ServicioNoDisponible) return 503;
   return 500; // una subclase nueva sin estado asignado: se trata como error del servidor
 }
 
@@ -101,7 +104,8 @@ export class FiltroDeErrores implements ExceptionFilter {
     const problema = this.problemaDe(error);
     problema.idDeCorrelacion = idDeCorrelacionDe(peticion, respuesta);
 
-    if (problema.status >= 500) {
+    // Un servicio no disponible es esperado y ya lo explica la respuesta: no es un error no controlado.
+    if (problema.status >= 500 && !(error instanceof ServicioNoDisponible)) {
       // El detalle va solo al log; al cliente nunca le llegan mensajes internos ni trazas.
       // TODO(Sentry): reportarlo también cuando haya cuenta y SENTRY_DSN.
       this.registro.error(

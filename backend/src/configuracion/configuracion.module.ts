@@ -3,6 +3,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import {
   configuracionDesdeVariables,
   validarVariables,
+  type CanalDeRecuperacion,
   type Configuracion,
   type Entorno,
   type NivelDeLog,
@@ -56,6 +57,9 @@ export const CONFIGURACION = Symbol('CONFIGURACION');
           COOKIES_SEGURAS: servicio.getOrThrow<string>('COOKIES_SEGURAS'),
           VERSION_POLITICA_VIGENTE: servicio.getOrThrow<string>(
             'VERSION_POLITICA_VIGENTE',
+          ),
+          CANAL_DE_RECUPERACION: servicio.getOrThrow<CanalDeRecuperacion>(
+            'CANAL_DE_RECUPERACION',
           ),
           VERSION_CONSENTIMIENTO_SALUD_VIGENTE: servicio.getOrThrow<string>(
             'VERSION_CONSENTIMIENTO_SALUD_VIGENTE',

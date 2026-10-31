@@ -37,6 +37,10 @@ import {
   type GeneradorDeTokensOpacos,
 } from './aplicacion/puertos/salida/generador-de-tokens-opacos.js';
 import {
+  ENVIADOR_DE_RECUPERACION,
+  type EnviadorDeRecuperacion,
+} from './aplicacion/puertos/salida/enviador-de-recuperacion.js';
+import {
   HASH_DE_CONTRASENAS,
   type HashDeContrasenas,
 } from './aplicacion/puertos/salida/hash-de-contrasenas.js';
@@ -44,6 +48,10 @@ import {
   REPOSITORIO_ACEPTACIONES_DE_POLITICA,
   type RepositorioAceptacionesDePolitica,
 } from './aplicacion/puertos/salida/repositorio-aceptaciones-de-politica.js';
+import {
+  REPOSITORIO_TOKENS_DE_RECUPERACION,
+  type RepositorioTokensDeRecuperacion,
+} from './aplicacion/puertos/salida/repositorio-tokens-de-recuperacion.js';
 import { REPOSITORIO_SESIONES } from './aplicacion/puertos/salida/repositorio-sesiones.js';
 import type { RepositorioSesiones } from './aplicacion/puertos/salida/repositorio-sesiones.js';
 import {
@@ -53,12 +61,15 @@ import {
 import { EmisorDeSesiones } from './aplicacion/servicios/emisor-de-sesiones.js';
 import type { DiccionarioDeContrasenasComunes } from './dominio/contrasena.js';
 import { ActualizarPerfilPropio } from './aplicacion/casos-de-uso/actualizar-perfil-propio.js';
+import { CambiarContrasena } from './aplicacion/casos-de-uso/cambiar-contrasena.js';
 import { CrearAdministrador } from './aplicacion/casos-de-uso/crear-administrador.js';
 import { ObtenerAdultoMayor } from './aplicacion/casos-de-uso/obtener-adulto-mayor.js';
 import { ObtenerPerfilPropio } from './aplicacion/casos-de-uso/obtener-perfil-propio.js';
 import { OtorgarConsentimiento } from './aplicacion/casos-de-uso/otorgar-consentimiento.js';
 import { RegistrarAdultoMayor } from './aplicacion/casos-de-uso/registrar-adulto-mayor.js';
+import { RestablecerContrasena } from './aplicacion/casos-de-uso/restablecer-contrasena.js';
 import { RevocarConsentimiento } from './aplicacion/casos-de-uso/revocar-consentimiento.js';
+import { SolicitarRecuperacion } from './aplicacion/casos-de-uso/solicitar-recuperacion.js';
 import {
   CONSULTA_DE_IDENTIDAD,
   type ConsultaDeIdentidad,
@@ -91,6 +102,11 @@ import {
 } from './infraestructura/salida/contrasenas/diccionario-de-contrasenas-comunes.js';
 import { RepositorioAceptacionesDePoliticaDrizzle } from './infraestructura/salida/persistencia/repositorio-aceptaciones-de-politica-drizzle.js';
 import { RepositorioSesionesDrizzle } from './infraestructura/salida/persistencia/repositorio-sesiones-drizzle.js';
+import { RepositorioTokensDeRecuperacionDrizzle } from './infraestructura/salida/persistencia/repositorio-tokens-de-recuperacion-drizzle.js';
+import {
+  EnviadorDeRecuperacionDeshabilitado,
+  EnviadorDeRecuperacionEnConsola,
+} from './infraestructura/salida/recuperacion/enviadores-de-recuperacion.js';
 import { RepositorioUsuariosDrizzle } from './infraestructura/salida/persistencia/repositorio-usuarios-drizzle.js';
 import { GeneradorDeTokensOpacosAleatorio } from './infraestructura/salida/seguridad/generador-de-tokens-opacos-aleatorio.js';
 import { HashDeContrasenasArgon2 } from './infraestructura/salida/seguridad/hash-de-contrasenas-argon2.js';
@@ -149,6 +165,21 @@ const MS_POR_DIA = 24 * 60 * MS_POR_MINUTO;
       inject: [ContextoTransaccional],
       useFactory: (contexto: ContextoTransaccional) =>
         new RepositorioConsentimientosDrizzle(contexto),
+    },
+
+    {
+      provide: REPOSITORIO_TOKENS_DE_RECUPERACION,
+      inject: [ContextoTransaccional],
+      useFactory: (contexto: ContextoTransaccional) =>
+        new RepositorioTokensDeRecuperacionDrizzle(contexto),
+    },
+    {
+      provide: ENVIADOR_DE_RECUPERACION,
+      inject: [CONFIGURACION],
+      useFactory: (configuracion: Configuracion): EnviadorDeRecuperacion =>
+        configuracion.canalDeRecuperacion === 'consola'
+          ? new EnviadorDeRecuperacionEnConsola()
+          : new EnviadorDeRecuperacionDeshabilitado(),
     },
 
     // Seguridad
@@ -489,6 +520,117 @@ const MS_POR_DIA = 24 * 60 * MS_POR_MINUTO;
           consentimientos,
           unidadDeTrabajo,
           eventos,
+          auditoria,
+          reloj,
+        ),
+    },
+
+    // Recuperar y cambiar la contraseña
+    {
+      provide: SolicitarRecuperacion,
+      inject: [
+        REPOSITORIO_USUARIOS,
+        REPOSITORIO_TOKENS_DE_RECUPERACION,
+        GENERADOR_DE_TOKENS_OPACOS,
+        ENVIADOR_DE_RECUPERACION,
+        UNIDAD_DE_TRABAJO,
+        AUDITORIA,
+        RELOJ,
+        GENERADOR_DE_IDS,
+        CONFIGURACION,
+      ],
+      useFactory: (
+        usuarios: RepositorioUsuarios,
+        tokens: RepositorioTokensDeRecuperacion,
+        tokensOpacos: GeneradorDeTokensOpacos,
+        enviador: EnviadorDeRecuperacion,
+        unidadDeTrabajo: UnidadDeTrabajo,
+        auditoria: Auditoria,
+        reloj: Reloj,
+        ids: GeneradorDeIds,
+        configuracion: Configuracion,
+      ) =>
+        new SolicitarRecuperacion(
+          usuarios,
+          tokens,
+          tokensOpacos,
+          enviador,
+          unidadDeTrabajo,
+          auditoria,
+          reloj,
+          ids,
+          // El enlace apunta al frontend: el primer origen permitido es el suyo.
+          { urlDelFrontend: configuracion.origenesPermitidos[0] ?? '' },
+        ),
+    },
+    {
+      provide: RestablecerContrasena,
+      inject: [
+        REPOSITORIO_USUARIOS,
+        REPOSITORIO_TOKENS_DE_RECUPERACION,
+        REPOSITORIO_SESIONES,
+        GENERADOR_DE_TOKENS_OPACOS,
+        HASH_DE_CONTRASENAS,
+        DICCIONARIO_DE_CONTRASENAS,
+        UNIDAD_DE_TRABAJO,
+        AUDITORIA,
+        RELOJ,
+      ],
+      useFactory: (
+        usuarios: RepositorioUsuarios,
+        tokens: RepositorioTokensDeRecuperacion,
+        sesiones: RepositorioSesiones,
+        tokensOpacos: GeneradorDeTokensOpacos,
+        hash: HashDeContrasenas,
+        comunes: DiccionarioDeContrasenasComunes,
+        unidadDeTrabajo: UnidadDeTrabajo,
+        auditoria: Auditoria,
+        reloj: Reloj,
+      ) =>
+        new RestablecerContrasena(
+          usuarios,
+          tokens,
+          sesiones,
+          tokensOpacos,
+          hash,
+          comunes,
+          unidadDeTrabajo,
+          auditoria,
+          reloj,
+        ),
+    },
+    {
+      provide: CambiarContrasena,
+      inject: [
+        REPOSITORIO_USUARIOS,
+        REPOSITORIO_SESIONES,
+        REPOSITORIO_TOKENS_DE_RECUPERACION,
+        EmisorDeSesiones,
+        HASH_DE_CONTRASENAS,
+        DICCIONARIO_DE_CONTRASENAS,
+        UNIDAD_DE_TRABAJO,
+        AUDITORIA,
+        RELOJ,
+      ],
+      useFactory: (
+        usuarios: RepositorioUsuarios,
+        sesiones: RepositorioSesiones,
+        tokens: RepositorioTokensDeRecuperacion,
+        emisorDeSesiones: EmisorDeSesiones,
+        hash: HashDeContrasenas,
+        comunes: DiccionarioDeContrasenasComunes,
+        unidadDeTrabajo: UnidadDeTrabajo,
+        auditoria: Auditoria,
+        reloj: Reloj,
+      ) =>
+        new CambiarContrasena(
+          usuarios,
+          sesiones,
+          tokens,
+          emisorDeSesiones,
+          hash,
+          comunes,
+          unidadDeTrabajo,
           auditoria,
           reloj,
         ),
