@@ -8,6 +8,8 @@ import { REPOSITORIO_USUARIOS } from '../../src/identidad/aplicacion/puertos/sal
 import { IdentidadModule } from '../../src/identidad/identidad.module.js';
 import { COTIZADOR_DE_SERVICIOS } from '../../src/pagos/aplicacion/puertos/entrada/cotizador-de-servicios.js';
 import { PagosModule } from '../../src/pagos/pagos.module.js';
+import { CONSULTA_DE_RESERVAS } from '../../src/reservas/aplicacion/puertos/entrada/consulta-de-reservas.js';
+import { ReservasModule } from '../../src/reservas/reservas.module.js';
 
 // Regla `exports-solo-puertos-de-entrada` (M0 §4.9): lo que un módulo de negocio exporta en Nest es
 // su frontera. Solo pueden salir los puertos de entrada (lo que otros módulos pueden usar) y los
@@ -52,6 +54,11 @@ const PERMITIDAS_POR_MODULO = [
     nombre: 'PagosModule',
     modulo: PagosModule,
     permitidas: [COTIZADOR_DE_SERVICIOS],
+  },
+  {
+    nombre: 'ReservasModule',
+    modulo: ReservasModule,
+    permitidas: [CONSULTA_DE_RESERVAS],
   },
 ] as const;
 

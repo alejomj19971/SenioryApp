@@ -39,11 +39,13 @@ function montar(
               nombre: 'Marta',
               tarifaHora: opciones.tarifaHora ?? 20_000,
               zona: 'Laureles',
+              disponibilidad: ['manana', 'tarde'],
               aceptacionAutomatica: false,
             },
       );
     },
     obtenerContactoDeCuidador: () => Promise.resolve(null),
+    obtenerCuidadorPorUsuario: () => Promise.resolve(null),
   };
   const instantes: Date[] = [];
   const politicas: RepositorioPoliticasDePrecios = {

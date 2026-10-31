@@ -311,6 +311,13 @@ export class Cuidador {
     this.tocar(ahora);
   }
 
+  // Suma un servicio terminado al contador. Es un valor DERIVADO de lo que ocurre en Reservas: solo el
+  // manejador del evento «servicio finalizado» lo llama.
+  registrarServicioCompletado(ahora: Date): void {
+    this.datos.serviciosCompletados += 1;
+    this.tocar(ahora);
+  }
+
   private tocar(ahora: Date): void {
     this.datos.actualizadoEn = ahora;
     this.datos.version += 1;

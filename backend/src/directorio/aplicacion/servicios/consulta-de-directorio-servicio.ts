@@ -32,8 +32,16 @@ export class ConsultaDeDirectorioServicio implements ConsultaDeDirectorio {
       nombre: cuidador.nombre,
       tarifaHora: cuidador.tarifaHora.valor,
       zona: cuidador.zona,
+      disponibilidad: [...cuidador.disponibilidad],
       aceptacionAutomatica: cuidador.aceptacionAutomatica,
     };
+  }
+
+  async obtenerCuidadorPorUsuario(
+    usuarioId: string,
+  ): Promise<{ cuidadorId: string } | null> {
+    const cuidador = await this.cuidadores.buscarPorUsuarioId(usuarioId);
+    return cuidador === null ? null : { cuidadorId: cuidador.id };
   }
 
   async obtenerContactoDeCuidador(
@@ -48,6 +56,8 @@ export class ConsultaDeDirectorioServicio implements ConsultaDeDirectorio {
       usuarioId: cuidador.usuarioId,
       nombre: cuidador.nombre,
       telefono: cuidador.telefono,
+      fotoUrl: cuidador.fotoUrl,
+      especialidad: cuidador.especialidad,
     };
   }
 }

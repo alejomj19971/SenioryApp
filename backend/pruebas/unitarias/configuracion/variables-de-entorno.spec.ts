@@ -58,6 +58,7 @@ describe('validarVariables', () => {
         nivelDeLog: 'info',
         zonaHorariaNegocio: 'America/Bogota',
         intervaloSondeoOutboxMs: 1000,
+        intervaloExpiracionServiciosMs: 60000,
         sentryDsn: null,
         secretoBff: null,
         secretoJwtAcceso: SECRETO_JWT_VALIDO,
@@ -214,6 +215,27 @@ describe('validarVariables', () => {
         'En producción, INTERVALO_SONDEO_OUTBOX_MS no puede ser 0 (los eventos pendientes nunca se entregarían)',
       ]);
     });
+
+    it('en producción no permite apagar la expiración de solicitudes', () => {
+      expect(
+        problemasDe(
+          entornoDeProduccion({ INTERVALO_EXPIRACION_SERVICIOS_MS: '0' }),
+        ),
+      ).toEqual([
+        'En producción, INTERVALO_EXPIRACION_SERVICIOS_MS no puede ser 0 (las solicitudes sin respuesta nunca expirarían)',
+      ]);
+    });
+
+    it.each(['-1', '3600001', '1.5', 'cada-rato'])(
+      'rechaza el intervalo de expiración %s',
+      (intervalo) => {
+        expect(
+          problemasDe(
+            entornoBase({ INTERVALO_EXPIRACION_SERVICIOS_MS: intervalo }),
+          ).join(),
+        ).toContain('INTERVALO_EXPIRACION_SERVICIOS_MS');
+      },
+    );
 
     it('rechaza un SECRETO_BFF corto', () => {
       expect(

@@ -69,13 +69,19 @@
 | 🔧 | Frontend (F3): verificar `lib/pricing.ts` contra `backend/pruebas/vectores/precios.json` y corregir el pago al profesional a `subtotal − round(subtotal × 0,1)` (hoy difiere con montos de pesos sueltos). |
 | 🔧 | Pantalla o comando para que un administrador cree una política nueva sin SQL (M10). |
 
-### M4 — Reservas
+### M4 — Reservas  *(backend construido)*
 
 | | Pendiente |
 |---|---|
-| 🔧 | Todo el módulo: solicitar, aceptar, iniciar, finalizar, cancelar y calificar un servicio. |
-| ⚖️ | **Política de cancelación y reembolso.** |
-| 🧑 | Horas exactas de cada franja (mañana, tarde, noche). |
+| ⚖️🚀 | **Política de cancelación y reembolso.** El evento `servicio_cancelado` ya lleva las horas de anticipación para que Pagos (M7) la aplique. |
+| 🧑 | **Cómo pasa un servicio a «en curso»:** hoy el cuidador marca el inicio (check-in), solo dentro de su franja o hasta 30 minutos antes. Decidir si además debe ser automático. |
+| 🔧 | **Servicios aceptados que nunca se iniciaron** (el cuidador no llegó, o no marcó): hoy se quedan «aceptado» para siempre. Falta decidir qué pasa (marcar «no se presentó», avisar, reembolsar) — M10. |
+| 🔧🚀 | **Exigir el pago aprobado para iniciar** (`REQUIERE_PAGO_APROBADO`): lo activa M7, cuando exista el pago; hoy un servicio aceptado puede iniciar sin pago. |
+| 🔧 | Que el cuidador defina su propia `aceptacionAutomatica` (hoy es un campo del perfil que solo se cambia por base de datos o por el importador): llega con M9. |
+| 🧑 | **Anticipación máxima de 180 días** y **plazos de aceptación** (2 h, o 30 min si es para hoy) están en el dominio como constantes: confirmarlos con el equipo. |
+| 🔧 | Una franja de 6 h admite servicios de hasta 8 h (rango de la base de datos): decidir si las horas deben caber en la franja. |
+| 🔧 | Frontend (F4): `contratacion.ts`, la confirmación con id, `CuidadorEnTurno` y la vista mínima del cuidador (`/cuidador`). |
+| 🧑 | Horas exactas de cada franja (mañana 06–12, tarde 12–18, noche 18–06): decididas el 2026-10-26; confirmar con el negocio. |
 | ⚖️ | Evaluar un seguro de responsabilidad civil y el manejo de quejas entre familias y cuidadores. |
 
 ### M5 — Notificaciones

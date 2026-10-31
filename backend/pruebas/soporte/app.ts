@@ -36,6 +36,7 @@ export async function crearAppDePrueba(
       SECRETO_JWT_ACCESO: SECRETO_JWT_DE_PRUEBA,
       COOKIES_SEGURAS: 'false',
       INTERVALO_SONDEO_OUTBOX_MS: '0',
+      INTERVALO_EXPIRACION_SERVICIOS_MS: '0',
       NIVEL_DE_LOG: 'error',
       ...opciones.variables,
     }),

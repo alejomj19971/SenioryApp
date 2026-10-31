@@ -145,6 +145,19 @@ export class RepositorioCuidadoresDrizzle implements RepositorioCuidadores {
     return this.buscar(id, false);
   }
 
+  async buscarPorUsuarioId(usuarioId: string): Promise<Cuidador | null> {
+    const filas = await this.contexto
+      .conexion()
+      .select()
+      .from(cuidadores)
+      .where(eq(cuidadores.usuarioId, usuarioId))
+      .limit(1);
+    const fila = filas[0];
+    if (fila === undefined) return null;
+    const porCuidador = await this.verificacionesDe([fila.id as CuidadorId]);
+    return cuidadorDeFila(fila, porCuidador.get(fila.id as CuidadorId) ?? []);
+  }
+
   buscarPorIdParaActualizar(id: CuidadorId): Promise<Cuidador | null> {
     return this.buscar(id, true);
   }

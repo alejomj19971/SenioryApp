@@ -409,6 +409,7 @@ describe('en producción', () => {
         SECRETO_BFF,
         COOKIES_SEGURAS: 'true',
         INTERVALO_SONDEO_OUTBOX_MS: '1000',
+        INTERVALO_EXPIRACION_SERVICIOS_MS: '60000',
       },
       ajustar: (constructor) =>
         constructor

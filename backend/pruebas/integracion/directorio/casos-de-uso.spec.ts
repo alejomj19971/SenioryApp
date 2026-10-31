@@ -10,7 +10,10 @@ import {
   ServicioNoDisponible,
 } from '../../../src/compartido/dominio/errores.js';
 import { FechaCivil } from '../../../src/compartido/dominio/fecha-civil.js';
-import type { ServicioCalificado } from '../../../src/compartido/eventos/reservas.js';
+import type {
+  ServicioCalificado,
+  ServicioFinalizado,
+} from '../../../src/compartido/eventos/reservas.js';
 import { DespachadorDeEventos } from '../../../src/compartido/infraestructura/outbox/despachador-de-eventos.js';
 import { RegistroDeManejadores } from '../../../src/compartido/infraestructura/outbox/registro-de-manejadores.js';
 import {
@@ -500,6 +503,45 @@ describe('casos de uso de Directorio', () => {
       });
     });
 
+    it('un servicio finalizado suma uno a los servicios completados del cuidador', async () => {
+      const { cuidadorId } = await importar().ejecutar(
+        entrada(),
+        REVISOR_DE_PRUEBA,
+      );
+      const finalizar = async () => {
+        const evento: ServicioFinalizado = {
+          id: ids().nuevo(),
+          tipo: 'reservas.servicio_finalizado',
+          version: 1,
+          ocurridoEn: reloj.ahora().toISOString(),
+          idDeCorrelacion: ids().nuevo(),
+          datos: {
+            servicioId: nuevoId(),
+            familiarId: nuevoId(),
+            cuidadorId,
+            adultoMayorId: nuevoId(),
+          },
+        };
+        await app
+          .get(UNIDAD_DE_TRABAJO, { strict: false })
+          .ejecutar(() =>
+            app.get(PUBLICADOR_DE_EVENTOS, { strict: false }).publicar(evento),
+          );
+        await app
+          .get(DespachadorDeEventos, { strict: false })
+          .esperarEntregas();
+      };
+
+      await finalizar();
+      await finalizar();
+
+      const [fila] = await filas<{ servicios_completados: number }>(
+        'select servicios_completados from directorio.cuidadores where id = $1',
+        [cuidadorId],
+      );
+      expect(fila?.servicios_completados).toBe(2);
+    });
+
     it('si el cuidador no existe, el evento queda fallido para revisarlo, sin perderse', async () => {
       const servicioId = nuevoId();
 
@@ -550,6 +592,7 @@ describe('casos de uso de Directorio', () => {
         nombre: datos.nombre,
         tarifaHora: 27_000,
         zona: datos.zona,
+        disponibilidad: ['manana', 'tarde'],
         aceptacionAutomatica: false,
       });
     });
@@ -572,6 +615,18 @@ describe('casos de uso de Directorio', () => {
       ).toBeNull();
     });
 
+    it('dice qué cuidador es una cuenta, y null si la cuenta no es de un cuidador', async () => {
+      const { cuidadorId, usuarioId } = await importar().ejecutar(
+        entrada(),
+        REVISOR_DE_PRUEBA,
+      );
+
+      expect(await consulta().obtenerCuidadorPorUsuario(usuarioId)).toEqual({
+        cuidadorId,
+      });
+      expect(await consulta().obtenerCuidadorPorUsuario(nuevoId())).toBeNull();
+    });
+
     it('entrega el contacto aunque el cuidador ya no se muestre: un servicio contratado se atiende', async () => {
       const datos = entrada();
       const { cuidadorId, usuarioId } = await importar().ejecutar(
@@ -588,6 +643,8 @@ describe('casos de uso de Directorio', () => {
         usuarioId,
         nombre: datos.nombre,
         telefono: '+573001234567',
+        fotoUrl: null,
+        especialidad: 'enfermeria',
       });
       expect(await consulta().obtenerContactoDeCuidador(nuevoId())).toBeNull();
     });

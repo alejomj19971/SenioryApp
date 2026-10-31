@@ -19,6 +19,7 @@ export default defineConfig({
       // Las pruebas que arrancan la aplicación completa no deben procesar eventos de ninguna base;
       // las pruebas del outbox controlan el despachador directamente.
       INTERVALO_SONDEO_OUTBOX_MS: '0',
+      INTERVALO_EXPIRACION_SERVICIOS_MS: '0',
     },
     projects: [
       {

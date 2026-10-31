@@ -45,6 +45,9 @@ export const CONFIGURACION = Symbol('CONFIGURACION');
           INTERVALO_SONDEO_OUTBOX_MS: servicio.getOrThrow<number>(
             'INTERVALO_SONDEO_OUTBOX_MS',
           ),
+          INTERVALO_EXPIRACION_SERVICIOS_MS: servicio.getOrThrow<number>(
+            'INTERVALO_EXPIRACION_SERVICIOS_MS',
+          ),
           SENTRY_DSN: servicio.get<string>('SENTRY_DSN'),
           SECRETO_BFF: servicio.get<string>('SECRETO_BFF'),
           SECRETO_JWT_ACCESO: servicio.getOrThrow<string>('SECRETO_JWT_ACCESO'),

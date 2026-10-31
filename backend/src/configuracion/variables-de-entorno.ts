@@ -86,6 +86,20 @@ export class VariablesDeEntorno {
   })
   INTERVALO_SONDEO_OUTBOX_MS: number = 1_000;
 
+  // Cada cuánto se cancelan las solicitudes de servicio a las que el cuidador no respondió a tiempo. El plazo
+  // más corto es de 30 minutos, por eso la revisión es frecuente. 0 la apaga (solo en pruebas).
+  @Type(() => Number)
+  @IsInt({
+    message: 'INTERVALO_EXPIRACION_SERVICIOS_MS debe ser un número entero',
+  })
+  @Min(0, {
+    message: 'INTERVALO_EXPIRACION_SERVICIOS_MS debe estar entre 0 y 3600000',
+  })
+  @Max(3_600_000, {
+    message: 'INTERVALO_EXPIRACION_SERVICIOS_MS debe estar entre 0 y 3600000',
+  })
+  INTERVALO_EXPIRACION_SERVICIOS_MS: number = 60_000;
+
   // Con qué se firman los tokens de acceso. Obligatorio en todos los entornos: un valor por defecto
   // en el código sería una llave pública.
   @IsString({ message: 'SECRETO_JWT_ACCESO es obligatorio' })
@@ -176,6 +190,7 @@ export interface Configuracion {
   nivelDeLog: NivelDeLog;
   zonaHorariaNegocio: string;
   intervaloSondeoOutboxMs: number;
+  intervaloExpiracionServiciosMs: number;
   sentryDsn: string | null;
   secretoBff: string | null;
   secretoJwtAcceso: string;
@@ -334,6 +349,11 @@ function reglasAdicionales(variables: VariablesDeEntorno): string[] {
         'En producción, CANAL_DE_RECUPERACION no puede ser consola (el enlace de recuperación quedaría escrito en el log)',
       );
     }
+    if (variables.INTERVALO_EXPIRACION_SERVICIOS_MS === 0) {
+      problemas.push(
+        'En producción, INTERVALO_EXPIRACION_SERVICIOS_MS no puede ser 0 (las solicitudes sin respuesta nunca expirarían)',
+      );
+    }
     if (variables.INTERVALO_SONDEO_OUTBOX_MS === 0) {
       problemas.push(
         'En producción, INTERVALO_SONDEO_OUTBOX_MS no puede ser 0 (los eventos pendientes nunca se entregarían)',
@@ -389,6 +409,7 @@ export function configuracionDesdeVariables(
     nivelDeLog: variables.NIVEL_DE_LOG,
     zonaHorariaNegocio: variables.ZONA_HORARIA_NEGOCIO,
     intervaloSondeoOutboxMs: variables.INTERVALO_SONDEO_OUTBOX_MS,
+    intervaloExpiracionServiciosMs: variables.INTERVALO_EXPIRACION_SERVICIOS_MS,
     sentryDsn: variables.SENTRY_DSN ?? null,
     secretoBff: variables.SECRETO_BFF ?? null,
     secretoJwtAcceso: variables.SECRETO_JWT_ACCESO,

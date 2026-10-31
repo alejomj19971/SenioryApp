@@ -40,6 +40,7 @@ import { ObtenerFiltrosDisponibles } from './aplicacion/casos-de-uso/obtener-fil
 import { ObtenerHojaDeVida } from './aplicacion/casos-de-uso/obtener-hoja-de-vida.js';
 import { RevisarVigencias } from './aplicacion/casos-de-uso/revisar-vigencias.js';
 import { RegistrarResenaAlCalificar } from './aplicacion/manejadores/registrar-resena-al-calificar.js';
+import { RegistrarServicioCompletado } from './aplicacion/manejadores/registrar-servicio-completado.js';
 import {
   CONSULTA_DE_DIRECTORIO,
   type ConsultaDeDirectorio,
@@ -73,6 +74,9 @@ import { RepositorioDocumentosDrizzle } from './infraestructura/salida/persisten
 import { RepositorioResenasDrizzle } from './infraestructura/salida/persistencia/repositorio-resenas-drizzle.js';
 
 const MANEJADOR_DE_RESENAS = Symbol('ManejadorDeResenas');
+const MANEJADOR_DE_SERVICIOS_COMPLETADOS = Symbol(
+  'ManejadorDeServiciosCompletados',
+);
 
 // Módulo de Directorio (M2): los cuidadores que las familias buscan. Exporta SOLO `CONSULTA_DE_DIRECTORIO`
 // (el puerto de entrada para Reservas, Notificaciones y Teleasistencia). Repositorios y almacén son
@@ -282,6 +286,13 @@ const MANEJADOR_DE_RESENAS = Symbol('ManejadorDeResenas');
         ),
     },
 
+    {
+      provide: MANEJADOR_DE_SERVICIOS_COMPLETADOS,
+      inject: [REPOSITORIO_CUIDADORES, RELOJ],
+      useFactory: (cuidadores: RepositorioCuidadores, reloj: Reloj) =>
+        new RegistrarServicioCompletado(cuidadores, reloj),
+    },
+
     // Lo que otros módulos pueden usar
     {
       provide: CONSULTA_DE_DIRECTORIO,
@@ -306,9 +317,12 @@ export class DirectorioModule implements OnModuleInit {
     private readonly registro: RegistroDeManejadores,
     @Inject(MANEJADOR_DE_RESENAS)
     private readonly manejadorDeResenas: RegistrarResenaAlCalificar,
+    @Inject(MANEJADOR_DE_SERVICIOS_COMPLETADOS)
+    private readonly manejadorDeServiciosCompletados: RegistrarServicioCompletado,
   ) {}
 
   onModuleInit(): void {
     this.registro.registrar(this.manejadorDeResenas);
+    this.registro.registrar(this.manejadorDeServiciosCompletados);
   }
 }

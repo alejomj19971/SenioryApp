@@ -1,8 +1,12 @@
+import type { Jornada } from '../../../../compartido/dominio/jornada.js';
+
 export interface CuidadorParaContratar {
   id: string;
   nombre: string;
   tarifaHora: number;
   zona: string;
+  // En qué jornadas atiende: Reservas rechaza una jornada que no está aquí.
+  disponibilidad: Jornada[];
   // Si confirma los servicios solo (true) o espera su respuesta (false).
   aceptacionAutomatica: boolean;
 }
@@ -13,6 +17,8 @@ export interface ContactoDeCuidador {
   usuarioId: string | null;
   nombre: string;
   telefono: string;
+  fotoUrl: string | null;
+  especialidad: string;
 }
 
 // Lo único de Directorio que otros módulos pueden usar. Son datos mínimos: ningún módulo recibe una
@@ -30,6 +36,12 @@ export interface ConsultaDeDirectorio {
   obtenerContactoDeCuidador(
     cuidadorId: string,
   ): Promise<ContactoDeCuidador | null>;
+
+  // Reservas: qué cuidador es esta cuenta (para que un cuidador acepte o rechace SUS servicios). Null si la
+  // cuenta no es de un cuidador.
+  obtenerCuidadorPorUsuario(
+    usuarioId: string,
+  ): Promise<{ cuidadorId: string } | null>;
 }
 
 export const CONSULTA_DE_DIRECTORIO = Symbol('ConsultaDeDirectorio');

@@ -30,6 +30,9 @@ export interface RepositorioCuidadores {
 
   buscarPorId(id: CuidadorId): Promise<Cuidador | null>;
 
+  // El cuidador de esta cuenta de `identidad`, o null.
+  buscarPorUsuarioId(usuarioId: string): Promise<Cuidador | null>;
+
   // Igual, pero bloquea la fila hasta que termine la transacción: dos reseñas simultáneas se atienden
   // una tras otra y no pisan los contadores. Debe llamarse dentro de una unidad de trabajo.
   buscarPorIdParaActualizar(id: CuidadorId): Promise<Cuidador | null>;
