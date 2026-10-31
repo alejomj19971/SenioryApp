@@ -13,6 +13,15 @@ updates:
     # comprometidos antes de instalarla.
     cooldown:
       default-days: 7
+    ignore:
+      # @nestjs/swagger acepta TypeScript 5.5 o 6: con la 7 no se puede ni instalar (ERESOLVE).
+      # Revisar cuando Nest la soporte.
+      - dependency-name: typescript
+        update-types: ['version-update:semver-major']
+      # Los tipos deben coincidir con el Node del runtime (24): con los de una versión mayor, el
+      # compilador aceptaría APIs que Node 24 no tiene.
+      - dependency-name: '@types/node'
+        update-types: ['version-update:semver-major']
     groups:
       nest:
         patterns: ['@nestjs/*']
