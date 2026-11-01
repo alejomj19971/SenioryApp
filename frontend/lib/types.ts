@@ -252,3 +252,14 @@ export interface Liquidacion {
   pagadaEn: string | null;
   creadaEn: string;
 }
+
+// Avisos (F5): lo que se le avisó a la persona, para su campana. Los textos ya vienen escritos por el backend (y no
+// llevan datos de salud, salvo el nombre en una alerta).
+export interface Aviso {
+  id: string;
+  tipo: string; // «evento:rol», por ejemplo «servicio_confirmado:familia»
+  titulo: string;
+  cuerpo: string;
+  prioridad: "normal" | "alta";
+  creadaEn: string;
+}

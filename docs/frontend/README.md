@@ -11,7 +11,7 @@ Cada archivo es el plan detallado de cómo una parte del frontend pasa de los da
 | F1 | Identidad | M1 | [F1-identidad.md](./F1-identidad.md) (con la [actualización del 2026-11-01](./F1-identidad.md#actualización-2026-11-01)) | ⏳ En construcción |
 | F2 | Directorio | M2 | [F2-directorio.md](./F2-directorio.md) | ✅ Construido |
 | F3+F4 | Cotización y contratación | M3, M4 | [F4-contratacion.md](./F4-contratacion.md) | ✅ Construido |
-| F5 | Notificaciones | M5 | — | Pendiente |
+| F5 | Notificaciones | M5 | [F5-notificaciones.md](./F5-notificaciones.md) | ✅ Construido |
 | F6 | Teleasistencia | M6 | [F6-teleasistencia.md](./F6-teleasistencia.md) | ✅ Construido |
 | F7 | Pagos y bolsas | M7 | [F7-pagos.md](./F7-pagos.md) | ✅ Construido |
 | F8 | Mensajería | M8 | [F8-mensajeria.md](./F8-mensajeria.md) | ✅ Construido |

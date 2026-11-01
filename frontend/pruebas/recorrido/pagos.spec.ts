@@ -100,6 +100,8 @@ test("pagar un servicio: la familia paga en la pasarela y el pago solo cambia co
   });
   await page.getByRole("button", { name: "Pagar ahora" }).click();
   await expect.poll(() => destino).toMatch(/\/pagos\/simulada\/[0-9a-f-]{36}$/);
+  // La salida a la pasarela sigue en curso: se espera a que termine antes de navegar a otra parte.
+  await page.waitForURL(/\/pagos\/simulada\//);
   // Volver sin que la pasarela avise NO cambia nada: el navegador no decide que está pagado.
   await page.goto(`/app/servicios/${servicioId}`);
   await expect(page.getByText(/Falta pagar/)).toBeVisible();
@@ -167,6 +169,8 @@ test("la bolsa de horas: comprar, acreditar con el aviso firmado, y pagar un ser
   });
   await tarjeta.getByRole("button", { name: "Comprar este paquete" }).click();
   await expect.poll(() => salio).toBe(true);
+  // La salida a la pasarela sigue en curso: se espera a que termine antes de navegar a otra parte.
+  await page.waitForURL(/\/pagos\/simulada\//);
   await page.goto("/app/bolsa");
   await expect(page.getByLabel("Saldo")).toContainText("$ 0");
 
