@@ -136,6 +136,28 @@ export class RepositorioNotificacionesDrizzle implements RepositorioNotificacion
     return fila?.total ?? 0;
   }
 
+  async existeAvisoDeConversacion(
+    destinatarioId: string,
+    tipo: string,
+    conversacionId: string,
+    desde: Date,
+  ): Promise<boolean> {
+    const filas = await this.contexto
+      .conexion()
+      .select({ id: notificaciones.id })
+      .from(notificaciones)
+      .where(
+        and(
+          eq(notificaciones.destinatarioId, destinatarioId),
+          eq(notificaciones.tipo, tipo),
+          sql`${notificaciones.parametros}->>'conversacionId' = ${conversacionId}`,
+          sql`${notificaciones.creadaEn} >= ${desde.toISOString()}::timestamptz`,
+        ),
+      )
+      .limit(1);
+    return filas.length > 0;
+  }
+
   async listarDe(
     destinatarioId: string,
     canal: Canal,

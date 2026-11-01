@@ -23,6 +23,11 @@ import { PublicadorDeEventosOutbox } from './infraestructura/outbox/publicador-d
 import { RegistroDeManejadores } from './infraestructura/outbox/registro-de-manejadores.js';
 import { SondeoDelOutbox } from './infraestructura/outbox/sondeo-del-outbox.js';
 import { RelojDelSistema } from './infraestructura/reloj-del-sistema.js';
+import { ConexionesDeFlujos } from './infraestructura/sse/conexiones-de-flujos.js';
+
+// Cuántas conexiones en vivo (SSE) puede tener abiertas una misma persona a la vez en cada instancia: una pestaña,
+// el celular y alguna más. Más que eso es una pestaña olvidada o un abuso.
+const CONEXIONES_EN_VIVO_POR_PERSONA = 5;
 
 // Lo transversal que usan todos los módulos (M0 §4.7 y §4.8). Es global: cada módulo inyecta los
 // puertos por su símbolo sin importarlo. Las clases se crean con fábricas para que no dependan de
@@ -90,6 +95,10 @@ import { RelojDelSistema } from './infraestructura/reloj-del-sistema.js';
       ) => new AuditoriaPostgres(bd, generador, reloj, contextoDePeticion),
     },
     {
+      provide: ConexionesDeFlujos,
+      useFactory: () => new ConexionesDeFlujos(CONEXIONES_EN_VIVO_POR_PERSONA),
+    },
+    {
       provide: SondeoDelOutbox,
       inject: [DespachadorDeEventos, CONFIGURACION],
       useFactory: (
@@ -113,6 +122,8 @@ import { RelojDelSistema } from './infraestructura/reloj-del-sistema.js';
     RegistroDeManejadores,
     // Para la capa HTTP: el middleware abre el contexto de cada petición.
     ContextoDePeticionAls,
+    // Las conexiones en vivo (SSE) abiertas: su tope por persona y su cierre al apagar el servidor.
+    ConexionesDeFlujos,
   ],
 })
 export class CompartidoModule {}

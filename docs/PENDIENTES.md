@@ -128,12 +128,16 @@
 | 🔧 | Un pago de servicio con **cobro parcial o con propina**, y **reembolsos parciales**: no están en el alcance. |
 | 🔧 | Frontend (F3 y F4): `/bolsa` y la compra con `Idempotency-Key`, el enlace de pago, el estado «falta pagar» del servicio y la vista de liquidaciones del cuidador. |
 
-### M8 — Mensajería
+### M8 — Mensajería  *(backend construido)*
 
 | | Pendiente |
 |---|---|
-| 🔧 | Todo el módulo: conversaciones y mensajes con tiempo real. |
-| 🧑 | Cuánto tiempo sigue legible una conversación después de terminar el servicio. |
+| 🧑 | **Cuánto tiempo sigue legible una conversación** después de terminar el servicio. Hoy es **para siempre** para sus dos partes (escribir sí se corta al terminar el servicio). Decidir con asesoría legal el plazo de conservación y la supresión (Ley 1581). |
+| 🔧 | **Marcar como leídos** y contar los no leídos: la columna `leido_en` existe, falta el caso de uso y mostrarlo en la lista. Y una vista previa del último mensaje en `GET /conversaciones`. |
+| 🔧 | **Reportar o bloquear** una conversación abusiva, y moderación: hoy solo hay el tope de 60 mensajes por minuto por IP. |
+| 🔧 | **Varias instancias:** el flujo en vivo consulta la base cada 2 s y no depende de la memoria, pero solo el servidor que procesa el evento despierta a sus conexiones al instante. Para latencia inmediata en todas hará falta `LISTEN/NOTIFY` o un bus (decisión de hosting, M10). |
+| 🔧 | **Flujo en vivo de Teleasistencia** (`GET /adultos-mayores/:id/eventos`, pendiente de M6): ya hay la infraestructura (`ConexionesDeFlujos`, patrón de `FlujoDeMensajes`); falta construirlo y que verifique el acceso en cada vuelta. |
+| 🔧 | Frontend (F4): `mensajeria.ts`, quitar las respuestas automáticas y los indicadores simulados de `ChatMensajes`, `EventSource` con reconexión y **reconocer los mensajes por su `id`** (el flujo entrega al menos una vez). |
 
 ### M9 — Directorio II: registro y verificación
 

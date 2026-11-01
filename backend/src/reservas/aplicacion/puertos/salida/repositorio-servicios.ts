@@ -52,6 +52,9 @@ export interface RepositorioServicios {
   // Solicitudes pendientes cuyo plazo ya venció (para la tarea de expiración).
   listarSolicitudesVencidas(ahora: Date, limite: number): Promise<ServicioId[]>;
 
+  // ¿Hay un servicio vivo (solicitado, aceptado o en curso) entre esta familia y este cuidador?
+  existeActivoEntre(familiarId: string, cuidadorId: string): Promise<boolean>;
+
   // Servicios aceptados o en curso de una persona mayor desde esa fecha (para «cuidador en turno» y para saber
   // si un cuidador tiene servicio activo con ella). El filtro fino por franja lo hace el dominio.
   listarActivosDeAdultoMayor(

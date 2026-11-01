@@ -223,6 +223,12 @@ PLANTILLAS['bolsa_comprada:familia'] = () => ({
     'Tu pago se aprobó y tu bolsa de horas ya tiene saldo. Úsala en Seniory.',
 });
 
+// Mensajería. El aviso NO lleva el texto del mensaje ni el nombre de quien lo escribió: solo dice que hay uno.
+PLANTILLAS['mensaje_nuevo:destinatario'] = () => ({
+  titulo: 'Tienes un mensaje nuevo',
+  cuerpo: 'Te escribieron en Seniory. Ábrela para leerlo.',
+});
+
 export const TIPOS_DE_AVISO = Object.keys(PLANTILLAS);
 
 export function renderizarAviso(

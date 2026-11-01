@@ -126,6 +126,23 @@ export class RepositorioNotificacionesEnMemoria implements RepositorioNotificaci
     );
   }
 
+  existeAvisoDeConversacion(
+    destinatarioId: string,
+    tipo: string,
+    conversacionId: string,
+    desde: Date,
+  ): Promise<boolean> {
+    return Promise.resolve(
+      this.avisos().some(
+        (a) =>
+          a.destinatarioId === destinatarioId &&
+          a.tipo === tipo &&
+          a.parametros.conversacionId === conversacionId &&
+          a.creadaEn >= desde,
+      ),
+    );
+  }
+
   listarDe(
     _destinatarioId: string,
     _canal: Canal,

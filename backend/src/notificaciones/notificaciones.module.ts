@@ -51,6 +51,7 @@ import {
   AvisarPagoReembolsado,
   AvisarPagoRequerido,
 } from './aplicacion/manejadores/avisar-de-pagos.js';
+import { AvisarMensajeNuevo } from './aplicacion/manejadores/avisar-de-mensajes.js';
 import {
   AvisarAlerta,
   AvisarLecturaFueraDeRango,
@@ -75,6 +76,7 @@ import { RepositorioNotificacionesDrizzle } from './infraestructura/salida/persi
 const MANEJADORES_DE_SERVICIO = Symbol('ManejadoresDeServicio');
 const MANEJADORES_DE_TELEASISTENCIA = Symbol('ManejadoresDeTeleasistencia');
 const MANEJADORES_DE_PAGOS = Symbol('ManejadoresDePagos');
+const MANEJADOR_DE_MENSAJES = Symbol('ManejadorDeMensajes');
 const SONDEO_DE_ENTREGAS = Symbol('SondeoDeEntregas');
 
 // Los eventos del ciclo de vida del servicio que generan avisos, cada uno con su nombre estable (el despachador
@@ -216,6 +218,15 @@ const EVENTOS_CON_AVISO = [
         new AvisarBolsaComprada(avisos),
       ],
     },
+    {
+      provide: MANEJADOR_DE_MENSAJES,
+      inject: [REPOSITORIO_NOTIFICACIONES, CrearAvisos, RELOJ],
+      useFactory: (
+        notificaciones: RepositorioNotificaciones,
+        avisos: CrearAvisos,
+        reloj: Reloj,
+      ) => new AvisarMensajeNuevo(notificaciones, avisos, reloj),
+    },
     // La tarea programada que envía los avisos pendientes (y reintenta los que fallaron).
     {
       provide: SONDEO_DE_ENTREGAS,
@@ -243,6 +254,8 @@ export class NotificacionesModule implements OnModuleInit {
     private readonly manejadoresDeTeleasistencia: ManejadorDeEventos[],
     @Inject(MANEJADORES_DE_PAGOS)
     private readonly manejadoresDePagos: ManejadorDeEventos[],
+    @Inject(MANEJADOR_DE_MENSAJES)
+    private readonly manejadorDeMensajes: AvisarMensajeNuevo,
     // Solo para que Nest lo cree y llame a sus ganchos de arranque y cierre.
     @Inject(SONDEO_DE_ENTREGAS) private readonly sondeo: SondeoPeriodico,
   ) {}
@@ -257,5 +270,6 @@ export class NotificacionesModule implements OnModuleInit {
     for (const manejador of this.manejadoresDePagos) {
       this.registro.registrar(manejador);
     }
+    this.registro.registrar(this.manejadorDeMensajes);
   }
 }

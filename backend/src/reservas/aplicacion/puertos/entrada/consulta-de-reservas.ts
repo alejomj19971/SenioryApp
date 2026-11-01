@@ -42,6 +42,14 @@ export interface ConsultaDeReservas {
     adultoMayorId: string,
   ): Promise<{ cuidadorId: string; cuidadorUsuarioId: string | null } | null>;
 
+  // Mensajería: ¿pueden escribirse esta familia y este cuidador? Es verdadero con un servicio entre ellos que
+  // siga vivo (solicitado, aceptado o en curso). Uno terminado o cancelado ya no permite escribir; leer lo escrito
+  // es otra cosa y no pasa por aquí. Se pregunta en CADA envío.
+  hayServicioActivoEntre(
+    familiarId: string,
+    cuidadorId: string,
+  ): Promise<boolean>;
+
   // Mensajería: quiénes pueden hablar en el chat de ese servicio. Null si no existe.
   obtenerParticipantes(
     servicioId: string,

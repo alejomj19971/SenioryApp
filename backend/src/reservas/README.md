@@ -53,6 +53,7 @@ Es una función pura sobre una tabla (`maquina-de-estados.ts`); una prueba la co
 | `obtenerServicio(id)`                                    | Pagos, Notificaciones, Mensajería  | IDs, estado, fecha, jornada y horas; **sin dinero ni datos personales**. `null` si no existe                          |
 | `cuidadorTieneServicioActivo(cuidadorId, adultoMayorId)` | Teleasistencia, **en cada acceso** | Verdadero con un servicio en curso, o aceptado cuya franja es ahora. Terminar o cancelar corta el acceso de inmediato |
 | `obtenerParticipantes(id)`                               | Mensajería                         | La cuenta del familiar y la del cuidador que pueden hablar en ese servicio                                            |
+| `hayServicioActivoEntre(familiarId, cuidadorId)`         | Mensajería, **en cada envío**      | Verdadero con un servicio solicitado, aceptado o en curso entre los dos. Terminado o cancelado, ya no se puede escribir |
 
 Reservas usa: de Identidad, `esFamiliarVinculado`, `tieneConsentimientoVigente` y `obtenerAdultoMayor`; de Directorio, `obtenerCuidadorParaContratar`, `obtenerContactoDeCuidador` y `obtenerCuidadorPorUsuario`; de Pagos, `COTIZADOR_DE_SERVICIOS` y `CONSULTA_DE_PAGOS` (¿alcanza la bolsa?). Pagos **no** puede consultar a Reservas (Reservas ya depende de Pagos): por eso el evento `servicio_confirmado` lleva las condiciones de cobro.
 

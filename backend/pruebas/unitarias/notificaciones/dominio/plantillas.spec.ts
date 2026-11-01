@@ -35,6 +35,7 @@ describe('renderizarAviso', () => {
       'compra_de_bolsa_fallida:familia',
       'lectura_fuera_de_rango:destinatario',
       'medicamento_omitido:destinatario',
+      'mensaje_nuevo:destinatario',
       'pago_reembolsado:familia',
       'pago_requerido:familia',
       'servicio_cancelado:cuidador',

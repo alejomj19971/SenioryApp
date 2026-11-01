@@ -48,6 +48,15 @@ export interface RepositorioNotificaciones {
   // Cuántos avisos se le crearon a esta persona desde `desde` (para el límite de envíos).
   contarRecientes(destinatarioId: string, desde: Date): Promise<number>;
 
+  // ¿Se le creó a esta persona, desde `desde`, un aviso de ese tipo sobre esa misma conversación? Para agrupar los
+  // avisos de mensajes: un chat animado avisa una vez, no por cada mensaje.
+  existeAvisoDeConversacion(
+    destinatarioId: string,
+    tipo: string,
+    conversacionId: string,
+    desde: Date,
+  ): Promise<boolean>;
+
   // Los avisos de una persona por un canal, los más recientes primero.
   listarDe(
     destinatarioId: string,

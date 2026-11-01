@@ -19,6 +19,7 @@ import type {
   Servicio,
   TransicionDeServicio,
 } from '../../../dominio/servicio.js';
+import { ESTADOS_ACTIVOS } from '../../../dominio/valores-cerrados.js';
 import { servicioDeFila } from './mapeadores.js';
 import { historialDeEstados, servicios } from './reservas.esquema.js';
 
@@ -234,6 +235,25 @@ export class RepositorioServiciosDrizzle implements RepositorioServicios {
       .orderBy(servicios.solicitudExpiraEn)
       .limit(limite);
     return filas.map((fila) => fila.id as ServicioId);
+  }
+
+  async existeActivoEntre(
+    familiarId: string,
+    cuidadorId: string,
+  ): Promise<boolean> {
+    const filas = await this.contexto
+      .conexion()
+      .select({ id: servicios.id })
+      .from(servicios)
+      .where(
+        and(
+          eq(servicios.familiarId, familiarId),
+          eq(servicios.cuidadorId, cuidadorId),
+          inArray(servicios.estado, [...ESTADOS_ACTIVOS]),
+        ),
+      )
+      .limit(1);
+    return filas.length > 0;
   }
 
   async listarActivosDeAdultoMayor(

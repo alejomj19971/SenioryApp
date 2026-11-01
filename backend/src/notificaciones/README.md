@@ -42,6 +42,14 @@ Un canal es un adaptador intercambiable (`CanalDeNotificacion`); agregar el real
 
 Cuando sale el primer aviso de una alerta, Notificaciones publica `notificaciones.notificacion_entregada` (solo para avisos de alertas): con él Teleasistencia marca la alerta como «notificada» y mide E11.
 
+## Los avisos de Mensajería
+
+| Evento                       | A quién        | Texto                                             |
+| ---------------------------- | -------------- | ------------------------------------------------- |
+| `mensajeria.mensaje_enviado` | La otra parte  | «Tienes un mensaje nuevo»: ábrela para leerlo     |
+
+**Agrupado:** si a esa persona ya se le avisó de esa conversación en los últimos 5 minutos, no se repite (al abrir la aplicación ve todos). El aviso **no lleva el texto ni el nombre** de quien escribió: por correo o SMS no hay privacidad para una conversación.
+
 ## Los avisos de Pagos
 
 Los avisos de pago **no llevan montos**: dicen que hay algo por hacer y mandan a abrir Seniory.

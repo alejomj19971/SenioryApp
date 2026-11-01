@@ -78,6 +78,13 @@ export class ConsultaDeReservasServicio implements ConsultaDeReservas {
     };
   }
 
+  hayServicioActivoEntre(
+    familiarId: string,
+    cuidadorId: string,
+  ): Promise<boolean> {
+    return this.servicios.existeActivoEntre(familiarId, cuidadorId);
+  }
+
   async obtenerParticipantes(
     servicioId: string,
   ): Promise<ParticipantesDelServicio | null> {
