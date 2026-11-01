@@ -6,7 +6,27 @@
 | **Requiere en el backend** | M1 (Identidad) en staging |
 | **Requiere en el frontend** | F0 |
 | **Tamaño** | L |
-| **Estado** | Propuesta |
+| **Estado** | En construcción (ver la actualización) |
+
+---
+
+## Actualización 2026-11-01
+
+El backend M0–M10 ya está en `main`; este plan se contrasta con su código real. Lo que cambia respecto al resto del documento:
+
+| Tema | Cambio |
+|---|---|
+| Modo de datos | **No existe `SENIORY_FUENTE_DATOS`** (se eliminó el 2026-10-26): los servicios o leen `data/` o llaman a la API. F1 conecta `paciente.ts` a la API y borra `familia.json`; el cuidador en turno sigue leyendo `data/` hasta F4. |
+| Cookies | El backend emite `seniory_refresco` con `Path=/api/v1/auth`. `guardarSesion` las reescribe **ambas con `Path=/`** en el dominio de Next (§4.2 ya lo suponía; ahora es una regla con prueba). Al llamar a `/auth/refresh` y `/auth/logout` el cliente reenvía el refresco en `Cookie` explícitamente. |
+| Ajustes al backend (§4.3) | **Los tres ya existen** en el backend (ventana de gracia de 30 s, `Origin` solo si viene, `X-Cliente-IP` con secreto). No hay nada pendiente. |
+| Tipos generados (§4.5) | **Se descarta `api:tipos`:** el OpenAPI no declara respuestas. Los contratos se escriben a mano en `lib/api/contratos/identidad.ts`. |
+| Recuperar contraseña | **Entra en F1**: el backend ya la tiene (`CANAL_DE_RECUPERACION=consola` en local; 503 si está `deshabilitado`). Pantallas `/recuperar` y `/restablecer-contrasena`. |
+| Versiones legales | El backend **exige** que `versionPolitica` y `versionDelTexto` sean la vigente (`v1`); si no, 400 (`consentimiento.version_no_vigente`). El frontend las toma de `lib/legal/versiones.ts`. |
+| Consentimiento | Cuerpo: `{ finalidad: 'datos_de_salud', calidad: 'titular' | 'representante', versionDelTexto }`. El familiar actúa como `representante` hasta que Legal decida. Un consentimiento ya vigente responde 409. |
+| Registro | Cuerpo: `{ nombre, correo, contrasena (10–128), telefono? (+57…), versionPolitica }`. Respuesta `{ usuario: { id, nombre, correo, rol } }` + cookies. |
+| `GET /yo` | `{ usuario: { id, nombre, correo, rol, telefono }, adultosMayores: [{ id, nombre, edad, fotoUrl, parentesco, esResponsable, consentimientoDeSalud }] }`. «Sin adulto mayor» y «sin consentimiento» salen de aquí. |
+| Roles | Tras ingresar: `familiar` → `/app` (o la bienvenida), `cuidador` → `/cuidador`, `administrador` → `/admin` (esas dos áreas llegan en F4 y F9; mientras tanto un mensaje claro). |
+| Diseño | Las pantallas usan `components/ui` y los tokens de la Etapa 0; errores de pantalla con `Aviso`. |
 
 ---
 
