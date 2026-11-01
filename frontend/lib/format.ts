@@ -1,3 +1,5 @@
+import { horaEnColombia } from "@/lib/fecha-colombia";
+
 const formateadorCOP = new Intl.NumberFormat("es-CO", {
   style: "currency",
   currency: "COP",
@@ -8,9 +10,12 @@ export function formatearCOP(valor: number): string {
   return formateadorCOP.format(valor);
 }
 
+// Todas las fechas y horas se muestran en hora de Colombia, sin importar dónde corra el código (el servidor del hosting
+// suele estar en UTC): así la persona ve la misma hora en el servidor y en el navegador.
 const formateadorFecha = new Intl.DateTimeFormat("es-CO", {
   day: "numeric",
   month: "long",
+  timeZone: "America/Bogota",
 });
 
 const formateadorFechaHora = new Intl.DateTimeFormat("es-CO", {
@@ -18,6 +23,8 @@ const formateadorFechaHora = new Intl.DateTimeFormat("es-CO", {
   month: "long",
   hour: "2-digit",
   minute: "2-digit",
+  hourCycle: "h23",
+  timeZone: "America/Bogota",
 });
 
 // Un día civil «AAAA-MM-DD» (la fecha de un servicio) como «domingo, 1 de noviembre». Se formatea en UTC a propósito:
@@ -35,14 +42,9 @@ export function formatearFechaHora(fechaISO: string): string {
   return formateadorFechaHora.format(new Date(fechaISO));
 }
 
-// Formato manual (no Intl): el espacio antes de "a. m."/"p. m." que genera
-// Intl.DateTimeFormat difiere entre el ICU de Node y el del navegador, lo
-// que rompe la hidratación en componentes cliente. HH:mm es determinista.
+// HH:mm en hora de Colombia (determinista entre el servidor y el navegador: no depende de la zona del equipo).
 export function formatearHora(fechaISO: string): string {
-  const fecha = new Date(fechaISO);
-  const horas = fecha.getHours().toString().padStart(2, "0");
-  const minutos = fecha.getMinutes().toString().padStart(2, "0");
-  return `${horas}:${minutos}`;
+  return horaEnColombia(fechaISO);
 }
 
 import type { Especialidad, Jornada } from "@/lib/types";

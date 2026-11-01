@@ -75,18 +75,18 @@ test("recorrido principal de una familia", async ({ page, context }) => {
 
   // Teleasistencia: alerta con cuenta regresiva de 5 segundos
   await page.goto("/app/teleasistencia");
-  await page.getByRole("button", { name: /Enviar alerta de emergencia/ }).click();
-  await expect(page.getByText(/Enviando alerta en \d/)).toBeVisible();
+  await page.getByRole("button", { name: "Pedir ayuda ahora" }).click();
+  await expect(page.getByText(/Pidiendo ayuda en \d/)).toBeVisible();
   await expect(page.getByText("Alerta enviada", { exact: true })).toBeVisible({ timeout: 10_000 });
 });
 
 test("cancelar la alerta antes de que termine la cuenta regresiva", async ({ page, context }) => {
   await ingresarComoFamilia(page, context, "/app/teleasistencia");
-  await page.getByRole("button", { name: /Enviar alerta de emergencia/ }).click();
-  await expect(page.getByText(/Enviando alerta en \d/)).toBeVisible();
+  await page.getByRole("button", { name: "Pedir ayuda ahora" }).click();
+  await expect(page.getByText(/Pidiendo ayuda en \d/)).toBeVisible();
 
   await page.getByRole("button", { name: "Cancelar" }).click();
 
-  await expect(page.getByText(/Enviando alerta en/)).toHaveCount(0);
+  await expect(page.getByText(/Pidiendo ayuda en/)).toHaveCount(0);
   await expect(page.getByText("Alerta enviada", { exact: true })).toHaveCount(0);
 });

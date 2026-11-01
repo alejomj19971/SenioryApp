@@ -22,7 +22,7 @@ Aplicación web (Next.js 16, App Router) de Seniory. **Actúa como BFF** (*backe
 | `npm run lint` | ESLint. |
 | `npm test` | Pruebas unitarias y de componentes (Vitest). `npm run test:observar` las repite al guardar. |
 | `npm run test:contrato` | Pruebas de **contrato** contra el backend local real (`npm run dev` en `backend/`): vigilan que la API responda lo que el frontend supone. Se omiten si el backend no está encendido. |
-| `npm run test:recorrido` | Recorridos de punta a punta (Playwright, navegador móvil) **contra el backend local real**. Levanta su propio servidor en el puerto 3100; sin el backend encendido se omiten. |
+| `npm run test:recorrido` | Recorridos de punta a punta (Playwright, navegador móvil) **contra el backend local real y la versión compilada** de la app (compila y la levanta en el puerto 3100; `next dev` compila al vuelo y deja de responder más de lo que se espera del backend). Sin el backend encendido se omiten; los de pagos y cuidadores necesitan las variables `ADMIN_DE_PRUEBA_*` y `SECRETO_DE_PASARELA_DE_PRUEBA` de `.env.ejemplo`. |
 
 ## Estructura
 

@@ -22,10 +22,12 @@ export default defineConfig({
   },
   projects: [{ name: "movil", use: { ...devices["Pixel 7"] } }],
   webServer: {
-    // La app está pensada para el celular; el recorrido usa un viewport móvil.
-    command: `npm run dev -- --port ${PUERTO}`,
+    // Los recorridos corren contra la versión COMPILADA (la que se despliega), no contra `next dev`: el servidor de
+    // desarrollo compila cada página al vuelo y, bajo carga, deja de responder más de los 8 s que la aplicación le da al
+    // backend (falso fallo). Con `PUERTO_DE_RECORRIDOS` distinto se puede tener otra copia corriendo a la vez.
+    command: `npm run build && npx next start --port ${PUERTO}`,
     url: URL_BASE,
     reuseExistingServer: !process.env.CI,
-    timeout: 120_000,
+    timeout: 240_000,
   },
 });

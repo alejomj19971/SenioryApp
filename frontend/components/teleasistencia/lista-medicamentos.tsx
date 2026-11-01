@@ -1,84 +1,90 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import Link from "next/link";
+import { useEffect, useMemo, useOptimistic, useState, useTransition } from "react";
+import { useRouter } from "next/navigation";
 import { BellRing, Check, Pill } from "lucide-react";
+import { Aviso } from "@/components/ui/aviso";
+import { marcarTomaAccion } from "@/lib/acciones/teleasistencia";
+import { ahoraEnColombia } from "@/lib/fecha-colombia";
 import { useAlarmaSonido } from "@/lib/hooks/use-alarma-sonido";
 import { cn } from "@/lib/utils";
-import type { Medicamento } from "@/lib/types";
+import type { EstadoDeToma, TomaDelDia } from "@/lib/types";
 
-function horaProgramadaHoy(hora: string, referencia: Date): Date {
-  const [horas, minutos] = hora.split(":").map(Number);
-  const fecha = new Date(referencia);
-  fecha.setHours(horas, minutos, 0, 0);
-  return fecha;
-}
+const minutosDe = (hora: string) => Number(hora.slice(0, 2)) * 60 + Number(hora.slice(3, 5));
 
-export function ListaMedicamentos({
-  medicamentos: medicamentosIniciales,
-}: {
-  medicamentos: Medicamento[];
-}) {
-  const [medicamentos, setMedicamentos] = useState(medicamentosIniciales);
-  const [ahora, setAhora] = useState<Date | null>(null);
+// Las tomas de hoy (F6). El estado de cada una es el del backend; al marcar, la pantalla responde de inmediato
+// (optimista) y, si el servidor no lo acepta (otra pantalla ya la cambió, el día no corresponde), vuelve a como estaba
+// y lo dice. «Hora» siempre es la de Colombia.
+export function ListaMedicamentos({ tomas }: { tomas: TomaDelDia[] }) {
+  const enrutador = useRouter();
+  const [enCurso, empezar] = useTransition();
+  const [error, setError] = useState<string | null>(null);
+  const [optimistas, aplicar] = useOptimistic(tomas, (actuales, cambio: { tomaId: string; estado: EstadoDeToma }) =>
+    actuales.map((toma) => (toma.tomaId === cambio.tomaId ? { ...toma, estado: cambio.estado } : toma)),
+  );
 
+  // La hora de Colombia se lee al montar (no durante el render del servidor) para no desajustar la hidratación.
+  const [minutosAhora, setMinutosAhora] = useState<number | null>(null);
   useEffect(() => {
-    // Hora real del sistema (externa): se lee al montar para evitar
-    // desajustes de hidratación entre el render del servidor y el cliente.
     // eslint-disable-next-line react-hooks/set-state-in-effect
-    setAhora(new Date());
-    const intervalo = setInterval(() => setAhora(new Date()), 15000);
+    setMinutosAhora(ahoraEnColombia().minutos);
+    const intervalo = setInterval(() => setMinutosAhora(ahoraEnColombia().minutos), 15_000);
     return () => clearInterval(intervalo);
   }, []);
 
-  const ordenados = useMemo(
-    () => [...medicamentos].sort((a, b) => a.hora.localeCompare(b.hora)),
-    [medicamentos],
+  const pendientes = optimistas.filter((toma) => toma.estado === "pendiente");
+  const proximaId = pendientes[0]?.tomaId;
+  const tomadas = optimistas.filter((toma) => toma.estado === "tomada").length;
+  // Una toma pendiente cuya hora ya llegó: suena la alarma y se avisa.
+  const enAlarma = useMemo(
+    () => (minutosAhora === null ? null : (pendientes.find((toma) => minutosDe(toma.hora) <= minutosAhora) ?? null)),
+    [pendientes, minutosAhora],
   );
+  useAlarmaSonido(enAlarma !== null);
 
-  const proximoPendienteId = ordenados.find((medicamento) => !medicamento.tomado)?.id;
-  const tomadosCount = ordenados.filter((medicamento) => medicamento.tomado).length;
+  function alternar(toma: TomaDelDia) {
+    const nuevo: "tomada" | "pendiente" = toma.estado === "tomada" ? "pendiente" : "tomada";
+    empezar(async () => {
+      aplicar({ tomaId: toma.tomaId, estado: nuevo });
+      const resultado = await marcarTomaAccion(toma.medicamentoId, toma.tomaId, nuevo);
+      if (!resultado.ok) {
+        setError(resultado.mensaje);
+        enrutador.refresh();
+        return;
+      }
+      setError(null);
+    });
+  }
 
-  const medicamentoEnAlarma = useMemo(() => {
-    if (!ahora) return null;
+  if (optimistas.length === 0) {
     return (
-      ordenados.find(
-        (medicamento) => !medicamento.tomado && horaProgramadaHoy(medicamento.hora, ahora) <= ahora,
-      ) ?? null
-    );
-  }, [ordenados, ahora]);
-
-  useAlarmaSonido(medicamentoEnAlarma !== null);
-
-  function alternarTomado(id: string) {
-    setMedicamentos((actuales) =>
-      actuales.map((medicamento) =>
-        medicamento.id === id
-          ? { ...medicamento, tomado: !medicamento.tomado }
-          : medicamento,
-      ),
+      <div className="flex flex-col items-start gap-3 rounded-2xl bg-muted p-4">
+        <p className="text-base text-foreground">Todavía no hay medicamentos para hoy.</p>
+        <Link href="/app/teleasistencia/medicamentos" className="inline-flex min-h-12 items-center font-medium text-primary underline underline-offset-4">
+          Agregar un medicamento
+        </Link>
+      </div>
     );
   }
 
   return (
     <div className="flex flex-col gap-3">
-      {medicamentoEnAlarma && (
-        <div
-          role="alert"
-          className="flex items-center gap-3 rounded-2xl bg-accent p-3 text-accent-foreground shadow-lg"
-        >
-          <span className="flex size-10 shrink-0 animate-pulse items-center justify-center rounded-full bg-white/25">
+      {enAlarma !== null && (
+        <div role="alert" className="flex items-center gap-3 rounded-2xl bg-warning p-3 text-warning-foreground shadow-lg">
+          <span className="flex size-10 shrink-0 animate-pulse items-center justify-center rounded-full bg-warning-foreground/15">
             <BellRing className="size-5" aria-hidden="true" />
           </span>
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-bold">¡Hora del medicamento!</p>
-            <p className="text-sm text-accent-foreground/90">
-              {medicamentoEnAlarma.nombre} · {medicamentoEnAlarma.dosis}
+            <p className="text-base font-bold">¡Hora del medicamento!</p>
+            <p className="text-base">
+              {enAlarma.nombre} · {enAlarma.dosis}
             </p>
           </div>
           <button
             type="button"
-            onClick={() => alternarTomado(medicamentoEnAlarma.id)}
-            className="flex h-10 shrink-0 items-center gap-1.5 rounded-full bg-white px-4 text-sm font-semibold text-accent"
+            onClick={() => alternar(enAlarma)}
+            className="flex h-12 shrink-0 items-center gap-1.5 rounded-full bg-card px-4 text-base font-semibold text-foreground"
           >
             <Check className="size-4" aria-hidden="true" />
             Ya se tomó
@@ -86,82 +92,65 @@ export function ListaMedicamentos({
         </div>
       )}
 
+      {error !== null && <Aviso titulo="No pudimos guardar el cambio" descripcion={error} />}
+
       <div className="flex items-center justify-between">
-        <p className="text-sm font-medium text-muted-foreground">
-          {tomadosCount} de {ordenados.length} tomados hoy
+        <p className="text-base font-medium text-muted-foreground">
+          {tomadas} de {optimistas.length} tomadas hoy
         </p>
         <div className="h-2 w-24 overflow-hidden rounded-full bg-muted" aria-hidden="true">
-          <div
-            className="h-full rounded-full bg-primary transition-[width]"
-            style={{ width: `${ordenados.length ? (tomadosCount / ordenados.length) * 100 : 0}%` }}
-          />
+          <div className="h-full rounded-full bg-success transition-[width]" style={{ width: `${(tomadas / optimistas.length) * 100}%` }} />
         </div>
       </div>
-      <ul className="flex flex-col gap-2">
-      {ordenados.map((medicamento) => {
-        const esProximoPendiente = medicamento.id === proximoPendienteId;
-        const enAlarma = medicamento.id === medicamentoEnAlarma?.id;
-        return (
-          <li
-            key={medicamento.id}
-            className={cn(
-              "flex items-center gap-3 rounded-xl p-3 ring-1",
-              enAlarma
-                ? "bg-accent/15 ring-2 ring-accent"
-                : esProximoPendiente
-                  ? "bg-accent/10 ring-accent"
-                  : medicamento.tomado
-                    ? "bg-muted/60 ring-border"
-                    : "bg-card ring-border",
-            )}
-          >
-            <span
+
+      <ul className="flex flex-col gap-2" aria-busy={enCurso}>
+        {optimistas.map((toma) => {
+          const esProxima = toma.tomaId === proximaId;
+          const atrasada = toma.tomaId === enAlarma?.tomaId;
+          const hecha = toma.estado === "tomada";
+          return (
+            <li
+              key={toma.tomaId}
               className={cn(
-                "flex size-10 shrink-0 items-center justify-center rounded-full",
-                enAlarma
-                  ? "bg-accent/20 text-accent"
-                  : medicamento.tomado
-                    ? "bg-primary/10 text-primary"
-                    : "bg-muted text-muted-foreground",
+                "flex items-center gap-3 rounded-xl p-3 ring-1",
+                atrasada ? "bg-warning/15 ring-2 ring-warning" : esProxima ? "bg-info/10 ring-info" : hecha ? "bg-muted/60 ring-border" : "bg-card ring-border",
               )}
             >
-              <Pill className="size-5" aria-hidden="true" />
-            </span>
-            <div className="flex-1">
-              <p
+              <span className={cn("flex size-10 shrink-0 items-center justify-center rounded-full", hecha ? "bg-success/15 text-success" : "bg-muted text-muted-foreground")}>
+                <Pill className="size-5" aria-hidden="true" />
+              </span>
+              <div className="flex-1">
+                <p className={cn("text-base font-medium", hecha ? "text-muted-foreground line-through" : "text-foreground")}>
+                  {toma.nombre} · {toma.dosis}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  {toma.hora}
+                  {toma.estado === "omitida" && " · Omitida"}
+                  {toma.estado === "pendiente" && atrasada && " · Atrasada"}
+                  {toma.estado === "pendiente" && !atrasada && esProxima && " · Próxima"}
+                  {toma.indicaciones !== "" && ` · ${toma.indicaciones}`}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => alternar(toma)}
+                aria-pressed={hecha}
+                aria-label={hecha ? `Deshacer: ${toma.nombre} de las ${toma.hora} no se tomó` : `Marcar ${toma.nombre} de las ${toma.hora} como tomado`}
                 className={cn(
-                  "text-base font-medium",
-                  medicamento.tomado ? "text-muted-foreground line-through" : "text-foreground",
+                  "flex size-12 shrink-0 items-center justify-center rounded-full border-2 transition-colors",
+                  hecha ? "border-success bg-success text-success-foreground" : "border-input bg-background text-transparent hover:border-primary/50",
                 )}
               >
-                {medicamento.nombre} · {medicamento.dosis}
-              </p>
-              <p className="text-sm text-muted-foreground">
-                {medicamento.hora} {enAlarma ? "· Atrasado" : esProximoPendiente && "· Próximo"}
-              </p>
-            </div>
-            <button
-              type="button"
-              onClick={() => alternarTomado(medicamento.id)}
-              aria-pressed={medicamento.tomado}
-              aria-label={
-                medicamento.tomado
-                  ? `Marcar ${medicamento.nombre} como no tomado`
-                  : `Marcar ${medicamento.nombre} como tomado`
-              }
-              className={cn(
-                "flex size-12 shrink-0 items-center justify-center rounded-full border-2 transition-colors",
-                medicamento.tomado
-                  ? "border-primary bg-primary text-primary-foreground"
-                  : "border-border bg-background text-transparent hover:border-primary/50",
-              )}
-            >
-              <Check className="size-6" aria-hidden="true" />
-            </button>
-          </li>
-        );
-      })}
+                <Check className="size-6" aria-hidden="true" />
+              </button>
+            </li>
+          );
+        })}
       </ul>
+
+      <Link href="/app/teleasistencia/medicamentos" className="inline-flex min-h-12 w-fit items-center font-medium text-primary underline underline-offset-4">
+        Administrar medicamentos
+      </Link>
     </div>
   );
 }

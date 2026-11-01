@@ -206,7 +206,15 @@ El frontend se conecta al backend módulo por módulo, en el orden del [plan v2]
 | 🔧 | **Historial de pagos de la familia** (hoy solo el de cada servicio y los movimientos de la bolsa) y comprobantes/facturas (decisión legal). |
 | 🔧 | **Cobro de un pago vencido por la familia:** la pantalla dice que el servicio se cancela; no hay recordatorio previo hasta que exista la campana (F5) y los canales. |
 | 🧑 | La base local acumula cuentas de prueba (correos `.invalid`) con cada corrida de los recorridos; no afecta a ningún entorno compartido. |
-| F6, F8 a F10 | 🔧 Una por cada módulo (teleasistencia, mensajes, avisos, administración) y el cierre para producción. |
+| F6 — Teleasistencia *(construido)* | 🔧 **Backend: flujo en vivo** (SSE, ya previsto en M6): hoy la pantalla se actualiza sola cada 15 s mientras se mira. Cuando exista, usará el mismo patrón que el chat. |
+| 🔧 | **Backend: listar las alertas** y exponer sus ids: `GET …/resumen` solo trae cuántas hay sin atender, así que la pantalla las cuenta pero no puede ofrecer «marcar como atendida» (`PATCH /alertas/:id/atendida` ya existe). |
+| ⚖️🧑 | **Rangos de referencia:** los de `RANGOS_POR_DEFECTO` son provisionales y los debe definir un profesional de salud antes de lanzar; falta la pantalla para que la familia cargue los de su médico (`PUT …/rangos-de-referencia`). La pantalla solo dice «fuera del rango esperado», sin cuál medida ni qué significa. |
+| 🔧 | **Medicamentos:** hoy solo diarios (el backend admite días de la semana y vigencias) y sin editar (se deja de tomar y se agrega de nuevo). La lista de «administrar» muestra los que se toman hoy. |
+| 🔧 | **El cuidador en turno** puede leer y marcar tomas según el backend (si tiene un servicio activo ahora); su pantalla no está construida: hoy solo la familia usa la teleasistencia. |
+| 🔧 | **Avisos de cada toma** con la app cerrada: dependen de las notificaciones (F5) y de los canales (correo, SMS, WhatsApp); la alarma sonora funciona solo con la pantalla abierta. |
+| ⚖️ | **Aviso legal del alcance de la teleasistencia** (no es un servicio de emergencias ni un dispositivo médico): ya se dice en pantalla; falta el texto aprobado en los términos. |
+| 🔧 | **«Gratis»**: el distintivo de la pantalla viene del prototipo; confirmar con el negocio que la teleasistencia seguirá siendo gratuita. |
+| F8 a F10 | 🔧 Una por cada módulo (mensajes, avisos, administración) y el cierre para producción. |
 | 🔧 | **Vulnerabilidades de las dependencias del frontend** (`npm audit`: 15 en producción, casi todas por `shadcn` y `zod`; arreglarlas obliga a subir `shadcn` a una versión mayor). `shadcn` es una herramienta de desarrollo y no debería estar en `dependencies`. |
 | 🧑 | **Pruebas de usabilidad** con adultos mayores y familiares reales (E4, E5). |
 | 🧑 | Quitar de la landing los textos y cifras de demostración. |

@@ -77,20 +77,59 @@ export interface FiltrosCuidador {
   tarifaMaxima?: number;
 }
 
-export interface Medicamento {
+// Teleasistencia (F6): datos de salud. Solo los ven la familia vinculada (con autorización) y el cuidador con un servicio
+// activo ahora; el backend lo verifica en cada consulta.
+export type EstadoDeToma = "pendiente" | "tomada" | "omitida";
+
+// Una toma de un medicamento en un día: lo que la persona ve y marca.
+export interface TomaDelDia {
+  tomaId: string;
+  medicamentoId: string;
+  nombre: string;
+  dosis: string;
+  indicaciones: string; // vacío si no hay
+  hora: string; // «HH:mm» en hora de Colombia
+  estado: EstadoDeToma;
+}
+
+export interface MedicamentoActivo {
   id: string;
   nombre: string;
   dosis: string;
-  hora: string; // "08:00"
-  tomado: boolean;
+  indicaciones: string;
+  horarios: string[]; // «HH:mm»
 }
 
+export interface MedicamentosDelDia {
+  fecha: string; // AAAA-MM-DD
+  medicamentos: MedicamentoActivo[];
+  tomas: TomaDelDia[]; // ordenadas por hora
+}
+
+// Cada medida es opcional (la presión va completa o no va). `fueraDeRango` no dice cuál medida ni cuánto.
 export interface LecturaSignos {
+  id: string;
   fecha: string; // ISO
-  presionSistolica: number;
-  presionDiastolica: number;
-  frecuenciaCardiaca: number;
-  glucosa: number;
+  presionSistolica: number | null;
+  presionDiastolica: number | null;
+  frecuenciaCardiaca: number | null;
+  glucosa: number | null;
+  fueraDeRango: boolean;
+}
+
+export interface ResumenDeTeleasistencia {
+  fecha: string;
+  tomas: { total: number; tomadas: number; pendientes: number; omitidas: number };
+  proximaToma: { nombre: string; hora: string } | null;
+  ultimaLectura: { fecha: string; fueraDeRango: boolean } | null;
+  alertasSinAtender: number;
+}
+
+// Lo que pasó al pedir ayuda: A QUIÉN se avisó de verdad. Nunca se promete más que eso.
+export interface AlertaEnviada {
+  id: string;
+  generadaEn: string;
+  avisadosA: string[];
 }
 
 export interface AdultoMayor {
