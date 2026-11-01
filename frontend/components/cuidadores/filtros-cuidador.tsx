@@ -174,7 +174,7 @@ export function FiltrosCuidador({
               className={cn(
                 "absolute top-1/2 right-1.5 flex size-9 -translate-y-1/2 items-center justify-center rounded-full transition-colors",
                 escuchando
-                  ? "animate-pulse bg-destructive text-white"
+                  ? "animate-pulse bg-destructive text-destructive-foreground"
                   : "text-primary hover:bg-primary/10",
               )}
             >

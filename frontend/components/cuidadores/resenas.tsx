@@ -27,7 +27,7 @@ export function Resenas({ resenas }: { resenas: Resena[] }) {
                     key={indiceEstrella}
                     className={
                       indiceEstrella < resena.calificacion
-                        ? "size-3.5 fill-accent text-accent"
+                        ? "size-3.5 fill-warning text-warning"
                         : "size-3.5 text-border"
                     }
                     aria-hidden="true"

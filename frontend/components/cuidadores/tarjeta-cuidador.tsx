@@ -34,7 +34,7 @@ export function TarjetaCuidador({ cuidador }: { cuidador: Cuidador }) {
         )}
         <div className="mt-1 flex items-center justify-between">
           <span className="flex items-center gap-1 text-sm font-medium text-foreground">
-            <Star className="size-4 fill-accent text-accent" aria-hidden="true" />
+            <Star className="size-4 fill-warning text-warning" aria-hidden="true" />
             {cuidador.calificacion.toFixed(1)}
           </span>
           <span className="text-lg font-bold text-foreground">

@@ -72,7 +72,7 @@ export function BotonAlerta() {
       <button
         type="button"
         onClick={iniciarAlerta}
-        className="flex min-h-24 w-full items-center justify-center gap-3 rounded-2xl bg-destructive text-lg font-bold text-white shadow-lg transition-transform active:scale-[0.98]"
+        className="flex min-h-24 w-full items-center justify-center gap-3 rounded-2xl bg-destructive text-lg font-bold text-destructive-foreground shadow-lg transition-transform active:scale-[0.98]"
       >
         <Siren className="size-8" aria-hidden="true" />
         Enviar alerta de emergencia

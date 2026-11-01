@@ -64,7 +64,7 @@ export function BotonVoz() {
         className={cn(
           "flex size-12 shrink-0 items-center justify-center rounded-full border-2 transition-colors",
           escuchando
-            ? "animate-pulse border-destructive bg-destructive text-white"
+            ? "animate-pulse border-destructive bg-destructive text-destructive-foreground"
             : "border-primary bg-primary/10 text-primary hover:bg-primary/20",
         )}
       >
