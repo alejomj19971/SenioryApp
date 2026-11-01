@@ -15,4 +15,19 @@ export type CuidadorOculto = EventoDeIntegracion<
   { cuidadorId: string }
 >;
 
-export type EventoDeDirectorio = CuidadorVisible | CuidadorOculto;
+// Un revisor aprobó los tres controles de un cuidador que se postuló: ya es parte del directorio. Notificaciones se
+// lo avisa a él.
+export type CuidadorVerificado = EventoDeIntegracion<
+  'directorio.cuidador_verificado',
+  { cuidadorId: string }
+>;
+
+// Un revisor rechazó un control. El cuidador ve el motivo en su perfil; Notificaciones le avisa que mire. El motivo
+// NO viaja en el evento (solo ids y valores cerrados).
+export type VerificacionRechazada = EventoDeIntegracion<
+  'directorio.verificacion_rechazada',
+  { cuidadorId: string; control: string }
+>;
+
+export type EventoDeDirectorio =
+  CuidadorVisible | CuidadorOculto | CuidadorVerificado | VerificacionRechazada;

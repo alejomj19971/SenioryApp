@@ -16,6 +16,7 @@ import { CONFIGURACION } from '../../../../configuracion/configuracion.module.js
 import type { Configuracion } from '../../../../configuracion/variables-de-entorno.js';
 import { CerrarSesion } from '../../../aplicacion/casos-de-uso/cerrar-sesion.js';
 import { IniciarSesion } from '../../../aplicacion/casos-de-uso/iniciar-sesion.js';
+import { RegistrarCuidadorPropio } from '../../../aplicacion/casos-de-uso/registrar-cuidador-propio.js';
 import {
   RegistrarFamiliar,
   type ResultadoDeAutenticacion,
@@ -48,6 +49,8 @@ interface RespuestaDeSesion {
 export class AuthController {
   constructor(
     @Inject(RegistrarFamiliar) private readonly registrar: RegistrarFamiliar,
+    @Inject(RegistrarCuidadorPropio)
+    private readonly registrarCuidador: RegistrarCuidadorPropio,
     @Inject(IniciarSesion) private readonly iniciar: IniciarSesion,
     @Inject(RenovarSesion) private readonly renovar: RenovarSesion,
     @Inject(CerrarSesion) private readonly cerrar: CerrarSesion,
@@ -66,6 +69,19 @@ export class AuthController {
     @Res({ passthrough: true }) respuesta: Response,
   ): Promise<RespuestaDeSesion> {
     const resultado = await this.registrar.ejecutar(cuerpo);
+    return this.conSesion(respuesta, resultado);
+  }
+
+  // La cuenta de un cuidador que se postula. Con ella solo puede crear su perfil y subir sus documentos: no se
+  // muestra a nadie hasta que un revisor apruebe sus tres controles (E7). El rol lo decide esta ruta, no el cuerpo.
+  @Publico()
+  @Throttle({ default: { limit: 5, ttl: UN_MINUTO_MS } })
+  @Post('registro-cuidador')
+  async registroDeCuidador(
+    @Body() cuerpo: RegistroDto,
+    @Res({ passthrough: true }) respuesta: Response,
+  ): Promise<RespuestaDeSesion> {
+    const resultado = await this.registrarCuidador.ejecutar(cuerpo);
     return this.conSesion(respuesta, resultado);
   }
 

@@ -3,7 +3,9 @@ import {
   CONTROLES_DE_VERIFICACION,
   ESPECIALIDADES,
   ESTADOS_DE_CUIDADOR,
+  ESTADOS_DE_DOCUMENTO,
   ESTADOS_DE_VERIFICACION,
+  TIPOS_DE_DOCUMENTO,
 } from '../../../src/directorio/dominio/valores-cerrados.js';
 import { conectarBd } from '../../soporte/bd.js';
 
@@ -60,7 +62,24 @@ describe('constantes del dominio y CHECK de la base de datos (directorio)', () =
       'verificaciones_estado_valido',
       ESTADOS_DE_VERIFICACION as readonly string[],
     ],
+    [
+      'estados de documento',
+      'documentos_estado_valido',
+      ESTADOS_DE_DOCUMENTO as readonly string[],
+    ],
   ])('los %s coinciden (%s)', async (_nombre, restriccion, constantes) => {
     expect(await valoresDelCheck(restriccion)).toEqual([...constantes].sort());
+  });
+
+  // La base admite además «foto», que todavía no se sube por la API: todo tipo del dominio tiene que caber.
+  it('todos los tipos de documento del dominio caben en la base de datos', async () => {
+    const enLaBase = await valoresDelCheck('documentos_tipo_valido');
+
+    expect(enLaBase).toEqual(expect.arrayContaining([...TIPOS_DE_DOCUMENTO]));
+    expect(
+      enLaBase.filter(
+        (t) => !(TIPOS_DE_DOCUMENTO as readonly string[]).includes(t),
+      ),
+    ).toEqual(['foto']);
   });
 });

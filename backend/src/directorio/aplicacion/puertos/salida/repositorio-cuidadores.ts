@@ -4,7 +4,12 @@ import type {
   CursorDeCuidadores,
   FiltrosDeCuidadores,
 } from '../../../dominio/filtros-de-cuidadores.js';
-import type { CuidadorId } from '../../../dominio/ids.js';
+import type { CuidadorId, VerificacionId } from '../../../dominio/ids.js';
+import type {
+  Especialidad,
+  EstadoDeVerificacion,
+} from '../../../dominio/valores-cerrados.js';
+import type { Verificacion } from '../../../dominio/verificacion.js';
 
 export interface PaginaDeCuidadores {
   cuidadores: Cuidador[];
@@ -19,6 +24,17 @@ export interface FiltrosDisponibles {
   tarifaMaxima: number | null;
 }
 
+// Una verificación de la cola de los revisores, con quién la pidió (solo lo que el revisor necesita ver).
+export interface FilaDeVerificacion {
+  verificacion: Verificacion;
+  cuidador: {
+    id: CuidadorId;
+    nombre: string;
+    especialidad: Especialidad;
+    zona: string;
+  };
+}
+
 export interface RepositorioCuidadores {
   // Guarda un cuidador nuevo con sus verificaciones, todo o nada. Lanza ConflictoDeEstado si ya hay un
   // cuidador para esa cuenta (`cuidador.usuario_ya_tiene_perfil`).
@@ -27,6 +43,19 @@ export interface RepositorioCuidadores {
   // Guarda lo que cambia después de creado: estado, visibilidad, contadores y versión. Lanza
   // RecursoNoEncontrado si no existe. Debe usarse con un cuidador leído con `buscarPorIdParaActualizar`.
   actualizar(cuidador: Cuidador): Promise<void>;
+
+  // Guarda una verificación nueva o los cambios de una existente (aprobada, rechazada, vencida). Lanza
+  // ConflictoDeEstado `verificacion.ya_vigente` si ese cuidador ya tiene una pendiente o aprobada de ese control.
+  guardarVerificacion(verificacion: Verificacion): Promise<void>;
+
+  // De quién es esa verificación, para bloquear a ese cuidador antes de decidir sobre ella.
+  buscarCuidadorDeVerificacion(id: VerificacionId): Promise<CuidadorId | null>;
+
+  // La cola de los revisores: las verificaciones en ese estado, las más antiguas primero.
+  listarVerificaciones(
+    estado: EstadoDeVerificacion,
+    limite: number,
+  ): Promise<FilaDeVerificacion[]>;
 
   buscarPorId(id: CuidadorId): Promise<Cuidador | null>;
 

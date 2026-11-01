@@ -44,9 +44,9 @@ Cuando sale el primer aviso de una alerta, Notificaciones publica `notificacione
 
 ## Los avisos de Mensajería
 
-| Evento                       | A quién        | Texto                                             |
-| ---------------------------- | -------------- | ------------------------------------------------- |
-| `mensajeria.mensaje_enviado` | La otra parte  | «Tienes un mensaje nuevo»: ábrela para leerlo     |
+| Evento                       | A quién       | Texto                                         |
+| ---------------------------- | ------------- | --------------------------------------------- |
+| `mensajeria.mensaje_enviado` | La otra parte | «Tienes un mensaje nuevo»: ábrela para leerlo |
 
 **Agrupado:** si a esa persona ya se le avisó de esa conversación en los últimos 5 minutos, no se repite (al abrir la aplicación ve todos). El aviso **no lleva el texto ni el nombre** de quien escribió: por correo o SMS no hay privacidad para una conversación.
 
@@ -54,12 +54,12 @@ Cuando sale el primer aviso de una alerta, Notificaciones publica `notificacione
 
 Los avisos de pago **no llevan montos**: dicen que hay algo por hacer y mandan a abrir Seniory.
 
-| Evento                    | A quién                       | Texto                                                                                        |
-| ------------------------- | ----------------------------- | -------------------------------------------------------------------------------------------- |
-| `pagos.pago_requerido`    | La familia que paga           | «Falta pagar tu servicio»: está confirmado, págalo para asegurarlo                           |
-| `pagos.pago_reembolsado`  | La familia                    | «Te devolvimos tu pago»                                                                      |
-| `pagos.pago_rechazado`    | La familia, **solo si era una compra de bolsa** | «No se completó tu compra» (distingue vencida de rechazada)                |
-| `pagos.bolsa_comprada`    | La familia                    | «Tu bolsa ya tiene saldo»                                                                    |
+| Evento                   | A quién                                         | Texto                                                              |
+| ------------------------ | ----------------------------------------------- | ------------------------------------------------------------------ |
+| `pagos.pago_requerido`   | La familia que paga                             | «Falta pagar tu servicio»: está confirmado, págalo para asegurarlo |
+| `pagos.pago_reembolsado` | La familia                                      | «Te devolvimos tu pago»                                            |
+| `pagos.pago_rechazado`   | La familia, **solo si era una compra de bolsa** | «No se completó tu compra» (distingue vencida de rechazada)        |
+| `pagos.bolsa_comprada`   | La familia                                      | «Tu bolsa ya tiene saldo»                                          |
 
 Cuando falla el pago de un **servicio** no hay un aviso de pago aparte: Reservas lo cancela con motivo `pago_fallido` y el aviso de la cancelación ya lo explica a las dos partes (dos avisos por lo mismo serían ruido).
 

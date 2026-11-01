@@ -20,6 +20,52 @@ export const CONTROLES_DE_VERIFICACION = [
 ] as const;
 export type ControlDeVerificacion = (typeof CONTROLES_DE_VERIFICACION)[number];
 
+// Los documentos que el cuidador sube. La cédula, los antecedentes, el título y la psicotécnica son PRIVADOS (solo
+// los ve el propio cuidador y un revisor); la hoja de vida, una vez aprobada, se muestra a las familias (H10).
+// (La base de datos también admite «foto», que todavía no se sube por la API.)
+export const TIPOS_DE_DOCUMENTO = [
+  'cedula',
+  'antecedentes',
+  'titulo',
+  'psicotecnica',
+  'hoja_de_vida',
+] as const;
+export type TipoDeDocumento = (typeof TIPOS_DE_DOCUMENTO)[number];
+
+export const ESTADOS_DE_DOCUMENTO = [
+  'pendiente',
+  'aprobado',
+  'rechazado',
+] as const;
+export type EstadoDeDocumento = (typeof ESTADOS_DE_DOCUMENTO)[number];
+
+// Qué documento respalda cada control.
+export const DOCUMENTO_DE_CADA_CONTROL: Record<
+  ControlDeVerificacion,
+  TipoDeDocumento
+> = {
+  antecedentes: 'antecedentes',
+  titulos: 'titulo',
+  psicotecnica: 'psicotecnica',
+};
+
+// Para enviar el perfil a revisión hay que haber subido todos estos.
+export const DOCUMENTOS_PARA_REVISION: readonly TipoDeDocumento[] = [
+  'cedula',
+  'antecedentes',
+  'titulo',
+  'psicotecnica',
+];
+
+export function tipoDeDocumentoDesdeTexto(texto: string): TipoDeDocumento {
+  return exigir(
+    TIPOS_DE_DOCUMENTO,
+    texto,
+    'El tipo de documento no es válido',
+    'documento.tipo_invalido',
+  );
+}
+
 export const ESTADOS_DE_CUIDADOR = [
   'borrador',
   'en_revision',

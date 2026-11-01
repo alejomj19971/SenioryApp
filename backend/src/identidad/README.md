@@ -4,7 +4,7 @@ Quién es cada persona, cómo entra y a quién puede ver. Plan completo: [docs/b
 
 ## Qué hace
 
-- **Cuentas y sesión:** registro de familiares, inicio y cierre de sesión, renovación del acceso (`/auth/*`).
+- **Cuentas y sesión:** registro de familiares y de cuidadores que se postulan (`POST /auth/registro-cuidador`: la cuenta nace con rol `cuidador` y sin acceso a nada del directorio hasta que lo aprueben), inicio y cierre de sesión, renovación del acceso (`/auth/*`).
 - **Perfil:** `GET` y `PATCH /yo`.
 - **Contraseña:** cambiarla con la actual (`PATCH /yo/contrasena`) y recuperarla si se olvidó (`/auth/olvide-contrasena` y `/auth/restablecer-contrasena`).
 - **Personas mayores:** las registra un familiar, que queda como su responsable (`/adultos-mayores`).
@@ -14,15 +14,15 @@ Los datos clínicos **no** viven aquí (están en Teleasistencia). Identidad sol
 
 ## Reglas que conviene saber
 
-| Tema                 | Regla                                                                                                                                                                                                                  |
-| -------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Rol                  | Se fija al crear la cuenta y no se cambia. El registro público siempre crea un `familiar`; un administrador solo se crea con `npm run crear-admin`.                                                                    |
-| Contraseña           | De 10 a 128 caracteres, sin reglas de composición; se rechazan las 9 218 más comunes. Solo se guarda su hash argon2id.                                                                                                 |
-| Recuperación         | El enlace del correo vence a los 30 min, sirve una sola vez y solo vale el último que se pidió. La respuesta es igual exista o no la cuenta. Al restablecer se cierran **todas** las sesiones y se levanta el bloqueo. |
-| Bloqueo              | Cada 5 fallos seguidos: 15 min, luego el doble, hasta 24 h. Los intentos durante el bloqueo no cuentan.                                                                                                                |
-| Sesión               | Acceso: JWT de 15 min. Refresco: opaco, 30 días, rota en cada uso; si un token ya usado reaparece pasados 30 s, se revoca toda su familia.                                                                             |
-| Acceso a una persona | Solo el familiar con vínculo activo. Quien no lo tiene recibe **404**, igual que si no existiera, y el intento queda auditado.                                                                                         |
-| Consentimiento       | Un solo consentimiento vigente por persona y finalidad. Revocar es inmediato.                                                                                                                                          |
+| Tema                 | Regla                                                                                                                                                                                                                   |
+| -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Rol                  | Se fija al crear la cuenta y no se cambia. El registro público crea un `familiar`, y el de cuidadores un `cuidador` (el rol lo fija la ruta, nunca el cuerpo); un administrador solo se crea con `npm run crear-admin`. |
+| Contraseña           | De 10 a 128 caracteres, sin reglas de composición; se rechazan las 9 218 más comunes. Solo se guarda su hash argon2id.                                                                                                  |
+| Recuperación         | El enlace del correo vence a los 30 min, sirve una sola vez y solo vale el último que se pidió. La respuesta es igual exista o no la cuenta. Al restablecer se cierran **todas** las sesiones y se levanta el bloqueo.  |
+| Bloqueo              | Cada 5 fallos seguidos: 15 min, luego el doble, hasta 24 h. Los intentos durante el bloqueo no cuentan.                                                                                                                 |
+| Sesión               | Acceso: JWT de 15 min. Refresco: opaco, 30 días, rota en cada uso; si un token ya usado reaparece pasados 30 s, se revoca toda su familia.                                                                              |
+| Acceso a una persona | Solo el familiar con vínculo activo. Quien no lo tiene recibe **404**, igual que si no existiera, y el intento queda auditado.                                                                                          |
+| Consentimiento       | Un solo consentimiento vigente por persona y finalidad. Revocar es inmediato.                                                                                                                                           |
 
 ## Lo que otros módulos pueden usar
 

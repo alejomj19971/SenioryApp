@@ -264,7 +264,7 @@ describe('autenticación (API)', () => {
         {
           resultado: 'permitido',
           actor_id: usuarioId,
-          metadatos: { versionPolitica: 'v1' },
+          metadatos: { versionPolitica: 'v1', rol: 'familiar' },
         },
       ]);
       expect(JSON.stringify(entradas)).not.toContain(datos.correo);

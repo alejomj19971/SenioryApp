@@ -53,6 +53,10 @@ import {
 } from './aplicacion/manejadores/avisar-de-pagos.js';
 import { AvisarMensajeNuevo } from './aplicacion/manejadores/avisar-de-mensajes.js';
 import {
+  AvisarCuidadorVerificado,
+  AvisarVerificacionRechazada,
+} from './aplicacion/manejadores/avisar-de-verificacion.js';
+import {
   AvisarAlerta,
   AvisarLecturaFueraDeRango,
   AvisarMedicamentoOmitido,
@@ -77,6 +81,7 @@ const MANEJADORES_DE_SERVICIO = Symbol('ManejadoresDeServicio');
 const MANEJADORES_DE_TELEASISTENCIA = Symbol('ManejadoresDeTeleasistencia');
 const MANEJADORES_DE_PAGOS = Symbol('ManejadoresDePagos');
 const MANEJADOR_DE_MENSAJES = Symbol('ManejadorDeMensajes');
+const MANEJADORES_DE_VERIFICACION = Symbol('ManejadoresDeVerificacion');
 const SONDEO_DE_ENTREGAS = Symbol('SondeoDeEntregas');
 
 // Los eventos del ciclo de vida del servicio que generan avisos, cada uno con su nombre estable (el despachador
@@ -219,6 +224,14 @@ const EVENTOS_CON_AVISO = [
       ],
     },
     {
+      provide: MANEJADORES_DE_VERIFICACION,
+      inject: [CONSULTA_DE_DIRECTORIO, CrearAvisos],
+      useFactory: (directorio: ConsultaDeDirectorio, avisos: CrearAvisos) => [
+        new AvisarCuidadorVerificado(directorio, avisos),
+        new AvisarVerificacionRechazada(directorio, avisos),
+      ],
+    },
+    {
       provide: MANEJADOR_DE_MENSAJES,
       inject: [REPOSITORIO_NOTIFICACIONES, CrearAvisos, RELOJ],
       useFactory: (
@@ -254,6 +267,8 @@ export class NotificacionesModule implements OnModuleInit {
     private readonly manejadoresDeTeleasistencia: ManejadorDeEventos[],
     @Inject(MANEJADORES_DE_PAGOS)
     private readonly manejadoresDePagos: ManejadorDeEventos[],
+    @Inject(MANEJADORES_DE_VERIFICACION)
+    private readonly manejadoresDeVerificacion: ManejadorDeEventos[],
     @Inject(MANEJADOR_DE_MENSAJES)
     private readonly manejadorDeMensajes: AvisarMensajeNuevo,
     // Solo para que Nest lo cree y llame a sus ganchos de arranque y cierre.
@@ -268,6 +283,9 @@ export class NotificacionesModule implements OnModuleInit {
       this.registro.registrar(manejador);
     }
     for (const manejador of this.manejadoresDePagos) {
+      this.registro.registrar(manejador);
+    }
+    for (const manejador of this.manejadoresDeVerificacion) {
       this.registro.registrar(manejador);
     }
     this.registro.registrar(this.manejadorDeMensajes);

@@ -7,6 +7,7 @@ import {
 import type { ContextoTransaccional } from '../../../../compartido/infraestructura/base-de-datos/contexto-transaccional.js';
 import { esViolacionDeUnicidad } from '../../../../compartido/infraestructura/base-de-datos/errores-de-postgres.js';
 import type {
+  FilaDeVerificacion,
   FiltrosDisponibles,
   PaginaDeCuidadores,
   RepositorioCuidadores,
@@ -17,9 +18,13 @@ import type {
   CursorDeCuidadores,
   FiltrosDeCuidadores,
 } from '../../../dominio/filtros-de-cuidadores.js';
-import type { CuidadorId } from '../../../dominio/ids.js';
+import type { CuidadorId, VerificacionId } from '../../../dominio/ids.js';
 import { normalizarParaBuscar } from '../../../dominio/texto-de-busqueda.js';
-import { CONTROLES_DE_VERIFICACION } from '../../../dominio/valores-cerrados.js';
+import {
+  CONTROLES_DE_VERIFICACION,
+  ESPECIALIDADES,
+  type EstadoDeVerificacion,
+} from '../../../dominio/valores-cerrados.js';
 import type { Verificacion } from '../../../dominio/verificacion.js';
 import { cuidadores, verificaciones } from './directorio.esquema.js';
 import { cuidadorDeFila, verificacionDeFila } from './mapeadores.js';
@@ -111,6 +116,16 @@ export class RepositorioCuidadoresDrizzle implements RepositorioCuidadores {
           // sigue visible, el CHECK `cuidadores_visible_si_activo` la rechazaría. Ocultar no dispara el
           // trigger de verificaciones (solo mira filas que quedan visibles).
           ...(cuidador.visible ? {} : { visible: false }),
+          // Lo que el propio cuidador edita en su perfil.
+          especialidad: cuidador.especialidad,
+          titulo: cuidador.titulo,
+          aniosExperiencia: cuidador.aniosExperiencia,
+          tarifaHora: cuidador.tarifaHora.valor,
+          telefono: cuidador.telefono,
+          zona: cuidador.zona,
+          zonaBusqueda: normalizarParaBuscar(cuidador.zona),
+          disponibilidad: [...cuidador.disponibilidad],
+          bio: cuidador.bio,
           estado: cuidador.estado,
           aceptacionAutomatica: cuidador.aceptacionAutomatica,
           sumaCalificaciones: cuidador.sumaCalificaciones,
@@ -138,6 +153,91 @@ export class RepositorioCuidadoresDrizzle implements RepositorioCuidadores {
             and(eq(cuidadores.id, cuidador.id), eq(cuidadores.visible, false)),
           );
       }
+    });
+  }
+
+  async guardarVerificacion(verificacion: Verificacion): Promise<void> {
+    const valores = {
+      id: verificacion.id,
+      cuidadorId: verificacion.cuidadorId,
+      control: verificacion.control,
+      estado: verificacion.estado,
+      revisadoPor: verificacion.revisadoPor,
+      revisadoEn: verificacion.revisadoEn,
+      motivoRechazo: verificacion.motivoDeRechazo,
+      vigenteHasta: verificacion.vigenteHasta?.aTexto() ?? null,
+      creadoEn: verificacion.creadoEn,
+    };
+    try {
+      await this.contexto
+        .conexion()
+        .insert(verificaciones)
+        .values(valores)
+        .onConflictDoUpdate({
+          target: verificaciones.id,
+          set: {
+            estado: valores.estado,
+            revisadoPor: valores.revisadoPor,
+            revisadoEn: valores.revisadoEn,
+            motivoRechazo: valores.motivoRechazo,
+            vigenteHasta: valores.vigenteHasta,
+          },
+        });
+    } catch (error) {
+      // Tras este error la transacción en curso queda abortada: el caso de uso debe dejar que se revierta.
+      if (esViolacionDeUnicidad(error, 'verificaciones_vigente_unica')) {
+        throw new ConflictoDeEstado(
+          'Ese control ya está en revisión o aprobado',
+          'verificacion.ya_vigente',
+        );
+      }
+      throw error;
+    }
+  }
+
+  async buscarCuidadorDeVerificacion(
+    id: VerificacionId,
+  ): Promise<CuidadorId | null> {
+    const filas = await this.contexto
+      .conexion()
+      .select({ cuidadorId: verificaciones.cuidadorId })
+      .from(verificaciones)
+      .where(eq(verificaciones.id, id))
+      .limit(1);
+    const fila = filas[0];
+    return fila === undefined ? null : (fila.cuidadorId as CuidadorId);
+  }
+
+  async listarVerificaciones(
+    estado: EstadoDeVerificacion,
+    limite: number,
+  ): Promise<FilaDeVerificacion[]> {
+    const filas = await this.contexto
+      .conexion()
+      .select({ verificacion: verificaciones, cuidador: cuidadores })
+      .from(verificaciones)
+      .innerJoin(cuidadores, eq(cuidadores.id, verificaciones.cuidadorId))
+      .where(eq(verificaciones.estado, estado))
+      .orderBy(asc(verificaciones.creadoEn), asc(verificaciones.id))
+      .limit(limite);
+    return filas.map(({ verificacion, cuidador }) => {
+      const especialidad = ESPECIALIDADES.find(
+        (e) => e === cuidador.especialidad,
+      );
+      if (especialidad === undefined) {
+        throw new Error(
+          `Valor inesperado en la base de datos: especialidad = "${cuidador.especialidad}"`,
+        );
+      }
+      return {
+        verificacion: verificacionDeFila(verificacion),
+        cuidador: {
+          id: cuidador.id as CuidadorId,
+          nombre: cuidador.nombre,
+          especialidad,
+          zona: cuidador.zona,
+        },
+      };
     });
   }
 
@@ -292,6 +392,8 @@ export class RepositorioCuidadoresDrizzle implements RepositorioCuidadores {
     return filas.map((fila) => fila.id as CuidadorId);
   }
 
+  // Una verificación por control: la pendiente o la aprobada si la hay (la que cuenta para mostrar) y, si no, la más
+  // reciente del historial (rechazada o vencida), para que el cuidador vea qué pasó con ella y pueda renovarla.
   private async verificacionesDe(
     ids: readonly CuidadorId[],
   ): Promise<Map<CuidadorId, Verificacion[]>> {
@@ -301,14 +403,22 @@ export class RepositorioCuidadoresDrizzle implements RepositorioCuidadores {
       .conexion()
       .select()
       .from(verificaciones)
-      // Solo las vigentes por tipo: la aprobada o la pendiente; el historial no cuenta para mostrar.
-      .where(
-        and(
-          inArray(verificaciones.cuidadorId, [...ids]),
-          inArray(verificaciones.estado, ['pendiente', 'aprobada']),
-        ),
-      );
+      .where(inArray(verificaciones.cuidadorId, [...ids]))
+      .orderBy(desc(verificaciones.creadoEn), desc(verificaciones.id));
+    const elegidas = new Map<string, (typeof filas)[number]>();
     for (const fila of filas) {
+      const clave = `${fila.cuidadorId}|${fila.control}`;
+      const actual = elegidas.get(clave);
+      const esVigente =
+        fila.estado === 'pendiente' || fila.estado === 'aprobada';
+      const actualEsVigente =
+        actual !== undefined &&
+        (actual.estado === 'pendiente' || actual.estado === 'aprobada');
+      if (actual === undefined || (esVigente && !actualEsVigente)) {
+        elegidas.set(clave, fila);
+      }
+    }
+    for (const fila of elegidas.values()) {
       const cuidadorId = fila.cuidadorId as CuidadorId;
       const lista = porCuidador.get(cuidadorId) ?? [];
       lista.push(verificacionDeFila(fila));

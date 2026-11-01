@@ -229,6 +229,18 @@ PLANTILLAS['mensaje_nuevo:destinatario'] = () => ({
   cuerpo: 'Te escribieron en Seniory. Ábrela para leerlo.',
 });
 
+// Verificación de cuidadores. Sin el motivo del rechazo: se ve dentro de Seniory.
+PLANTILLAS['cuidador_verificado:cuidador'] = () => ({
+  titulo: 'Ya eres parte de Seniory',
+  cuerpo:
+    'Aprobamos tus controles: tu perfil ya aparece para las familias. Revisa tu disponibilidad en Seniory.',
+});
+PLANTILLAS['verificacion_rechazada:cuidador'] = () => ({
+  titulo: 'Revisa tu postulación',
+  cuerpo:
+    'Un control de tu postulación necesita correcciones. Abre Seniory para ver qué falta y volver a enviarlo.',
+});
+
 export const TIPOS_DE_AVISO = Object.keys(PLANTILLAS);
 
 export function renderizarAviso(

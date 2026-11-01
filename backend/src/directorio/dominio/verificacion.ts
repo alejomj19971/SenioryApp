@@ -1,5 +1,8 @@
 import type { FechaCivil } from '../../compartido/dominio/fecha-civil.js';
-import { ErrorDeValidacion } from '../../compartido/dominio/errores.js';
+import {
+  ConflictoDeEstado,
+  ErrorDeValidacion,
+} from '../../compartido/dominio/errores.js';
 import type { CuidadorId, VerificacionId } from './ids.js';
 import type {
   ControlDeVerificacion,
@@ -59,6 +62,26 @@ export class Verificacion {
     });
   }
 
+  // El cuidador pide que revisen un control. Queda en la cola de los revisores.
+  static solicitar(datos: {
+    id: VerificacionId;
+    cuidadorId: CuidadorId;
+    control: ControlDeVerificacion;
+    ahora: Date;
+  }): Verificacion {
+    return new Verificacion({
+      id: datos.id,
+      cuidadorId: datos.cuidadorId,
+      control: datos.control,
+      estado: 'pendiente',
+      revisadoPor: null,
+      revisadoEn: null,
+      motivoDeRechazo: null,
+      vigenteHasta: null,
+      creadoEn: datos.ahora,
+    });
+  }
+
   // Para reconstruir desde la base de datos: los datos ya fueron validados al guardarse.
   static reconstruir(datos: DatosDeVerificacion): Verificacion {
     return new Verificacion({ ...datos });
@@ -90,6 +113,69 @@ export class Verificacion {
   }
   get creadoEn(): Date {
     return this.datos.creadoEn;
+  }
+
+  // El revisor la aprueba, diciendo hasta cuándo vale. No puede venir ya vencida.
+  aprobar(
+    revisadoPor: string,
+    vigenteHasta: FechaCivil | null,
+    hoy: FechaCivil,
+    ahora: Date,
+  ): void {
+    this.exigirPendiente('aprobar');
+    if (revisadoPor.trim() === '') {
+      throw new ErrorDeValidacion(
+        'Una verificación aprobada debe decir quién la revisó',
+        'verificacion.sin_revisor',
+      );
+    }
+    if (vigenteHasta !== null && vigenteHasta.esAnteriorA(hoy)) {
+      throw new ErrorDeValidacion(
+        'La vigencia no puede ser una fecha pasada',
+        'verificacion.vigencia_pasada',
+      );
+    }
+    this.datos.estado = 'aprobada';
+    this.datos.revisadoPor = revisadoPor;
+    this.datos.revisadoEn = ahora;
+    this.datos.vigenteHasta = vigenteHasta;
+    this.datos.motivoDeRechazo = null;
+  }
+
+  // El revisor la rechaza, y tiene que decir por qué: es lo que verá el cuidador para corregirlo.
+  rechazar(revisadoPor: string, motivo: string, ahora: Date): void {
+    this.exigirPendiente('rechazar');
+    const limpio = motivo.normalize('NFC').trim();
+    if (Array.from(limpio).length < 1 || Array.from(limpio).length > 500) {
+      throw new ErrorDeValidacion(
+        'El motivo del rechazo debe tener entre 1 y 500 caracteres',
+        'verificacion.motivo_invalido',
+      );
+    }
+    this.datos.estado = 'rechazada';
+    this.datos.revisadoPor = revisadoPor;
+    this.datos.revisadoEn = ahora;
+    this.datos.motivoDeRechazo = limpio;
+  }
+
+  // Una aprobada cuya vigencia pasó queda como historial para poder pedir una nueva.
+  marcarVencida(hoy: FechaCivil): void {
+    if (this.datos.estado !== 'aprobada' || this.estaVigente(hoy)) {
+      throw new ConflictoDeEstado(
+        'Solo una verificación aprobada que ya venció se marca como vencida',
+        'verificacion.no_vencida',
+      );
+    }
+    this.datos.estado = 'vencida';
+  }
+
+  private exigirPendiente(accion: string): void {
+    if (this.datos.estado !== 'pendiente') {
+      throw new ConflictoDeEstado(
+        `Una verificación ${this.datos.estado} no se puede ${accion}`,
+        'verificacion.no_pendiente',
+      );
+    }
   }
 
   // Aprobada y todavía dentro de su vigencia. El último día de vigencia todavía vale.

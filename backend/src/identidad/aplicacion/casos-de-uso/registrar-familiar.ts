@@ -55,6 +55,14 @@ export class RegistrarFamiliar {
     private readonly versionDePoliticaVigente: string,
   ) {}
 
+  // Qué cuenta se crea. Es la ÚNICA diferencia con el registro de cuidadores (que hereda de esta clase): el rol lo
+  // decide el caso de uso, nunca la persona que se registra.
+  protected crearUsuario(
+    datos: Parameters<typeof Usuario.registrarFamiliar>[0],
+  ): Usuario {
+    return Usuario.registrarFamiliar(datos);
+  }
+
   async ejecutar(
     entrada: EntradaDeRegistro,
   ): Promise<ResultadoDeAutenticacion> {
@@ -79,7 +87,7 @@ export class RegistrarFamiliar {
 
     const ahora = this.reloj.ahora();
     const usuarioId = this.ids.nuevo<'Usuario'>();
-    const usuario = Usuario.registrarFamiliar({
+    const usuario = this.crearUsuario({
       id: usuarioId,
       correo,
       nombre,
@@ -112,7 +120,7 @@ export class RegistrarFamiliar {
       recursoTipo: 'usuario',
       recursoId: usuarioId,
       resultado: 'permitido',
-      metadatos: { versionPolitica: version.valor },
+      metadatos: { versionPolitica: version.valor, rol: usuario.rol },
     });
     return { usuario: vistaDeUsuario(usuario), tokens };
   }

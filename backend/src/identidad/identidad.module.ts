@@ -26,6 +26,7 @@ import { CONFIGURACION } from '../configuracion/configuracion.module.js';
 import type { Configuracion } from '../configuracion/variables-de-entorno.js';
 import { CerrarSesion } from './aplicacion/casos-de-uso/cerrar-sesion.js';
 import { IniciarSesion } from './aplicacion/casos-de-uso/iniciar-sesion.js';
+import { RegistrarCuidadorPropio } from './aplicacion/casos-de-uso/registrar-cuidador-propio.js';
 import { RegistrarFamiliar } from './aplicacion/casos-de-uso/registrar-familiar.js';
 import { RenovarSesion } from './aplicacion/casos-de-uso/renovar-sesion.js';
 import {
@@ -272,6 +273,48 @@ const MS_POR_DIA = 24 * 60 * MS_POR_MINUTO;
         configuracion: Configuracion,
       ) =>
         new RegistrarFamiliar(
+          usuarios,
+          aceptaciones,
+          hash,
+          comunes,
+          sesiones,
+          unidadDeTrabajo,
+          eventos,
+          auditoria,
+          reloj,
+          ids,
+          configuracion.versionPoliticaVigente,
+        ),
+    },
+    {
+      provide: RegistrarCuidadorPropio,
+      inject: [
+        REPOSITORIO_USUARIOS,
+        REPOSITORIO_ACEPTACIONES_DE_POLITICA,
+        HASH_DE_CONTRASENAS,
+        DICCIONARIO_DE_CONTRASENAS,
+        EmisorDeSesiones,
+        UNIDAD_DE_TRABAJO,
+        EventosDeIdentidad,
+        AUDITORIA,
+        RELOJ,
+        GENERADOR_DE_IDS,
+        CONFIGURACION,
+      ],
+      useFactory: (
+        usuarios: RepositorioUsuarios,
+        aceptaciones: RepositorioAceptacionesDePolitica,
+        hash: HashDeContrasenas,
+        comunes: DiccionarioDeContrasenasComunes,
+        sesiones: EmisorDeSesiones,
+        unidadDeTrabajo: UnidadDeTrabajo,
+        eventos: EventosDeIdentidad,
+        auditoria: Auditoria,
+        reloj: Reloj,
+        ids: GeneradorDeIds,
+        configuracion: Configuracion,
+      ) =>
+        new RegistrarCuidadorPropio(
           usuarios,
           aceptaciones,
           hash,

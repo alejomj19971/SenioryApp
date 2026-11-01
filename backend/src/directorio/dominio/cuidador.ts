@@ -70,6 +70,19 @@ export interface DatosParaRegistrarCuidador {
 
 export type CambioDeVisibilidad = 'visible' | 'oculto';
 
+// Lo que el cuidador puede cambiar de su perfil. Lo que no viene se queda como está.
+export interface CambiosDePerfil {
+  especialidad?: Especialidad;
+  titulo?: string;
+  aniosExperiencia?: number;
+  tarifaHora?: number;
+  telefono?: string;
+  zona?: string;
+  disponibilidad?: readonly Jornada[];
+  bio?: string;
+  aceptacionAutomatica?: boolean;
+}
+
 // La persona que presta el cuidado y que las familias buscan.
 //
 // **Regla clave (E7): un cuidador solo es visible con sus tres controles aprobados y vigentes** y en
@@ -83,49 +96,8 @@ export class Cuidador {
 
   // Un cuidador nuevo entra en borrador y oculto: se vuelve visible cuando se aprueban sus controles.
   static registrar(datos: DatosParaRegistrarCuidador): Cuidador {
-    const nombre = texto(datos.nombre, 'nombre', LARGO_MAXIMO_DE_NOMBRE);
-    const titulo = texto(datos.titulo, 'titulo', LARGO_MAXIMO_DE_TITULO);
-    const zona = texto(datos.zona, 'zona', LARGO_MAXIMO_DE_ZONA);
-    if (
-      !Number.isInteger(datos.aniosExperiencia) ||
-      datos.aniosExperiencia < 0 ||
-      datos.aniosExperiencia > ANIOS_MAXIMOS_DE_EXPERIENCIA
-    ) {
-      throw new ErrorDeValidacion(
-        `Los años de experiencia deben ser un entero entre 0 y ${ANIOS_MAXIMOS_DE_EXPERIENCIA}`,
-        'cuidador.experiencia_invalida',
-      );
-    }
-    const tarifaHora = Dinero.pesos(datos.tarifaHora);
-    if (tarifaHora.valor === 0) {
-      throw new ErrorDeValidacion(
-        'La tarifa por hora debe ser mayor que cero',
-        'cuidador.tarifa_invalida',
-      );
-    }
-    const telefono = datos.telefono.trim();
-    if (!TELEFONO_E164.test(telefono)) {
-      throw new ErrorDeValidacion(
-        'El teléfono debe tener formato internacional, por ejemplo +573001234567',
-        'cuidador.telefono_invalido',
-      );
-    }
-    const bio = datos.bio.normalize('NFC').trim();
-    if (Array.from(bio).length > LARGO_MAXIMO_DE_BIO) {
-      throw new ErrorDeValidacion(
-        `La presentación no puede pasar de ${LARGO_MAXIMO_DE_BIO} caracteres`,
-        'cuidador.bio_muy_larga',
-      );
-    }
-    const disponibilidad = JORNADAS.filter((jornada) =>
-      datos.disponibilidad.includes(jornada),
-    );
-    if (disponibilidad.length === 0) {
-      throw new ErrorDeValidacion(
-        'El cuidador debe estar disponible en al menos una jornada',
-        'cuidador.sin_disponibilidad',
-      );
-    }
+    const { nombre, titulo, zona, telefono, bio, disponibilidad, tarifaHora } =
+      validarPerfil(datos);
     return new Cuidador({
       id: datos.id,
       usuarioId: datos.usuarioId,
@@ -270,6 +242,60 @@ export class Cuidador {
     return deberiaSerVisible ? 'visible' : 'oculto';
   }
 
+  // El propio cuidador corrige su perfil. Los datos que respaldan la verificación (la especialidad y el título)
+  // solo se pueden cambiar antes de que lo activen: después, cambiarlos dejaría un título aprobado que ya no es el
+  // que se muestra. Un cuidador suspendido no edita nada.
+  actualizarPerfil(cambios: CambiosDePerfil, ahora: Date): void {
+    if (this.datos.estado === 'suspendido') {
+      throw new ConflictoDeEstado(
+        'Un cuidador suspendido no puede cambiar su perfil',
+        'cuidador.suspendido',
+      );
+    }
+    const cambiaDatoVerificado =
+      cambios.especialidad !== undefined || cambios.titulo !== undefined;
+    if (cambiaDatoVerificado && this.datos.estado === 'activo') {
+      throw new ConflictoDeEstado(
+        'La especialidad y el título ya fueron verificados: no se pueden cambiar',
+        'cuidador.dato_verificado',
+      );
+    }
+    const validado = validarPerfil({
+      nombre: this.datos.nombre,
+      titulo: cambios.titulo ?? this.datos.titulo,
+      zona: cambios.zona ?? this.datos.zona,
+      aniosExperiencia: cambios.aniosExperiencia ?? this.datos.aniosExperiencia,
+      tarifaHora: cambios.tarifaHora ?? this.datos.tarifaHora.valor,
+      telefono: cambios.telefono ?? this.datos.telefono,
+      bio: cambios.bio ?? this.datos.bio,
+      disponibilidad: cambios.disponibilidad ?? this.datos.disponibilidad,
+    });
+    this.datos.especialidad = cambios.especialidad ?? this.datos.especialidad;
+    this.datos.titulo = validado.titulo;
+    this.datos.zona = validado.zona;
+    this.datos.aniosExperiencia = validado.aniosExperiencia;
+    this.datos.tarifaHora = validado.tarifaHora;
+    this.datos.telefono = validado.telefono;
+    this.datos.bio = validado.bio;
+    this.datos.disponibilidad = validado.disponibilidad;
+    if (cambios.aceptacionAutomatica !== undefined) {
+      this.datos.aceptacionAutomatica = cambios.aceptacionAutomatica;
+    }
+    this.tocar(ahora);
+  }
+
+  // El cuidador terminó su perfil y sus documentos: pasa a revisión. Solo desde el borrador.
+  enviarARevision(ahora: Date): void {
+    if (this.datos.estado !== 'borrador') {
+      throw new ConflictoDeEstado(
+        `Un cuidador ${this.datos.estado} no puede enviarse a revisión`,
+        'cuidador.no_enviable_a_revision',
+      );
+    }
+    this.datos.estado = 'en_revision';
+    this.tocar(ahora);
+  }
+
   // Pasa a activo: puede mostrarse en cuanto tenga sus tres controles. Un cuidador suspendido no vuelve
   // por esta vía: se reactiva con una decisión explícita (M9).
   activar(ahora: Date): void {
@@ -322,6 +348,74 @@ export class Cuidador {
     this.datos.actualizadoEn = ahora;
     this.datos.version += 1;
   }
+}
+
+interface PerfilParaValidar {
+  nombre: string;
+  titulo: string;
+  zona: string;
+  aniosExperiencia: number;
+  tarifaHora: number;
+  telefono: string;
+  bio: string;
+  disponibilidad: readonly Jornada[];
+}
+
+// Las reglas del perfil, las mismas al registrarlo y al editarlo. Devuelve los valores ya limpios.
+function validarPerfil(datos: PerfilParaValidar) {
+  const nombre = texto(datos.nombre, 'nombre', LARGO_MAXIMO_DE_NOMBRE);
+  const titulo = texto(datos.titulo, 'titulo', LARGO_MAXIMO_DE_TITULO);
+  const zona = texto(datos.zona, 'zona', LARGO_MAXIMO_DE_ZONA);
+  if (
+    !Number.isInteger(datos.aniosExperiencia) ||
+    datos.aniosExperiencia < 0 ||
+    datos.aniosExperiencia > ANIOS_MAXIMOS_DE_EXPERIENCIA
+  ) {
+    throw new ErrorDeValidacion(
+      `Los años de experiencia deben ser un entero entre 0 y ${ANIOS_MAXIMOS_DE_EXPERIENCIA}`,
+      'cuidador.experiencia_invalida',
+    );
+  }
+  const tarifaHora = Dinero.pesos(datos.tarifaHora);
+  if (tarifaHora.valor === 0) {
+    throw new ErrorDeValidacion(
+      'La tarifa por hora debe ser mayor que cero',
+      'cuidador.tarifa_invalida',
+    );
+  }
+  const telefono = datos.telefono.trim();
+  if (!TELEFONO_E164.test(telefono)) {
+    throw new ErrorDeValidacion(
+      'El teléfono debe tener formato internacional, por ejemplo +573001234567',
+      'cuidador.telefono_invalido',
+    );
+  }
+  const bio = datos.bio.normalize('NFC').trim();
+  if (Array.from(bio).length > LARGO_MAXIMO_DE_BIO) {
+    throw new ErrorDeValidacion(
+      `La presentación no puede pasar de ${LARGO_MAXIMO_DE_BIO} caracteres`,
+      'cuidador.bio_muy_larga',
+    );
+  }
+  const disponibilidad = JORNADAS.filter((jornada) =>
+    datos.disponibilidad.includes(jornada),
+  );
+  if (disponibilidad.length === 0) {
+    throw new ErrorDeValidacion(
+      'El cuidador debe estar disponible en al menos una jornada',
+      'cuidador.sin_disponibilidad',
+    );
+  }
+  return {
+    nombre,
+    titulo,
+    zona,
+    aniosExperiencia: datos.aniosExperiencia,
+    tarifaHora,
+    telefono,
+    bio,
+    disponibilidad,
+  };
 }
 
 function texto(valor: string, campo: string, maximo: number): string {

@@ -33,6 +33,7 @@ describe('renderizarAviso', () => {
       'alerta_generada:destinatario',
       'bolsa_comprada:familia',
       'compra_de_bolsa_fallida:familia',
+      'cuidador_verificado:cuidador',
       'lectura_fuera_de_rango:destinatario',
       'medicamento_omitido:destinatario',
       'mensaje_nuevo:destinatario',
@@ -48,6 +49,7 @@ describe('renderizarAviso', () => {
       'servicio_iniciado:familia',
       'servicio_solicitado:cuidador',
       'servicio_solicitado:familia',
+      'verificacion_rechazada:cuidador',
     ]);
   });
 

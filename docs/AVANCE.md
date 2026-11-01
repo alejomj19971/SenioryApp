@@ -4,8 +4,8 @@
 
 ## Dónde vamos
 
-> **Backend: M0 con 7 de 8 PR hechos (falta el despliegue a staging, que espera el hosting), M1 (Identidad) con 7 de 8, M2 (Directorio) en `main` y M3 (cotización) en `main` y M4 (reservas) en `main` y M5 (notificaciones) en `main` y M6 (teleasistencia) en `main` y M7 (cobro, bolsas y liquidación) en `main` y M8 (mensajería) construido, en revisión.**
-> Siguiente paso: **M9 (registro y verificación de cuidadores)**. Se construye todo el backend antes de seguir con el frontend; los datos reales (cuidadores, verificaciones) llegan después por los procesos del propio sistema. Pendiente de ustedes: revisar y aceptar el [ADR-03](./ADR-03.md) (comunicación) y el [ADR-04](./ADR-04.md) (stack) y ver la CI en verde en GitHub.
+> **Backend: M0 con 7 de 8 PR hechos (falta el despliegue a staging, que espera el hosting), M1 (Identidad) con 7 de 8, M2 (Directorio) en `main` y M3 (cotización) en `main` y M4 (reservas) en `main` y M5 (notificaciones) en `main` y M6 (teleasistencia) en `main` y M7 (cobro, bolsas y liquidación) en `main` y M8 (mensajería) en `main` y M9 (registro y verificación de cuidadores) construido, en revisión.**
+> Siguiente paso: **M10 (endurecimiento y despliegue)**. Se construye todo el backend antes de seguir con el frontend; los datos reales (cuidadores, verificaciones) llegan después por los procesos del propio sistema. Pendiente de ustedes: revisar y aceptar el [ADR-03](./ADR-03.md) (comunicación) y el [ADR-04](./ADR-04.md) (stack) y ver la CI en verde en GitHub.
 >
 > El frontend sigue siendo el prototipo del pitch con datos de ejemplo, pero **F0 (la base para conectarlo al backend) ya está construida**. Siguiente en el frontend: **F1 (identidad)**.
 
@@ -18,8 +18,9 @@ Backend   M0 █████████████████▌░░  7 de 
           M5 ████████████████████  construido
           M6 ████████████████████  construido
           M7 ████████████████████  construido
-          M8 ████████████████████  construido (en revisión)   ← aquí
-          M9 … M11                 pendientes
+          M8 ████████████████████  construido
+          M9 ████████████████████  construido (en revisión)   ← aquí
+          M10 … M11                pendientes
 Frontend  F0 ████████████████████  construido   ← aquí
           F1 … F9                  pendientes (F1 siguiente)
 Base de datos  ████████████████████  completa (adelantada)
@@ -67,10 +68,11 @@ Base de datos  ████████████████████  com
 | M5 | Notificaciones: aviso a la familia y al cuidador en cada cambio del servicio, canales como adaptadores (la campana de la aplicación es real; correo, SMS y WhatsApp esperan proveedor), reintentos con espera creciente, sin duplicados, prioridad alta por todos los canales a la vez y alarma de alerta sin entregar. Ver el [README del módulo](../backend/src/notificaciones/README.md). | ✅ commit `6c6fa83` (ya en `main`) |
 | M6 | Teleasistencia: política de acceso en cada consulta (el cuidador solo con servicio activo; revocar el consentimiento o terminar el servicio corta el acceso al instante), medicamentos con tomas del día idempotentes, signos vitales con rangos, alertas con clave de idempotencia y medición E11, tarea de omisión, resumen en una consulta y datos clínicos que nunca salen en eventos ni avisos. Ver el [README del módulo](../backend/src/teleasistencia/README.md). | ✅ commit `5ebb78e` (ya en `main`) |
 | M7 | Cobro: el servicio se cobra al confirmarse (con la pasarela o con la bolsa de horas), el aviso firmado de la pasarela es la única puerta para aprobar un pago (una sola vez, con el monto verificado, también si llega en paralelo), la bolsa es un libro de movimientos que nunca queda negativo, el dinero vuelve al cancelar, los pagos sin pagar vencen (preguntándole antes a la pasarela), el servicio no inicia sin pago y el cuidador queda con su liquidación. La pasarela y el dispersor reales esperan decisión: hoy hay adaptadores simulados (prohibidos en producción) y deshabilitados. Ver el [README del módulo](../backend/src/pagos/README.md). | ✅ commit `7920327` (ya en `main`) |
-| M8 | Mensajería: el chat entre la familia y el cuidador (solo sus dos partes; se escribe mientras haya un servicio vivo y se lee siempre), mensajes en texto plano sin duplicados al reenviar, paginación por cursor, eventos en vivo (SSE) que se reconectan sin perder mensajes, tope de conexiones y apagado limpio, y aviso agrupado a la otra parte sin el texto. Ver el [README del módulo](../backend/src/mensajeria/README.md). | ⏳ en revisión (rama `feat/m8-mensajeria`) |
-| M9 → M11 | Verificación de cuidadores, despliegue, IA. | Pendientes, en ese orden |
+| M8 | Mensajería: el chat entre la familia y el cuidador (solo sus dos partes; se escribe mientras haya un servicio vivo y se lee siempre), mensajes en texto plano sin duplicados al reenviar, paginación por cursor, eventos en vivo (SSE) que se reconectan sin perder mensajes, tope de conexiones y apagado limpio, y aviso agrupado a la otra parte sin el texto. Ver el [README del módulo](../backend/src/mensajeria/README.md). | ✅ commit `33f70de` (ya en `main`) |
+| M9 | Postulación y verificación de cuidadores: registro propio con rol `cuidador`, perfil en borrador, documentos validados por contenido, revisión de los tres controles por administradores (aprobar con vigencia o rechazar con motivo, sin carreras entre revisores), activación y visibilidad solo con los tres aprobados (E7), vencimiento y renovación, y hoja de vida pública aprobada aparte de los documentos privados. Ver el [README del módulo](../backend/src/directorio/README.md). | ⏳ en revisión (rama `feat/m9-verificacion`) |
+| M10 → M11 | Despliegue, IA. | Pendientes, en ese orden |
 
-**Cifras actuales:** 2816 pruebas (unitarias y de arquitectura, y de integración y API contra Postgres real; las de integración corren un archivo tras otro porque comparten la base de datos), cobertura del 98 %, lint y compilación limpios y 0 vulnerabilidades en las dependencias de producción.
+**Cifras actuales:** 2910 pruebas (unitarias y de arquitectura, y de integración y API contra Postgres real; las de integración corren un archivo tras otro porque comparten la base de datos), cobertura del 98 %, lint y compilación limpios y 0 vulnerabilidades en las dependencias de producción.
 
 ### Frontend (`frontend/`)
 
@@ -106,7 +108,8 @@ Cada rama parte de la anterior. Se revisan con un PR encadenado por entrega (la 
 | 18 | `feat/m5-notificaciones` | M5: notificaciones (ya en `main`). |
 | 19 | `feat/m6-teleasistencia` | M6: teleasistencia (ya en `main`). |
 | 20 | `feat/m7-cobro` | M7: cobro, bolsas y liquidación (ya en `main`). |
-| 21 | `feat/m8-mensajeria` (actual) | M8: mensajería. |
+| 21 | `feat/m8-mensajeria` | M8: mensajería (ya en `main`). |
+| 22 | `feat/m9-verificacion` (actual) | M9: registro y verificación de cuidadores. |
 
 **La CI solo corre en el PR 6:** es la primera rama que tiene `.github/workflows/backend.yml`. Una vez fusionada en `main`, correrá en todos los PR que toquen `backend/`.
 

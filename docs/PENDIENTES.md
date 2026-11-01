@@ -77,7 +77,7 @@
 | 🧑 | **Cómo pasa un servicio a «en curso»:** hoy el cuidador marca el inicio (check-in), solo dentro de su franja o hasta 30 minutos antes. Decidir si además debe ser automático. |
 | 🔧 | **Servicios aceptados que nunca se iniciaron** (el cuidador no llegó, o no marcó): hoy se quedan «aceptado» para siempre. Falta decidir qué pasa (marcar «no se presentó», avisar, reembolsar) — M10. |
 | 🔧 | **Exigir el pago aprobado para iniciar:** ya está hecho (`REQUIERE_PAGO_APROBADO`, obligatorio en staging y producción). En desarrollo viene apagado para poder probar sin pagar. |
-| 🔧 | Que el cuidador defina su propia `aceptacionAutomatica` (hoy es un campo del perfil que solo se cambia por base de datos o por el importador): llega con M9. |
+| 🔧 | Que el cuidador defina su propia `aceptacionAutomatica`: ya está hecho (`PATCH /cuidadores/yo`, M9). |
 | 🧑 | **Anticipación máxima de 180 días** y **plazos de aceptación** (2 h, o 30 min si es para hoy) están en el dominio como constantes: confirmarlos con el equipo. |
 | 🔧 | Una franja de 6 h admite servicios de hasta 8 h (rango de la base de datos): decidir si las horas deben caber en la franja. |
 | 🔧 | Frontend (F4): `contratacion.ts`, la confirmación con id, `CuidadorEnTurno` y la vista mínima del cuidador (`/cuidador`). |
@@ -139,13 +139,20 @@
 | 🔧 | **Flujo en vivo de Teleasistencia** (`GET /adultos-mayores/:id/eventos`, pendiente de M6): ya hay la infraestructura (`ConexionesDeFlujos`, patrón de `FlujoDeMensajes`); falta construirlo y que verifique el acceso en cada vuelta. |
 | 🔧 | Frontend (F4): `mensajeria.ts`, quitar las respuestas automáticas y los indicadores simulados de `ChatMensajes`, `EventSource` con reconexión y **reconocer los mensajes por su `id`** (el flujo entrega al menos una vez). |
 
-### M9 — Directorio II: registro y verificación
+### M9 — Directorio II: registro y verificación  *(backend construido)*
 
 | | Pendiente |
 |---|---|
-| 🔧 | Todo el módulo: registro del cuidador, documentos y verificación. |
-| 🧑 | Antivirus para los archivos subidos. |
-| ⚖️🚀 | **Procedimiento de verificación:** quién revisa, en cuánto tiempo y con qué vigencia; y los primeros cuidadores reales verificados. |
+| ⚖️🚀 | **Procedimiento de verificación:** quién revisa, en cuánto tiempo y con qué vigencia de cada control (hoy: antecedentes y psicotécnica **deben** traer fecha de vencimiento, máximo 5 años; títulos pueden no vencer; son propuestas provisionales), y los primeros cuidadores reales verificados. |
+| 🧑🚀 | **Antivirus para los archivos subidos** (puerto `AnalizadorDeArchivos` del plan, no construido). Hoy solo se valida el formato por contenido y el tamaño. |
+| 🔧🚀 | **Almacén real de archivos:** el local no se admite en producción, así que **sin bucket privado no se pueden subir documentos** (responde 503). Depende del hosting. |
+| 🔧 | **Quitar metadatos** de las imágenes subidas (EXIF con ubicación y fecha): hoy se guardan tal cual. Necesita una librería de imágenes. |
+| ⚖️🚀 | **Segundo factor para administradores** (el panel de revisores decide quién se muestra a las familias). Hoy basta la contraseña. |
+| 🔧 | **Avisar a los revisores** de que hay una postulación nueva (hoy la ven al abrir la cola) y **plazos de respuesta** a los cuidadores. |
+| 🔧 | La **foto** del cuidador no se sube por la API (la base la admite): llega con el almacén real. |
+| 🔧 | Que un control vencido **cancele o reasigne** los servicios futuros del cuidador (hoy Reservas recibe `cuidador_oculto` pero no actúa), y una pantalla de administrador para suspender o reactivar cuidadores (`suspender` existe en el dominio). |
+| 🔧 | **Eliminar los documentos** de quien se retira o los rechazados, y los plazos de conservación (Ley 1581). |
+| 🔧 | Frontend: registro del cuidador, carga de documentos (envío como cuerpo binario, no multipart) y panel de revisión. |
 
 ### M10 — Endurecimiento y producción
 

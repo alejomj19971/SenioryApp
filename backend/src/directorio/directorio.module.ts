@@ -35,6 +35,21 @@ import {
 import { IdentidadModule } from '../identidad/identidad.module.js';
 import { ImportarCuidador } from './aplicacion/casos-de-uso/importar-cuidador.js';
 import { ListarCuidadores } from './aplicacion/casos-de-uso/listar-cuidadores.js';
+import {
+  ActualizarMiPerfil,
+  CrearMiPerfil,
+  ObtenerMiPerfil,
+  RenovarVerificacion,
+  SolicitarRevision,
+  SubirDocumento,
+} from './aplicacion/casos-de-uso/mi-postulacion.js';
+import {
+  AbrirDocumentoParaRevisor,
+  ListarHojasDeVidaPendientes,
+  ListarVerificaciones,
+  RevisarHojaDeVida,
+  RevisarVerificacion,
+} from './aplicacion/casos-de-uso/revision.js';
 import { ObtenerCuidador } from './aplicacion/casos-de-uso/obtener-cuidador.js';
 import { ObtenerFiltrosDisponibles } from './aplicacion/casos-de-uso/obtener-filtros-disponibles.js';
 import { ObtenerHojaDeVida } from './aplicacion/casos-de-uso/obtener-hoja-de-vida.js';
@@ -65,6 +80,8 @@ import { ConsultaDeDirectorioServicio } from './aplicacion/servicios/consulta-de
 import { EventosDeDirectorio } from './aplicacion/servicios/eventos-de-directorio.js';
 import { ArchivosController } from './infraestructura/entrada/http/archivos.controller.js';
 import { CuidadoresController } from './infraestructura/entrada/http/cuidadores.controller.js';
+import { MiPerfilController } from './infraestructura/entrada/http/mi-perfil.controller.js';
+import { VerificacionesController } from './infraestructura/entrada/http/verificaciones.controller.js';
 import {
   AlmacenDeArchivosDeshabilitado,
   AlmacenDeArchivosLocal,
@@ -84,7 +101,13 @@ const MANEJADOR_DE_SERVICIOS_COMPLETADOS = Symbol(
 // Nest.
 @Module({
   imports: [IdentidadModule],
-  controllers: [CuidadoresController, ArchivosController],
+  // MiPerfilController va ANTES: así `yo` no se toma por el id de un cuidador.
+  controllers: [
+    MiPerfilController,
+    VerificacionesController,
+    CuidadoresController,
+    ArchivosController,
+  ],
   providers: [
     // Persistencia y archivos
     {
@@ -189,6 +212,248 @@ const MANEJADOR_DE_SERVICIOS_COMPLETADOS = Symbol(
           reloj,
           configuracion.zonaHorariaNegocio,
         ),
+    },
+
+    // La postulación del cuidador (M9): su perfil, sus documentos y la solicitud de revisión.
+    {
+      provide: CrearMiPerfil,
+      inject: [
+        REPOSITORIO_CUIDADORES,
+        REPOSITORIO_DOCUMENTOS,
+        CONSULTA_DE_IDENTIDAD,
+        UNIDAD_DE_TRABAJO,
+        AUDITORIA,
+        RELOJ,
+        GENERADOR_DE_IDS,
+        CONFIGURACION,
+      ],
+      useFactory: (
+        cuidadores: RepositorioCuidadores,
+        documentos: RepositorioDocumentos,
+        identidad: ConsultaDeIdentidad,
+        unidadDeTrabajo: UnidadDeTrabajo,
+        auditoria: Auditoria,
+        reloj: Reloj,
+        ids: GeneradorDeIds,
+        configuracion: Configuracion,
+      ) =>
+        new CrearMiPerfil(
+          cuidadores,
+          documentos,
+          identidad,
+          unidadDeTrabajo,
+          auditoria,
+          reloj,
+          ids,
+          configuracion.zonaHorariaNegocio,
+        ),
+    },
+    {
+      provide: ObtenerMiPerfil,
+      inject: [
+        REPOSITORIO_CUIDADORES,
+        REPOSITORIO_DOCUMENTOS,
+        RELOJ,
+        CONFIGURACION,
+      ],
+      useFactory: (
+        cuidadores: RepositorioCuidadores,
+        documentos: RepositorioDocumentos,
+        reloj: Reloj,
+        configuracion: Configuracion,
+      ) =>
+        new ObtenerMiPerfil(
+          cuidadores,
+          documentos,
+          reloj,
+          configuracion.zonaHorariaNegocio,
+        ),
+    },
+    {
+      provide: ActualizarMiPerfil,
+      inject: [
+        REPOSITORIO_CUIDADORES,
+        REPOSITORIO_DOCUMENTOS,
+        UNIDAD_DE_TRABAJO,
+        AUDITORIA,
+        RELOJ,
+        CONFIGURACION,
+      ],
+      useFactory: (
+        cuidadores: RepositorioCuidadores,
+        documentos: RepositorioDocumentos,
+        unidadDeTrabajo: UnidadDeTrabajo,
+        auditoria: Auditoria,
+        reloj: Reloj,
+        configuracion: Configuracion,
+      ) =>
+        new ActualizarMiPerfil(
+          cuidadores,
+          documentos,
+          unidadDeTrabajo,
+          auditoria,
+          reloj,
+          configuracion.zonaHorariaNegocio,
+        ),
+    },
+    {
+      provide: SubirDocumento,
+      inject: [
+        REPOSITORIO_CUIDADORES,
+        REPOSITORIO_DOCUMENTOS,
+        ALMACEN_DE_ARCHIVOS,
+        UNIDAD_DE_TRABAJO,
+        AUDITORIA,
+        RELOJ,
+        GENERADOR_DE_IDS,
+        CONFIGURACION,
+      ],
+      useFactory: (
+        cuidadores: RepositorioCuidadores,
+        documentos: RepositorioDocumentos,
+        almacen: AlmacenDeArchivos,
+        unidadDeTrabajo: UnidadDeTrabajo,
+        auditoria: Auditoria,
+        reloj: Reloj,
+        ids: GeneradorDeIds,
+        configuracion: Configuracion,
+      ) =>
+        new SubirDocumento(
+          cuidadores,
+          documentos,
+          almacen,
+          unidadDeTrabajo,
+          auditoria,
+          reloj,
+          ids,
+          configuracion.zonaHorariaNegocio,
+        ),
+    },
+    {
+      provide: SolicitarRevision,
+      inject: [
+        REPOSITORIO_CUIDADORES,
+        REPOSITORIO_DOCUMENTOS,
+        UNIDAD_DE_TRABAJO,
+        AUDITORIA,
+        RELOJ,
+        GENERADOR_DE_IDS,
+        CONFIGURACION,
+      ],
+      useFactory: (
+        cuidadores: RepositorioCuidadores,
+        documentos: RepositorioDocumentos,
+        unidadDeTrabajo: UnidadDeTrabajo,
+        auditoria: Auditoria,
+        reloj: Reloj,
+        ids: GeneradorDeIds,
+        configuracion: Configuracion,
+      ) =>
+        new SolicitarRevision(
+          cuidadores,
+          documentos,
+          unidadDeTrabajo,
+          auditoria,
+          reloj,
+          ids,
+          configuracion.zonaHorariaNegocio,
+        ),
+    },
+    {
+      provide: RenovarVerificacion,
+      inject: [
+        REPOSITORIO_CUIDADORES,
+        REPOSITORIO_DOCUMENTOS,
+        UNIDAD_DE_TRABAJO,
+        AUDITORIA,
+        RELOJ,
+        GENERADOR_DE_IDS,
+        CONFIGURACION,
+      ],
+      useFactory: (
+        cuidadores: RepositorioCuidadores,
+        documentos: RepositorioDocumentos,
+        unidadDeTrabajo: UnidadDeTrabajo,
+        auditoria: Auditoria,
+        reloj: Reloj,
+        ids: GeneradorDeIds,
+        configuracion: Configuracion,
+      ) =>
+        new RenovarVerificacion(
+          cuidadores,
+          documentos,
+          unidadDeTrabajo,
+          auditoria,
+          reloj,
+          ids,
+          configuracion.zonaHorariaNegocio,
+        ),
+    },
+
+    // El panel de los revisores (M9).
+    {
+      provide: ListarVerificaciones,
+      inject: [REPOSITORIO_CUIDADORES, REPOSITORIO_DOCUMENTOS],
+      useFactory: (
+        cuidadores: RepositorioCuidadores,
+        documentos: RepositorioDocumentos,
+      ) => new ListarVerificaciones(cuidadores, documentos),
+    },
+    {
+      provide: AbrirDocumentoParaRevisor,
+      inject: [REPOSITORIO_DOCUMENTOS, ALMACEN_DE_ARCHIVOS, AUDITORIA],
+      useFactory: (
+        documentos: RepositorioDocumentos,
+        almacen: AlmacenDeArchivos,
+        auditoria: Auditoria,
+      ) => new AbrirDocumentoParaRevisor(documentos, almacen, auditoria),
+    },
+    {
+      provide: RevisarVerificacion,
+      inject: [
+        REPOSITORIO_CUIDADORES,
+        REPOSITORIO_DOCUMENTOS,
+        UNIDAD_DE_TRABAJO,
+        EventosDeDirectorio,
+        AUDITORIA,
+        RELOJ,
+        CONFIGURACION,
+      ],
+      useFactory: (
+        cuidadores: RepositorioCuidadores,
+        documentos: RepositorioDocumentos,
+        unidadDeTrabajo: UnidadDeTrabajo,
+        eventos: EventosDeDirectorio,
+        auditoria: Auditoria,
+        reloj: Reloj,
+        configuracion: Configuracion,
+      ) =>
+        new RevisarVerificacion(
+          cuidadores,
+          documentos,
+          unidadDeTrabajo,
+          eventos,
+          auditoria,
+          reloj,
+          configuracion.zonaHorariaNegocio,
+        ),
+    },
+    {
+      provide: ListarHojasDeVidaPendientes,
+      inject: [REPOSITORIO_DOCUMENTOS, REPOSITORIO_CUIDADORES],
+      useFactory: (
+        documentos: RepositorioDocumentos,
+        cuidadores: RepositorioCuidadores,
+      ) => new ListarHojasDeVidaPendientes(documentos, cuidadores),
+    },
+    {
+      provide: RevisarHojaDeVida,
+      inject: [REPOSITORIO_DOCUMENTOS, UNIDAD_DE_TRABAJO, AUDITORIA],
+      useFactory: (
+        documentos: RepositorioDocumentos,
+        unidadDeTrabajo: UnidadDeTrabajo,
+        auditoria: Auditoria,
+      ) => new RevisarHojaDeVida(documentos, unidadDeTrabajo, auditoria),
     },
 
     // Lo que corre desde la consola del servidor (npm run cuidadores:importar y
