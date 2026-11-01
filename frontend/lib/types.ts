@@ -1,5 +1,3 @@
-import type { ResumenServicio } from "@/lib/pricing";
-
 export type Especialidad =
   | "auxiliar"
   | "enfermeria"
@@ -51,9 +49,24 @@ export interface CuidadorEnTurno {
   id: string;
   nombre: string;
   foto: string;
-  titulo: string;
   especialidad: Especialidad;
   telefono: string; // formato E.164, ej. "+573001234567"
+  servicioId: string; // el servicio activo con el que está cuidando ahora
+}
+
+// La bolsa de horas prepago (F7): un libro de movimientos que nunca queda negativo. Dinero en pesos enteros.
+export interface MovimientoDeBolsa {
+  id: string;
+  tipo: string;
+  cambio: number; // positivo si entra saldo, negativo si sale
+  servicioId: string | null;
+  fecha: string; // ISO
+}
+
+export interface Bolsa {
+  saldoDisponible: number; // lo que se puede gastar ya
+  saldoReservado: number; // apartado para servicios confirmados que aún no terminan
+  movimientos: MovimientoDeBolsa[];
 }
 
 export interface FiltrosCuidador {
@@ -101,20 +114,57 @@ export interface Mensaje {
   fecha: string; // ISO
 }
 
-// Contratación (F0 §4.4): estos tipos cruzan entre el servidor y los componentes cliente, así que
-// viven aquí y no en el servicio, que es solo de servidor.
-export interface DatosContratacion {
+// Servicios (F3+F4): lo que la familia pide y el cuidador atiende. El dinero lo calcula SIEMPRE el servidor.
+export type EstadoDeServicio = "solicitado" | "aceptado" | "en_curso" | "finalizado" | "cancelado";
+export type MotivoDeCancelacion = "rechazada" | "expirada" | "cancelada_por_familia" | "pago_fallido";
+export type MedioDePago = "pasarela" | "bolsa";
+
+export interface ServicioBase {
+  id: string;
+  estado: EstadoDeServicio;
+  fecha: string; // AAAA-MM-DD, día civil de Colombia
+  jornada: Jornada;
+  horas: number;
+  medioDePago: MedioDePago;
+  solicitudExpiraEn: string | null; // ISO; hasta cuándo puede aceptar el cuidador
+  cuidador: { id: string; nombre: string } | null;
+  adultoMayor: { id: string; nombre: string; edad: number } | null;
+  solicitadoEn: string;
+  aceptadoEn: string | null;
+  iniciadoEn: string | null;
+  finalizadoEn: string | null;
+  canceladoEn: string | null;
+  motivoDeCancelacion: MotivoDeCancelacion | null;
+  calificacion: { calificacion: number; comentario: string } | null;
+  tarifaHora: number;
+}
+
+// La familia ve lo que paga y NUNCA lo que recibe el cuidador.
+export interface Servicio extends ServicioBase {
+  subtotal: number;
+  cargoDeServicio: number;
+  totalFamilia: number;
+}
+
+// El cuidador ve lo que recibe y NUNCA lo que paga la familia.
+export interface ServicioDelCuidador extends ServicioBase {
+  pagoProfesional: number;
+}
+
+export interface Cotizacion {
+  cuidadorId: string;
+  horas: number;
+  tarifaHora: number;
+  subtotal: number;
+  cargoPorcentaje: number; // 8 = 8 %
+  cargo: number;
+  totalFamilia: number;
+}
+
+export interface DatosDeSolicitud {
   cuidadorId: string;
   fecha: string; // AAAA-MM-DD
   jornada: Jornada;
   horas: number;
-}
-
-export interface ContratacionConfirmada {
-  id: string;
-  cuidadorNombre: string;
-  fecha: string;
-  jornada: Jornada;
-  horas: number;
-  resumen: ResumenServicio;
+  medioDePago: MedioDePago;
 }

@@ -1,8 +1,11 @@
 import "server-only";
 import { cache } from "react";
 import { cookies } from "next/headers";
+import { redirect } from "next/navigation";
 import { leerDelBackend } from "@/lib/api/cliente-servidor";
 import type { RespuestaDePerfil } from "@/lib/api/contratos/identidad";
+import type { Rol } from "@/lib/api/contratos/identidad";
+import { destinoTrasIngresar } from "@/lib/redireccion";
 import { COOKIE_DE_ACCESO, COOKIE_DE_REFRESCO } from "@/lib/sesion/constantes";
 import { cookiesDeSesionDe, opcionesDeCookie } from "@/lib/sesion/cookies";
 
@@ -34,3 +37,14 @@ export async function tokenDeRefresco(): Promise<string | undefined> {
 // La verificación REAL de la sesión: pregunta al backend quién es y qué personas cuida. Memorizada durante un
 // render, así varias partes de la misma página no repiten la consulta. Un 401 redirige a `/ingresar`.
 export const verificarSesion = cache((): Promise<RespuestaDePerfil> => leerDelBackend<RespuestaDePerfil>("/yo"));
+
+// Exige que la sesión sea de ese rol (el área del cuidador, el panel de administración); a cualquier otra persona la
+// lleva a donde le corresponde. El backend vuelve a verificar el rol en cada ruta: esto solo evita mostrar pantallas
+// que no le sirven.
+export async function exigirRol(rol: Rol): Promise<RespuestaDePerfil> {
+  const perfil = await verificarSesion();
+  if (perfil.usuario.rol !== rol) {
+    redirect(destinoTrasIngresar({ rol: perfil.usuario.rol, adultosMayores: perfil.adultosMayores }));
+  }
+  return perfil;
+}

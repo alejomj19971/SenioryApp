@@ -195,7 +195,12 @@ El frontend se conecta al backend módulo por módulo, en el orden del [plan v2]
 | 🔧 | **Reseñas:** solo las del backend; no hay paginación de reseñas (el perfil trae todas). Revisar cuando un cuidador tenga muchas. |
 | 🔧 | **Cuidador en turno:** hasta F4 nadie aparece «en turno» (antes era uno inventado del prototipo). `mensajes.json` y la contratación siguen del prototipo y se reemplazan en F4 y F8: mientras tanto el chat de un cuidador real aparece vacío. |
 | 🧑 | Los recorridos del directorio necesitan los cuidadores de `npm run semillas` (y uno importado con PDF para probar la hoja de vida); sin ellos algunos se omiten. |
-| F3 a F10 | 🔧 Una por cada módulo M3 a M9 (cotización y contratación con vista mínima del cuidador, pagos y bolsas, teleasistencia, mensajes, avisos, administración) y el cierre para producción. |
+| F3+F4 — Contratación *(construido)* | 🔧 **Pagar un servicio con la pasarela:** un servicio aceptado con medio «pasarela» necesita que la familia pague; la pantalla del servicio todavía no ofrece «Pagar» (llega con F7). Con la bolsa, el pago es inmediato. |
+| 🔧 | **Avisos al cuidador:** hoy el cuidador solo ve una solicitud al abrir su panel; el aviso por correo/SMS/WhatsApp espera proveedor y la campana llega con F5. Una solicitud sin respuesta vence a las 2 horas (30 minutos si es para hoy). |
+| 🔧 | **Panel del cuidador:** solo los servicios más recientes (sin «ver más»), sin calendario ni historial de pagos (liquidaciones en F7), y sin su perfil y documentos (F9). |
+| 🔧 | **Reprogramar:** no existe; hoy se cancela y se pide de nuevo. Y la política de cancelación tardía (hoy siempre se devuelve todo) es una decisión de negocio abierta. |
+| 🧑 | **Cuidador en turno** y **mensajes** siguen sin conectar con el chat real (F8): «Escribir» abre el chat del prototipo vacío. |
+| F7 a F10 | 🔧 Una por cada módulo M7 a M9 (pagos y bolsas, teleasistencia, mensajes, avisos, administración) y el cierre para producción. |
 | 🔧 | **Vulnerabilidades de las dependencias del frontend** (`npm audit`: 15 en producción, casi todas por `shadcn` y `zod`; arreglarlas obliga a subir `shadcn` a una versión mayor). `shadcn` es una herramienta de desarrollo y no debería estar en `dependencies`. |
 | 🧑 | **Pruebas de usabilidad** con adultos mayores y familiares reales (E4, E5). |
 | 🧑 | Quitar de la landing los textos y cifras de demostración. |

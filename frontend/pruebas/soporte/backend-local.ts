@@ -135,3 +135,90 @@ export async function abrirSesion(cuenta: CuentaDePrueba): Promise<string> {
   if (!respuesta.ok || cookie === undefined) throw new Error(`No se pudo iniciar sesión (${respuesta.status}).`);
   return cookie;
 }
+
+// ── Un cuidador VERIFICADO, por el flujo real de M9 ───────────────────────────────────────────────────────────────
+// Se registra como cuidador, arma su perfil, sube sus cuatro documentos y pide la revisión; un administrador aprueba
+// los tres controles y el backend lo activa y lo muestra (E7). Así las pruebas de contratación tienen a alguien a
+// quien contratar y con quien iniciar sesión (los cuidadores de las semillas no tienen contraseña conocida).
+// Hace falta una cuenta de administrador local: `ADMIN_DE_PRUEBA_CORREO` y `ADMIN_DE_PRUEBA_CONTRASENA` en
+// `.env.local` (se crea con `npm run crear-admin` en backend/). Sin ella, las pruebas que lo usan se omiten.
+
+const CORREO_DEL_ADMIN = process.env.ADMIN_DE_PRUEBA_CORREO ?? "";
+const CONTRASENA_DEL_ADMIN = process.env.ADMIN_DE_PRUEBA_CONTRASENA ?? "";
+
+export const hayAdministradorDePrueba = CORREO_DEL_ADMIN !== "" && CONTRASENA_DEL_ADMIN !== "";
+
+const PDF_MINIMO = Buffer.from("%PDF-1.4\n1 0 obj<</Type/Catalog>>endobj\ntrailer<</Root 1 0 R>>\n%%EOF\n");
+
+export interface CuidadorDePrueba {
+  cuentaDeAcceso: CuentaDePrueba;
+  cuidadorId: string;
+  nombre: string;
+  tarifaHora: number;
+}
+
+async function subirDocumento(tipo: string, cookie: string, ip: string): Promise<void> {
+  const respuesta = await fetch(`${URL_DEL_BACKEND}/cuidadores/yo/documentos/${tipo}`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/pdf", "X-Nombre-De-Archivo": `${tipo}.pdf`, "X-Seniory-BFF": SECRETO_BFF, "X-Cliente-IP": ip, Cookie: cookie },
+    body: PDF_MINIMO,
+  });
+  if (!respuesta.ok) throw new Error(`No se pudo subir el documento ${tipo} (${respuesta.status}): ${await respuesta.text()}`);
+}
+
+export async function crearCuidadorVerificado({ tarifaHora = 20_000, zona = "Laureles" } = {}): Promise<CuidadorDePrueba> {
+  if (!hayAdministradorDePrueba) throw new Error("Falta ADMIN_DE_PRUEBA_CORREO / ADMIN_DE_PRUEBA_CONTRASENA en .env.local.");
+  const cuenta: CuentaDePrueba = {
+    nombre: "Cuidadora de Prueba",
+    correo: correoUnico("cuidadora"),
+    contrasena: CONTRASENA_DE_PRUEBA,
+    nombreDeLaPersona: "",
+    ip: ipAleatoria(),
+  };
+  const registro = await pedir("/auth/registro-cuidador", {
+    metodo: "POST",
+    ip: cuenta.ip,
+    cuerpo: { nombre: cuenta.nombre, correo: cuenta.correo, contrasena: cuenta.contrasena, versionPolitica: "v1" },
+  });
+  if (!registro.ok) throw new Error(`No se pudo registrar al cuidador (${registro.status}): ${await registro.text()}`);
+  const cookie = await abrirSesion(cuenta);
+
+  const perfil = await pedir("/cuidadores/yo", {
+    metodo: "POST",
+    cookie,
+    ip: cuenta.ip,
+    cuerpo: {
+      especialidad: "enfermeria",
+      titulo: "Enfermera profesional de prueba",
+      aniosExperiencia: 5,
+      tarifaHora,
+      telefono: `+57300${String(randomInt(1_000_000, 9_999_999))}`,
+      zona,
+      disponibilidad: ["manana", "tarde", "noche"],
+      bio: "Cuidadora creada por las pruebas automáticas.",
+    },
+  });
+  if (!perfil.ok) throw new Error(`No se pudo crear el perfil (${perfil.status}): ${await perfil.text()}`);
+  const { perfil: datos } = (await perfil.json()) as { perfil: { id: string } };
+
+  for (const tipo of ["cedula", "antecedentes", "titulo", "psicotecnica"]) await subirDocumento(tipo, cookie, cuenta.ip);
+  const revision = await pedir("/cuidadores/yo/revision", { metodo: "POST", cookie, ip: cuenta.ip });
+  if (!revision.ok) throw new Error(`No se pudo pedir la revisión (${revision.status}): ${await revision.text()}`);
+
+  // Un administrador aprueba los tres controles (la vigencia máxima es de 5 años).
+  const dentroDeTresAnios = new Date(Date.now() + 3 * 365 * 86_400_000).toISOString().slice(0, 10);
+  const admin = await abrirSesion({ nombre: "", correo: CORREO_DEL_ADMIN, contrasena: CONTRASENA_DEL_ADMIN, nombreDeLaPersona: "", ip: ipAleatoria() });
+  const cola = await pedir("/verificaciones?estado=pendiente", { cookie: admin });
+  const { verificaciones } = (await cola.json()) as { verificaciones: { id: string; control: string; cuidador: { id: string } }[] };
+  const mias = verificaciones.filter((v) => v.cuidador.id === datos.id);
+  if (mias.length !== 3) throw new Error(`Se esperaban 3 controles pendientes del cuidador y hay ${mias.length}.`);
+  for (const v of mias) {
+    const decision = await pedir(`/verificaciones/${v.id}`, {
+      metodo: "PATCH",
+      cookie: admin,
+      cuerpo: { decision: "aprobar", vigenteHasta: v.control === "titulos" ? null : dentroDeTresAnios },
+    });
+    if (!decision.ok) throw new Error(`No se pudo aprobar ${v.control} (${decision.status}): ${await decision.text()}`);
+  }
+  return { cuentaDeAcceso: cuenta, cuidadorId: datos.id, nombre: cuenta.nombre, tarifaHora };
+}

@@ -1,8 +1,9 @@
 import { expect, test, type BrowserContext, type Page } from "@playwright/test";
+import { ahoraEnColombia, sumarDias } from "../../lib/fecha-colombia";
 import { backendDisponible, crearCuenta, ipAleatoria } from "../soporte/backend-local";
 
 // Recorrido principal (F0 §6): landing → ingresar → /app → buscar → perfil con insignias → contratar 1 hora
-// (tarifa + 8 %) → confirmación → teleasistencia → alerta con cuenta regresiva.
+// (tarifa + 8 %) → solicitud enviada → teleasistencia → alerta con cuenta regresiva.
 //
 // Es la red de seguridad del resto del trabajo del frontend: mientras se reemplazan los servicios de
 // datos por la API, módulo por módulo, la aplicación tiene que seguir haciendo esto. Se actualiza con
@@ -51,7 +52,7 @@ test("recorrido principal de una familia", async ({ page, context }) => {
   await expect(page.getByText("Antecedentes verificados")).toBeVisible();
   await expect(page.getByText("Títulos comprobados")).toBeVisible();
 
-  // Contratar 1 hora: la tarifa del cuidador + 8 %
+  // Pedir 1 hora: la tarifa del cuidador + 8 %, calculado por el servidor
   const boton = page.getByRole("link", { name: /Contratar por horas/ });
   const tarifa = Number(((await boton.innerText()).match(/\$\s?([\d.]+)\/hora/)?.[1] ?? "").replaceAll(".", ""));
   expect(tarifa).toBeGreaterThan(0);
@@ -60,11 +61,16 @@ test("recorrido principal de una familia", async ({ page, context }) => {
   await boton.click();
   await expect(page).toHaveURL(/\/app\/contratar\/[0-9a-f-]{36}$/);
   await expect(page.getByText(total).first()).toBeVisible();
-  await page.getByRole("button", { name: "Confirmar contratación" }).click();
+  // Un día al azar bien adelante: así correr el recorrido dos veces seguidas no choca con la solicitud anterior.
+  await page.getByRole("group", { name: "Elegir fecha" }).getByRole("button", { name: "Elegir fecha" }).click();
+  await page.getByLabel("Fecha personalizada").fill(sumarDias(ahoraEnColombia().hoy, 20 + Math.floor(Math.random() * 150)));
+  await page.getByRole("group", { name: "Elegir franja horaria" }).getByRole("button").first().click();
+  await page.getByRole("button", { name: "Enviar solicitud" }).click();
 
-  // Confirmación
-  await expect(page).toHaveURL(/\/app\/contratar\/confirmacion$/);
-  await expect(page.getByRole("heading", { name: "¡Contratación confirmada!" })).toBeVisible();
+  // La solicitud queda esperando al cuidador (no «contratación confirmada»: él decide), con el mismo total
+  await expect(page).toHaveURL(/\/app\/servicios\/[0-9a-f-]{36}\?nuevo=1$/);
+  await expect(page.getByText("¡Solicitud enviada!")).toBeVisible();
+  await expect(page.getByText("Esperando al cuidador")).toBeVisible();
   await expect(page.getByText(total).first()).toBeVisible();
 
   // Teleasistencia: alerta con cuenta regresiva de 5 segundos

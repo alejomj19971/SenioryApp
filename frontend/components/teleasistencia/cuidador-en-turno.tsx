@@ -47,7 +47,7 @@ export function CuidadorEnTurno({
             <AvatarCuidador nombre={cuidador.nombre} foto={cuidador.foto} size="lg" className="size-14" />
             <div>
               <DialogTitle>{cuidador.nombre}</DialogTitle>
-              <DialogDescription>{cuidador.titulo}</DialogDescription>
+              <DialogDescription>{etiquetaEspecialidad(cuidador.especialidad)}</DialogDescription>
             </div>
           </div>
         </DialogHeader>

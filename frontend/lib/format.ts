@@ -20,6 +20,13 @@ const formateadorFechaHora = new Intl.DateTimeFormat("es-CO", {
   minute: "2-digit",
 });
 
+// Un día civil «AAAA-MM-DD» (la fecha de un servicio) como «domingo, 1 de noviembre». Se formatea en UTC a propósito:
+// el día ya es el de Colombia, y pasarlo por la zona horaria del equipo lo correría un día.
+const formateadorDeDiaCivil = new Intl.DateTimeFormat("es-CO", { weekday: "long", day: "numeric", month: "long", timeZone: "UTC" });
+export function formatearDiaCivil(fecha: string): string {
+  return formateadorDeDiaCivil.format(new Date(`${fecha}T00:00:00Z`));
+}
+
 export function formatearFecha(fechaISO: string): string {
   return formateadorFecha.format(new Date(fechaISO));
 }

@@ -10,8 +10,7 @@ Cada archivo es el plan detallado de cómo una parte del frontend pasa de los da
 | Etapa 0 | Sistema de diseño (paleta y `components/ui`) | — | [ETAPA0](../../frontend/ETAPA0_HOJA_DE_COMPONENTES.md) | ✅ Construido |
 | F1 | Identidad | M1 | [F1-identidad.md](./F1-identidad.md) (con la [actualización del 2026-11-01](./F1-identidad.md#actualización-2026-11-01)) | ⏳ En construcción |
 | F2 | Directorio | M2 | [F2-directorio.md](./F2-directorio.md) | ✅ Construido |
-| F3 | Cotización | M3 | — | Pendiente |
-| F4 | Contratación | M4 | — | Pendiente |
+| F3+F4 | Cotización y contratación | M3, M4 | [F4-contratacion.md](./F4-contratacion.md) | ✅ Construido |
 | F5 | Notificaciones | M5 | — | Pendiente |
 | F6 | Teleasistencia | M6 | — | Pendiente |
 | F7 | Pagos y bolsas | M7 | — | Pendiente |

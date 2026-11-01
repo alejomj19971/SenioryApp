@@ -7,15 +7,15 @@ import { etiquetaJornada } from "@/lib/format";
 
 export type FechaSeleccion = "hoy" | "manana" | "elegir";
 
-const jornadas: Jornada[] = ["manana", "tarde", "noche"];
-
 interface SelectorHorasProps {
   fechaSeleccion: FechaSeleccion;
   onFechaSeleccionChange: (valor: FechaSeleccion) => void;
   fechaPersonalizada: string;
   onFechaPersonalizadaChange: (valor: string) => void;
   fechaMinima: string;
-  jornada: Jornada;
+  // Las franjas que se pueden pedir ese día: las que atiende el cuidador y que todavía no terminaron.
+  jornadasPedibles: Jornada[];
+  jornada: Jornada | null;
   onJornadaChange: (valor: Jornada) => void;
   horas: number;
   onHorasChange: (valor: number) => void;
@@ -30,6 +30,7 @@ export function SelectorHoras({
   fechaPersonalizada,
   onFechaPersonalizadaChange,
   fechaMinima,
+  jornadasPedibles,
   jornada,
   onJornadaChange,
   horas,
@@ -64,13 +65,19 @@ export function SelectorHoras({
 
       <div className="flex flex-col gap-2">
         <span className="text-base font-semibold text-foreground">Franja horaria</span>
-        <div role="group" aria-label="Elegir franja horaria" className="flex flex-wrap gap-2">
-          {jornadas.map((valor) => (
-            <Chip key={valor} activo={jornada === valor} onClick={() => onJornadaChange(valor)}>
-              {etiquetaJornada(valor)}
-            </Chip>
-          ))}
-        </div>
+        {jornadasPedibles.length > 0 ? (
+          <div role="group" aria-label="Elegir franja horaria" className="flex flex-wrap gap-2">
+            {jornadasPedibles.map((valor) => (
+              <Chip key={valor} activo={jornada === valor} onClick={() => onJornadaChange(valor)}>
+                {etiquetaJornada(valor)}
+              </Chip>
+            ))}
+          </div>
+        ) : (
+          <p role="status" className="text-base text-muted-foreground">
+            Para ese día ya no quedan franjas con este cuidador. Elige otro día.
+          </p>
+        )}
       </div>
 
       <div className="flex flex-col gap-2">

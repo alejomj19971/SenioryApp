@@ -1,6 +1,7 @@
 import "server-only";
 import { redirect } from "next/navigation";
 import type { AdultoMayorDelBackend, RespuestaDePerfil } from "@/lib/api/contratos/identidad";
+import { obtenerCuidadorEnTurnoDe } from "@/lib/services/servicios";
 import { verificarSesion } from "@/lib/sesion";
 import type { AdultoMayor, CuidadorEnTurno, Familiar } from "@/lib/types";
 
@@ -38,8 +39,9 @@ export async function obtenerAdultoMayor(): Promise<AdultoMayor> {
   };
 }
 
-// Hasta F4 nadie está «en turno»: depende de los servicios (Reservas), que todavía no están conectados. Devolver un
-// cuidador inventado sería mostrar a una familia real alguien que no la está cuidando.
+// El cuidador que está con la persona AHORA (un servicio en curso, o aceptado y dentro de su franja); null si no hay.
+// Es el único lugar donde la familia recibe el teléfono de un cuidador (H1, H4).
 export async function obtenerCuidadorEnTurno(): Promise<CuidadorEnTurno | null> {
-  return null;
+  const { persona } = await exigirFamiliaLista();
+  return obtenerCuidadorEnTurnoDe(persona.id);
 }

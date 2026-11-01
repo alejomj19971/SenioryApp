@@ -2,12 +2,13 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Search, HeartPulse } from "lucide-react";
+import { CalendarCheck, Home, Search, HeartPulse } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const items = [
   { href: "/app", label: "Inicio", icono: Home },
   { href: "/app/cuidadores", label: "Buscar", icono: Search },
+  { href: "/app/servicios", label: "Servicios", icono: CalendarCheck },
   { href: "/app/teleasistencia", label: "Teleasistencia", icono: HeartPulse },
 ];
 
