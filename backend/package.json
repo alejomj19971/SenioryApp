@@ -29,7 +29,9 @@
     "semillas": "npm run build && node --env-file-if-exists=.env dist/identidad/infraestructura/entrada/consola/semillas-cli.js && node --env-file-if-exists=.env dist/directorio/infraestructura/entrada/consola/semillas-de-directorio-cli.js",
     "cuidadores:importar": "npm run build && node --env-file-if-exists=.env dist/directorio/infraestructura/entrada/consola/importar-cuidadores-cli.js",
     "cuidadores:revisar-vigencias": "npm run build && node --env-file-if-exists=.env dist/directorio/infraestructura/entrada/consola/revisar-vigencias-cli.js",
-    "bd:migrar": "npm run build && node --env-file-if-exists=.env dist/compartido/infraestructura/base-de-datos/migrar-cli.js"
+    "bd:migrar": "npm run build && node --env-file-if-exists=.env dist/compartido/infraestructura/base-de-datos/migrar-cli.js",
+    "bd:permisos": "npm run build && node --env-file-if-exists=.env dist/compartido/infraestructura/base-de-datos/permisos-cli.js",
+    "bd:probar-restauracion": "node --env-file-if-exists=.env scripts/probar-restauracion.mjs"
   },
   "dependencies": {
     "@nestjs/common": "^12.0.1",

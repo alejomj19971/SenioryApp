@@ -99,6 +99,7 @@ export const CONFIGURACION = Symbol('CONFIGURACION');
             'DIRECTORIO_DE_ARCHIVOS',
           ),
           SECRETO_DE_ARCHIVOS: servicio.get<string>('SECRETO_DE_ARCHIVOS'),
+          SECRETO_DE_OPERACION: servicio.get<string>('SECRETO_DE_OPERACION'),
           URL_PUBLICA_DE_LA_API: servicio.get<string>('URL_PUBLICA_DE_LA_API'),
           CANAL_DE_RECUPERACION: servicio.getOrThrow<CanalDeRecuperacion>(
             'CANAL_DE_RECUPERACION',

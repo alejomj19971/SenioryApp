@@ -70,3 +70,52 @@ jobs:
         run: |
           npm audit --audit-level=high
           npm audit --omit=dev
+
+  # La imagen de producción (M10): que compile, que use la misma versión de Node que el resto, y que el ARRANQUE SEGURO
+  # funcione de verdad: con un adaptador simulado en producción el contenedor se NIEGA a iniciar.
+  imagen:
+    name: Imagen de producción
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: La imagen usa la misma versión de Node que .nvmrc
+        run: |
+          esperada="$(tr -d 'v \n' < .nvmrc)"
+          actual="$(sed -n 's/^ARG NODE_VERSION=//p' Dockerfile)"
+          echo "nvmrc=$esperada dockerfile=$actual"
+          test "$esperada" = "$actual"
+
+      - name: Construir la imagen
+        run: docker build --tag seniory-backend:ci .
+
+      - name: Corre sin privilegios y sin secretos ni pruebas dentro
+        run: |
+          test "$(docker run --rm --entrypoint id seniory-backend:ci -u)" != "0"
+          ! docker run --rm --entrypoint sh seniory-backend:ci -c 'ls .env pruebas src 2>/dev/null | grep -q .'
+
+      - name: En producción NO arranca con la pasarela simulada
+        run: |
+          set +e
+          salida="$(docker run --rm \
+            -e NODE_ENV=production \
+            -e URL_BASE_DE_DATOS=postgres://u:p@127.0.0.1:5432/b \
+            -e ORIGENES_PERMITIDOS=https://app.seniory.co \
+            -e COOKIES_SEGURAS=true \
+            -e SECRETO_BFF=bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb \
+            -e SECRETO_JWT_ACCESO=jjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjj \
+            -e REQUIERE_PAGO_APROBADO=true \
+            -e PASARELA_DE_PAGOS=simulada \
+            -e SECRETO_DE_PASARELA=pppppppppppppppppppppppppppppppppppppppp \
+            -e DISPERSOR_DE_PAGOS=simulado \
+            -e CANALES_DE_NOTIFICACION_SIMULADOS=true \
+            seniory-backend:ci 2>&1)"
+          codigo=$?
+          echo "$salida"
+          test "$codigo" -ne 0
+          echo "$salida" | grep -q 'PASARELA_DE_PAGOS no puede ser simulada'
+          echo "$salida" | grep -q 'DISPERSOR_DE_PAGOS no puede ser simulado'
+          echo "$salida" | grep -q 'CANALES_DE_NOTIFICACION_SIMULADOS no puede ser true'

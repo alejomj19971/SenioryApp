@@ -256,6 +256,12 @@ export class VariablesDeEntorno {
   @IsString()
   DIRECTORIO_DE_ARCHIVOS: string = './archivos-locales';
 
+  // Clave con la que el monitor del equipo consulta GET /salud/operacion (retraso del outbox y fallos). Si no se define, esa
+  // ruta no existe. 32 caracteres o más.
+  @IsOptional()
+  @IsString()
+  SECRETO_DE_OPERACION?: string;
+
   // Con él se firman las direcciones temporales de los archivos (obligatorio con el almacén local).
   @IsOptional()
   @IsString()
@@ -316,6 +322,7 @@ export interface Configuracion {
   almacenDeArchivos: AlmacenDeArchivosConfigurado;
   directorioDeArchivos: string;
   secretoDeArchivos: string | null;
+  secretoDeOperacion: string | null;
   urlPublicaDeLaApi: string;
 }
 
@@ -419,6 +426,14 @@ function reglasAdicionales(variables: VariablesDeEntorno): string[] {
         `SECRETO_DE_PASARELA debe tener al menos ${LARGO_MINIMO_SECRETO_JWT} caracteres`,
       );
     }
+  }
+  if (
+    variables.SECRETO_DE_OPERACION !== undefined &&
+    variables.SECRETO_DE_OPERACION.length < LARGO_MINIMO_SECRETO_JWT
+  ) {
+    problemas.push(
+      `SECRETO_DE_OPERACION debe tener al menos ${LARGO_MINIMO_SECRETO_JWT} caracteres`,
+    );
   }
   if (variables.URL_PUBLICA_DE_LA_API !== undefined) {
     try {
@@ -602,6 +617,7 @@ export function configuracionDesdeVariables(
     almacenDeArchivos: variables.ALMACEN_DE_ARCHIVOS,
     directorioDeArchivos: variables.DIRECTORIO_DE_ARCHIVOS,
     secretoDeArchivos: variables.SECRETO_DE_ARCHIVOS ?? null,
+    secretoDeOperacion: variables.SECRETO_DE_OPERACION ?? null,
     urlPublicaDeLaApi: (
       variables.URL_PUBLICA_DE_LA_API ??
       `http://localhost:${variables.PUERTO}/api/v1`

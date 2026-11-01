@@ -1,0 +1,17 @@
+# Lo que NO entra a la imagen: secretos, dependencias del equipo, resultados de pruebas y todo lo que no corre en producción.
+.env
+.env.*
+!.env.ejemplo
+node_modules
+dist
+coverage
+*.tsbuildinfo
+archivos-locales
+pruebas
+scripts
+docs
+.git
+.github
+Dockerfile
+docker-compose.yml
+README.md

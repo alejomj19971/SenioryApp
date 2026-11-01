@@ -154,11 +154,20 @@
 | 🔧 | **Eliminar los documentos** de quien se retira o los rechazados, y los plazos de conservación (Ley 1581). |
 | 🔧 | Frontend: registro del cuidador, carga de documentos (envío como cuerpo binario, no multipart) y panel de revisión. |
 
-### M10 — Endurecimiento y producción
+### M10 — Endurecimiento y producción  *(construido lo que no depende del hosting)*
+
+Construido: imagen de Docker y CI que la verifica (arranque seguro), rol de base de datos de la aplicación con permisos mínimos, estado del outbox para el monitor, guarda de migraciones sin datos de prueba, ensayo de restauración y los documentos [OPERACION](./OPERACION.md) y [SEGURIDAD](./SEGURIDAD.md).
 
 | | Pendiente |
 |---|---|
-| 🔧🚀 | Todo: despliegue, un rol de base de datos por módulo, respaldos con restauración ensayada, monitoreo y alertas, y revisión de seguridad (OWASP ASVS nivel 2). |
+| 🚀 | **Elegir el hosting** y con él: desplegar (M0 PR 7), TLS, registro de imágenes, secretos rotados, respaldos automáticos del proveedor y **ensayo de restauración con el respaldo real** (antes del lanzamiento y cada trimestre), y un monitor externo que consulte `/salud/listo` y `/api/v1/salud/operacion` con las alertas propuestas en OPERACION. |
+| 🚀 | **Sentry** (`SENTRY_DSN`) y los tableros de errores 5xx, retraso del outbox y latencia de alertas (la medición E11 ya se registra; falta graficarla). |
+| 🔧🚀 | **Prueba de carga ligera** (búsqueda de cuidadores, alertas) y revisión de índices con volumen real; ajustar los límites de peticiones con sus resultados. |
+| 🔧 | **Un rol de base de datos por módulo.** Hoy hay uno de mínimos permisos para toda la aplicación, porque los módulos comparten transacciones (p. ej. importar un cuidador escribe en Identidad y Directorio). Separarlos pide rediseñar esas transacciones: necesita su propio ADR. |
+| 🔧 | **Exportar y suprimir los datos de una persona** (Ley 1581; PR 8 de M1) y los plazos de retención. Pide decisión legal sobre qué se conserva (registros financieros, de salud, auditoría). |
+| 🔧 | **Segundo factor para administradores**, verificación del correo, cifrado de columnas clínicas, quitar metadatos de imágenes y antivirus (ver [SEGURIDAD](./SEGURIDAD.md)). |
+| 🔧 | Publicar los contratos **OpenAPI y AsyncAPI** versionados. |
+| 🧑 | Definir con el equipo la **guardia, la comunicación de caídas** y el contacto con la SIC ante un incidente con datos personales; la periodicidad de rotación de secretos. |
 | ⚖️🚀 | Los requisitos de la [sección 12 del plan](./PLAN_BACKEND_SENIORY.md): términos y condiciones, política de datos, atención de consultas y reclamos (SIC), soporte, piloto cerrado con unas 20 familias. |
 
 ### M11 — IA *(opcional)*

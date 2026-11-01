@@ -25,6 +25,7 @@ import { NotificacionesModule } from './notificaciones/notificaciones.module.js'
 import { PagosModule } from './pagos/pagos.module.js';
 import { ReservasModule } from './reservas/reservas.module.js';
 import { TeleasistenciaModule } from './teleasistencia/teleasistencia.module.js';
+import { OperacionController } from './salud/operacion.controller.js';
 import { SaludController } from './salud/salud.controller.js';
 
 const PETICIONES_POR_MINUTO = 100; // por IP; las rutas de /auth tienen límites más estrictos
@@ -48,7 +49,7 @@ const PETICIONES_POR_MINUTO = 100; // por IP; las rutas de /auth tienen límites
     TeleasistenciaModule,
     MensajeriaModule,
   ],
-  controllers: [SaludController],
+  controllers: [SaludController, OperacionController],
   providers: [
     // Se ejecutan en este orden: origen, límite de peticiones, autenticación y roles.
     { provide: APP_GUARD, useClass: GuardDeOrigen },

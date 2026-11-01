@@ -20,7 +20,7 @@ El marco general (stack, reglas de arquitectura, estándares y orden) está en [
 | M7 | Pagos II: cobro, bolsas y liquidación | Pagos + pasarela de pagos | [PLAN_BACKEND §M7](../PLAN_BACKEND_SENIORY.md) y [README del módulo](../../backend/src/pagos/README.md) | **Construido** (en revisión, [avance](../AVANCE.md)) |
 | M8 | Mensajería | *(no está en el diagrama, ver abajo)* | [PLAN_BACKEND §M8](../PLAN_BACKEND_SENIORY.md) y [README del módulo](../../backend/src/mensajeria/README.md) | **Construido** (en revisión, [avance](../AVANCE.md)) |
 | M9 | Directorio II: registro y verificación | Directorio y verificación | [PLAN_BACKEND §M9](../PLAN_BACKEND_SENIORY.md) y [README del módulo](../../backend/src/directorio/README.md) | **Construido** (en revisión, [avance](../AVANCE.md)) |
-| M10 | Endurecimiento y despliegue | — | — | Pendiente |
+| M10 | Endurecimiento y despliegue | — | [OPERACION](../OPERACION.md) y [SEGURIDAD](../SEGURIDAD.md) | **Construido** lo que no depende del hosting (en revisión, [avance](../AVANCE.md)) |
 | M11 | IA (opcional) | IA + proveedor de IA | — | Pendiente |
 
 ## Decisiones tomadas al construir los planes

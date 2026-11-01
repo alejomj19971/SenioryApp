@@ -84,6 +84,7 @@ describe('validarVariables', () => {
         almacenDeArchivos: 'deshabilitado',
         directorioDeArchivos: './archivos-locales',
         secretoDeArchivos: null,
+        secretoDeOperacion: null,
         urlPublicaDeLaApi: 'http://localhost:3001/api/v1',
       });
     });

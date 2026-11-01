@@ -24,6 +24,8 @@ API de Seniory: **monolito modular con arquitectura hexagonal** ([ADR-01](../doc
 | `cp .env.ejemplo .env` | Crea tu configuración local (no se sube a git). La API no arranca sin ella. **Completa `SECRETO_JWT_ACCESO`** (el comando para generarlo está en el propio archivo) y deja `COOKIES_SEGURAS=false` en local. |
 | `npm run bd:arriba` | Enciende Postgres en Docker (puerto **5434**). `bd:abajo` lo apaga. |
 | `npm run bd:migrar` | Aplica las migraciones a esa base. |
+| `npm run bd:permisos` | Crea o actualiza el rol de la aplicación (`ROL_DE_APLICACION`) con permisos mínimos: leer y escribir datos, nada de estructura. Se corre con la cuenta dueña después de `bd:migrar`, en cada despliegue ([OPERACION](../docs/OPERACION.md)). |
+| `npm run bd:probar-restauracion` | Ensayo de restauración: respaldo con `pg_dump`, restauración en una base nueva y comparación de filas tabla por tabla (usa el contenedor `seniory_postgres`). |
 | `npm run crear-admin` | Crea un administrador. Lee `ADMIN_NOMBRE`, `ADMIN_CORREO` y `ADMIN_CONTRASENA` del entorno. Sirve en todos los entornos. |
 | `npm run semillas` | Crea datos de ejemplo (la familiar Andrea y Doña Carmen, y 9 cuidadores). Pide `CONTRASENA_DE_PRUEBA`; **se niega a correr en producción**. |
 | `npm run cuidadores:importar -- ruta.json` | Carga cuidadores **reales** con sus tres controles ya revisados. Formato y reglas en el [README de Directorio](./src/directorio/README.md). |
