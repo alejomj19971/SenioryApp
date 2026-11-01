@@ -1,15 +1,3 @@
 {
-  "familiar": {
-    "id": "f-andrea",
-    "nombre": "Andrea",
-    "foto": "",
-    "adultoMayorId": "am-carmen"
-  },
-  "adultoMayor": {
-    "id": "am-carmen",
-    "nombre": "Doña Carmen",
-    "edad": 78,
-    "foto": "",
-    "cuidadorAsignadoId": "c-marta-restrepo"
-  }
+  "cuidadorId": "c-marta-restrepo"
 }

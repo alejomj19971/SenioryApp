@@ -2,9 +2,12 @@ import { AppHeader } from "@/components/shell/app-header";
 import { BottomNav } from "@/components/shell/bottom-nav";
 import { ContratacionProvider } from "@/components/contratacion/contratacion-provider";
 import { BarraAccesibilidad } from "@/components/accesibilidad/barra-accesibilidad";
+import { exigirFamiliaLista } from "@/lib/services/paciente";
 import { obtenerProximoMedicamento } from "@/lib/services/teleasistencia";
 
 export default async function AppShellLayout({ children }: LayoutProps<"/app">) {
+  // La app es de las familias que ya tienen a su persona y su autorización; a las demás, la bienvenida o su área.
+  await exigirFamiliaLista();
   const proximoMedicamento = await obtenerProximoMedicamento();
 
   return (

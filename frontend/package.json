@@ -9,7 +9,8 @@
     "lint": "eslint",
     "test": "vitest run",
     "test:observar": "vitest",
-    "test:recorrido": "playwright test"
+    "test:recorrido": "playwright test",
+    "test:contrato": "vitest run --config vitest.contrato.config.mts"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",

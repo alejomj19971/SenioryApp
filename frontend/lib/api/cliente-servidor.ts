@@ -3,15 +3,16 @@ import { cookies, headers } from "next/headers";
 import { notFound, redirect } from "next/navigation";
 import { secretoBff, urlDelBackend } from "@/lib/configuracion";
 import { ErrorDeApi } from "@/lib/api/error-de-api";
+import { COOKIE_DE_ACCESO, COOKIE_DE_REFRESCO, RUTA_DE_INGRESO } from "@/lib/sesion/constantes";
+
+export { COOKIE_DE_ACCESO, RUTA_DE_INGRESO };
 
 // Cliente HTTP del BFF hacia el backend (F0 §4.6). Solo corre en el servidor: en el navegador no hay
 // URL del backend, ni secreto, ni tokens.
 
-export const COOKIE_DE_ACCESO = "seniory_acceso";
 // Si el backend no responde en este tiempo, la persona ve un error claro en vez de una pantalla colgada.
 // Se ajusta con mediciones reales (F0, decisión 2).
 export const TIEMPO_MAXIMO_MS = 8_000;
-export const RUTA_DE_INGRESO = "/ingresar";
 
 export interface OpcionesDePeticion {
   metodo?: "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
@@ -21,6 +22,11 @@ export interface OpcionesDePeticion {
   claveDeIdempotencia?: string;
   // No envía la cookie de sesión (por ejemplo, al iniciar sesión). Por defecto se envía si existe.
   sinSesion?: boolean;
+  // Para la petición que sigue a un inicio de sesión: la cookie recién guardada todavía no está en la petición
+  // entrante, así que se pasa el token a mano.
+  tokenDeAcceso?: string;
+  // Solo `/auth/refresh` y `/auth/logout`: el refresco se envía a mano (su cookie no viaja a otras rutas del backend).
+  tokenDeRefresco?: string;
 }
 
 const FORMATO_DE_IP = /^[0-9a-fA-F:.]{3,45}$/;
@@ -48,10 +54,15 @@ async function encabezados(opciones: OpcionesDePeticion): Promise<Headers> {
   if (opciones.claveDeIdempotencia !== undefined) {
     saliente.set("Idempotency-Key", opciones.claveDeIdempotencia);
   }
+  const galletas: string[] = [];
   if (opciones.sinSesion !== true) {
-    const acceso = (await cookies()).get(COOKIE_DE_ACCESO)?.value;
-    if (acceso !== undefined && acceso !== "") saliente.set("Cookie", `${COOKIE_DE_ACCESO}=${acceso}`);
+    const acceso = opciones.tokenDeAcceso ?? (await cookies()).get(COOKIE_DE_ACCESO)?.value;
+    if (acceso !== undefined && acceso !== "") galletas.push(`${COOKIE_DE_ACCESO}=${acceso}`);
   }
+  if (opciones.tokenDeRefresco !== undefined && opciones.tokenDeRefresco !== "") {
+    galletas.push(`${COOKIE_DE_REFRESCO}=${opciones.tokenDeRefresco}`);
+  }
+  if (galletas.length > 0) saliente.set("Cookie", galletas.join("; "));
   return saliente;
 }
 
@@ -90,7 +101,7 @@ export async function pedirAlBackend(
 // lanza como `ErrorDeApi` y lo atrapa `error.tsx`.
 export async function leerDelBackend<T>(
   ruta: string,
-  opciones: Pick<OpcionesDePeticion, "consulta"> = {},
+  opciones: Pick<OpcionesDePeticion, "consulta" | "tokenDeAcceso"> = {},
 ): Promise<T> {
   const respuesta = await pedirAlBackend(ruta, { ...opciones, metodo: "GET" });
   if (respuesta.status === 401) redirect(RUTA_DE_INGRESO);

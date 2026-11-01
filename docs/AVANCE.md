@@ -4,10 +4,10 @@
 
 ## Dónde vamos
 
-> **Backend: M0 con 7 de 8 PR hechos (falta el despliegue a staging, que espera el hosting), M1 (Identidad) con 7 de 8, M2 (Directorio) en `main` y M3 (cotización) en `main` y M4 (reservas) en `main` y M5 (notificaciones) en `main` y M6 (teleasistencia) en `main` y M7 (cobro, bolsas y liquidación) en `main` y M8 (mensajería) en `main` y M9 (registro y verificación de cuidadores) en `main` y M10 (endurecimiento) construido en lo que no depende del hosting, en revisión.**
-> Siguiente paso: **M11 (IA, opcional)** y, terminado el backend, el frontend. Para lanzar falta elegir el hosting y lo que de él depende (ver [OPERACION](./OPERACION.md), [SEGURIDAD](./SEGURIDAD.md) y [PENDIENTES](./PENDIENTES.md)). Se construye todo el backend antes de seguir con el frontend; los datos reales (cuidadores, verificaciones) llegan después por los procesos del propio sistema. Pendiente de ustedes: revisar y aceptar el [ADR-03](./ADR-03.md) (comunicación) y el [ADR-04](./ADR-04.md) (stack) y ver la CI en verde en GitHub.
+> **Backend: M0 con 7 de 8 PR hechos (falta el despliegue a staging, que espera el hosting), M1 (Identidad) con 7 de 8, M2 (Directorio) en `main` y M3 (cotización) en `main` y M4 (reservas) en `main` y M5 (notificaciones) en `main` y M6 (teleasistencia) en `main` y M7 (cobro, bolsas y liquidación) en `main` y M8 (mensajería) en `main` y M9 (registro y verificación de cuidadores) en `main` y M10 (endurecimiento) en `main` en lo que no depende del hosting.**
+> Siguiente paso: **el frontend** (F1 en revisión; ver el [plan v2](./PLAN_FRONTEND_SENIORY.md) y el [plan de integración](./INTEGRACION_FRONTEND_BACKEND.md)); **M11 (IA)** es opcional y pide definir su alcance. Para lanzar falta elegir el hosting y lo que de él depende (ver [OPERACION](./OPERACION.md), [SEGURIDAD](./SEGURIDAD.md) y [PENDIENTES](./PENDIENTES.md)). Se construye todo el backend antes de seguir con el frontend; los datos reales (cuidadores, verificaciones) llegan después por los procesos del propio sistema. Pendiente de ustedes: revisar y aceptar el [ADR-03](./ADR-03.md) (comunicación) y el [ADR-04](./ADR-04.md) (stack) y ver la CI en verde en GitHub.
 >
-> El frontend sigue siendo el prototipo del pitch con datos de ejemplo, pero **F0 (la base para conectarlo al backend) ya está construida**. Siguiente en el frontend: **F1 (identidad)**.
+> El frontend ya tiene su **sistema de diseño** (paleta y componentes), **F0** (base de integración) y **F1** (identidad: cuentas reales, sesión y bienvenida) construido y en revisión; el resto de las pantallas sigue con los datos de ejemplo del prototipo hasta conectarse. Siguiente: **F2 (directorio)**.
 
 ```
 Backend   M0 █████████████████▌░░  7 de 8 PR (falta el despliegue)
@@ -20,10 +20,12 @@ Backend   M0 █████████████████▌░░  7 de 
           M7 ████████████████████  construido
           M8 ████████████████████  construido
           M9 ████████████████████  construido
-          M10 ███████████████░░░░░  construido salvo lo que espera el hosting (en revisión)   ← aquí
+          M10 ███████████████░░░░░  construido salvo lo que espera el hosting
           M11                      pendiente (opcional)
-Frontend  F0 ████████████████████  construido   ← aquí
-          F1 … F9                  pendientes (F1 siguiente)
+Frontend  F0 ████████████████████  construido
+          Etapa 0 ████████████████  construido (paleta y components/ui)
+          F1 ████████████████████  construido (en revisión)   ← aquí
+          F2 … F10                 pendientes (F2 siguiente)
 Base de datos  ████████████████████  completa (adelantada)
 ```
 
@@ -71,10 +73,10 @@ Base de datos  ████████████████████  com
 | M7 | Cobro: el servicio se cobra al confirmarse (con la pasarela o con la bolsa de horas), el aviso firmado de la pasarela es la única puerta para aprobar un pago (una sola vez, con el monto verificado, también si llega en paralelo), la bolsa es un libro de movimientos que nunca queda negativo, el dinero vuelve al cancelar, los pagos sin pagar vencen (preguntándole antes a la pasarela), el servicio no inicia sin pago y el cuidador queda con su liquidación. La pasarela y el dispersor reales esperan decisión: hoy hay adaptadores simulados (prohibidos en producción) y deshabilitados. Ver el [README del módulo](../backend/src/pagos/README.md). | ✅ commit `7920327` (ya en `main`) |
 | M8 | Mensajería: el chat entre la familia y el cuidador (solo sus dos partes; se escribe mientras haya un servicio vivo y se lee siempre), mensajes en texto plano sin duplicados al reenviar, paginación por cursor, eventos en vivo (SSE) que se reconectan sin perder mensajes, tope de conexiones y apagado limpio, y aviso agrupado a la otra parte sin el texto. Ver el [README del módulo](../backend/src/mensajeria/README.md). | ✅ commit `33f70de` (ya en `main`) |
 | M9 | Postulación y verificación de cuidadores: registro propio con rol `cuidador`, perfil en borrador, documentos validados por contenido, revisión de los tres controles por administradores (aprobar con vigencia o rechazar con motivo, sin carreras entre revisores), activación y visibilidad solo con los tres aprobados (E7), vencimiento y renovación, y hoja de vida pública aprobada aparte de los documentos privados. Ver el [README del módulo](../backend/src/directorio/README.md). | ✅ commit `095ebaf` (ya en `main`) |
-| M10 | Endurecimiento: imagen de Docker (sin root, sin `.env` ni pruebas) y job de CI que comprueba que en producción se niega a iniciar con adaptadores simulados; rol de base de datos de la aplicación con permisos mínimos (`bd:permisos`) separado de la cuenta dueña de las migraciones; `GET /salud/operacion` con el estado del outbox para el monitor; guarda de que las migraciones no traigan datos de prueba; ensayo de restauración (`bd:probar-restauracion`); y las guías [OPERACION](./OPERACION.md) y [SEGURIDAD](./SEGURIDAD.md) (OWASP API Top 10 y ASVS 2 con lo que falta). Hosting, monitor externo, respaldos del proveedor y prueba de carga esperan decisión. | ⏳ en revisión (rama `feat/m10-endurecimiento`) |
+| M10 | Endurecimiento: imagen de Docker (sin root, sin `.env` ni pruebas) y job de CI que comprueba que en producción se niega a iniciar con adaptadores simulados; rol de base de datos de la aplicación con permisos mínimos (`bd:permisos`) separado de la cuenta dueña de las migraciones; `GET /salud/operacion` con el estado del outbox para el monitor; guarda de que las migraciones no traigan datos de prueba; ensayo de restauración (`bd:probar-restauracion`); y las guías [OPERACION](./OPERACION.md) y [SEGURIDAD](./SEGURIDAD.md) (OWASP API Top 10 y ASVS 2 con lo que falta). Hosting, monitor externo, respaldos del proveedor y prueba de carga esperan decisión. | ✅ commit `5d0f0c3` (ya en `main`) |
 | M11 | IA (opcional). | Pendiente |
 
-**Cifras actuales:** 2927 pruebas (unitarias y de arquitectura, y de integración y API contra Postgres real; las de integración corren un archivo tras otro porque comparten la base de datos), cobertura del 98 %, lint y compilación limpios y 0 vulnerabilidades en las dependencias de producción.
+**Cifras actuales:** backend, 2927 pruebas (unitarias y de arquitectura, y de integración y API contra Postgres real; las de integración corren un archivo tras otro porque comparten la base de datos), cobertura del 98 %, lint y compilación limpios y 0 vulnerabilidades en las dependencias de producción. Frontend, 222 pruebas unitarias, 15 de contrato y 10 recorridos de Playwright contra el backend local.
 
 ### Frontend (`frontend/`)
 
@@ -82,7 +84,10 @@ Base de datos  ████████████████████  com
 |---|---|
 | Prototipo del pitch (landing, directorio, contratación, teleasistencia, mensajes) con datos en `frontend/data/*.json` | Funciona en local; no es la aplicación final. |
 | F0 · Base de integración con el backend | ✅ Construido: red de seguridad (Vitest y Playwright), servicios solo de servidor, acción de servidor para la contratación, cliente HTTP, `proxy.ts` y `error.tsx`. 94 pruebas unitarias y 2 recorridos. |
-| F1–F9 | Pendientes. Cada F*n* conecta las pantallas al módulo M*n* y borra el JSON que reemplaza. |
+| Etapa 0 · Sistema de diseño | ✅ Construido: paleta de limpieza, seguridad, salud y precisión (contraste AA medido en claro, oscuro y alto contraste), `components/ui` con objetivos de 48 px y el componente `Aviso`. |
+| Planes v2 | ✅ [Plan del frontend](./PLAN_FRONTEND_SENIORY.md) actualizado (orden por valor, cookies reescritas, contratos a mano, flujo con Claude Design) y [plan de integración](./INTEGRACION_FRONTEND_BACKEND.md) (entorno local, mapa de módulos, errores, tiempo real, pruebas, CI, riesgos). |
+| F1 · Identidad | ⏳ En revisión (rama `feat/f1-identidad`): ingresar, registro, recuperar y restablecer contraseña, bienvenida (persona y autorización de salud), política de datos, «Mi cuenta» con cambio de contraseña, salir; sesión con cookies reescritas a `Path=/` y renovación en `proxy.ts`; `/app` exige familia con persona y autorización; áreas de cuidador y administrador con aviso honesto; `paciente.ts` sobre `GET /yo`. 222 pruebas unitarias, 15 de contrato y 10 recorridos contra el backend local. |
+| F2–F10 | Pendientes, en el orden del plan v2. Cada F*n* conecta las pantallas al módulo M*n* y borra el JSON que reemplaza. |
 
 ### Ramas (todas en GitHub; las 4 últimas desde el 28 de octubre)
 
@@ -112,7 +117,9 @@ Cada rama parte de la anterior. Se revisan con un PR encadenado por entrega (la 
 | 20 | `feat/m7-cobro` | M7: cobro, bolsas y liquidación (ya en `main`). |
 | 21 | `feat/m8-mensajeria` | M8: mensajería (ya en `main`). |
 | 22 | `feat/m9-verificacion` | M9: registro y verificación de cuidadores (ya en `main`). |
-| 23 | `feat/m10-endurecimiento` (actual) | M10: endurecimiento y despliegue. |
+| 23 | `feat/m10-endurecimiento` | M10: endurecimiento y despliegue (ya en `main`). |
+| 24 | `feat/f-paleta` | Paleta nueva y Etapa 0 del sistema de diseño (ya en `main`). |
+| 25 | `feat/f1-identidad` (actual) | Planes v2 del frontend y F1: identidad. |
 
 **La CI solo corre en el PR 6:** es la primera rama que tiene `.github/workflows/backend.yml`. Una vez fusionada en `main`, correrá en todos los PR que toquen `backend/`.
 

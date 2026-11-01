@@ -1,0 +1,18 @@
+import type { Metadata } from "next";
+import { FormularioRegistro } from "@/components/cuenta/formulario-registro";
+
+export const metadata: Metadata = { title: "Crear cuenta" };
+
+export default function RegistroPage() {
+  return (
+    <div className="flex flex-col gap-6">
+      <div className="flex flex-col gap-1">
+        <h1 className="text-2xl font-bold text-foreground">Crea tu cuenta</h1>
+        <p className="text-base text-muted-foreground">
+          Es gratis y te toma un minuto. Después te preguntaremos por la persona a la que vas a cuidar.
+        </p>
+      </div>
+      <FormularioRegistro />
+    </div>
+  );
+}

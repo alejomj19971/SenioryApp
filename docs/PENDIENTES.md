@@ -180,12 +180,17 @@ Construido: imagen de Docker y CI que la verifica (arranque seguro), rol de base
 
 ## Frontend
 
-El prototipo del pitch funciona con datos de ejemplo. **Ninguna pantalla está conectada al backend todavía.**
+El frontend se conecta al backend módulo por módulo, en el orden del [plan v2](./PLAN_FRONTEND_SENIORY.md#4-módulos-del-frontend-y-orden-de-construcción): F1, F2, F3+F4, F7, F6, F8, F5, F9 y F10. **F0, la Etapa 0 (sistema de diseño) y F1 (identidad) están construidos**; el resto de las pantallas sigue leyendo `frontend/data/`, así que el entorno compartido es solo para el equipo.
 
 | Etapa | Pendiente |
 |---|---|
-| F1 — Identidad | 🔧 `instrumentation.ts` que impida arrancar en producción sin `SENIORY_API_URL` y `SENIORY_BFF_SECRETO` (va con el primer código que llama al backend). Registro, inicio de sesión, **olvidé mi contraseña**, cambiar contraseña, alta del adulto mayor y consentimiento. |
-| F2 a F9 | 🔧 Una por cada módulo M2 a M9 (directorio, cotización, contratación con vista mínima del cuidador, avisos, teleasistencia, pagos y bolsas, mensajes, administración). |
+| F1 — Identidad *(construido)* | 🔧 `instrumentation.ts` que impida arrancar en producción sin `SENIORY_API_URL` y `SENIORY_BFF_SECRETO` (hoy la primera lectura falla con un mensaje claro, pero la app arranca). |
+| ⚖️ | **Textos legales:** la política de tratamiento y el texto del consentimiento son versiones de trabajo (`v1`, marcadas en pantalla como pendientes de revisión legal). Hay que publicarlos revisados por un abogado y decidir **quién acepta el consentimiento** (hoy el familiar como representante). **Bloquea el lanzamiento.** |
+| 🔧 | **Retirar la autorización de salud:** el texto promete «puedes retirarla cuando quieras» y el backend tiene `DELETE /consentimientos/:id`, pero `GET /yo` no devuelve el id del consentimiento, así que la pantalla no puede ofrecerlo. Falta exponer el id en `/yo` (backend) y una pantalla en «Mi cuenta» (frontend). |
+| 🔧 | **Perfil:** cambiar el nombre y el teléfono (`PATCH /yo` existe; falta la pantalla), y verificar el correo (llega con el canal de correo, M5). |
+| 🔧 | **Varias personas a cuidar:** hoy la app usa la responsable (o la primera); falta elegir entre varias y agregar otra después de la bienvenida. |
+| 🔧 | **Un solo comando de integración** (`npm run integracion:preparar`) y el job `integracion` de la CI (ver [INTEGRACION §1 y §8](./INTEGRACION_FRONTEND_BACKEND.md)). |
+| F2 a F10 | 🔧 Una por cada módulo M2 a M9 (directorio, contratación con vista mínima del cuidador, pagos y bolsas, teleasistencia, mensajes, avisos, administración) y el cierre para producción. |
 | 🔧 | **Vulnerabilidades de las dependencias del frontend** (`npm audit`: 15 en producción, casi todas por `shadcn` y `zod`; arreglarlas obliga a subir `shadcn` a una versión mayor). `shadcn` es una herramienta de desarrollo y no debería estar en `dependencies`. |
 | 🧑 | **Pruebas de usabilidad** con adultos mayores y familiares reales (E4, E5). |
 | 🧑 | Quitar de la landing los textos y cifras de demostración. |

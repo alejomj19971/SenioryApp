@@ -1,8 +1,8 @@
 # Seniory — Frontend
 
-Aplicación web (Next.js 16, App Router) de Seniory. **Actúa como BFF** (*backend for frontend*): el navegador solo habla con este servidor, y este llama al backend ([`../backend`](../backend)) de servidor a servidor. Planes: [PLAN_FRONTEND](../docs/PLAN_FRONTEND_SENIORY.md), [F0](../docs/frontend/F0-base-de-integracion.md) y [F1](../docs/frontend/F1-identidad.md).
+Aplicación web (Next.js 16, App Router) de Seniory. **Actúa como BFF** (*backend for frontend*): el navegador solo habla con este servidor, y este llama al backend ([`../backend`](../backend)) de servidor a servidor. Planes: [PLAN_FRONTEND](../docs/PLAN_FRONTEND_SENIORY.md), [INTEGRACIÓN con el backend](../docs/INTEGRACION_FRONTEND_BACKEND.md), [F0](../docs/frontend/F0-base-de-integracion.md) y [F1](../docs/frontend/F1-identidad.md).
 
-> **Estado:** hoy las pantallas siguen siendo el prototipo del pitch, con datos de ejemplo en `data/*.json`. La **base para conectarlas al backend (F0) ya está construida**; cada módulo F*n* conecta sus pantallas y borra el JSON que reemplaza.
+> **Estado:** **F1 (identidad) está conectado al backend**: cuentas reales, sesión por cookies y bienvenida; `/app` exige ingresar. El resto de las pantallas (cuidadores, contratación, teleasistencia, mensajes) sigue siendo el prototipo del pitch con datos de ejemplo en `data/*.json`; cada módulo F*n* conecta sus pantallas y borra el JSON que reemplaza. Para correr la app necesitas el backend encendido y las variables de `.env.local` (`SENIORY_BFF_SECRETO` **igual** a `SECRETO_BFF` del backend).
 
 > **Next.js 16 tiene cambios incompatibles con versiones anteriores.** Antes de escribir código lee la guía correspondiente en `node_modules/next/dist/docs/` (ver [AGENTS.md](./AGENTS.md)).
 
@@ -21,7 +21,8 @@ Aplicación web (Next.js 16, App Router) de Seniory. **Actúa como BFF** (*backe
 | `npm run build` / `npm start` | Compila y ejecuta. |
 | `npm run lint` | ESLint. |
 | `npm test` | Pruebas unitarias y de componentes (Vitest). `npm run test:observar` las repite al guardar. |
-| `npm run test:recorrido` | Recorridos de punta a punta (Playwright, navegador móvil). Levanta su propio servidor en el puerto 3100. |
+| `npm run test:contrato` | Pruebas de **contrato** contra el backend local real (`npm run dev` en `backend/`): vigilan que la API responda lo que el frontend supone. Se omiten si el backend no está encendido. |
+| `npm run test:recorrido` | Recorridos de punta a punta (Playwright, navegador móvil) **contra el backend local real**. Levanta su propio servidor en el puerto 3100; sin el backend encendido se omiten. |
 
 ## Estructura
 

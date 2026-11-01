@@ -20,6 +20,10 @@ function importaciones(codigo: string): string[] {
   return [...codigo.matchAll(/(?:from|import)\s*\(?\s*["']([^"']+)["']/g)].map((m) => m[1] as string);
 }
 
+// Piezas de la sesión que `proxy.ts` también usa y que no pueden llevar `server-only` (el proxy corre antes que
+// cualquier componente de servidor). No guardan secretos: reciben por parámetro lo que necesitan.
+const PURAS_PARA_EL_PROXY = new Set(["lib/sesion/constantes.ts", "lib/sesion/cookies.ts", "lib/sesion/jwt.ts", "lib/sesion/renovar.ts"]);
+
 const nombre = (ruta: string) => relative(RAIZ, ruta).replaceAll("\\", "/");
 const pantallas = [...archivos(join(RAIZ, "app")), ...archivos(join(RAIZ, "components"))];
 
@@ -76,7 +80,7 @@ describe("regla de capas del frontend", () => {
       ...["configuracion.ts"].map((f) => join(RAIZ, "lib", f)),
     ].filter((ruta) => {
       try {
-        return statSync(ruta).isFile() && !ruta.endsWith("error-de-api.ts");
+        return statSync(ruta).isFile() && !ruta.endsWith("error-de-api.ts") && !PURAS_PARA_EL_PROXY.has(nombre(ruta)) && !nombre(ruta).startsWith("lib/api/contratos/");
       } catch {
         return false;
       }
@@ -87,5 +91,13 @@ describe("regla de capas del frontend", () => {
       .map(nombre);
 
     expect(sinMarca).toEqual([]);
+  });
+
+  it("las piezas de la sesión sin `server-only` no leen secretos ni variables del backend", () => {
+    const infractores = [...PURAS_PARA_EL_PROXY]
+      .filter((ruta) => /SENIORY_|SECRETO|process.env.(?!NODE_ENV)/.test(readFileSync(join(RAIZ, ruta), "utf8")))
+      .sort();
+
+    expect(infractores).toEqual([]);
   });
 });
