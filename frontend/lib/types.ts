@@ -146,11 +146,23 @@ export interface Familiar {
   adultoMayorId: string;
 }
 
-export interface Mensaje {
+// Mensajería (F8): el chat entre una familia y un cuidador. Texto plano; solo las dos partes lo ven.
+export interface Conversacion {
   id: string;
-  autor: "familiar" | "cuidador";
+  otraParte: { nombre: string; foto: string };
+  ultimoMensajeEn: string | null; // ISO
+  puedeEscribir: boolean;
+}
+
+// Un mensaje en pantalla. `enviando` y `fallido` solo existen en el navegador (lo que se acaba de escribir); lo que
+// viene del servidor siempre es `enviado`. `idDeCliente` lo genera la pantalla para cada mensaje: reenviar el mismo no lo duplica.
+export interface MensajeDeChat {
+  id: string;
+  idDeCliente?: string;
+  autor: "yo" | "otro";
   texto: string;
-  fecha: string; // ISO
+  enviadoEn: string; // ISO
+  estado: "enviado" | "enviando" | "fallido";
 }
 
 // Servicios (F3+F4): lo que la familia pide y el cuidador atiende. El dinero lo calcula SIEMPRE el servidor.

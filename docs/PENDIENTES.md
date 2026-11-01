@@ -193,13 +193,12 @@ El frontend se conecta al backend módulo por módulo, en el orden del [plan v2]
 | F2 — Directorio *(construido)* | 🔧 **Backend:** que `GET /cuidadores` y `/cuidadores/:id` digan si hay hoja de vida pública (`tieneHojaDeVida`). Hoy el perfil lo averigua con una consulta extra y la tarjeta de la búsqueda no puede mostrar «hoja de vida disponible». |
 | 🔧 | **Fotos de los cuidadores:** la API trae `fotoUrl` (hoy siempre nula; llega con el almacén real). Mientras, se muestran las iniciales. |
 | 🔧 | **Reseñas:** solo las del backend; no hay paginación de reseñas (el perfil trae todas). Revisar cuando un cuidador tenga muchas. |
-| 🔧 | **Cuidador en turno:** hasta F4 nadie aparece «en turno» (antes era uno inventado del prototipo). `mensajes.json` y la contratación siguen del prototipo y se reemplazan en F4 y F8: mientras tanto el chat de un cuidador real aparece vacío. |
+| 🔧 | **Cuidador en turno:** hasta F4 nadie aparece «en turno» (antes era uno inventado del prototipo). Desde F4 el cuidador en turno es el real, y desde F8 «Escribir» abre su chat real. |
 | 🧑 | Los recorridos del directorio necesitan los cuidadores de `npm run semillas` (y uno importado con PDF para probar la hoja de vida); sin ellos algunos se omiten. |
 | F3+F4 — Contratación *(construido)* | 🔧 **Pagar un servicio con la pasarela:** un servicio aceptado con medio «pasarela» necesita que la familia pague; la pantalla del servicio todavía no ofrece «Pagar» (llega con F7). Con la bolsa, el pago es inmediato. |
 | 🔧 | **Avisos al cuidador:** hoy el cuidador solo ve una solicitud al abrir su panel; el aviso por correo/SMS/WhatsApp espera proveedor y la campana llega con F5. Una solicitud sin respuesta vence a las 2 horas (30 minutos si es para hoy). |
 | 🔧 | **Panel del cuidador:** solo los servicios más recientes (sin «ver más»), sin calendario ni historial de pagos (liquidaciones en F7), y sin su perfil y documentos (F9). |
 | 🔧 | **Reprogramar:** no existe; hoy se cancela y se pide de nuevo. Y la política de cancelación tardía (hoy siempre se devuelve todo) es una decisión de negocio abierta. |
-| 🧑 | **Cuidador en turno** y **mensajes** siguen sin conectar con el chat real (F8): «Escribir» abre el chat del prototipo vacío. |
 | F7 — Pagos y bolsas *(construido)* | ⚖️🚀 **Pasarela y dispersor reales:** hoy solo hay la simulada (sin página de pago: el pago se aprueba con un aviso firmado que fabrican las pruebas). Con la pasarela real hay que revisar que la **página de retorno** lleve de vuelta a `/app/servicios/[id]` y, si hace falta, `URL_PUBLICA_DE_LA_API`/dominios. Ver [pagos/README](../backend/src/pagos/README.md). |
 | ⚖️ | **Precios de las bolsas:** el catálogo está vacío en producción hasta que el negocio apruebe paquetes (las pruebas crean `prueba-5h` y `prueba-10h` **solo en la base local**). La landing y «Mi bolsa» ya los muestran en cuanto existan. |
 | 🔧 | **La landing es dinámica** (lee el catálogo en cada visita) y por eso ya no es estática; si pesa en el rendimiento, cachear unos minutos. |
@@ -214,7 +213,10 @@ El frontend se conecta al backend módulo por módulo, en el orden del [plan v2]
 | 🔧 | **Avisos de cada toma** con la app cerrada: dependen de las notificaciones (F5) y de los canales (correo, SMS, WhatsApp); la alarma sonora funciona solo con la pantalla abierta. |
 | ⚖️ | **Aviso legal del alcance de la teleasistencia** (no es un servicio de emergencias ni un dispositivo médico): ya se dice en pantalla; falta el texto aprobado en los términos. |
 | 🔧 | **«Gratis»**: el distintivo de la pantalla viene del prototipo; confirmar con el negocio que la teleasistencia seguirá siendo gratuita. |
-| F8 a F10 | 🔧 Una por cada módulo (mensajes, avisos, administración) y el cierre para producción. |
+| F8 — Mensajería *(construido)* | 🔧 **Avisos de mensaje nuevo:** hoy el mensaje solo llega en vivo si la otra persona tiene el chat (o la app) abierto; sin la campana (F5) ni correo/WhatsApp (espera proveedor) nadie se entera de un mensaje con la app cerrada. |
+| 🔧 | **Mensajes no leídos:** la API no deja marcar ni consultar «leído» (la tabla tiene la columna, pero no hay ruta), así que la lista no cuenta ni marca pendientes y la pantalla no inventa un «visto». Si el negocio lo pide, es un cambio del backend. |
+| 🔧 | **Muchas conexiones:** el backend permite 5 flujos en vivo por persona; con más pestañas abiertas las sobrantes caen al respaldo (consulta cada 10 s). Al elegir el hosting hay que comprobar que su proxy no almacene en búfer ni recorte las conexiones largas del flujo en vivo (`/api/mensajeria/eventos`); con varias instancias del backend, además, el aviso inmediato solo llega a la que procesó el evento y las demás lo reciben en su revisión de cada 2 s (ver [OPERACION](./OPERACION.md)). |
+| F9 y F10 | 🔧 Una por cada módulo (registro del cuidador y administración) y el cierre para producción. |
 | 🔧 | **Vulnerabilidades de las dependencias del frontend** (`npm audit`: 15 en producción, casi todas por `shadcn` y `zod`; arreglarlas obliga a subir `shadcn` a una versión mayor). `shadcn` es una herramienta de desarrollo y no debería estar en `dependencies`. |
 | 🧑 | **Pruebas de usabilidad** con adultos mayores y familiares reales (E4, E5). |
 | 🧑 | Quitar de la landing los textos y cifras de demostración. |

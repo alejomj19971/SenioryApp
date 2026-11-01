@@ -14,7 +14,7 @@ Cada archivo es el plan detallado de cómo una parte del frontend pasa de los da
 | F5 | Notificaciones | M5 | — | Pendiente |
 | F6 | Teleasistencia | M6 | [F6-teleasistencia.md](./F6-teleasistencia.md) | ✅ Construido |
 | F7 | Pagos y bolsas | M7 | [F7-pagos.md](./F7-pagos.md) | ✅ Construido |
-| F8 | Mensajería | M8 | — | Pendiente |
+| F8 | Mensajería | M8 | [F8-mensajeria.md](./F8-mensajeria.md) | ✅ Construido |
 | F9 | Cuidadores y administración | M9 | — | Pendiente |
 
 El orden de construcción, la integración con el backend y el flujo de diseño están en el [plan del frontend (v2)](../PLAN_FRONTEND_SENIORY.md) y en el [plan de integración](../INTEGRACION_FRONTEND_BACKEND.md). Los planes de F2 a F9 se escriben al empezar cada uno, en el orden de la tabla del plan (F2, F3+F4, F7, F6, F8, F5, F9).

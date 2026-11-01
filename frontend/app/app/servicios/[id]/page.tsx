@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, CalendarDays, CircleCheck, Clock, Star, UserRound, Wallet } from "lucide-react";
+import { BotonEscribir } from "@/components/mensajeria/boton-escribir";
 import { ResumenCosto } from "@/components/contratacion/resumen-costo";
 import { SeccionDePago } from "@/components/pagos/seccion-de-pago";
 import { CalificarServicio, CancelarServicio } from "@/components/servicios/acciones-de-servicio-familia";
@@ -85,6 +86,10 @@ export default async function ServicioPage({ params, searchParams }: PageProps<"
       </section>
 
       <ResumenCosto subtotal={servicio.subtotal} cargo={servicio.cargoDeServicio} cargoPorcentaje={porcentaje} total={servicio.totalFamilia} />
+
+      {servicio.cuidador !== null && (servicio.estado === "solicitado" || servicio.estado === "aceptado" || servicio.estado === "en_curso") && (
+        <BotonEscribir cuidadorId={servicio.cuidador.id} nombre={servicio.cuidador.nombre} className="w-full" />
+      )}
 
       <SeccionDePago servicio={servicio} pago={pago} />
 

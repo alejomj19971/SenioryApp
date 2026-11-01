@@ -132,3 +132,30 @@ export async function escribirEnBackend<T>(
   const sinCuerpo = respuesta.status === 204 || respuesta.headers.get("content-length") === "0";
   return { ok: true, datos: (sinCuerpo ? undefined : await respuesta.json()) as T };
 }
+
+// Abre un flujo de eventos en vivo (SSE) del backend. A diferencia de `pedirAlBackend`, el tiempo máximo cubre solo la
+// CONEXIÓN (hasta recibir los encabezados): después el flujo dura lo que el backend decida (hasta 10 minutos) y solo lo
+// corta quien lo pidió (`senal`: el navegador se fue) o el backend.
+export async function abrirFlujoDelBackend(
+  ruta: string,
+  { ultimoEvento, senal }: { ultimoEvento?: string; senal: AbortSignal },
+): Promise<Response> {
+  const url = direccion(ruta);
+  const cabeceras = await encabezados({});
+  cabeceras.set("Accept", "text/event-stream");
+  if (ultimoEvento !== undefined) cabeceras.set("Last-Event-ID", ultimoEvento);
+
+  const control = new AbortController();
+  const cortar = () => control.abort();
+  if (senal.aborted) cortar();
+  else senal.addEventListener("abort", cortar, { once: true });
+  const temporizador = setTimeout(cortar, TIEMPO_MAXIMO_MS);
+  try {
+    return await fetch(url, { method: "GET", headers: cabeceras, cache: "no-store", redirect: "manual", signal: control.signal });
+  } catch (causa) {
+    senal.removeEventListener("abort", cortar);
+    throw ErrorDeApi.deRed(causa);
+  } finally {
+    clearTimeout(temporizador);
+  }
+}

@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { Banknote, Inbox } from "lucide-react";
+import { Banknote, Inbox, MessageCircle } from "lucide-react";
 import { TarjetaDeSolicitud } from "@/components/cuidador/tarjeta-de-solicitud";
 import { exigirRol } from "@/lib/sesion";
 import { listarServiciosDelCuidador } from "@/lib/services/servicios";
@@ -34,6 +34,14 @@ export default async function CuidadorPage() {
         <span>
           <span className="block text-base font-semibold text-foreground">Tus pagos</span>
           <span className="block text-sm text-muted-foreground">Lo que te debemos y lo que ya te pagamos</span>
+        </span>
+      </Link>
+
+      <Link href="/cuidador/mensajes" className="flex items-center gap-3 rounded-2xl bg-card p-4 ring-1 ring-border transition-colors hover:ring-primary/40">
+        <MessageCircle className="size-6 shrink-0 text-primary" aria-hidden="true" />
+        <span>
+          <span className="block text-base font-semibold text-foreground">Mensajes</span>
+          <span className="block text-sm text-muted-foreground">Tus conversaciones con las familias</span>
         </span>
       </Link>
 

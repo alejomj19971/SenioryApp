@@ -1,8 +1,8 @@
 "use client";
 
-import Link from "next/link";
-import { ChevronRight, MessageCircle, Phone, ShieldCheck } from "lucide-react";
+import { ChevronRight, Phone, ShieldCheck } from "lucide-react";
 import { AvatarCuidador } from "@/components/avatar-cuidador";
+import { BotonEscribir } from "@/components/mensajeria/boton-escribir";
 import {
   Dialog,
   DialogContent,
@@ -65,13 +65,7 @@ export function CuidadorEnTurno({
             <Phone className="size-4" aria-hidden="true" />
             Llamar
           </a>
-          <Link
-            href={`/app/mensajes/${cuidador.id}`}
-            className="flex h-12 items-center justify-center gap-2 rounded-full border border-border text-sm font-semibold text-foreground"
-          >
-            <MessageCircle className="size-4" aria-hidden="true" />
-            Escribir
-          </Link>
+          <BotonEscribir cuidadorId={cuidador.id} nombre={cuidador.nombre} className="h-12 w-full rounded-full" />
         </div>
       </DialogContent>
     </Dialog>

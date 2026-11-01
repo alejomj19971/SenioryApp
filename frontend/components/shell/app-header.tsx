@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { UserRound } from "lucide-react";
+import { MessageCircle, UserRound } from "lucide-react";
 import { Logo } from "@/components/logo";
 import { SalirDeLaCuenta } from "@/components/shell/salir-de-la-cuenta";
 import { buttonVariants } from "@/components/ui/button";
@@ -11,6 +11,13 @@ export function AppHeader() {
         <Logo />
       </Link>
       <div className="flex items-center gap-2">
+        <Link
+          href="/app/mensajes"
+          aria-label="Mensajes"
+          className={buttonVariants({ variant: "ghost", size: "icon" })}
+        >
+          <MessageCircle aria-hidden="true" />
+        </Link>
         <Link
           href="/app/cuenta"
           aria-label="Mi cuenta"

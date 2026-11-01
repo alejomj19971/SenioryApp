@@ -2,7 +2,7 @@
 
 Aplicación web (Next.js 16, App Router) de Seniory. **Actúa como BFF** (*backend for frontend*): el navegador solo habla con este servidor, y este llama al backend ([`../backend`](../backend)) de servidor a servidor. Planes: [PLAN_FRONTEND](../docs/PLAN_FRONTEND_SENIORY.md), [INTEGRACIÓN con el backend](../docs/INTEGRACION_FRONTEND_BACKEND.md), [F0](../docs/frontend/F0-base-de-integracion.md) y [F1](../docs/frontend/F1-identidad.md).
 
-> **Estado:** **F1 (identidad) está conectado al backend**: cuentas reales, sesión por cookies y bienvenida; `/app` exige ingresar. El resto de las pantallas (cuidadores, contratación, teleasistencia, mensajes) sigue siendo el prototipo del pitch con datos de ejemplo en `data/*.json`; cada módulo F*n* conecta sus pantallas y borra el JSON que reemplaza. Para correr la app necesitas el backend encendido y las variables de `.env.local` (`SENIORY_BFF_SECRETO` **igual** a `SECRETO_BFF` del backend).
+> **Estado:** conectados al backend: identidad (F1), directorio (F2), contratación y área del cuidador (F3+F4), pagos y bolsas (F7), teleasistencia (F6) y mensajería en vivo (F8). Ya no queda ningún dato de ejemplo en el código (`data/` se borró). Faltan notificaciones (F5), el registro y los documentos del cuidador y el panel de administración (F9) y el cierre para producción (F10). Para correr la app necesitas el backend encendido y las variables de `.env.local` (`SENIORY_BFF_SECRETO` **igual** a `SECRETO_BFF` del backend).
 
 > **Next.js 16 tiene cambios incompatibles con versiones anteriores.** Antes de escribir código lee la guía correspondiente en `node_modules/next/dist/docs/` (ver [AGENTS.md](./AGENTS.md)).
 
@@ -37,7 +37,6 @@ frontend/
 │  ├─ api/                  ← cliente HTTP hacia el backend y `ErrorDeApi` (solo de servidor)
 │  ├─ configuracion.ts      ← variables de entorno validadas (solo de servidor)
 │  └─ types.ts              ← tipos que cruzan entre el servidor y el navegador
-├─ data/                    ← datos de ejemplo del prototipo; se borran módulo por módulo
 └─ pruebas/{unitarias,recorrido}/
 ```
 

@@ -7,7 +7,7 @@
 > **Backend: M0 con 7 de 8 PR hechos (falta el despliegue a staging, que espera el hosting), M1 (Identidad) con 7 de 8, M2 (Directorio) en `main` y M3 (cotización) en `main` y M4 (reservas) en `main` y M5 (notificaciones) en `main` y M6 (teleasistencia) en `main` y M7 (cobro, bolsas y liquidación) en `main` y M8 (mensajería) en `main` y M9 (registro y verificación de cuidadores) en `main` y M10 (endurecimiento) en `main` en lo que no depende del hosting.**
 > Siguiente paso: **el frontend** (F1 en revisión; ver el [plan v2](./PLAN_FRONTEND_SENIORY.md) y el [plan de integración](./INTEGRACION_FRONTEND_BACKEND.md)); **M11 (IA)** es opcional y pide definir su alcance. Para lanzar falta elegir el hosting y lo que de él depende (ver [OPERACION](./OPERACION.md), [SEGURIDAD](./SEGURIDAD.md) y [PENDIENTES](./PENDIENTES.md)). Se construye todo el backend antes de seguir con el frontend; los datos reales (cuidadores, verificaciones) llegan después por los procesos del propio sistema. Pendiente de ustedes: revisar y aceptar el [ADR-03](./ADR-03.md) (comunicación) y el [ADR-04](./ADR-04.md) (stack) y ver la CI en verde en GitHub.
 >
-> El frontend ya tiene su **sistema de diseño** (paleta y componentes), **F0** (base de integración) y **F1** (identidad: cuentas reales, sesión y bienvenida) construido y en revisión; el resto de las pantallas sigue con los datos de ejemplo del prototipo hasta conectarse. Siguiente: **F8 (mensajería)**.
+> El frontend ya tiene su **sistema de diseño** (paleta y componentes), **F0** (base de integración) y **F1** (identidad: cuentas reales, sesión y bienvenida) construido y en revisión; el resto de las pantallas sigue con los datos de ejemplo del prototipo hasta conectarse. Siguiente: **F5 (notificaciones)**.
 
 ```
 Backend   M0 █████████████████▌░░  7 de 8 PR (falta el despliegue)
@@ -28,8 +28,9 @@ Frontend  F0 ████████████████████  const
           F2 ████████████████████  construido
           F3+F4 ██████████████████  construido
           F7 ████████████████████  construido
-          F6 ████████████████████  construido (en revisión)   ← aquí
-          F8, F5, F9, F10          pendientes (F8 siguiente)
+          F6 ████████████████████  construido
+          F8 ████████████████████  construido (en revisión)   ← aquí
+          F5, F9, F10              pendientes (F5 siguiente)
 Base de datos  ████████████████████  completa (adelantada)
 ```
 
@@ -94,8 +95,9 @@ Base de datos  ████████████████████  com
 | F2 · Directorio | ✅ commit `0583de4` (ya en `main`): búsqueda en el servidor con filtros en la URL (texto sin tildes, especialidad, jornada, zona, tarifa) y «Ver más» por cursor; perfil con reseñas y verificación; hoja de vida servida por Next como PDF; **sin ningún dato de contacto** (H1) en HTML ni en lo que viaja al navegador; ids UUID. Se retiran `cuidadores.json` y las hojas de vida de ejemplo. 270 pruebas unitarias, 27 de contrato y 16 recorridos contra el backend local. |
 | F3+F4 · Cotización y contratación | ✅ commit `a05f46a` (ya en `main`): el precio lo calcula el servidor (cada cambio de horas pide una cotización nueva); pedir un servicio con `Idempotency-Key` (la misma clave para el mismo envío, otra si cambian los datos) y fecha y franjas en hora de Colombia (no UTC); el resultado es una **solicitud**, no una «contratación confirmada»; «Mis servicios» y el detalle con cancelar y calificar; cuidador en turno real (el único lugar con teléfono); **área del cuidador** `/cuidador` para aceptar, rechazar, iniciar y finalizar, que ve lo que recibe y nunca lo que paga la familia. Se retiran `pricing.ts` y la confirmación simulada. 304 pruebas unitarias, 38 de contrato y 20 recorridos con dos personas contra el backend local. |
 | F7 · Pagos y bolsas | ✅ commit `97a7715` (ya en `main`): el pago del servicio con todos sus estados dichos con palabras (preparando, falta pagar con vencimiento, recibido, devuelto, rechazado o vencido) y «Pagar ahora» (el servidor pide el enlace a la pasarela; **el navegador nunca decide que algo está pagado**: solo el aviso firmado de la pasarela lo aprueba); «Mi bolsa de horas» con saldo, movimientos y compra de paquetes con `Idempotency-Key`; «Tus pagos» del cuidador; y la landing con las bolsas **reales** del catálogo (vacío hasta que el negocio apruebe precios; si el backend no responde, la página no se rompe). Se retira el texto de «precios de ejemplo para la demo». 338 pruebas unitarias, 49 de contrato y 24 recorridos contra el backend local con su pasarela simulada. |
-| F6 · Teleasistencia | ⏳ En revisión (rama `feat/f6-teleasistencia`): medicamentos reales (agregar con sus horas y «dejar de tomar») y sus tomas del día, marcadas y deshechas con respuesta inmediata y 409 explicado; signos vitales (registrar con la presión completa, gráfica que tolera medidas faltantes, aviso de «fuera de rango» sin interpretar nada clínico); **pedir ayuda de verdad**: cuenta regresiva de 5 s, `Idempotency-Key` (reintentar no avisa dos veces), la pantalla dice **a quién se avisó** y ofrece llamar al 123 (se quita la «línea de emergencia» y «Monitoreo activo»); inicio y barra inferior con el resumen real; la pantalla se pone al día cada 15 s mientras se mira (el backend aún no tiene flujo en vivo). Fechas y horas siempre en hora de Colombia. Se retiran `medicamentos.json` y `signos-vitales.json`. Los recorridos corren contra la versión compilada. 392 pruebas unitarias, 57 de contrato y 29 recorridos. |
-| F8–F10 | Pendientes, en el orden del plan v2. Cada F*n* conecta las pantallas al módulo M*n* y borra el JSON que reemplaza. |
+| F6 · Teleasistencia | ✅ commit `4b25d27` (ya en `main`): medicamentos reales (agregar con sus horas y «dejar de tomar») y sus tomas del día, marcadas y deshechas con respuesta inmediata y 409 explicado; signos vitales (registrar con la presión completa, gráfica que tolera medidas faltantes, aviso de «fuera de rango» sin interpretar nada clínico); **pedir ayuda de verdad**: cuenta regresiva de 5 s, `Idempotency-Key` (reintentar no avisa dos veces), la pantalla dice **a quién se avisó** y ofrece llamar al 123 (se quita la «línea de emergencia» y «Monitoreo activo»); inicio y barra inferior con el resumen real; la pantalla se pone al día cada 15 s mientras se mira (el backend aún no tiene flujo en vivo). Fechas y horas siempre en hora de Colombia. Se retiran `medicamentos.json` y `signos-vitales.json`. Los recorridos corren contra la versión compilada. 392 pruebas unitarias, 57 de contrato y 29 recorridos. |
+| F8 · Mensajería | ⏳ En revisión (rama `feat/f8-mensajeria`): el chat real entre familia y cuidador, con los mensajes **en vivo** (el servidor de Next reenvía los eventos del backend; el navegador nunca habla con el backend), reconexión sola y respaldo por consulta si el flujo no vuelve. El backend entrega al menos una vez: los mensajes se reconocen por su `id` y no se repiten. Enviar es inmediato y, si falla, se puede reintentar con el mismo `idDeCliente` sin duplicar. **No hay «en línea» ni «escribiendo»**: el sistema no lo sabe. «Escribir» desde el servicio y desde el cuidador en turno; lista de conversaciones para la familia y para el cuidador; solo lectura al terminar el servicio; de la otra parte solo nombre y foto. Se retiran el chat del prototipo y `mensajes.json` (con esto desaparece `frontend/data/`). 432 pruebas unitarias, 67 de contrato y 31 recorridos (incluido uno con familia y cuidador en dos navegadores a la vez). |
+| F5, F9, F10 | Pendientes, en el orden del plan v2. Cada F*n* conecta las pantallas al módulo M*n* y borra el JSON que reemplaza. |
 
 ### Ramas (todas en GitHub; las 4 últimas desde el 28 de octubre)
 
@@ -131,7 +133,8 @@ Cada rama parte de la anterior. Se revisan con un PR encadenado por entrega (la 
 | 26 | `feat/f2-directorio` | F2: directorio de cuidadores (ya en `main`). |
 | 27 | `feat/f4-contratacion` | F3+F4: cotización, contratación y área del cuidador (ya en `main`). |
 | 28 | `feat/f7-pagos` | F7: pagos, bolsa de horas y pagos del cuidador (ya en `main`). |
-| 29 | `feat/f6-teleasistencia` (actual) | F6: teleasistencia. |
+| 29 | `feat/f6-teleasistencia` | F6: teleasistencia (ya en `main`). |
+| 30 | `feat/f8-mensajeria` (actual) | F8: mensajería. |
 
 **La CI solo corre en el PR 6:** es la primera rama que tiene `.github/workflows/backend.yml`. Una vez fusionada en `main`, correrá en todos los PR que toquen `backend/`.
 

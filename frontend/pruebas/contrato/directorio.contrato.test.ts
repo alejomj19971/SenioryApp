@@ -125,7 +125,9 @@ describe.skipIf(!disponible)("contrato de Directorio con el backend local", () =
     expect(filtros.especialidades).toEqual(["auxiliar", "enfermeria", "fisioterapia", "acompanamiento"]);
     expect(filtros.jornadas).toEqual(["manana", "tarde", "noche"]);
     if (!sinSembrar()) {
-      expect(filtros.tarifaMaxima).toBe(Math.max(...primeros.map((c) => c.tarifaHora)));
+      // De TODOS los que se muestran: con más de una página (los recorridos crean cuidadores) es mayor o igual al
+      // máximo de la primera.
+      expect(filtros.tarifaMaxima).toBeGreaterThanOrEqual(Math.max(...primeros.map((c) => c.tarifaHora)));
       expect(filtros.zonas.length).toBeGreaterThan(0);
     }
   });
