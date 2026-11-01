@@ -1,10 +1,8 @@
 import "server-only";
 import { redirect } from "next/navigation";
-import cuidadorEnTurnoData from "@/data/cuidador-en-turno.json";
 import type { AdultoMayorDelBackend, RespuestaDePerfil } from "@/lib/api/contratos/identidad";
-import { obtenerCuidador } from "@/lib/services/cuidadores";
 import { verificarSesion } from "@/lib/sesion";
-import type { AdultoMayor, Cuidador, Familiar } from "@/lib/types";
+import type { AdultoMayor, CuidadorEnTurno, Familiar } from "@/lib/types";
 
 // La familia y la persona a cuidar, desde la sesión real (F1 §4.5). Quien llega aquí ya pasó por el layout de
 // `/app`, que garantiza una familia con persona y consentimiento; si no, se la manda a completarlo.
@@ -37,11 +35,11 @@ export async function obtenerAdultoMayor(): Promise<AdultoMayor> {
     nombre: persona.nombre,
     edad: persona.edad,
     foto: persona.fotoUrl ?? "",
-    cuidadorAsignadoId: cuidadorEnTurnoData.cuidadorId,
   };
 }
 
-// Sigue leyendo `data/` hasta F4 (depende de Reservas).
-export async function obtenerCuidadorEnTurno(): Promise<Cuidador | null> {
-  return obtenerCuidador(cuidadorEnTurnoData.cuidadorId);
+// Hasta F4 nadie está «en turno»: depende de los servicios (Reservas), que todavía no están conectados. Devolver un
+// cuidador inventado sería mostrar a una familia real alguien que no la está cuidando.
+export async function obtenerCuidadorEnTurno(): Promise<CuidadorEnTurno | null> {
+  return null;
 }

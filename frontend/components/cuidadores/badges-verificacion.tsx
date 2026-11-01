@@ -1,6 +1,5 @@
 import { ShieldCheck, GraduationCap, BrainCircuit, CheckCircle2 } from "lucide-react";
 import type { Verificacion } from "@/lib/types";
-import { formatearFecha } from "@/lib/format";
 
 const items = [
   {
@@ -41,8 +40,8 @@ export function BadgesVerificacion({ verificacion }: { verificacion: Verificacio
           </li>
         ))}
       </ul>
-      <p className="mt-3 text-xs text-muted-foreground">
-        Verificado el {formatearFecha(verificacion.fechaVerificacion)}
+      <p className="mt-3 text-sm text-muted-foreground">
+        Revisamos estos documentos antes de mostrar a cada cuidador, y los volvemos a revisar cuando vencen.
       </p>
     </div>
   );

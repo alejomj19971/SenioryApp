@@ -1,10 +1,10 @@
 import Link from "next/link";
-import { ShieldCheck, Star, MapPin, FileText } from "lucide-react";
+import { ShieldCheck, Star, MapPin } from "lucide-react";
 import { AvatarCuidador } from "@/components/avatar-cuidador";
-import type { Cuidador } from "@/lib/types";
+import type { CuidadorResumen } from "@/lib/types";
 import { etiquetaEspecialidad, formatearCOP } from "@/lib/format";
 
-export function TarjetaCuidador({ cuidador }: { cuidador: Cuidador }) {
+export function TarjetaCuidador({ cuidador }: { cuidador: CuidadorResumen }) {
   return (
     <Link
       href={`/app/cuidadores/${cuidador.id}`}
@@ -26,17 +26,16 @@ export function TarjetaCuidador({ cuidador }: { cuidador: Cuidador }) {
           <MapPin className="size-3.5 shrink-0" aria-hidden="true" />
           {cuidador.zona}
         </div>
-        {cuidador.hojaDeVida && (
-          <span className="inline-flex w-fit items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
-            <FileText className="size-3.5" aria-hidden="true" />
-            Hoja de vida disponible
-          </span>
-        )}
         <div className="mt-1 flex items-center justify-between">
-          <span className="flex items-center gap-1 text-sm font-medium text-foreground">
-            <Star className="size-4 fill-warning text-warning" aria-hidden="true" />
-            {cuidador.calificacion.toFixed(1)}
-          </span>
+          {cuidador.calificacion !== null ? (
+            <span className="flex items-center gap-1 text-sm font-medium text-foreground">
+              <Star className="size-4 fill-warning text-warning" aria-hidden="true" />
+              {cuidador.calificacion.toFixed(1)}
+              <span className="font-normal text-muted-foreground">({cuidador.cantidadResenas})</span>
+            </span>
+          ) : (
+            <span className="text-sm text-muted-foreground">Sin reseñas todavía</span>
+          )}
           <span className="text-lg font-bold text-foreground">
             {formatearCOP(cuidador.tarifaHora)}
             <span className="text-xs font-normal text-muted-foreground">/hora</span>

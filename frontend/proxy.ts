@@ -20,7 +20,7 @@ import { renovarSesion } from "@/lib/sesion/renovar";
 //     y en la PETICIÓN que continúa (para que los componentes de servidor de esta misma navegación ya usen el
 //     token nuevo: no pueden escribir cookies).
 
-const RUTAS_PROTEGIDAS = ["/app", "/bienvenida", "/cuidador", "/admin"];
+const RUTAS_PROTEGIDAS = ["/app", "/bienvenida", "/cuidador", "/admin", "/api"];
 const RUTAS_DE_INVITADO = ["/ingresar", "/registro"];
 
 const esRutaDe = (ruta: string, bases: string[]) =>

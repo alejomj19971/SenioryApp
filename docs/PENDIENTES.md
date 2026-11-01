@@ -190,7 +190,12 @@ El frontend se conecta al backend módulo por módulo, en el orden del [plan v2]
 | 🔧 | **Perfil:** cambiar el nombre y el teléfono (`PATCH /yo` existe; falta la pantalla), y verificar el correo (llega con el canal de correo, M5). |
 | 🔧 | **Varias personas a cuidar:** hoy la app usa la responsable (o la primera); falta elegir entre varias y agregar otra después de la bienvenida. |
 | 🔧 | **Un solo comando de integración** (`npm run integracion:preparar`) y el job `integracion` de la CI (ver [INTEGRACION §1 y §8](./INTEGRACION_FRONTEND_BACKEND.md)). |
-| F2 a F10 | 🔧 Una por cada módulo M2 a M9 (directorio, contratación con vista mínima del cuidador, pagos y bolsas, teleasistencia, mensajes, avisos, administración) y el cierre para producción. |
+| F2 — Directorio *(construido)* | 🔧 **Backend:** que `GET /cuidadores` y `/cuidadores/:id` digan si hay hoja de vida pública (`tieneHojaDeVida`). Hoy el perfil lo averigua con una consulta extra y la tarjeta de la búsqueda no puede mostrar «hoja de vida disponible». |
+| 🔧 | **Fotos de los cuidadores:** la API trae `fotoUrl` (hoy siempre nula; llega con el almacén real). Mientras, se muestran las iniciales. |
+| 🔧 | **Reseñas:** solo las del backend; no hay paginación de reseñas (el perfil trae todas). Revisar cuando un cuidador tenga muchas. |
+| 🔧 | **Cuidador en turno:** hasta F4 nadie aparece «en turno» (antes era uno inventado del prototipo). `mensajes.json` y la contratación siguen del prototipo y se reemplazan en F4 y F8: mientras tanto el chat de un cuidador real aparece vacío. |
+| 🧑 | Los recorridos del directorio necesitan los cuidadores de `npm run semillas` (y uno importado con PDF para probar la hoja de vida); sin ellos algunos se omiten. |
+| F3 a F10 | 🔧 Una por cada módulo M3 a M9 (cotización y contratación con vista mínima del cuidador, pagos y bolsas, teleasistencia, mensajes, avisos, administración) y el cierre para producción. |
 | 🔧 | **Vulnerabilidades de las dependencias del frontend** (`npm audit`: 15 en producción, casi todas por `shadcn` y `zod`; arreglarlas obliga a subir `shadcn` a una versión mayor). `shadcn` es una herramienta de desarrollo y no debería estar en `dependencies`. |
 | 🧑 | **Pruebas de usabilidad** con adultos mayores y familiares reales (E4, E5). |
 | 🧑 | Quitar de la landing los textos y cifras de demostración. |

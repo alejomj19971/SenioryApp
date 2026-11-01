@@ -12,13 +12,13 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { etiquetaEspecialidad } from "@/lib/format";
-import type { Cuidador } from "@/lib/types";
+import type { CuidadorEnTurno as DatosDelCuidadorEnTurno } from "@/lib/types";
 
 export function CuidadorEnTurno({
   cuidador,
   adultoMayorNombre,
 }: {
-  cuidador: Cuidador;
+  cuidador: DatosDelCuidadorEnTurno;
   adultoMayorNombre: string;
 }) {
   return (

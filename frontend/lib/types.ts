@@ -8,37 +8,52 @@ export type Especialidad =
 
 export type Jornada = "manana" | "tarde" | "noche";
 
+// Los tres controles que hacen visible a un cuidador (E7): para quien se muestra siempre están los tres.
 export interface Verificacion {
   antecedentes: boolean; // Policía, Procuraduría, Contraloría
   titulos: boolean; // títulos/certificaciones comprobados
   psicotecnica: boolean; // prueba psicotécnica aprobada
-  fechaVerificacion: string; // ISO
 }
 
 export interface Resena {
-  autor: string;
+  id: string;
+  autor: string; // abreviado, p. ej. «Andrea G.»
   calificacion: number; // 1–5
-  comentario: string;
-  fecha: string;
+  comentario: string; // vacío si no escribió
+  fecha: string; // ISO
 }
 
-export interface Cuidador {
+// Lo que se muestra de un cuidador en la búsqueda. NUNCA lleva teléfono ni datos de contacto (H1): el directorio
+// no los entrega; solo el cuidador en turno de un servicio contratado los trae (F4).
+export interface CuidadorResumen {
   id: string;
   nombre: string;
-  foto: string;
+  foto: string; // vacío si no tiene
   especialidad: Especialidad;
   titulo: string; // ej. "Técnica en Enfermería — SENA"
   aniosExperiencia: number;
   tarifaHora: number; // COP, lo que cobra el cuidador
-  telefono: string; // formato E.164, ej. "+573001234567"
   zona: string; // barrio/comuna de Medellín o municipio del Valle de Aburrá
   disponibilidad: Jornada[];
-  calificacion: number;
+  calificacion: number | null; // promedio con un decimal; null si todavía no tiene reseñas
+  cantidadResenas: number;
   serviciosCompletados: number;
   bio: string;
   verificacion: Verificacion;
+}
+
+export interface Cuidador extends CuidadorResumen {
   resenas: Resena[];
-  hojaDeVida?: string; // ruta pública al PDF de la hoja de vida, ej. "/hojas-de-vida/nombre.pdf"
+}
+
+// El cuidador que atiende ahora a la persona mayor. Es el único que trae el teléfono (F4, desde Reservas).
+export interface CuidadorEnTurno {
+  id: string;
+  nombre: string;
+  foto: string;
+  titulo: string;
+  especialidad: Especialidad;
+  telefono: string; // formato E.164, ej. "+573001234567"
 }
 
 export interface FiltrosCuidador {
@@ -70,7 +85,6 @@ export interface AdultoMayor {
   nombre: string;
   edad: number;
   foto: string;
-  cuidadorAsignadoId?: string;
 }
 
 export interface Familiar {

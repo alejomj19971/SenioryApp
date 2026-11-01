@@ -1,6 +1,13 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { confirmarContratacionAccion } from "@/lib/acciones/contratacion";
 import type { DatosContratacion } from "@/lib/types";
+
+// El cuidador viene del directorio (la API); aquí se sustituye por uno conocido: esta prueba es de la acción y de
+// su cálculo, no del directorio.
+vi.mock("@/lib/services/cuidadores", () => ({
+  obtenerCuidador: async (id: string) =>
+    id === "c-marta-restrepo" ? { id, nombre: "Marta Elena Restrepo", tarifaHora: 20_000 } : null,
+}));
 
 const VALIDOS: DatosContratacion = {
   cuidadorId: "c-marta-restrepo",

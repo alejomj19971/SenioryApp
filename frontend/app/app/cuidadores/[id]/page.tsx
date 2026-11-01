@@ -5,7 +5,7 @@ import { AvatarCuidador } from "@/components/avatar-cuidador";
 import { BadgesVerificacion } from "@/components/cuidadores/badges-verificacion";
 import { Resenas } from "@/components/cuidadores/resenas";
 import { buttonVariants } from "@/components/ui/button";
-import { obtenerCuidador } from "@/lib/services/cuidadores";
+import { obtenerCuidador, tieneHojaDeVida } from "@/lib/services/cuidadores";
 import { etiquetaEspecialidad, etiquetaJornada, formatearCOP } from "@/lib/format";
 
 export default async function PerfilCuidadorPage({
@@ -17,6 +17,8 @@ export default async function PerfilCuidadorPage({
   if (!cuidador) {
     notFound();
   }
+  // La vista del cuidador no dice si tiene hoja de vida: se pregunta, y solo se ofrece el enlace si existe.
+  const hojaDeVida = await tieneHojaDeVida(cuidador.id);
 
   return (
     <div className="flex flex-col gap-6 px-4 py-6 pb-28">
@@ -40,13 +42,18 @@ export default async function PerfilCuidadorPage({
           </div>
           <p className="text-sm text-muted-foreground">{cuidador.titulo}</p>
           <div className="mt-1.5 flex flex-wrap items-center gap-2">
-            <span className="flex items-center gap-1 rounded-full bg-accent/15 px-2.5 py-1 text-sm font-semibold text-accent">
-              <Star className="size-4 fill-accent text-accent" aria-hidden="true" />
-              {cuidador.calificacion.toFixed(1)}
-            </span>
+            {cuidador.calificacion !== null ? (
+              <span className="flex items-center gap-1 rounded-full bg-warning/20 px-2.5 py-1 text-sm font-semibold text-foreground">
+                <Star className="size-4 fill-warning text-warning" aria-hidden="true" />
+                {cuidador.calificacion.toFixed(1)}
+                <span className="font-normal text-muted-foreground">({cuidador.cantidadResenas})</span>
+              </span>
+            ) : (
+              <span className="rounded-full bg-muted px-2.5 py-1 text-sm text-muted-foreground">Sin reseñas todavía</span>
+            )}
             <span className="flex items-center gap-1 text-sm text-muted-foreground">
               <Briefcase className="size-4" aria-hidden="true" />
-              {cuidador.serviciosCompletados} servicios
+              {cuidador.serviciosCompletados} {cuidador.serviciosCompletados === 1 ? "servicio" : "servicios"}
             </span>
           </div>
         </div>
@@ -61,9 +68,9 @@ export default async function PerfilCuidadorPage({
         <p className="text-base text-muted-foreground">{cuidador.bio}</p>
       </section>
 
-      {cuidador.hojaDeVida && (
+      {hojaDeVida && (
         <a
-          href={cuidador.hojaDeVida}
+          href={`/api/cuidadores/${cuidador.id}/hoja-de-vida`}
           target="_blank"
           rel="noopener noreferrer"
           className="flex items-center gap-3 rounded-2xl bg-muted p-4 ring-1 ring-border transition-colors hover:ring-primary/40"

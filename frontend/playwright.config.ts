@@ -9,7 +9,7 @@ export default defineConfig({
   testDir: "./pruebas/recorrido",
   // Un recorrido toca varias pantallas y, con `next dev`, la primera visita compila cada una.
   timeout: 90_000,
-  expect: { timeout: 15_000 },
+  expect: { timeout: 30_000 },
   fullyParallel: false,
   workers: 1,
   retries: process.env.CI ? 1 : 0,

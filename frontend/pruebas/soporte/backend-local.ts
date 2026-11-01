@@ -104,3 +104,34 @@ export async function crearCuenta({ lista = true, nombre = "Familia de Prueba" }
   if (!consentimiento.ok) throw new Error(`No se pudo dar la autorización (${consentimiento.status}).`);
   return cuenta;
 }
+
+// Una petición cualquiera al backend, con el secreto del BFF y la «IP» de la cuenta (sin seguir redirecciones: las
+// pruebas miran el 302 de la hoja de vida).
+export async function pedir(
+  ruta: string,
+  { cookie, ip = ipAleatoria(), metodo = "GET", cuerpo }: { cookie?: string; ip?: string; metodo?: string; cuerpo?: unknown } = {},
+): Promise<Response> {
+  return fetch(`${URL_DEL_BACKEND}${ruta}`, {
+    method: metodo,
+    redirect: "manual",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Seniory-BFF": SECRETO_BFF,
+      "X-Cliente-IP": ip,
+      ...(cookie === undefined ? {} : { Cookie: cookie }),
+    },
+    ...(cuerpo === undefined ? {} : { body: JSON.stringify(cuerpo) }),
+  });
+}
+
+// Inicia sesión por la API y devuelve la cookie de acceso lista para enviar.
+export async function abrirSesion(cuenta: CuentaDePrueba): Promise<string> {
+  const respuesta = await pedir("/auth/login", {
+    metodo: "POST",
+    ip: cuenta.ip,
+    cuerpo: { correo: cuenta.correo, contrasena: cuenta.contrasena },
+  });
+  const cookie = respuesta.headers.getSetCookie().find((c) => c.startsWith("seniory_acceso="))?.split(";")[0];
+  if (!respuesta.ok || cookie === undefined) throw new Error(`No se pudo iniciar sesión (${respuesta.status}).`);
+  return cookie;
+}
