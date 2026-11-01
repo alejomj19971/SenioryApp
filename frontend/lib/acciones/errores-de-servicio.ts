@@ -22,6 +22,8 @@ export const MENSAJE_DEMASIADAS_SOLICITUDES = "Hiciste demasiadas solicitudes se
 
 export function mensajeDeErrorDeServicio(error: ErrorDeApi): string {
   if (error.estado === 429) return MENSAJE_DEMASIADAS_SOLICITUDES;
+  // Todavía no hay pasarela de pagos (o el almacén de archivos): se dice, no se finge.
+  if (error.estado === 503 && error.codigo !== "servicio_no_disponible") return "Esto no está disponible por ahora. Inténtalo de nuevo más tarde.";
   const mensaje = MENSAJES_POR_CODIGO[error.codigo];
   if (mensaje !== undefined) return mensaje;
   // Un servicio que no existe o no es de esta persona (404) y lo que no se puede en este estado (409) llegan con su

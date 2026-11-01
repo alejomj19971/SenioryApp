@@ -166,7 +166,11 @@ async function subirDocumento(tipo: string, cookie: string, ip: string): Promise
   if (!respuesta.ok) throw new Error(`No se pudo subir el documento ${tipo} (${respuesta.status}): ${await respuesta.text()}`);
 }
 
-export async function crearCuidadorVerificado({ tarifaHora = 20_000, zona = "Laureles" } = {}): Promise<CuidadorDePrueba> {
+export async function crearCuidadorVerificado({
+  tarifaHora = 20_000,
+  zona = "Laureles",
+  conHojaDeVida = false,
+}: { tarifaHora?: number; zona?: string; conHojaDeVida?: boolean } = {}): Promise<CuidadorDePrueba> {
   if (!hayAdministradorDePrueba) throw new Error("Falta ADMIN_DE_PRUEBA_CORREO / ADMIN_DE_PRUEBA_CONTRASENA en .env.local.");
   const cuenta: CuentaDePrueba = {
     nombre: "Cuidadora de Prueba",
@@ -201,7 +205,9 @@ export async function crearCuidadorVerificado({ tarifaHora = 20_000, zona = "Lau
   if (!perfil.ok) throw new Error(`No se pudo crear el perfil (${perfil.status}): ${await perfil.text()}`);
   const { perfil: datos } = (await perfil.json()) as { perfil: { id: string } };
 
-  for (const tipo of ["cedula", "antecedentes", "titulo", "psicotecnica"]) await subirDocumento(tipo, cookie, cuenta.ip);
+  for (const tipo of ["cedula", "antecedentes", "titulo", "psicotecnica", ...(conHojaDeVida ? ["hoja_de_vida"] : [])]) {
+    await subirDocumento(tipo, cookie, cuenta.ip);
+  }
   const revision = await pedir("/cuidadores/yo/revision", { metodo: "POST", cookie, ip: cuenta.ip });
   if (!revision.ok) throw new Error(`No se pudo pedir la revisión (${revision.status}): ${await revision.text()}`);
 
@@ -220,5 +226,67 @@ export async function crearCuidadorVerificado({ tarifaHora = 20_000, zona = "Lau
     });
     if (!decision.ok) throw new Error(`No se pudo aprobar ${v.control} (${decision.status}): ${await decision.text()}`);
   }
+  // La hoja de vida pública se aprueba aparte (es lo que verán las familias).
+  if (conHojaDeVida) {
+    const hojas = await pedir("/verificaciones/hojas-de-vida", { cookie: admin });
+    const { hojasDeVida } = (await hojas.json()) as { hojasDeVida: { documento: { id: string }; cuidador: { id: string } }[] };
+    const mia = hojasDeVida.find((hoja) => hoja.cuidador.id === datos.id);
+    if (mia === undefined) throw new Error("La hoja de vida no apareció en la cola de revisión.");
+    const aprobada = await pedir(`/verificaciones/documentos/${mia.documento.id}`, { metodo: "PATCH", cookie: admin, cuerpo: { decision: "aprobar" } });
+    if (!aprobada.ok) throw new Error(`No se pudo aprobar la hoja de vida (${aprobada.status}): ${await aprobada.text()}`);
+  }
   return { cuentaDeAcceso: cuenta, cuidadorId: datos.id, nombre: cuenta.nombre, tarifaHora };
+}
+
+// ── Pagos: avisos firmados de la pasarela SIMULADA y un paquete de bolsa de prueba ───────────────────────────────────
+// La pasarela simulada no tiene una página de pago: un pago pasa a aprobado SOLO con el aviso firmado que ella misma
+// manda al backend. Las pruebas lo fabrican igual que lo haría una real (HMAC-SHA256 del cuerpo exacto con el
+// secreto compartido, `SECRETO_DE_PASARELA_DE_PRUEBA` en `.env.local`). Sin secreto, esas pruebas se omiten.
+
+const SECRETO_DE_LA_PASARELA = process.env.SECRETO_DE_PASARELA_DE_PRUEBA ?? "";
+export const hayPasarelaDePrueba = SECRETO_DE_LA_PASARELA !== "";
+
+export async function enviarAvisoDePago(
+  tipo: "pago.aprobado" | "pago.rechazado",
+  pago: { id: string; montoTotal: number },
+  { firmaValida = true, idEvento = randomBytes(8).toString("hex") }: { firmaValida?: boolean; idEvento?: string } = {},
+): Promise<Response> {
+  const { createHmac } = await import("node:crypto");
+  const cuerpo = JSON.stringify({ idEvento, tipo, referencia: pago.id, monto: pago.montoTotal });
+  const firma = createHmac("sha256", firmaValida ? SECRETO_DE_LA_PASARELA : "otro-secreto").update(cuerpo).digest("hex");
+  return fetch(`${URL_DEL_BACKEND}/pagos/webhook/simulada`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "X-Seniory-Firma": firma, "X-Seniory-BFF": SECRETO_BFF, "X-Cliente-IP": ipAleatoria() },
+    body: cuerpo,
+  });
+}
+
+// Espera (hasta 15 s) a que se cumpla algo que el backend hace por eventos (el cobro nace unos instantes después de
+// que el cuidador acepta).
+export async function esperarQue<T>(leer: () => Promise<T | null | undefined | false>, descripcion: string): Promise<T> {
+  const limite = Date.now() + 15_000;
+  for (;;) {
+    const valor = await leer();
+    if (valor !== null && valor !== undefined && valor !== false) return valor;
+    if (Date.now() > limite) throw new Error(`Se esperaba que ${descripcion}, y no ocurrió en 15 s.`);
+    await new Promise((resolver) => setTimeout(resolver, 400));
+  }
+}
+
+// El catálogo de bolsas viene VACÍO hasta que el negocio apruebe precios (no se inventan): para probar la compra se
+// crean dos paquetes («prueba-10h» y «prueba-5h») en la base LOCAL con el contenedor de Postgres de desarrollo. Devuelve su código, o null si no hay
+// Docker o el contenedor (entonces las pruebas de compra se omiten).
+export async function asegurarPaqueteDePrueba(): Promise<string | null> {
+  const { execFileSync } = await import("node:child_process");
+  const contenedor = process.env.CONTENEDOR_DE_BD ?? "seniory_postgres";
+  const sql =
+    "insert into pagos.paquetes_de_bolsa (codigo, horas_referencia, descuento_bps, credito, precio, activo) " +
+    "values ('prueba-10h', 10, 1000, 216000, 194400, true), ('prueba-5h', 5, 500, 108000, 102600, true) " +
+    "on conflict (codigo) do update set activo = true, credito = excluded.credito, precio = excluded.precio, descuento_bps = excluded.descuento_bps, horas_referencia = excluded.horas_referencia";
+  try {
+    execFileSync("docker", ["exec", contenedor, "psql", "-U", "seniory", "-d", "seniory", "-v", "ON_ERROR_STOP=1", "-c", sql], { stdio: "ignore" });
+    return "prueba-10h";
+  } catch {
+    return null;
+  }
 }

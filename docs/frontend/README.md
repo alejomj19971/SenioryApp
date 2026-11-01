@@ -13,7 +13,7 @@ Cada archivo es el plan detallado de cómo una parte del frontend pasa de los da
 | F3+F4 | Cotización y contratación | M3, M4 | [F4-contratacion.md](./F4-contratacion.md) | ✅ Construido |
 | F5 | Notificaciones | M5 | — | Pendiente |
 | F6 | Teleasistencia | M6 | — | Pendiente |
-| F7 | Pagos y bolsas | M7 | — | Pendiente |
+| F7 | Pagos y bolsas | M7 | [F7-pagos.md](./F7-pagos.md) | ✅ Construido |
 | F8 | Mensajería | M8 | — | Pendiente |
 | F9 | Cuidadores y administración | M9 | — | Pendiente |
 

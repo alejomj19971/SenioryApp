@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Wallet } from "lucide-react";
 import { SelectorHoras, type FechaSeleccion } from "@/components/contratacion/selector-horas";
@@ -140,6 +141,16 @@ export function FormularioContratacion({ cuidador, ahora, cotizacionInicial, sal
           </div>
           <Switch id="usar-bolsa" checked={pagaConBolsa} disabled={!bolsaAlcanza} onCheckedChange={setUsarBolsa} />
         </div>
+      )}
+
+      {saldoDeLaBolsa === 0 && (
+        <p className="text-base text-muted-foreground">
+          ¿Pagas seguido? Con una{" "}
+          <Link href="/app/bolsa" className="font-medium text-primary underline underline-offset-4">
+            bolsa de horas
+          </Link>{" "}
+          pagas desde tu saldo, sin salir de Seniory.
+        </p>
       )}
 
       {cotizacion !== null && (

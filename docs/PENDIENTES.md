@@ -200,7 +200,13 @@ El frontend se conecta al backend módulo por módulo, en el orden del [plan v2]
 | 🔧 | **Panel del cuidador:** solo los servicios más recientes (sin «ver más»), sin calendario ni historial de pagos (liquidaciones en F7), y sin su perfil y documentos (F9). |
 | 🔧 | **Reprogramar:** no existe; hoy se cancela y se pide de nuevo. Y la política de cancelación tardía (hoy siempre se devuelve todo) es una decisión de negocio abierta. |
 | 🧑 | **Cuidador en turno** y **mensajes** siguen sin conectar con el chat real (F8): «Escribir» abre el chat del prototipo vacío. |
-| F7 a F10 | 🔧 Una por cada módulo M7 a M9 (pagos y bolsas, teleasistencia, mensajes, avisos, administración) y el cierre para producción. |
+| F7 — Pagos y bolsas *(construido)* | ⚖️🚀 **Pasarela y dispersor reales:** hoy solo hay la simulada (sin página de pago: el pago se aprueba con un aviso firmado que fabrican las pruebas). Con la pasarela real hay que revisar que la **página de retorno** lleve de vuelta a `/app/servicios/[id]` y, si hace falta, `URL_PUBLICA_DE_LA_API`/dominios. Ver [pagos/README](../backend/src/pagos/README.md). |
+| ⚖️ | **Precios de las bolsas:** el catálogo está vacío en producción hasta que el negocio apruebe paquetes (las pruebas crean `prueba-5h` y `prueba-10h` **solo en la base local**). La landing y «Mi bolsa» ya los muestran en cuanto existan. |
+| 🔧 | **La landing es dinámica** (lee el catálogo en cada visita) y por eso ya no es estática; si pesa en el rendimiento, cachear unos minutos. |
+| 🔧 | **Historial de pagos de la familia** (hoy solo el de cada servicio y los movimientos de la bolsa) y comprobantes/facturas (decisión legal). |
+| 🔧 | **Cobro de un pago vencido por la familia:** la pantalla dice que el servicio se cancela; no hay recordatorio previo hasta que exista la campana (F5) y los canales. |
+| 🧑 | La base local acumula cuentas de prueba (correos `.invalid`) con cada corrida de los recorridos; no afecta a ningún entorno compartido. |
+| F6, F8 a F10 | 🔧 Una por cada módulo (teleasistencia, mensajes, avisos, administración) y el cierre para producción. |
 | 🔧 | **Vulnerabilidades de las dependencias del frontend** (`npm audit`: 15 en producción, casi todas por `shadcn` y `zod`; arreglarlas obliga a subir `shadcn` a una versión mayor). `shadcn` es una herramienta de desarrollo y no debería estar en `dependencies`. |
 | 🧑 | **Pruebas de usabilidad** con adultos mayores y familiares reales (E4, E5). |
 | 🧑 | Quitar de la landing los textos y cifras de demostración. |

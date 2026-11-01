@@ -1,4 +1,6 @@
 import type { Metadata } from "next";
+import Link from "next/link";
+import { Wallet } from "lucide-react";
 import { FormularioCambiarContrasena } from "@/components/cuenta/formulario-cambiar-contrasena";
 import { SalirDeLaCuenta } from "@/components/shell/salir-de-la-cuenta";
 import { exigirFamiliaLista } from "@/lib/services/paciente";
@@ -15,6 +17,14 @@ export default async function CuentaPage() {
         <p className="text-lg font-semibold text-foreground">{perfil.usuario.nombre}</p>
         <p className="text-base text-muted-foreground">{perfil.usuario.correo}</p>
       </section>
+
+      <Link href="/app/bolsa" className="flex items-center gap-3 rounded-2xl bg-card p-4 ring-1 ring-border transition-colors hover:ring-primary/40">
+        <Wallet className="size-6 shrink-0 text-primary" aria-hidden="true" />
+        <span>
+          <span className="block text-base font-semibold text-foreground">Mi bolsa de horas</span>
+          <span className="block text-sm text-muted-foreground">Saldo, movimientos y paquetes</span>
+        </span>
+      </Link>
 
       <section aria-labelledby="titulo-contrasena" className="flex flex-col gap-4">
         <h2 id="titulo-contrasena" className="text-xl font-semibold text-foreground">

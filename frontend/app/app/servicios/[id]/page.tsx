@@ -2,12 +2,14 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, CalendarDays, CircleCheck, Clock, Star, UserRound, Wallet } from "lucide-react";
 import { ResumenCosto } from "@/components/contratacion/resumen-costo";
+import { SeccionDePago } from "@/components/pagos/seccion-de-pago";
 import { CalificarServicio, CancelarServicio } from "@/components/servicios/acciones-de-servicio-familia";
 import { EstadoDelServicio } from "@/components/servicios/estado-del-servicio";
 import { etiquetaDeEstadoParaLaFamilia } from "@/lib/etiquetas-de-servicio";
 import { horaEnColombia } from "@/lib/fecha-colombia";
 import { etiquetaJornada, formatearDiaCivil } from "@/lib/format";
 import { exigirFamiliaLista } from "@/lib/services/paciente";
+import { obtenerPagoDelServicio } from "@/lib/services/pagos";
 import { obtenerServicio } from "@/lib/services/servicios";
 
 export const metadata = {
@@ -20,6 +22,8 @@ export default async function ServicioPage({ params, searchParams }: PageProps<"
   await exigirFamiliaLista();
   const servicio = await obtenerServicio(id);
   if (!servicio) notFound();
+  // El cobro nace unos instantes después de que el cuidador acepta; hasta entonces no hay pago.
+  const pago = servicio.estado === "solicitado" ? null : await obtenerPagoDelServicio(servicio.id);
 
   const etiqueta = etiquetaDeEstadoParaLaFamilia(servicio.estado, servicio.motivoDeCancelacion);
   const porcentaje = servicio.subtotal === 0 ? 0 : Math.round((servicio.cargoDeServicio / servicio.subtotal) * 1000) / 10;
@@ -81,6 +85,8 @@ export default async function ServicioPage({ params, searchParams }: PageProps<"
       </section>
 
       <ResumenCosto subtotal={servicio.subtotal} cargo={servicio.cargoDeServicio} cargoPorcentaje={porcentaje} total={servicio.totalFamilia} />
+
+      <SeccionDePago servicio={servicio} pago={pago} />
 
       {servicio.calificacion !== null && (
         <section className="flex flex-col gap-1 rounded-2xl bg-card p-4 ring-1 ring-border">

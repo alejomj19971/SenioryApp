@@ -168,3 +168,36 @@ export interface DatosDeSolicitud {
   horas: number;
   medioDePago: MedioDePago;
 }
+
+// Pagos (F7)
+export type EstadoDePago = "pendiente" | "aprobado" | "rechazado" | "expirado" | "reembolsado";
+
+export interface Pago {
+  id: string;
+  concepto: string;
+  servicioId: string | null;
+  paqueteCodigo: string | null;
+  medio: string;
+  montoTotal: number; // pesos enteros
+  estado: EstadoDePago;
+  venceEn: string | null; // ISO; solo mientras está pendiente
+  creadoEn: string;
+}
+
+export interface PaqueteDeBolsa {
+  codigo: string;
+  horasReferencia: number;
+  descuento: number; // 10 = 10 %
+  credito: number; // lo que recibe la bolsa
+  precio: number; // lo que paga la familia
+}
+
+// Lo que se le debe (o ya se le pagó) al cuidador por un servicio.
+export interface Liquidacion {
+  id: string;
+  servicioId: string;
+  monto: number;
+  estado: "pendiente" | "enviada" | "pagada" | "fallida";
+  pagadaEn: string | null;
+  creadaEn: string;
+}

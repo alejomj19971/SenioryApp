@@ -1,5 +1,5 @@
 import { expect, test, type BrowserContext, type Page } from "@playwright/test";
-import { backendDisponible, crearCuenta, ipAleatoria } from "../soporte/backend-local";
+import { backendDisponible, crearCuenta, crearCuidadorVerificado, hayAdministradorDePrueba, ipAleatoria } from "../soporte/backend-local";
 
 // Recorridos del directorio (F2 §6) contra el BACKEND LOCAL REAL con los cuidadores de las semillas
 // (`npm run semillas` en backend/). Sin el backend, o sin cuidadores, se omiten.
@@ -97,26 +97,16 @@ test("un cuidador que no existe, o un id inventado, da «no encontrado»", async
 });
 
 test("la hoja de vida la entrega el servidor de Next como PDF y sin dejar ver el backend", async ({ page, context }) => {
+  test.skip(!hayAdministradorDePrueba, "Falta ADMIN_DE_PRUEBA_CORREO / ADMIN_DE_PRUEBA_CONTRASENA en .env.local.");
+  // Dos cuidadores creados por el flujo real: uno con hoja de vida aprobada y otro sin ella (no depende de las semillas).
+  const conHoja = await crearCuidadorVerificado({ conHojaDeVida: true });
+  const sinHoja = await crearCuidadorVerificado();
   await ingresarComoFamilia(page, context);
-  await expect(tarjetas(page).first()).toBeVisible();
-
-  // Se busca un cuidador que tenga hoja de vida (el perfil solo ofrece el enlace si existe).
-  const enlaces = await tarjetas(page).evaluateAll((nodos) => nodos.map((nodo) => (nodo as HTMLAnchorElement).href));
-  let hoja: string | null = null;
-  let sinHoja: string | null = null;
-  for (const enlace of enlaces) {
-    await page.goto(enlace);
-    const id = enlace.split("/").at(-1) as string;
-    if ((await page.getByRole("link", { name: /Hoja de vida/ }).count()) > 0) hoja ??= id;
-    else sinHoja ??= id;
-    if (hoja !== null && sinHoja !== null) break;
-  }
-  test.skip(hoja === null, "Ningún cuidador de las semillas tiene hoja de vida (npm run cuidadores:importar con un PDF).");
 
   // El enlace apunta a Next, no al backend
-  await page.goto(`/app/cuidadores/${hoja}`);
+  await page.goto(`/app/cuidadores/${conHoja.cuidadorId}`);
   const href = await page.getByRole("link", { name: /Hoja de vida/ }).getAttribute("href");
-  expect(href).toBe(`/api/cuidadores/${hoja}/hoja-de-vida`);
+  expect(href).toBe(`/api/cuidadores/${conHoja.cuidadorId}/hoja-de-vida`);
 
   const pdf = await page.request.get(href as string);
   expect(pdf.status()).toBe(200);
@@ -126,11 +116,9 @@ test("la hoja de vida la entrega el servidor de Next como PDF y sin dejar ver el
   expect((await pdf.body()).subarray(0, 5).toString()).toBe("%PDF-");
 
   // Quien no tiene hoja de vida no ofrece el enlace, y la ruta responde 404
-  if (sinHoja !== null) {
-    await page.goto(`/app/cuidadores/${sinHoja}`);
-    await expect(page.getByRole("link", { name: /Hoja de vida/ })).toHaveCount(0);
-    expect((await page.request.get(`/api/cuidadores/${sinHoja}/hoja-de-vida`)).status()).toBe(404);
-  }
+  await page.goto(`/app/cuidadores/${sinHoja.cuidadorId}`);
+  await expect(page.getByRole("link", { name: /Hoja de vida/ })).toHaveCount(0);
+  expect((await page.request.get(`/api/cuidadores/${sinHoja.cuidadorId}/hoja-de-vida`)).status()).toBe(404);
   expect((await page.request.get("/api/cuidadores/no-es-uuid/hoja-de-vida")).status()).toBe(404);
 });
 

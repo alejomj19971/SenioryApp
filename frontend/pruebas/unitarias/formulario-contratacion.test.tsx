@@ -124,7 +124,8 @@ describe("FormularioContratacion", () => {
   it("reintentar el MISMO envío usa la misma clave; cambiar algo usa otra (la misma clave con otros datos es un 409)", async () => {
     solicitarServicioAccion.mockResolvedValue({ ok: false, mensaje: "No hay conexión." });
     mostrar();
-    const enviar = () => userEvent.click(screen.getByRole("button", { name: "Enviar solicitud" }));
+    // Como una persona: espera a que el botón vuelva a estar disponible (mientras envía dice «Enviando…»).
+    const enviar = async () => userEvent.click(await screen.findByRole("button", { name: "Enviar solicitud" }));
 
     await enviar();
     await screen.findByText("No pudimos enviar la solicitud");
