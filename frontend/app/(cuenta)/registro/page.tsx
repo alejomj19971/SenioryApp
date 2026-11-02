@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import { FormularioRegistro } from "@/components/cuenta/formulario-registro";
 
 export const metadata: Metadata = { title: "Crear cuenta" };
@@ -13,6 +14,12 @@ export default function RegistroPage() {
         </p>
       </div>
       <FormularioRegistro />
+      <p className="text-center text-base text-muted-foreground">
+        ¿Eres cuidador?{" "}
+        <Link href="/registro/cuidador" className="inline-flex min-h-12 items-center font-medium text-primary underline underline-offset-4">
+          Postúlate aquí
+        </Link>
+      </p>
     </div>
   );
 }
