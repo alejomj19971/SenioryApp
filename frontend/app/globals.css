@@ -182,3 +182,44 @@
     outline-offset: 2px;
   }
 }
+
+@layer components {
+  /* Ingresar y registrarse (acento de claymorfismo, sutil a propósito): una sombra ambiental debajo de la
+     tarjeta y de sus campos, nunca en vez del borde ni del anillo de foco, que siguen intactos. El radio solo se
+     agranda un paso dentro de la escala ya definida arriba (--radius-xl/3xl), no se inventa uno nuevo. */
+  .tarjeta-de-acceso {
+    box-shadow:
+      0 1px 2px oklch(0.24 0.04 250 / 4%),
+      0 20px 40px -20px oklch(0.24 0.04 250 / 18%);
+  }
+  .tarjeta-de-acceso [data-slot="input"] {
+    border-radius: var(--radius-xl);
+    transition: box-shadow 0.15s ease;
+  }
+  .tarjeta-de-acceso [data-slot="input"]:focus-visible {
+    box-shadow: 0 2px 10px -2px oklch(0.42 0.1 255 / 20%);
+  }
+  .tarjeta-de-acceso [data-slot="button"] {
+    border-radius: var(--radius-xl);
+  }
+  .tarjeta-de-acceso button[type="submit"] {
+    box-shadow: 0 6px 16px -6px oklch(0.42 0.1 255 / 38%);
+    transition: box-shadow 0.15s ease;
+  }
+  .tarjeta-de-acceso button[type="submit"]:hover {
+    box-shadow: 0 8px 20px -6px oklch(0.42 0.1 255 / 46%);
+  }
+  .tarjeta-de-acceso button[type="submit"]:active {
+    box-shadow: 0 2px 6px -2px oklch(0.42 0.1 255 / 26%);
+  }
+  /* Alto contraste pide claridad máxima: la sombra, que es ambigua por naturaleza, se apaga del todo. El borde
+     nítido (ring-border) y el radio se quedan: ninguno de los dos le resta nitidez a nada. */
+  :root[data-contrast="high"] .tarjeta-de-acceso,
+  :root[data-contrast="high"] .tarjeta-de-acceso [data-slot="input"],
+  :root[data-contrast="high"] .tarjeta-de-acceso [data-slot="input"]:focus-visible,
+  :root[data-contrast="high"] .tarjeta-de-acceso button[type="submit"],
+  :root[data-contrast="high"] .tarjeta-de-acceso button[type="submit"]:hover,
+  :root[data-contrast="high"] .tarjeta-de-acceso button[type="submit"]:active {
+    box-shadow: none;
+  }
+}

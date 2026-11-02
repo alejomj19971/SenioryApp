@@ -8,11 +8,11 @@ import { buttonVariants } from "@/components/ui/button";
 export function SelectorDeTipoDeCuenta({ comoCuidador }: { comoCuidador: boolean }) {
   return (
     <nav aria-label="Tipo de cuenta" className="grid grid-cols-2 gap-2">
-      <Link href="/registro" aria-current={comoCuidador ? undefined : "page"} className={buttonVariants({ variant: comoCuidador ? "outline" : "default" })}>
+      <Link href="/registro" aria-current={comoCuidador ? undefined : "page"} className={buttonVariants({ variant: comoCuidador ? "outline" : "default", className: "rounded-xl" })}>
         <Users aria-hidden="true" />
         Soy familia
       </Link>
-      <Link href="/registro/cuidador" aria-current={comoCuidador ? "page" : undefined} className={buttonVariants({ variant: comoCuidador ? "default" : "outline" })}>
+      <Link href="/registro/cuidador" aria-current={comoCuidador ? "page" : undefined} className={buttonVariants({ variant: comoCuidador ? "default" : "outline", className: "rounded-xl" })}>
         <HeartHandshake aria-hidden="true" />
         Soy cuidador
       </Link>
