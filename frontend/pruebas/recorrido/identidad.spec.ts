@@ -28,8 +28,8 @@ test("registro → persona → autorización → inicio con el nombre real → s
   const correo = correoUnico("registro");
 
   await page.goto("/registro");
-  // Quien llega buscando postularse como cuidador lo encuentra desde aquí, no solo desde el pie de la landing.
-  await expect(page.getByRole("link", { name: "Postúlate aquí" })).toHaveAttribute("href", "/registro/cuidador");
+  // Elegir familia o cuidador se ve arriba del todo, no solo desde el pie de la landing.
+  await expect(page.getByRole("link", { name: "Soy cuidador" })).toHaveAttribute("href", "/registro/cuidador");
   await page.getByLabel("Tu nombre").fill("Andrea Gómez");
   await page.getByLabel("Correo").fill(correo);
   await page.getByLabel("Contraseña", { exact: true }).fill(CONTRASENA_DE_PRUEBA);
