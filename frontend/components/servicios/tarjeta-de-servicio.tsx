@@ -10,7 +10,7 @@ export function TarjetaDeServicio({ servicio }: { servicio: Servicio }) {
   return (
     <Link
       href={`/app/servicios/${servicio.id}`}
-      className="flex flex-col gap-3 rounded-2xl bg-card p-4 ring-1 ring-border transition-colors hover:ring-primary/40"
+      className="animate-in fade-in slide-in-from-bottom-1 ease-out flex flex-col gap-3 rounded-2xl bg-card p-4 ring-1 ring-border transition-colors hover:ring-primary/40"
     >
       <div className="flex items-start justify-between gap-2">
         <p className="text-base font-semibold text-foreground">{servicio.cuidador?.nombre ?? "Cuidador"}</p>

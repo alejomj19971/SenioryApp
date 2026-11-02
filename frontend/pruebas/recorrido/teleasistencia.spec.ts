@@ -110,6 +110,15 @@ test("registrar signos: la presión va completa, se ve en la gráfica y en el in
   await expect(page.getByText("95 mg/dL")).toBeVisible();
   await expect(page.getByRole("note").filter({ hasText: "fuera del rango" })).toHaveCount(0);
 
+  // La gráfica se ve de verdad (no solo las cifras de arriba): un `<svg>` con alto real, en cada pestaña. `Tabs` es
+  // `flex-col` y la pestaña trae `flex-1` de fábrica, así que una altura explícita sin `shrink-0 basis-auto` queda
+  // en 0px sin que ninguna prueba con recharts simulado lo note.
+  const grafica = page.getByRole("tabpanel");
+  await expect(grafica.locator("svg").first()).toBeVisible();
+  expect((await grafica.locator("svg").first().boundingBox())?.height ?? 0).toBeGreaterThan(100);
+  await page.getByRole("tab", { name: "Pulso" }).click();
+  expect((await page.getByRole("tabpanel").locator("svg").first().boundingBox())?.height ?? 0).toBeGreaterThan(100);
+
   await page.goto("/app");
   await expect(page.getByText("123/77 mmHg")).toBeVisible();
 

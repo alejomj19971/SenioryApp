@@ -222,4 +222,27 @@
   :root[data-contrast="high"] .tarjeta-de-acceso button[type="submit"]:active {
     box-shadow: none;
   }
+
+  /* Entrada en cascada para listas (buscador de cuidadores, mis servicios): cada tarjeta aparece un poco después de
+     la anterior, no todas de golpe — se lee como «aquí está lo que buscabas», no como un parpadeo. Tope de 7 pasos:
+     una lista larga no hace esperar a las últimas. Cada tarjeta ya trae su propia animación (`animate-in`); esto
+     solo escalona cuándo empieza cada una. */
+  .lista-con-entrada > * {
+    animation-duration: 350ms;
+  }
+  .lista-con-entrada > *:nth-child(1) { animation-delay: 0ms; }
+  .lista-con-entrada > *:nth-child(2) { animation-delay: 30ms; }
+  .lista-con-entrada > *:nth-child(3) { animation-delay: 60ms; }
+  .lista-con-entrada > *:nth-child(4) { animation-delay: 90ms; }
+  .lista-con-entrada > *:nth-child(5) { animation-delay: 120ms; }
+  .lista-con-entrada > *:nth-child(6) { animation-delay: 150ms; }
+  .lista-con-entrada > *:nth-child(n + 7) { animation-delay: 180ms; }
+}
+
+/* Quien pidió menos movimiento al sistema operativo no debería tener que pedírselo también a cada app: ninguna
+   animación de entrada se mueve ni se desvanece para esa persona, en ningún componente que use `animate-in`. */
+@media (prefers-reduced-motion: reduce) {
+  [class*="animate-in"] {
+    animation: none !important;
+  }
 }

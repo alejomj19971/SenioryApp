@@ -8,7 +8,7 @@ export function TarjetaCuidador({ cuidador }: { cuidador: CuidadorResumen }) {
   return (
     <Link
       href={`/app/cuidadores/${cuidador.id}`}
-      className="flex gap-3 rounded-2xl bg-card p-4 ring-1 ring-border transition-colors hover:ring-primary/40"
+      className="animate-in fade-in slide-in-from-bottom-1 ease-out flex gap-3 rounded-2xl bg-card p-4 ring-1 ring-border transition-colors hover:ring-primary/40"
     >
       <AvatarCuidador nombre={cuidador.nombre} foto={cuidador.foto} size="lg" />
       <div className="flex flex-1 flex-col gap-1">

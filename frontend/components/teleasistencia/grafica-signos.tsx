@@ -67,6 +67,9 @@ export function GraficaSignos({ lecturas }: { lecturas: LecturaSignos[] }) {
         </div>
       </div>
 
+      {/* `Tabs` es `flex-col`, y `TabsContent` trae `flex-1` (flex-basis: 0) de fábrica: en una columna, eso ignora
+          la `h-56` y la gráfica queda en 0px de alto. `shrink-0 basis-auto` hace que la altura explícita sí mande;
+          sin esto, Recharts nunca llega a dibujar nada (se vio con una lectura real, no solo en el código). */}
       <Tabs defaultValue="presion">
         <TabsList className="w-full">
           <TabsTrigger value="presion">Presión</TabsTrigger>
@@ -74,7 +77,7 @@ export function GraficaSignos({ lecturas }: { lecturas: LecturaSignos[] }) {
           <TabsTrigger value="glucosa">Glucosa</TabsTrigger>
         </TabsList>
 
-        <TabsContent value="presion" className="h-56 pt-4">
+        <TabsContent value="presion" className="animate-in fade-in h-56 shrink-0 basis-auto pt-4">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={datos} margin={{ top: 8, right: 8, left: -24, bottom: 0 }}>
               <XAxis dataKey="dia" fontSize={12} stroke="var(--muted-foreground)" />
@@ -86,7 +89,7 @@ export function GraficaSignos({ lecturas }: { lecturas: LecturaSignos[] }) {
           </ResponsiveContainer>
         </TabsContent>
 
-        <TabsContent value="frecuencia" className="h-56 pt-4">
+        <TabsContent value="frecuencia" className="animate-in fade-in h-56 shrink-0 basis-auto pt-4">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={datos} margin={{ top: 8, right: 8, left: -24, bottom: 0 }}>
               <XAxis dataKey="dia" fontSize={12} stroke="var(--muted-foreground)" />
@@ -97,7 +100,7 @@ export function GraficaSignos({ lecturas }: { lecturas: LecturaSignos[] }) {
           </ResponsiveContainer>
         </TabsContent>
 
-        <TabsContent value="glucosa" className="h-56 pt-4">
+        <TabsContent value="glucosa" className="animate-in fade-in h-56 shrink-0 basis-auto pt-4">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={datos} margin={{ top: 8, right: 8, left: -24, bottom: 0 }}>
               <XAxis dataKey="dia" fontSize={12} stroke="var(--muted-foreground)" />

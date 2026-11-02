@@ -30,7 +30,7 @@ export function ListaDeServicios({ servicios: primera, siguiente: primeraSiguien
   }
 
   return (
-    <div className="flex flex-col gap-3">
+    <div className="lista-con-entrada flex flex-col gap-3">
       {servicios.map((servicio) => (
         <TarjetaDeServicio key={servicio.id} servicio={servicio} />
       ))}

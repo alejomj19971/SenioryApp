@@ -132,7 +132,7 @@ export function BuscadorCuidadores({
       </p>
 
       {cuidadores.length > 0 ? (
-        <div className="flex flex-col gap-3" aria-busy={buscando}>
+        <div className="lista-con-entrada flex flex-col gap-3" aria-busy={buscando}>
           {cuidadores.map((cuidador) => (
             <TarjetaCuidador key={cuidador.id} cuidador={cuidador} />
           ))}
