@@ -25,14 +25,14 @@ export function CtaFinal() {
           Empieza hoy a cuidar mejor, con la confianza que tu familia merece.
         </p>
         <Link
-          href="/app"
+          href="/ingresar"
           className={buttonVariants({
             size: "lg",
             variant: "secondary",
             className: "h-14 rounded-full px-8 text-lg",
           })}
         >
-          Probar la app
+          Ingresar
         </Link>
       </div>
     </section>

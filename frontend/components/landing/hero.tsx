@@ -21,13 +21,13 @@ export function Hero() {
           </p>
           <div className="flex flex-col gap-3 sm:flex-row">
             <Link
-              href="/app"
+              href="/ingresar"
               className={buttonVariants({
                 size: "lg",
                 className: "h-14 rounded-full px-8 text-lg",
               })}
             >
-              Probar la app
+              Ingresar
             </Link>
             <a
               href="#servicios"

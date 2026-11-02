@@ -27,13 +27,13 @@ export function Header() {
           ))}
         </nav>
         <Link
-          href="/app"
+          href="/ingresar"
           className={buttonVariants({
             size: "lg",
             className: "h-12 rounded-full px-5 text-base",
           })}
         >
-          Probar la app
+          Ingresar
         </Link>
       </div>
     </header>

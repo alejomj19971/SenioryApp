@@ -11,10 +11,10 @@ export function Footer() {
           Medellín.
         </p>
         <Link
-          href="/app"
+          href="/ingresar"
           className="text-sm font-semibold text-primary hover:underline"
         >
-          Probar la app
+          Ingresar
         </Link>
         <Link
           href="/registro/cuidador"

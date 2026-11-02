@@ -29,8 +29,8 @@ test("recorrido principal de una familia", async ({ page, context }) => {
   // Landing → ingresar → aplicación
   await context.setExtraHTTPHeaders({ "x-forwarded-for": ipAleatoria() });
   await page.goto("/");
-  await page.getByRole("link", { name: "Probar la app" }).first().click();
-  await expect(page).toHaveURL(/\/ingresar\?volver=%2Fapp$/);
+  await page.getByRole("link", { name: "Ingresar" }).first().click();
+  await expect(page).toHaveURL(/\/ingresar$/);
   const cuenta = await crearCuenta({ nombre: "Andrea" });
   await page.getByLabel("Correo").fill(cuenta.correo);
   await page.getByLabel("Contraseña", { exact: true }).fill(cuenta.contrasena);
