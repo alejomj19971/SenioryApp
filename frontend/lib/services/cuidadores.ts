@@ -9,7 +9,7 @@ import type {
   RespuestaDeCuidador,
 } from "@/lib/api/contratos/directorio";
 import { ErrorDeApi } from "@/lib/api/error-de-api";
-import { urlDelBackend } from "@/lib/configuracion";
+import { descargarArchivoDelBackend } from "@/lib/services/archivos";
 import { consultaDeFiltros } from "@/lib/filtros-de-cuidadores";
 import type { Cuidador, CuidadorResumen, FiltrosCuidador, Resena } from "@/lib/types";
 
@@ -106,45 +106,17 @@ export type ResultadoDeHojaDeVida =
   | { tipo: "sin_sesion" }
   | { tipo: "fallo" };
 
-const TIEMPO_MAXIMO_DEL_ARCHIVO_MS = 15_000;
-
-// La dirección firmada viene de NUESTRO backend, no de la persona; aun así solo se sigue si es https (un bucket
-// real) o del propio backend (el almacén local de desarrollo): nada de pedir a direcciones cualquiera.
-function direccionPermitida(destino: URL): boolean {
-  return destino.protocol === "https:" || destino.origin === new URL(urlDelBackend()).origin;
-}
-
-// Abre el PDF de la hoja de vida desde el SERVIDOR: el backend responde con una redirección a una dirección firmada
-// que vence en 5 minutos, y aquí se sigue y se entrega el archivo. El navegador nunca ve esa dirección.
+// Abre el PDF de la hoja de vida desde el SERVIDOR (la entrega de archivos firmados vive en `archivos.ts`). Solo PDF: la
+// hoja de vida pública lo es (M9); cualquier otra cosa no se entrega.
 export async function abrirHojaDeVida(id: string): Promise<ResultadoDeHojaDeVida> {
   if (!FORMATO_DE_UUID.test(id)) return { tipo: "sin_hoja" };
-  const respuesta = await pedirAlBackend(`/cuidadores/${id}/hoja-de-vida`);
-  if (respuesta.status === 401) return { tipo: "sin_sesion" };
-  if (respuesta.status === 404) return { tipo: "sin_hoja" };
-  if (respuesta.status === 503) return { tipo: "no_disponible" };
-  const ubicacion = respuesta.headers.get("location");
-  if (respuesta.status < 300 || respuesta.status >= 400 || ubicacion === null) return { tipo: "fallo" };
-
-  let destino: URL;
-  try {
-    destino = new URL(ubicacion, urlDelBackend());
-  } catch {
-    return { tipo: "fallo" };
+  const resultado = await descargarArchivoDelBackend(`/cuidadores/${id}/hoja-de-vida`, ["application/pdf"]);
+  switch (resultado.tipo) {
+    case "archivo":
+      return { tipo: "pdf", cuerpo: resultado.cuerpo };
+    case "sin_archivo":
+      return { tipo: "sin_hoja" };
+    default:
+      return resultado;
   }
-  if (!direccionPermitida(destino)) return { tipo: "fallo" };
-
-  let archivo: Response;
-  try {
-    archivo = await fetch(destino, {
-      cache: "no-store",
-      redirect: "error",
-      signal: AbortSignal.timeout(TIEMPO_MAXIMO_DEL_ARCHIVO_MS),
-    });
-  } catch {
-    return { tipo: "fallo" };
-  }
-  if (!archivo.ok || archivo.body === null) return { tipo: "sin_hoja" };
-  // Solo PDF: la hoja de vida pública lo es (M9); cualquier otra cosa no se entrega.
-  if (!(archivo.headers.get("content-type") ?? "").startsWith("application/pdf")) return { tipo: "fallo" };
-  return { tipo: "pdf", cuerpo: archivo.body };
 }

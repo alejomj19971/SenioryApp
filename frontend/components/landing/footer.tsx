@@ -16,6 +16,12 @@ export function Footer() {
         >
           Probar la app
         </Link>
+        <Link
+          href="/registro/cuidador"
+          className="inline-flex min-h-12 items-center text-sm font-semibold text-primary hover:underline"
+        >
+          ¿Eres cuidador? Postúlate
+        </Link>
         <p className="text-xs text-muted-foreground">
           © {new Date().getFullYear()} Seniory. Todos los derechos reservados.
         </p>

@@ -40,7 +40,8 @@ async function enviarSinSesion(
   }
 }
 
-export async function registrarse(_previo: EstadoDeFormulario, datos: FormData): Promise<EstadoDeFormulario> {
+// El registro de una familia y el de un cuidador se parecen: cambian la ruta del backend y a dónde se va después.
+async function registrarCuenta(ruta: string, destino: string, datos: FormData): Promise<EstadoDeFormulario> {
   const valores = {
     nombre: texto(datos, "nombre").trim(),
     correo: texto(datos, "correo").trim(),
@@ -61,7 +62,7 @@ export async function registrarse(_previo: EstadoDeFormulario, datos: FormData):
   });
   if (Object.keys(errores).length > 0) return { errores, valores };
 
-  const resultado = await enviarSinSesion("/auth/registro", {
+  const resultado = await enviarSinSesion(ruta, {
     nombre: valores.nombre,
     correo: valores.correo,
     contrasena,
@@ -71,8 +72,17 @@ export async function registrarse(_previo: EstadoDeFormulario, datos: FormData):
   if ("error" in resultado) return estadoDeError(resultado.error, valores);
 
   await guardarSesion(resultado.respuesta);
-  // Una cuenta nueva siempre empieza por la persona a la que va a cuidar.
-  redirect("/bienvenida/persona");
+  redirect(destino);
+}
+
+// Una cuenta nueva siempre empieza por la persona a la que va a cuidar.
+export async function registrarse(_previo: EstadoDeFormulario, datos: FormData): Promise<EstadoDeFormulario> {
+  return registrarCuenta("/auth/registro", "/bienvenida/persona", datos);
+}
+
+// Un cuidador que se postula empieza por armar su perfil; no se muestra a nadie hasta que un revisor lo apruebe.
+export async function registrarseComoCuidador(_previo: EstadoDeFormulario, datos: FormData): Promise<EstadoDeFormulario> {
+  return registrarCuenta("/auth/registro-cuidador", "/cuidador/perfil", datos);
 }
 
 export async function iniciarSesion(_previo: EstadoDeFormulario, datos: FormData): Promise<EstadoDeFormulario> {

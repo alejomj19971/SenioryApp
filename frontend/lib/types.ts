@@ -263,3 +263,63 @@ export interface Aviso {
   prioridad: "normal" | "alta";
   creadaEn: string;
 }
+
+// Postulación del cuidador y panel de revisores (F9)
+export type ControlDeVerificacion = "antecedentes" | "titulos" | "psicotecnica";
+export type TipoDeDocumento = "cedula" | "antecedentes" | "titulo" | "psicotecnica" | "hoja_de_vida";
+export type EstadoDeControl = "sin_solicitar" | "pendiente" | "aprobada" | "rechazada" | "vencida";
+
+export interface ControlDelCuidador {
+  control: ControlDeVerificacion;
+  estado: EstadoDeControl;
+  // Por qué lo rechazaron: lo único que necesita para corregirlo.
+  motivoDeRechazo: string | null;
+  vigenteHasta: string | null; // AAAA-MM-DD
+  // Vencido o rechazado: hay que subir el documento otra vez y pedir la renovación.
+  puedeRenovar: boolean;
+}
+
+export interface DocumentoSubido {
+  id: string;
+  tipo: TipoDeDocumento;
+  nombre: string;
+  estado: "pendiente" | "aprobado" | "rechazado";
+  tamanoBytes: number;
+  subidoEn: string;
+}
+
+// El perfil visto POR EL PROPIO cuidador: incluye su teléfono (es suyo) y cómo va su postulación.
+export interface MiPerfilDeCuidador {
+  id: string;
+  nombre: string;
+  especialidad: Especialidad;
+  titulo: string;
+  aniosExperiencia: number;
+  tarifaHora: number;
+  telefono: string;
+  zona: string;
+  disponibilidad: Jornada[];
+  bio: string;
+  aceptacionAutomatica: boolean;
+  estado: string;
+  // ¿Se está mostrando hoy a las familias?
+  visible: boolean;
+  controles: ControlDelCuidador[];
+  documentos: DocumentoSubido[];
+}
+
+// Una fila de la cola de los revisores.
+export interface VerificacionParaRevisor {
+  id: string;
+  control: ControlDeVerificacion;
+  estado: "pendiente" | "aprobada" | "rechazada" | "vencida";
+  solicitadaEn: string;
+  cuidador: { id: string; nombre: string; especialidad: Especialidad; zona: string };
+  // Lo que se debe mirar: el documento del control y la cédula.
+  documentos: DocumentoSubido[];
+}
+
+export interface HojaDeVidaPorRevisar {
+  documento: DocumentoSubido;
+  cuidador: { id: string; nombre: string };
+}

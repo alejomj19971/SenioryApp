@@ -6,12 +6,13 @@ import { Campo, MensajeDeCampo } from "@/components/cuenta/campo";
 import { CampoDeContrasena } from "@/components/cuenta/campo-de-contrasena";
 import { ResumenDelFormulario } from "@/components/cuenta/resumen-del-formulario";
 import { Button } from "@/components/ui/button";
-import { registrarse } from "@/lib/acciones/cuenta";
+import { registrarse, registrarseComoCuidador } from "@/lib/acciones/cuenta";
 import { ESTADO_INICIAL } from "@/lib/acciones/estado";
 import { LARGO_MINIMO_DE_CONTRASENA } from "@/lib/acciones/validar-cuenta";
 
-export function FormularioRegistro() {
-  const [estado, accion, pendiente] = useActionState(registrarse, ESTADO_INICIAL);
+// `comoCuidador`: quien se postula para cuidar (su cuenta es de cuidador y empieza por armar su perfil).
+export function FormularioRegistro({ comoCuidador = false }: { comoCuidador?: boolean }) {
+  const [estado, accion, pendiente] = useActionState(comoCuidador ? registrarseComoCuidador : registrarse, ESTADO_INICIAL);
   const errorDePolitica = estado.errores?.aceptaPolitica;
 
   return (

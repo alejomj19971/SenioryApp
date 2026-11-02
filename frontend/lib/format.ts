@@ -34,6 +34,12 @@ export function formatearDiaCivil(fecha: string): string {
   return formateadorDeDiaCivil.format(new Date(`${fecha}T00:00:00Z`));
 }
 
+// Un día civil con su año, «10 de mayo de 2027»: para fechas lejanas, como la vigencia de un documento.
+const formateadorDeDiaCivilConAnio = new Intl.DateTimeFormat("es-CO", { day: "numeric", month: "long", year: "numeric", timeZone: "UTC" });
+export function formatearDiaCivilConAnio(fecha: string): string {
+  return formateadorDeDiaCivilConAnio.format(new Date(`${fecha}T00:00:00Z`));
+}
+
 export function formatearFecha(fechaISO: string): string {
   return formateadorFecha.format(new Date(fechaISO));
 }

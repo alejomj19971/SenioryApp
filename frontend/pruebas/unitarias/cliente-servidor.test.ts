@@ -56,6 +56,38 @@ afterEach(() => {
   vi.unstubAllGlobals();
 });
 
+describe("pedirAlBackend: un archivo como cuerpo (F9)", () => {
+  it("lo envía tal cual con su tipo y su nombre codificado, sin JSON, y con más tiempo si se pide", async () => {
+    fetchFalso.mockResolvedValue(json(201, {}));
+    const contenido = new Uint8Array(new ArrayBuffer(4));
+    contenido.set([37, 80, 68, 70]);
+    const espiar = vi.spyOn(AbortSignal, "timeout");
+
+    await pedirAlBackend("/cuidadores/yo/documentos/cedula", { metodo: "PUT", archivo: { contenido, tipo: "application/pdf", nombre: "mi cédula.pdf" }, tiempoMaximoMs: 30_000 });
+
+    const { init, encabezados } = ultimaPeticion();
+    expect(init.method).toBe("PUT");
+    expect(encabezados.get("Content-Type")).toBe("application/pdf");
+    expect(encabezados.get("X-Nombre-De-Archivo")).toBe(encodeURIComponent("mi cédula.pdf"));
+    expect(init.body).toBeInstanceOf(Blob);
+    expect((init.body as Blob).size).toBe(4);
+    expect(espiar).toHaveBeenCalledWith(30_000);
+    espiar.mockRestore();
+  });
+
+  it("sin pedirlo, usa el tiempo máximo normal y envía JSON", async () => {
+    fetchFalso.mockResolvedValue(json(200, {}));
+    const espiar = vi.spyOn(AbortSignal, "timeout");
+
+    await pedirAlBackend("/x", { metodo: "POST", cuerpo: { a: 1 } });
+
+    expect(espiar).toHaveBeenCalledWith(TIEMPO_MAXIMO_MS);
+    expect(ultimaPeticion().encabezados.get("Content-Type")).toBe("application/json");
+    expect(ultimaPeticion().encabezados.get("X-Nombre-De-Archivo")).toBeNull();
+    espiar.mockRestore();
+  });
+});
+
 describe("pedirAlBackend: lo que envía", () => {
   it("manda el secreto del BFF, el identificador de correlación y la IP del navegador", async () => {
     entrantes.set("x-request-id", "0198-correlacion");

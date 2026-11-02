@@ -18,6 +18,11 @@ export interface OpcionesDePeticion {
   metodo?: "GET" | "POST" | "PATCH" | "PUT" | "DELETE";
   consulta?: Record<string, string>;
   cuerpo?: unknown;
+  // Un archivo como cuerpo (los documentos del cuidador): ni JSON ni multipart. El nombre viaja codificado en una
+  // cabecera; el backend decide el tipo por el CONTENIDO, no por lo que se declare aquí.
+  archivo?: { contenido: Uint8Array<ArrayBuffer>; tipo: string; nombre?: string };
+  // Para lo que tarda más que una consulta (subir un archivo).
+  tiempoMaximoMs?: number;
   // Para los POST que crean dinero o alertas: un reintento no los duplica.
   claveDeIdempotencia?: string;
   // No envía la cookie de sesión (por ejemplo, al iniciar sesión). Por defecto se envía si existe.
@@ -51,6 +56,10 @@ async function encabezados(opciones: OpcionesDePeticion): Promise<Headers> {
   if (ip !== undefined) saliente.set("X-Cliente-IP", ip);
 
   if (opciones.cuerpo !== undefined) saliente.set("Content-Type", "application/json");
+  if (opciones.archivo !== undefined) {
+    saliente.set("Content-Type", opciones.archivo.tipo);
+    if (opciones.archivo.nombre !== undefined) saliente.set("X-Nombre-De-Archivo", encodeURIComponent(opciones.archivo.nombre));
+  }
   if (opciones.claveDeIdempotencia !== undefined) {
     saliente.set("Idempotency-Key", opciones.claveDeIdempotencia);
   }
@@ -86,11 +95,11 @@ export async function pedirAlBackend(
     return await fetch(url, {
       method: opciones.metodo ?? "GET",
       headers: cabeceras,
-      body: opciones.cuerpo === undefined ? undefined : JSON.stringify(opciones.cuerpo),
+      body: opciones.archivo !== undefined ? new Blob([opciones.archivo.contenido], { type: opciones.archivo.tipo }) : opciones.cuerpo === undefined ? undefined : JSON.stringify(opciones.cuerpo),
       // Es el comportamiento por defecto en Next 16, pero los datos de una persona nunca se guardan en caché.
       cache: "no-store",
       redirect: "manual",
-      signal: AbortSignal.timeout(TIEMPO_MAXIMO_MS),
+      signal: AbortSignal.timeout(opciones.tiempoMaximoMs ?? TIEMPO_MAXIMO_MS),
     });
   } catch (causa) {
     throw ErrorDeApi.deRed(causa);
