@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import { ShieldCheck, Star } from "lucide-react";
 import { buttonVariants } from "@/components/ui/button";
@@ -46,18 +47,18 @@ export function Hero() {
         </div>
 
         <div className="relative mx-auto w-full max-w-xs">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src="/img/pareja-caminando.jpg"
-            alt=""
+          {/* El recuadro lleva la posición, el recorte y la máscara; la foto solo rellena ese recuadro
+              (`fill` necesita un contenedor con tamaño propio, aquí el `-inset-10`/`-inset-16` de siempre). */}
+          <div
             aria-hidden="true"
-            className="pointer-events-none absolute -inset-10 -z-10 rounded-[3rem] object-cover opacity-90 [mask-image:radial-gradient(closest-side,black_70%,transparent_100%)] sm:-inset-16"
-          />
+            className="pointer-events-none absolute -inset-10 -z-10 overflow-hidden rounded-[3rem] opacity-90 [mask-image:radial-gradient(closest-side,black_70%,transparent_100%)] sm:-inset-16"
+          >
+            <Image src="/img/pareja-caminando.jpg" alt="" fill priority sizes="(min-width: 640px) 24rem, 100vw" className="object-cover" />
+          </div>
           <div className="absolute -top-6 -left-6 size-28 rounded-full bg-accent/20 blur-2xl" aria-hidden="true" />
           <div className="absolute -bottom-8 -right-4 size-32 rounded-full bg-primary/15 blur-2xl" aria-hidden="true" />
           <div className="absolute -top-5 -right-5 z-10 flex size-16 items-center justify-center rounded-full bg-card p-1.5 shadow-xl ring-1 ring-border">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img src="/logo-icon.png" alt="" className="size-full object-contain" />
+            <Image src="/logo-icon.png" alt="" width={48} height={48} className="size-full object-contain" />
           </div>
           <div className="relative rounded-[2.5rem] border-8 border-foreground/90 bg-card p-3 shadow-2xl">
             <div className="rounded-[1.75rem] bg-background p-4">

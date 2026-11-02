@@ -1,3 +1,5 @@
+import Image from "next/image";
+
 export function Historias() {
   return (
     <section className="bg-background py-16 sm:py-24">
@@ -15,12 +17,13 @@ export function Historias() {
 
         <div className="mt-12 grid gap-6 sm:grid-cols-2">
           <figure className="group overflow-hidden rounded-3xl bg-card shadow-sm ring-1 ring-border transition-shadow hover:shadow-xl">
-            <div className="overflow-hidden">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
+            <div className="relative aspect-4/3 w-full overflow-hidden">
+              <Image
                 src="/img/pareja-caminando.jpg"
                 alt="Pareja de adultos mayores caminando tomados del brazo por un sendero de otoño"
-                className="aspect-4/3 w-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
+                fill
+                sizes="(min-width: 640px) 50vw, 100vw"
+                className="object-cover transition-transform duration-500 ease-out group-hover:scale-105"
               />
             </div>
             <figcaption className="p-5 text-base text-muted-foreground">
@@ -30,12 +33,13 @@ export function Historias() {
           </figure>
 
           <figure className="group overflow-hidden rounded-3xl bg-card shadow-sm ring-1 ring-border transition-shadow hover:shadow-xl">
-            <div className="overflow-hidden">
-              {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img
+            <div className="relative aspect-4/3 w-full overflow-hidden">
+              <Image
                 src="/img/pareja-columpio.jpg"
                 alt="Pareja de adultos mayores sonriendo juntos al aire libre"
-                className="aspect-4/3 w-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
+                fill
+                sizes="(min-width: 640px) 50vw, 100vw"
+                className="object-cover transition-transform duration-500 ease-out group-hover:scale-105"
               />
             </div>
             <figcaption className="p-5 text-base text-muted-foreground">

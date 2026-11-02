@@ -73,6 +73,10 @@ export function FormularioRegistro({ comoCuidador = false }: { comoCuidador?: bo
             Acepto la{" "}
             <Link href="/privacidad" target="_blank" rel="noopener" className="font-medium text-primary underline underline-offset-4">
               política de tratamiento de datos
+            </Link>{" "}
+            y los{" "}
+            <Link href="/terminos" target="_blank" rel="noopener" className="font-medium text-primary underline underline-offset-4">
+              términos y condiciones
             </Link>
             .
           </span>

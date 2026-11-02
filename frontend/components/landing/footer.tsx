@@ -22,6 +22,17 @@ export function Footer() {
         >
           ¿Eres cuidador? Postúlate
         </Link>
+        <nav aria-label="Legal" className="flex flex-wrap justify-center gap-x-6 text-sm text-muted-foreground">
+          <Link href="/privacidad" className="inline-flex min-h-12 items-center underline-offset-4 hover:underline">
+            Política de tratamiento de datos
+          </Link>
+          <Link href="/terminos" className="inline-flex min-h-12 items-center underline-offset-4 hover:underline">
+            Términos y condiciones
+          </Link>
+          <Link href="/alcance-teleasistencia" className="inline-flex min-h-12 items-center underline-offset-4 hover:underline">
+            Alcance de la teleasistencia
+          </Link>
+        </nav>
         <p className="text-xs text-muted-foreground">
           © {new Date().getFullYear()} Seniory. Todos los derechos reservados.
         </p>

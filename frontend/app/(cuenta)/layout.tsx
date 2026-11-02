@@ -17,6 +17,12 @@ export default function CuentaLayout({ children }: LayoutProps<"/">) {
           <Link href="/privacidad" className="inline-flex min-h-12 items-center underline underline-offset-4">
             Política de tratamiento de datos
           </Link>
+          <Link href="/terminos" className="inline-flex min-h-12 items-center underline underline-offset-4">
+            Términos y condiciones
+          </Link>
+          <Link href="/alcance-teleasistencia" className="inline-flex min-h-12 items-center underline underline-offset-4">
+            Alcance de la teleasistencia
+          </Link>
         </footer>
       </div>
     </div>

@@ -1,6 +1,6 @@
 # Planes del frontend por módulo
 
-Cada archivo es el plan detallado de cómo una parte del frontend pasa de los datos de prueba (`frontend/data/`) al backend real. El marco general está en [PLAN_FRONTEND_SENIORY.md](../PLAN_FRONTEND_SENIORY.md). Cada módulo F*n* se construye cuando su módulo M*n* del backend está listo ([docs/backend/](../backend/README.md)).
+Cada archivo es el plan detallado de cómo una parte del frontend pasa a usar el backend real. Los diez módulos (F0 a F10) ya están construidos; `frontend/data/` (los datos de ejemplo del prototipo) se borró por completo en F8. El marco general está en [PLAN_FRONTEND_SENIORY.md](../PLAN_FRONTEND_SENIORY.md). Cada módulo F*n* se construye cuando su módulo M*n* del backend está listo ([docs/backend/](../backend/README.md)).
 
 ## Estado
 
@@ -8,7 +8,7 @@ Cada archivo es el plan detallado de cómo una parte del frontend pasa de los da
 |---|---|---|---|---|
 | F0 | Base de integración | M0 (solo `/salud`) | [F0-base-de-integracion.md](./F0-base-de-integracion.md) | ✅ Construido |
 | Etapa 0 | Sistema de diseño (paleta y `components/ui`) | — | [ETAPA0](../../frontend/ETAPA0_HOJA_DE_COMPONENTES.md) | ✅ Construido |
-| F1 | Identidad | M1 | [F1-identidad.md](./F1-identidad.md) (con la [actualización del 2026-11-01](./F1-identidad.md#actualización-2026-11-01)) | ⏳ En construcción |
+| F1 | Identidad | M1 | [F1-identidad.md](./F1-identidad.md) (con la [actualización del 2026-11-01](./F1-identidad.md#actualización-2026-11-01)) | ✅ Construido |
 | F2 | Directorio | M2 | [F2-directorio.md](./F2-directorio.md) | ✅ Construido |
 | F3+F4 | Cotización y contratación | M3, M4 | [F4-contratacion.md](./F4-contratacion.md) | ✅ Construido |
 | F5 | Notificaciones | M5 | [F5-notificaciones.md](./F5-notificaciones.md) | ✅ Construido |
@@ -16,8 +16,9 @@ Cada archivo es el plan detallado de cómo una parte del frontend pasa de los da
 | F7 | Pagos y bolsas | M7 | [F7-pagos.md](./F7-pagos.md) | ✅ Construido |
 | F8 | Mensajería | M8 | [F8-mensajeria.md](./F8-mensajeria.md) | ✅ Construido |
 | F9 | Cuidadores y administración | M9 | [F9-verificacion.md](./F9-verificacion.md) | ✅ Construido |
+| F10 | Cierre para producción | M10 | [F10-cierre.md](./F10-cierre.md) | ✅ Construido |
 
-El orden de construcción, la integración con el backend y el flujo de diseño están en el [plan del frontend (v2)](../PLAN_FRONTEND_SENIORY.md) y en el [plan de integración](../INTEGRACION_FRONTEND_BACKEND.md). Los planes de F2 a F9 se escriben al empezar cada uno, en el orden de la tabla del plan (F2, F3+F4, F7, F6, F8, F5, F9).
+El orden de construcción, la integración con el backend y el flujo de diseño están en el [plan del frontend (v2)](../PLAN_FRONTEND_SENIORY.md) y en el [plan de integración](../INTEGRACION_FRONTEND_BACKEND.md). Los planes de F2 a F10 se escribieron al empezar cada uno, en el orden de la tabla del plan (F2, F3+F4, F7, F6, F8, F5, F9, F10).
 
 ## Decisiones tomadas al construir los planes
 

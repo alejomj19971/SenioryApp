@@ -3,6 +3,7 @@ import {
   ErrorDeConfiguracion,
   secretoBff,
   urlDelBackend,
+  urlPublicaDelSitio,
   validarConfiguracion,
 } from "@/lib/configuracion";
 
@@ -56,6 +57,28 @@ describe("secretoBff", () => {
 
     expect(() => secretoBff()).toThrow(/al menos 32/);
     expect(() => secretoBff()).not.toThrow(/corto-pero-secreto/);
+  });
+});
+
+describe("urlPublicaDelSitio (F10: robots.txt, sitemap.xml y metadataBase, nunca de seguridad)", () => {
+  it("usa la variable explícita, sin la barra final", () => {
+    vi.stubEnv("URL_PUBLICA_DEL_SITIO", "https://seniory.co/");
+
+    expect(urlPublicaDelSitio()).toBe("https://seniory.co");
+  });
+
+  it("sin ella, usa la que Vercel pone sola en cada despliegue", () => {
+    vi.stubEnv("URL_PUBLICA_DEL_SITIO", "");
+    vi.stubEnv("VERCEL_PROJECT_PRODUCTION_URL", "seniory.vercel.app");
+
+    expect(urlPublicaDelSitio()).toBe("https://seniory.vercel.app");
+  });
+
+  it("sin ninguna, nunca lanza: cae a localhost", () => {
+    vi.stubEnv("URL_PUBLICA_DEL_SITIO", "");
+    vi.stubEnv("VERCEL_PROJECT_PRODUCTION_URL", "");
+
+    expect(urlPublicaDelSitio()).toBe("http://localhost:3000");
   });
 });
 

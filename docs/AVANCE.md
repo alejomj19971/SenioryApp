@@ -1,13 +1,12 @@
 # Seniory — Avance del proyecto
 
-**Corte:** 31 de octubre de 2026 · Se actualiza al terminar cada PR o cuando se toma una decisión.
+**Corte:** 1 de noviembre de 2026 · Se actualiza al terminar cada PR o cuando se toma una decisión.
 
 ## Dónde vamos
 
-> **Backend: M0 con 7 de 8 PR hechos (falta el despliegue a staging, que espera el hosting), M1 (Identidad) con 7 de 8, M2 (Directorio) en `main` y M3 (cotización) en `main` y M4 (reservas) en `main` y M5 (notificaciones) en `main` y M6 (teleasistencia) en `main` y M7 (cobro, bolsas y liquidación) en `main` y M8 (mensajería) en `main` y M9 (registro y verificación de cuidadores) en `main` y M10 (endurecimiento) en `main` en lo que no depende del hosting.**
-> Siguiente paso: **el frontend** (F1 en revisión; ver el [plan v2](./PLAN_FRONTEND_SENIORY.md) y el [plan de integración](./INTEGRACION_FRONTEND_BACKEND.md)); **M11 (IA)** es opcional y pide definir su alcance. Para lanzar falta elegir el hosting y lo que de él depende (ver [OPERACION](./OPERACION.md), [SEGURIDAD](./SEGURIDAD.md) y [PENDIENTES](./PENDIENTES.md)). Se construye todo el backend antes de seguir con el frontend; los datos reales (cuidadores, verificaciones) llegan después por los procesos del propio sistema. Pendiente de ustedes: revisar y aceptar el [ADR-03](./ADR-03.md) (comunicación) y el [ADR-04](./ADR-04.md) (stack) y ver la CI en verde en GitHub.
+> **Backend: M0 con 7 de 8 PR hechos (falta el despliegue a staging, que espera el hosting), M1 (Identidad) con 7 de 8, M2 (Directorio) en `main` y M3 (cotización) en `main` y M4 (reservas) en `main` y M5 (notificaciones) en `main` y M6 (teleasistencia) en `main` y M7 (cobro, bolsas y liquidación) en `main` y M8 (mensajería) en `main` y M9 (registro y verificación de cuidadores) en `main` y M10 (endurecimiento) en `main` en lo que no depende del hosting. M11 (IA) es opcional y pide definir su alcance.** Pendiente de ustedes: revisar y aceptar el [ADR-03](./ADR-03.md) (comunicación) y el [ADR-04](./ADR-04.md) (stack) y ver la CI en verde en GitHub.
 >
-> El frontend ya tiene su **sistema de diseño** (paleta y componentes), **F0** (base de integración) y **F1** (identidad: cuentas reales, sesión y bienvenida) construido y en revisión; el resto de las pantallas sigue con los datos de ejemplo del prototipo hasta conectarse. Siguiente: **F10 (cierre para producción)**.
+> El **frontend** también está **completo**: sistema de diseño y los diez módulos del [plan v2](./PLAN_FRONTEND_SENIORY.md) conectados al backend real (identidad, directorio, cotización y contratación, pagos, teleasistencia, mensajería en vivo, notificaciones, postulación y verificación de cuidadores, y el cierre para producción), sin ningún dato de ejemplo (`frontend/data/` se borró en F8). Lo que falta para lanzar no es construir más pantallas: es elegir el hosting y lo que de él depende (ver [OPERACION](./OPERACION.md) y [SEGURIDAD](./SEGURIDAD.md)), Sentry (cuenta y `SENTRY_DSN`), correr Lighthouse contra la build de producción, y las decisiones de negocio ya anotadas en [PENDIENTES](./PENDIENTES.md).
 
 ```
 Backend   M0 █████████████████▌░░  7 de 8 PR (falta el despliegue)
@@ -31,8 +30,8 @@ Frontend  F0 ████████████████████  const
           F6 ████████████████████  construido
           F8 ████████████████████  construido
           F5 ████████████████████  construido
-          F9 ████████████████████  construido (en revisión)   ← aquí
-          F10                      pendiente (último módulo)
+          F9 ████████████████████  construido
+          F10 ████████████████████  construido   ← aquí  (plan v2 completo)
 Base de datos  ████████████████████  completa (adelantada)
 ```
 
@@ -47,9 +46,9 @@ Base de datos  ████████████████████  com
 | [ADR-04](./ADR-04.md) (antes ADR-03) | **Borrador:** stack, persistencia, datos de salud en Teleasistencia, Mensajería, bolsas en Pagos, BFF, outbox y fronteras verificadas. Falta que lo acepten ambos. |
 | [Pendientes por etapa](./PENDIENTES.md) | Lo que falta de cada etapa del plan (decisiones, legal, código). Se actualiza en cada PR. |
 | [Plan del backend](./PLAN_BACKEND_SENIORY.md) (M0–M11) | Completo. Planes detallados de [M0](./backend/M0-plataforma-y-compartido.md) y [M1](./backend/M1-identidad.md) **aprobados** (2026-10-22). |
-| [Plan del frontend](./PLAN_FRONTEND_SENIORY.md) (F0–F9) | Completo. Planes detallados de [F0](./frontend/F0-base-de-integracion.md) y [F1](./frontend/F1-identidad.md) **propuestos**. |
+| [Plan del frontend](./PLAN_FRONTEND_SENIORY.md) (F0–F10) | Completo y **construido**: los diez módulos (F1 a F10) están en `main`, cada uno con su plan detallado en [docs/frontend/](./frontend/README.md). |
 | [Diseño de la base de datos](./backend/BASE_DE_DATOS.md) | Construido. Guía de estudio en PDF: [BASE_DE_DATOS-guia-de-estudio.pdf](./backend/BASE_DE_DATOS-guia-de-estudio.pdf). |
-| Planes detallados de M2–M11 y F2–F9 | Pendientes. Se escriben por etapas, en pareja M*n*/F*n*. |
+| Planes detallados de M11 | Pendiente: M11 (IA) es opcional y todavía no tiene alcance definido. |
 
 ### Backend (`backend/`)
 
@@ -100,8 +99,8 @@ Base de datos  ████████████████████  com
 | F6 · Teleasistencia | ✅ commit `4b25d27` (ya en `main`): medicamentos reales (agregar con sus horas y «dejar de tomar») y sus tomas del día, marcadas y deshechas con respuesta inmediata y 409 explicado; signos vitales (registrar con la presión completa, gráfica que tolera medidas faltantes, aviso de «fuera de rango» sin interpretar nada clínico); **pedir ayuda de verdad**: cuenta regresiva de 5 s, `Idempotency-Key` (reintentar no avisa dos veces), la pantalla dice **a quién se avisó** y ofrece llamar al 123 (se quita la «línea de emergencia» y «Monitoreo activo»); inicio y barra inferior con el resumen real; la pantalla se pone al día cada 15 s mientras se mira (el backend aún no tiene flujo en vivo). Fechas y horas siempre en hora de Colombia. Se retiran `medicamentos.json` y `signos-vitales.json`. Los recorridos corren contra la versión compilada. 392 pruebas unitarias, 57 de contrato y 29 recorridos. |
 | F8 · Mensajería | ✅ commit `fc0e3d1` (ya en `main`): el chat real entre familia y cuidador, con los mensajes **en vivo** (el servidor de Next reenvía los eventos del backend; el navegador nunca habla con el backend), reconexión sola y respaldo por consulta si el flujo no vuelve. El backend entrega al menos una vez: los mensajes se reconocen por su `id` y no se repiten. Enviar es inmediato y, si falla, se puede reintentar con el mismo `idDeCliente` sin duplicar. **No hay «en línea» ni «escribiendo»**: el sistema no lo sabe. «Escribir» desde el servicio y desde el cuidador en turno; lista de conversaciones para la familia y para el cuidador; solo lectura al terminar el servicio; de la otra parte solo nombre y foto. Se retiran el chat del prototipo y `mensajes.json` (con esto desaparece `frontend/data/`). 432 pruebas unitarias, 67 de contrato y 31 recorridos (incluido uno con familia y cuidador en dos navegadores a la vez). |
 | F5 · Notificaciones | ✅ commit `5efe2d3` (ya en `main`): la campana en el encabezado de la familia y del cuidador, con un punto cuando hay avisos sin ver, y las pantallas `/app/avisos` y `/cuidador/avisos` (los más recientes primero, «Ver avisos anteriores», «Nuevo» e «Importante», cada aviso lleva a su pantalla). Cada parte recibe el texto que el backend escribió para su rol, sin datos de salud ni montos. **El backend no guarda «leído»**: lo nuevo se decide en el dispositivo con una cookie que nunca retrocede (otro dispositivo lo verá como nuevo, y se dice así). La campana nunca rompe una pantalla si el backend no responde. 455 pruebas unitarias, 72 de contrato y 33 recorridos. |
-| F9 · Postulación y revisión | ⏳ En revisión (rama `feat/f9-verificacion`): el cuidador se registra, arma su perfil, sube sus documentos (cédula, antecedentes, título, psicotécnica y, opcional, hoja de vida) como **cuerpo binario** a través de una ruta de Next que reenvía al backend (el backend decide por el contenido, no por lo que declare el cliente), los envía a revisión y ve cómo va cada uno de sus tres controles, con el motivo de un rechazo y la renovación de uno vencido. El panel `/admin` (solo administradores) trae la cola por estado, abre cada documento privado por una ruta de Next que sigue la dirección firmada **en el servidor** (nunca llega al navegador; cada apertura queda auditada), aprueba con su vigencia o rechaza con motivo, y aprueba las hojas de vida que verán las familias. Un perfil activo no puede cambiar su especialidad ni su título. Con los tres controles aprobados, el cuidador aparece en la búsqueda. 510 pruebas unitarias, 82 de contrato y 35 recorridos (incluido el ciclo completo: cuidador, revisor y familia). |
-| F10 | Pendiente: el cierre para producción (legales, SEO, cabeceras de seguridad, monitoreo, rendimiento). |
+| F9 · Postulación y revisión | ✅ commit `2c30a45` (ya en `main`): el cuidador se registra, arma su perfil, sube sus documentos (cédula, antecedentes, título, psicotécnica y, opcional, hoja de vida) como **cuerpo binario** a través de una ruta de Next que reenvía al backend (el backend decide por el contenido, no por lo que declare el cliente), los envía a revisión y ve cómo va cada uno de sus tres controles, con el motivo de un rechazo y la renovación de uno vencido. El panel `/admin` (solo administradores) trae la cola por estado, abre cada documento privado por una ruta de Next que sigue la dirección firmada **en el servidor** (nunca llega al navegador; cada apertura queda auditada), aprueba con su vigencia o rechaza con motivo, y aprueba las hojas de vida que verán las familias. Un perfil activo no puede cambiar su especialidad ni su título. Con los tres controles aprobados, el cuidador aparece en la búsqueda. 510 pruebas unitarias, 82 de contrato y 35 recorridos (incluido el ciclo completo: cuidador, revisor y familia). |
+| F10 · Cierre para producción | ✅ construido (último módulo del plan v2): páginas legales nuevas (`/terminos`, `/alcance-teleasistencia`), `robots.ts` y `sitemap.ts` (excluyen `/app`, `/cuidador` y `/admin`), cabeceras de seguridad en toda ruta (CSP, `X-Frame-Options`, `Permissions-Policy` — el micrófono se deja para el comando de voz), un error boundary propio en cada área (`/app`, `/cuidador`, `/admin` y la raíz, con un componente compartido que nunca muestra el mensaje crudo del error) y las fotos de la landing con `next/image`. Sentry y el derecho a exportar/eliminar la cuenta quedan pendientes (falta la cuenta de Sentry y las rutas del backend); Lighthouse no se corrió en esta sesión (la CLI pide descargar un paquete que la política de la sesión no permitió). 519 pruebas unitarias, 82 de contrato y 40 recorridos. Con esto quedan construidos los diez módulos del plan v2 (F1 a F10). |
 
 ### Ramas (todas en GitHub; las 4 últimas desde el 28 de octubre)
 
@@ -140,7 +139,8 @@ Cada rama parte de la anterior. Se revisan con un PR encadenado por entrega (la 
 | 29 | `feat/f6-teleasistencia` | F6: teleasistencia (ya en `main`). |
 | 30 | `feat/f8-mensajeria` | F8: mensajería (ya en `main`). |
 | 31 | `feat/f5-notificaciones` | F5: notificaciones (la campana, ya en `main`). |
-| 32 | `feat/f9-verificacion` (actual) | F9: postulación del cuidador y panel de revisión. |
+| 32 | `feat/f9-verificacion` | F9: postulación del cuidador y panel de revisión (ya en `main`). |
+| 33 | `feat/f10-cierre` (actual) | F10: cierre para producción — último módulo del plan v2. |
 
 **La CI solo corre en el PR 6:** es la primera rama que tiene `.github/workflows/backend.yml`. Una vez fusionada en `main`, correrá en todos los PR que toquen `backend/`.
 

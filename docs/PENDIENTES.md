@@ -57,7 +57,7 @@
 | 🔧 | La búsqueda normaliza el texto en la aplicación (sin `unaccent`) y usa `LIKE` sobre columnas normalizadas con índices `pg_trgm`. Revisar con `EXPLAIN` cuando haya volumen real. |
 | 🔧 | La ruta `GET /cuidadores/:id/hoja-de-vida` responde un 302 hacia el API: el BFF (F2) decide si lo sigue por el servidor o redirige al navegador. |
 | 🔧 | Frontend: `cuidadores.ts` y el buscador contra la API (F2). |
-| 🧑 | Revisar si los teléfonos de `frontend/data/cuidadores.json` son de personas reales, y la **licencia de las fotos** de la landing. Las semillas del backend usan nombres y teléfonos inventados, no esos datos. |
+| 🧑 | Confirmar la **licencia de las fotos** de la landing (`frontend/public/img/*.jpg`) antes del lanzamiento. |
 
 *Resuelto en M2:* el directorio exige sesión y pasa por el límite global de peticiones (100 por minuto por IP); un límite propio y más estricto queda para M10 si hace falta.
 
@@ -180,7 +180,7 @@ Construido: imagen de Docker y CI que la verifica (arranque seguro), rol de base
 
 ## Frontend
 
-El frontend se conecta al backend módulo por módulo, en el orden del [plan v2](./PLAN_FRONTEND_SENIORY.md#4-módulos-del-frontend-y-orden-de-construcción): F1, F2, F3+F4, F7, F6, F8, F5, F9 y F10. **F0, la Etapa 0 (sistema de diseño) y F1 (identidad) están construidos**; el resto de las pantallas sigue leyendo `frontend/data/`, así que el entorno compartido es solo para el equipo.
+El frontend se conecta al backend módulo por módulo, en el orden del [plan v2](./PLAN_FRONTEND_SENIORY.md#4-módulos-del-frontend-y-orden-de-construcción): F1, F2, F3+F4, F7, F6, F8, F5, F9 y F10. **F0 a F9 están construidos** (ya no queda ningún dato de ejemplo: `frontend/data/` se borró en F8); falta F10, el cierre para producción.
 
 | Etapa | Pendiente |
 |---|---|
@@ -224,10 +224,13 @@ El frontend se conecta al backend módulo por módulo, en el orden del [plan v2]
 | 🔧 | **Administradores:** solo se crean por consola (`npm run crear-admin`); no hay pantalla para invitar o quitar revisores, ni segundo factor (decisión abierta en M9). |
 | 🔧 | **Documentos propios:** el cuidador sube y reemplaza, pero no puede borrar ni descargar lo que subió; el derecho de supresión de sus datos se resuelve en F10. La foto de perfil todavía no se sube (la API no la acepta). |
 | 🚀 | **Almacén de archivos real:** con el almacén `deshabilitado` subir documentos responde «no disponible» (se dice, no se finge) y el `local` no se admite en producción. Hay que elegir el almacén al escoger el hosting. |
-| F10 | 🔧 El cierre para producción (legales, SEO, errores, seguridad de cabeceras, rendimiento). |
+| F10 — Cierre para producción *(construido)* | 🧑 **Sentry:** falta la cuenta y el `SENTRY_DSN` (ya anotado arriba, M0); mientras no exista, el frontend no instala `@sentry/nextjs` (es una dependencia nueva, y sin DSN quedaría sin configurar). Los errores del servidor ya traen un `digest` para buscarlos en el log; conectarlos a Sentry es agregar el SDK cuando haya cuenta. |
+| 🧑 | **Exportar y eliminar la cuenta** (Ley 1581): el backend todavía no tiene esas rutas (quedó anotado como opcional en M1, PR 8); el frontend las construye cuando existan. Hoy «eliminar tus datos» en la política de privacidad dice que el canal se publicará antes del lanzamiento. |
+| 🧑 | **Lighthouse:** no se corrió en esta sesión (la CLI pide descargar un paquete que la política de la sesión no permitió ejecutar). Córrelo contra la build de producción (`npm run build && npx next start`) en landing, ingresar, registro, perfil del cuidador y teleasistencia antes de lanzar; accesibilidad ≥ 90 (F10 §3.5). |
+| 🔧 | **CSP sin nonces:** `next.config.ts` manda `script-src`/`style-src` con `unsafe-inline` (no hay orígenes externos: el navegador solo habla con este servidor). Un nonce por petición sería más estricto, pero fuerza TODA la aplicación a renderizarse dinámicamente (la guía de Next lo advierte: sin caché de CDN, más carga en el servidor) — ver `docs/frontend/F10-cierre.md`. Revisar si vale la pena al elegir el hosting. |
+| 🧑🚀 | **Dominio y `URL_PUBLICA_DEL_SITIO`:** sin ellos, `robots.txt`, `sitemap.xml` y Open Graph usan `localhost` (en Vercel se completa sola). Hay que fijarla al elegir el hosting. |
 | 🔧 | **Vulnerabilidades de las dependencias del frontend** (`npm audit`: 15 en producción, casi todas por `shadcn` y `zod`; arreglarlas obliga a subir `shadcn` a una versión mayor). `shadcn` es una herramienta de desarrollo y no debería estar en `dependencies`. |
 | 🧑 | **Pruebas de usabilidad** con adultos mayores y familiares reales (E4, E5). |
-| 🧑 | Quitar de la landing los textos y cifras de demostración. |
 | 🧑 | Decidir **dominios y cookies**: subdominios del mismo sitio (`app.…` y `api.…`) o reescrituras. |
 
 ---

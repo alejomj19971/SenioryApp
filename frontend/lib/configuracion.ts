@@ -51,6 +51,18 @@ export function secretoBff(): string {
   return valor;
 }
 
+// La dirección pública del propio sitio (para `robots.ts`, `sitemap.ts` y los enlaces absolutos de Open Graph). A
+// diferencia de `urlDelBackend` y `secretoBff`, NO es de seguridad: si falta, se usa `localhost` y listo (F10 §7; el
+// dominio definitivo es una decisión del hosting, documentada en PENDIENTES). `VERCEL_PROJECT_PRODUCTION_URL` la pone
+// Vercel sola en cada despliegue; si se usa otro hosting, se define `URL_PUBLICA_DEL_SITIO` a mano.
+export function urlPublicaDelSitio(): string {
+  const explicita = process.env.URL_PUBLICA_DEL_SITIO?.trim();
+  if (explicita !== undefined && explicita !== "") return explicita.replace(/\/+$/, "");
+  const deVercel = process.env.VERCEL_PROJECT_PRODUCTION_URL?.trim();
+  if (deVercel !== undefined && deVercel !== "") return `https://${deVercel}`;
+  return "http://localhost:3000";
+}
+
 // Comprueba todo junto, para fallar al arrancar con TODOS los problemas y no uno por uno.
 export function validarConfiguracion(): void {
   const problemas: string[] = [];

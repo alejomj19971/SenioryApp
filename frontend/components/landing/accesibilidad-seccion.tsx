@@ -1,3 +1,4 @@
+import Image from "next/image";
 import { Mic, Contrast, TextCursorInput } from "lucide-react";
 
 const caracteristicas = [
@@ -26,12 +27,15 @@ export function AccesibilidadSeccion() {
           <div className="relative mx-auto w-44 sm:w-52 md:w-full">
             <div className="absolute -top-4 -left-4 size-20 rounded-full bg-accent/20 blur-2xl" aria-hidden="true" />
             <div className="absolute -right-3 -bottom-5 size-24 rounded-full bg-primary/15 blur-2xl" aria-hidden="true" />
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              src="/img/dona-carmen.jpg"
-              alt="Mujer mayor sonriendo, representando a las personas mayores que usan Seniory"
-              className="relative aspect-4/5 w-full rounded-3xl object-cover shadow-lg ring-4 ring-background"
-            />
+            <div className="relative aspect-4/5 w-full overflow-hidden rounded-3xl shadow-lg ring-4 ring-background">
+              <Image
+                src="/img/dona-carmen.jpg"
+                alt="Mujer mayor sonriendo, representando a las personas mayores que usan Seniory"
+                fill
+                sizes="(min-width: 768px) 220px, 13rem"
+                className="object-cover"
+              />
+            </div>
           </div>
           <div className="text-center md:text-left">
             <span className="inline-flex rounded-full bg-accent/15 px-4 py-1.5 text-sm font-semibold text-accent">
