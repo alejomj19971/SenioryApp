@@ -223,6 +223,12 @@
     box-shadow: none;
   }
 
+  /* Las manchas de color de fondo (prueba de diseño) son puro adorno: en alto contraste estorban más de lo que
+     aportan, así que desaparecen. */
+  :root[data-contrast="high"] .fondo-decorativo {
+    display: none;
+  }
+
   /* Entrada en cascada para listas (buscador de cuidadores, mis servicios): cada tarjeta aparece un poco después de
      la anterior, no todas de golpe — se lee como «aquí está lo que buscabas», no como un parpadeo. Tope de 7 pasos:
      una lista larga no hace esperar a las últimas. Cada tarjeta ya trae su propia animación (`animate-in`); esto
