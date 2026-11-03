@@ -61,3 +61,9 @@ export class ArchivoFirmadoDto {
   @Length(1, 200, { message: 'La firma no es válida' })
   firma!: string;
 }
+
+export class ClaveDeFotoDto {
+  @IsString({ message: 'Falta el archivo' })
+  @Length(1, 200, { message: 'El archivo no es válido' })
+  clave!: string;
+}

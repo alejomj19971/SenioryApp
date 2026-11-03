@@ -42,6 +42,7 @@ import {
   RenovarVerificacion,
   SolicitarRevision,
   SubirDocumento,
+  SubirFoto,
 } from './aplicacion/casos-de-uso/mi-postulacion.js';
 import {
   AbrirDocumentoParaRevisor,
@@ -52,6 +53,7 @@ import {
 } from './aplicacion/casos-de-uso/revision.js';
 import { ObtenerCuidador } from './aplicacion/casos-de-uso/obtener-cuidador.js';
 import { ObtenerFiltrosDisponibles } from './aplicacion/casos-de-uso/obtener-filtros-disponibles.js';
+import { ObtenerFotoDeCuidador } from './aplicacion/casos-de-uso/obtener-foto-de-cuidador.js';
 import { ObtenerHojaDeVida } from './aplicacion/casos-de-uso/obtener-hoja-de-vida.js';
 import { RevisarVigencias } from './aplicacion/casos-de-uso/revisar-vigencias.js';
 import { RegistrarResenaAlCalificar } from './aplicacion/manejadores/registrar-resena-al-calificar.js';
@@ -80,6 +82,7 @@ import { ConsultaDeDirectorioServicio } from './aplicacion/servicios/consulta-de
 import { EventosDeDirectorio } from './aplicacion/servicios/eventos-de-directorio.js';
 import { ArchivosController } from './infraestructura/entrada/http/archivos.controller.js';
 import { CuidadoresController } from './infraestructura/entrada/http/cuidadores.controller.js';
+import { FotosController } from './infraestructura/entrada/http/fotos.controller.js';
 import { MiPerfilController } from './infraestructura/entrada/http/mi-perfil.controller.js';
 import { VerificacionesController } from './infraestructura/entrada/http/verificaciones.controller.js';
 import {
@@ -107,6 +110,7 @@ const MANEJADOR_DE_SERVICIOS_COMPLETADOS = Symbol(
     VerificacionesController,
     CuidadoresController,
     ArchivosController,
+    FotosController,
   ],
   providers: [
     // Persistencia y archivos
@@ -209,6 +213,20 @@ const MANEJADOR_DE_SERVICIOS_COMPLETADOS = Symbol(
           cuidadores,
           documentos,
           almacen,
+          reloj,
+          configuracion.zonaHorariaNegocio,
+        ),
+    },
+    {
+      provide: ObtenerFotoDeCuidador,
+      inject: [REPOSITORIO_CUIDADORES, RELOJ, CONFIGURACION],
+      useFactory: (
+        cuidadores: RepositorioCuidadores,
+        reloj: Reloj,
+        configuracion: Configuracion,
+      ) =>
+        new ObtenerFotoDeCuidador(
+          cuidadores,
           reloj,
           configuracion.zonaHorariaNegocio,
         ),
@@ -326,6 +344,36 @@ const MANEJADOR_DE_SERVICIOS_COMPLETADOS = Symbol(
           auditoria,
           reloj,
           ids,
+          configuracion.zonaHorariaNegocio,
+        ),
+    },
+    {
+      provide: SubirFoto,
+      inject: [
+        REPOSITORIO_CUIDADORES,
+        REPOSITORIO_DOCUMENTOS,
+        ALMACEN_DE_ARCHIVOS,
+        UNIDAD_DE_TRABAJO,
+        AUDITORIA,
+        RELOJ,
+        CONFIGURACION,
+      ],
+      useFactory: (
+        cuidadores: RepositorioCuidadores,
+        documentos: RepositorioDocumentos,
+        almacen: AlmacenDeArchivos,
+        unidadDeTrabajo: UnidadDeTrabajo,
+        auditoria: Auditoria,
+        reloj: Reloj,
+        configuracion: Configuracion,
+      ) =>
+        new SubirFoto(
+          cuidadores,
+          documentos,
+          almacen,
+          unidadDeTrabajo,
+          auditoria,
+          reloj,
           configuracion.zonaHorariaNegocio,
         ),
     },

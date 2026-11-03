@@ -6,6 +6,7 @@ import type { UnidadDeTrabajo } from '../../../compartido/aplicacion/puertos/uni
 import type { UsuarioAutenticado } from '../../../compartido/aplicacion/puertos/verificador-de-tokens.js';
 import {
   ConflictoDeEstado,
+  ErrorDeValidacion,
   RecursoNoEncontrado,
   ReglaDeNegocioIncumplida,
   ServicioNoDisponible,
@@ -14,7 +15,11 @@ import { FechaCivil } from '../../../compartido/dominio/fecha-civil.js';
 import type { Jornada } from '../../../compartido/dominio/jornada.js';
 import type { ConsultaDeIdentidad } from '../../../identidad/aplicacion/puertos/entrada/consulta-de-identidad.js';
 import { Cuidador, type CambiosDePerfil } from '../../dominio/cuidador.js';
-import { Documento } from '../../dominio/documento.js';
+import {
+  Documento,
+  EXTENSION_DE_TIPO_MIME,
+  tipoMimeDeContenido,
+} from '../../dominio/documento.js';
 import type { DocumentoId } from '../../dominio/ids.js';
 import {
   CONTROLES_DE_VERIFICACION,
@@ -286,6 +291,88 @@ export class SubirDocumento extends MiPerfil {
       metadatos: { tipo: documento.tipo },
     });
     return vistaDeDocumento(documento);
+  }
+}
+
+// 3 MB: una foto de perfil no necesita el tope de 5 MB de los documentos.
+export const TAMANO_MAXIMO_DE_FOTO = 3 * 1024 * 1024;
+
+export interface FotoSubida {
+  contenido: Uint8Array;
+}
+
+// El cuidador sube (o reemplaza) su foto de perfil. A diferencia de `SubirDocumento`, no pasa por revisión: se
+// muestra de inmediato a las familias. La clave es fija por cuidador (`fotos/{id}.ext`): si vuelve a subir en el
+// mismo formato, pisa el archivo anterior y la URL pública no cambia; si cambia de formato (JPEG↔PNG), la URL sí
+// cambia y el archivo anterior queda sin referencia (sin tope de archivos: solo hay uno vigente a la vez).
+export class SubirFoto extends MiPerfil {
+  constructor(
+    cuidadores: RepositorioCuidadores,
+    private readonly documentos: RepositorioDocumentos,
+    private readonly almacen: AlmacenDeArchivos,
+    private readonly unidadDeTrabajo: UnidadDeTrabajo,
+    private readonly auditoria: Auditoria,
+    reloj: Reloj,
+    zonaHorariaNegocio: string,
+  ) {
+    super(cuidadores, reloj, zonaHorariaNegocio);
+  }
+
+  async ejecutar(
+    usuario: UsuarioAutenticado,
+    foto: FotoSubida,
+  ): Promise<VistaDeMiPerfil> {
+    const cuidador = await this.cuidadorDe(usuario);
+    if (cuidador.estado === 'suspendido') {
+      throw new ConflictoDeEstado(
+        'Un cuidador suspendido no puede cambiar su foto',
+        'cuidador.suspendido',
+      );
+    }
+    if (!this.almacen.disponible) {
+      throw new ServicioNoDisponible(
+        'La carga de la foto no está disponible por ahora',
+        'archivos.no_disponible',
+      );
+    }
+    const tipoMime = tipoMimeDeContenido(foto.contenido);
+    if (tipoMime === null || tipoMime === 'application/pdf') {
+      throw new ErrorDeValidacion(
+        'La foto debe ser una imagen JPEG o PNG',
+        'foto.formato_invalido',
+      );
+    }
+    const clave = `fotos/${cuidador.id}.${EXTENSION_DE_TIPO_MIME[tipoMime]}`;
+    const fotoUrl = this.almacen.urlPublica(clave);
+
+    const actualizado = await this.unidadDeTrabajo.ejecutar(async () => {
+      const actual = await this.cuidadores.buscarPorIdParaActualizar(
+        cuidador.id,
+      );
+      if (actual === null) {
+        throw new RecursoNoEncontrado(
+          'Todavía no tienes un perfil de cuidador',
+          'cuidador.sin_perfil',
+        );
+      }
+      actual.cambiarFoto(fotoUrl, this.reloj.ahora());
+      await this.cuidadores.actualizar(actual);
+      // Al final, para que un fallo del archivo revierta también la fila.
+      await this.almacen.guardar(clave, foto.contenido, tipoMime);
+      return actual;
+    });
+    await this.auditoria.registrar({
+      actorId: usuario.id,
+      accion: 'directorio.subir_foto',
+      recursoTipo: 'cuidador',
+      recursoId: actualizado.id,
+      resultado: 'permitido',
+    });
+    return vistaDeMiPerfil(
+      actualizado,
+      await this.documentos.listarDeCuidador(actualizado.id),
+      this.hoy(),
+    );
   }
 }
 

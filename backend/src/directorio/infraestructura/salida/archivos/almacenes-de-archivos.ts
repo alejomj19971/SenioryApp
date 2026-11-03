@@ -73,6 +73,15 @@ export class AlmacenDeArchivosLocal implements AlmacenDeArchivos {
     return `${this.opciones.urlPublicaDeLaApi}/archivos?${consulta.toString()}`;
   }
 
+  // La foto de perfil: pública, sin firma ni vencimiento. Solo para claves bajo «fotos/»; cualquier otra carpeta
+  // (documentos de verificación) lanza, para que un error de uso no filtre un archivo privado.
+  urlPublica(clave: string): string {
+    if (!esClaveValida(clave) || !clave.startsWith('fotos/')) {
+      throw new Error('Esa clave no se puede servir como archivo público');
+    }
+    return `${this.opciones.urlPublicaDeLaApi}/fotos?${new URLSearchParams({ clave }).toString()}`;
+  }
+
   // ¿La dirección que llegó es una de las que firmamos, y todavía no venció? Comparación en tiempo constante.
   firmaEsValida(clave: string, expira: number, firma: string): boolean {
     if (!esClaveValida(clave)) return false;
@@ -110,6 +119,10 @@ export class AlmacenDeArchivosDeshabilitado implements AlmacenDeArchivos {
   }
 
   urlFirmada(): string {
+    throw new Error('No hay un almacén de archivos configurado');
+  }
+
+  urlPublica(): string {
     throw new Error('No hay un almacén de archivos configurado');
   }
 }

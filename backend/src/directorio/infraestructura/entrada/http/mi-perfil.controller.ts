@@ -11,11 +11,15 @@ import {
   Post,
   Put,
   Req,
+  Res,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
-import type { Request } from 'express';
+import type { Request, Response } from 'express';
 import type { UsuarioAutenticado } from '../../../../compartido/aplicacion/puertos/verificador-de-tokens.js';
-import { ErrorDeValidacion } from '../../../../compartido/dominio/errores.js';
+import {
+  ErrorDeValidacion,
+  RecursoNoEncontrado,
+} from '../../../../compartido/dominio/errores.js';
 import {
   Roles,
   UsuarioActual,
@@ -27,6 +31,8 @@ import {
   RenovarVerificacion,
   SolicitarRevision,
   SubirDocumento,
+  SubirFoto,
+  TAMANO_MAXIMO_DE_FOTO,
 } from '../../../aplicacion/casos-de-uso/mi-postulacion.js';
 import type {
   VistaDeDocumento,
@@ -56,6 +62,7 @@ export class MiPerfilController {
     @Inject(ObtenerMiPerfil) private readonly obtener: ObtenerMiPerfil,
     @Inject(ActualizarMiPerfil) private readonly actualizar: ActualizarMiPerfil,
     @Inject(SubirDocumento) private readonly subir: SubirDocumento,
+    @Inject(SubirFoto) private readonly subirFoto: SubirFoto,
     @Inject(SolicitarRevision) private readonly revision: SolicitarRevision,
     @Inject(RenovarVerificacion)
     private readonly renovar: RenovarVerificacion,
@@ -77,6 +84,25 @@ export class MiPerfilController {
     @UsuarioActual() usuario: UsuarioAutenticado,
   ): Promise<{ perfil: VistaDeMiPerfil }> {
     return { perfil: await this.obtener.ejecutar(usuario) };
+  }
+
+  // Redirige a la foto, igual que `:id/foto` del directorio, pero sin exigir que el perfil ya se muestre: es SU
+  // propia foto, la ve mientras arma su perfil.
+  @Roles('cuidador')
+  @Get('foto')
+  async miFoto(
+    @UsuarioActual() usuario: UsuarioAutenticado,
+    @Res() respuesta: Response,
+  ): Promise<void> {
+    const perfil = await this.obtener.ejecutar(usuario);
+    if (perfil.fotoUrl === null) {
+      throw new RecursoNoEncontrado(
+        'Todavía no tienes una foto de perfil',
+        'foto.no_encontrada',
+      );
+    }
+    respuesta.setHeader('Cache-Control', 'no-store');
+    respuesta.redirect(302, perfil.fotoUrl);
   }
 
   @Roles('cuidador')
@@ -121,6 +147,28 @@ export class MiPerfilController {
       contenido,
     });
     return { documento };
+  }
+
+  // La foto de perfil: JPEG o PNG, sin la hoja de vida en PDF. Se muestra de inmediato, sin revisión.
+  @Roles('cuidador')
+  @Throttle({ default: { limit: 20, ttl: UN_MINUTO_MS } })
+  @HttpCode(HttpStatus.OK)
+  @Put('foto')
+  async subirFotoDePerfil(
+    @UsuarioActual() usuario: UsuarioAutenticado,
+    @Headers('content-type') tipoDeContenido: string | undefined,
+    @Req() peticion: Request,
+  ): Promise<{ perfil: VistaDeMiPerfil }> {
+    const declarado = (tipoDeContenido ?? '').split(';')[0]?.trim() ?? '';
+    if (!['image/jpeg', 'image/png'].includes(declarado)) {
+      throw new ErrorDeValidacion(
+        'La foto debe enviarse como JPEG o PNG',
+        'foto.formato_invalido',
+      );
+    }
+    const contenido = await leerCuerpoCrudo(peticion, TAMANO_MAXIMO_DE_FOTO);
+    const perfil = await this.subirFoto.ejecutar(usuario, { contenido });
+    return { perfil };
   }
 
   @Roles('cuidador')

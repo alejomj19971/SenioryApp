@@ -34,6 +34,7 @@ export interface VistaDeDocumento {
 export interface VistaDeMiPerfil {
   id: string;
   nombre: string;
+  fotoUrl: string | null;
   especialidad: string;
   titulo: string;
   aniosExperiencia: number;
@@ -95,6 +96,7 @@ export function vistaDeMiPerfil(
   return {
     id: cuidador.id,
     nombre: cuidador.nombre,
+    fotoUrl: cuidador.fotoUrl,
     especialidad: cuidador.especialidad,
     titulo: cuidador.titulo,
     aniosExperiencia: cuidador.aniosExperiencia,

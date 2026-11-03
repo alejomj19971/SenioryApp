@@ -132,10 +132,10 @@ describe("listarCuidadores", () => {
     expect(JSON.stringify(cuidadores)).not.toMatch(/telefono|3000000001|correo|@/);
   });
 
-  it("la foto del backend se conserva si existe", async () => {
+  it("si hay foto, apunta a NUESTRA ruta (nunca la dirección del backend)", async () => {
     leerDelBackend.mockResolvedValue({ cuidadores: [delBackend({ fotoUrl: "https://cdn.seniory.co/f.jpg" })], siguiente: null });
 
-    expect((await servicio.listarCuidadores()).cuidadores[0]?.foto).toBe("https://cdn.seniory.co/f.jpg");
+    expect((await servicio.listarCuidadores()).cuidadores[0]?.foto).toBe(`/api/cuidadores/${UUID}/foto`);
   });
 });
 

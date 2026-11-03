@@ -36,7 +36,8 @@ function aResumen(cuidador: CuidadorDelBackend): CuidadorResumen {
   return {
     id: cuidador.id,
     nombre: cuidador.nombre,
-    foto: cuidador.fotoUrl ?? "",
+    // Nunca la dirección del backend: el navegador la pide a NUESTRA ruta, que la sigue por él (como la hoja de vida).
+    foto: cuidador.fotoUrl !== null ? `/api/cuidadores/${cuidador.id}/foto` : "",
     especialidad: cuidador.especialidad,
     titulo: cuidador.titulo,
     aniosExperiencia: cuidador.aniosExperiencia,
@@ -97,6 +98,28 @@ export async function tieneHojaDeVida(id: string): Promise<boolean> {
   if (respuesta.status >= 300 && respuesta.status < 400) return true;
   if (respuesta.status === 404 || respuesta.status === 503) return false;
   throw await ErrorDeApi.desdeRespuesta(respuesta);
+}
+
+export type ResultadoDeFoto =
+  | { tipo: "imagen"; cuerpo: ReadableStream<Uint8Array>; tipoDeContenido: string }
+  | { tipo: "sin_foto" }
+  | { tipo: "no_disponible" }
+  | { tipo: "sin_sesion" }
+  | { tipo: "fallo" };
+
+// Abre la foto de perfil del cuidador desde el SERVIDOR, igual que la hoja de vida: el navegador nunca ve la
+// dirección del backend, ni la pública ni una externa de una importación.
+export async function abrirFotoDeCuidador(id: string): Promise<ResultadoDeFoto> {
+  if (!FORMATO_DE_UUID.test(id)) return { tipo: "sin_foto" };
+  const resultado = await descargarArchivoDelBackend(`/cuidadores/${id}/foto`, ["image/jpeg", "image/png"]);
+  switch (resultado.tipo) {
+    case "archivo":
+      return { tipo: "imagen", cuerpo: resultado.cuerpo, tipoDeContenido: resultado.tipoDeContenido };
+    case "sin_archivo":
+      return { tipo: "sin_foto" };
+    default:
+      return resultado;
+  }
 }
 
 export type ResultadoDeHojaDeVida =

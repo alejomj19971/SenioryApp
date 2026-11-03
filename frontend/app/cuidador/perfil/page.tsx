@@ -5,6 +5,7 @@ import { BotonDeRevision } from "@/components/postulacion/acciones-de-postulacio
 import { EstadoDeControles } from "@/components/postulacion/estado-de-controles";
 import { FormularioPerfil } from "@/components/postulacion/formulario-perfil";
 import { SubirDocumento } from "@/components/postulacion/subir-documento";
+import { SubirFoto } from "@/components/postulacion/subir-foto";
 import { DOCUMENTOS_OBLIGATORIOS, NOMBRE_DEL_DOCUMENTO, resumenDeLaPostulacion, tieneLosDocumentos } from "@/lib/etiquetas-de-postulacion";
 import { exigirRol } from "@/lib/sesion";
 import { obtenerMiPerfil } from "@/lib/services/postulacion";
@@ -61,6 +62,14 @@ export default async function PerfilDelCuidadorPage() {
           </span>
         </p>
       </div>
+
+      <section aria-labelledby="foto" className="flex flex-col gap-3">
+        <h2 id="foto" className="text-lg font-semibold text-foreground">
+          Tu foto
+        </h2>
+        <p className="text-base text-muted-foreground">Las familias la ven apenas la subas: no pasa por revisión.</p>
+        <SubirFoto nombre={perfil.nombre} fotoUrl={perfil.fotoUrl !== null ? "/api/cuidador/foto" : null} />
+      </section>
 
       <section aria-labelledby="controles" className="flex flex-col gap-3">
         <h2 id="controles" className="text-lg font-semibold text-foreground">

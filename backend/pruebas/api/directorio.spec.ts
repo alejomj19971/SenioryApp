@@ -107,6 +107,7 @@ describe('directorio de cuidadores (API)', () => {
       '/api/v1/cuidadores/filtros',
       `/api/v1/cuidadores/${nuevoId()}`,
       `/api/v1/cuidadores/${nuevoId()}/hoja-de-vida`,
+      `/api/v1/cuidadores/${nuevoId()}/foto`,
     ])('GET %s sin sesión es 401', async (ruta) => {
       const respuesta = await como(app).get(ruta);
 
@@ -533,6 +534,46 @@ describe('directorio de cuidadores (API)', () => {
       const respuesta = await get(
         `/api/v1/cuidadores/${cuidadorId}/hoja-de-vida`,
       );
+
+      expect(respuesta.status).toBe(404);
+    });
+  });
+
+  describe('foto de perfil', () => {
+    it('redirige a la dirección guardada (una externa, la de una importación), sin firma ni vencimiento', async () => {
+      const { cuidadorId } = await importar(
+        entrada(zonaNueva(), {
+          fotoUrl: 'https://cdn.ejemplo.invalid/marta.jpg',
+        }),
+      );
+
+      const respuesta = await get(`/api/v1/cuidadores/${cuidadorId}/foto`);
+
+      expect(respuesta.status).toBe(302);
+      expect(respuesta.headers['cache-control']).toBe('no-store');
+      expect(respuesta.headers.location).toBe(
+        'https://cdn.ejemplo.invalid/marta.jpg',
+      );
+    });
+
+    it('un cuidador sin foto es 404', async () => {
+      const { cuidadorId } = await importar(entrada(zonaNueva()));
+
+      const respuesta = await get(`/api/v1/cuidadores/${cuidadorId}/foto`);
+
+      expect(respuesta.status).toBe(404);
+      expect(respuesta.body).toMatchObject({ codigo: 'foto.no_encontrada' });
+    });
+
+    it('un cuidador que no se muestra no entrega su foto (E7: no se adivina por el id)', async () => {
+      const { cuidadorId } = await importar(
+        entrada(zonaNueva(), {
+          fotoUrl: 'https://cdn.ejemplo.invalid/marta.jpg',
+        }),
+      );
+      await ocultar(cuidadorId);
+
+      const respuesta = await get(`/api/v1/cuidadores/${cuidadorId}/foto`);
 
       expect(respuesta.status).toBe(404);
     });

@@ -14,6 +14,7 @@ const decidirHojaDeVidaAccion = vi.fn();
 vi.mock("@/lib/acciones/postulacion", () => ({ guardarPerfilAccion, solicitarRevisionAccion, renovarControlAccion, decidirControlAccion, decidirHojaDeVidaAccion }));
 
 const { SubirDocumento } = await import("@/components/postulacion/subir-documento");
+const { SubirFoto } = await import("@/components/postulacion/subir-foto");
 const { FormularioPerfil } = await import("@/components/postulacion/formulario-perfil");
 const { EstadoDeControles } = await import("@/components/postulacion/estado-de-controles");
 const { BotonDeRevision } = await import("@/components/postulacion/acciones-de-postulacion");
@@ -33,6 +34,7 @@ const control = (extra: Partial<ControlDelCuidador> = {}): ControlDelCuidador =>
 const perfil = (extra: Partial<MiPerfilDeCuidador> = {}): MiPerfilDeCuidador => ({
   id: "c1",
   nombre: "Marta Gómez",
+  fotoUrl: null,
   especialidad: "enfermeria",
   titulo: "Enfermera profesional",
   aniosExperiencia: 5,
@@ -118,6 +120,44 @@ describe("SubirDocumento", () => {
     expect(screen.getByText(/Último archivo: nueva\.pdf \(2 KB\)/)).toBeInTheDocument();
     expect(screen.getByText("En revisión")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Subir uno nuevo" })).toBeInTheDocument();
+  });
+});
+
+describe("SubirFoto", () => {
+  const elegir = async (nombre: string, tipo: string, bytes?: number) => {
+    const usuario = userEvent.setup({ applyAccept: false });
+    await usuario.upload(document.getElementById("foto-de-perfil") as HTMLInputElement, archivo(nombre, tipo, bytes));
+  };
+
+  it("sube la foto como cuerpo de la petición y refresca la pantalla", async () => {
+    fetchSimulado.mockResolvedValue(new Response(JSON.stringify({ ok: true }), { status: 200 }));
+    render(<SubirFoto nombre="Marta Gómez" fotoUrl={null} />);
+
+    await elegir("yo.jpg", "image/jpeg");
+
+    await waitFor(() => expect(refresh).toHaveBeenCalled());
+    const [url, opciones] = fetchSimulado.mock.calls[0] as [string, RequestInit];
+    expect(url).toBe("/api/cuidador/foto");
+    expect(opciones.method).toBe("POST");
+    expect(opciones.headers).toMatchObject({ "Content-Type": "image/jpeg" });
+    expect(opciones.body).toBeInstanceOf(File);
+  });
+
+  it("descarta lo evidente sin llamar al servidor: tipo no permitido, vacía o de más de 3 MB", async () => {
+    render(<SubirFoto nombre="Marta Gómez" fotoUrl={null} />);
+
+    await elegir("hoja.pdf", "application/pdf");
+    expect(screen.getByText("Debe ser una foto JPEG o una imagen PNG.")).toBeInTheDocument();
+    await elegir("vacia.jpg", "image/jpeg", 0);
+    expect(screen.getByText("El archivo está vacío.")).toBeInTheDocument();
+    await elegir("grande.jpg", "image/jpeg", 3 * 1024 * 1024 + 1);
+    expect(screen.getByText(/pesa más de 3 MB/)).toBeInTheDocument();
+    expect(fetchSimulado).not.toHaveBeenCalled();
+  });
+
+  it("cambia la etiqueta del botón cuando ya hay una foto", () => {
+    render(<SubirFoto nombre="Marta Gómez" fotoUrl="http://localhost/foto.jpg" />);
+    expect(screen.getByRole("button", { name: "Cambiar foto" })).toBeInTheDocument();
   });
 });
 

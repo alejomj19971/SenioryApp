@@ -292,6 +292,7 @@ export interface DocumentoSubido {
 export interface MiPerfilDeCuidador {
   id: string;
   nombre: string;
+  fotoUrl: string | null;
   especialidad: Especialidad;
   titulo: string;
   aniosExperiencia: number;

@@ -284,6 +284,19 @@ export class Cuidador {
     this.tocar(ahora);
   }
 
+  // El cuidador cambia su foto de perfil. A diferencia de los documentos de verificación, se muestra de inmediato
+  // a las familias, sin revisión: es una foto, no una prueba de identidad o idoneidad.
+  cambiarFoto(fotoUrl: string, ahora: Date): void {
+    if (this.datos.estado === 'suspendido') {
+      throw new ConflictoDeEstado(
+        'Un cuidador suspendido no puede cambiar su foto',
+        'cuidador.suspendido',
+      );
+    }
+    this.datos.fotoUrl = fotoUrl;
+    this.tocar(ahora);
+  }
+
   // El cuidador terminó su perfil y sus documentos: pasa a revisión. Solo desde el borrador.
   enviarARevision(ahora: Date): void {
     if (this.datos.estado !== 'borrador') {

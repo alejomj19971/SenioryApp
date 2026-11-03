@@ -332,6 +332,30 @@ describe('Cuidador: editar el perfil y enviarlo a revisión', () => {
     );
   });
 
+  it('cambia la foto de inmediato, sin pasar por revisión', () => {
+    const cuidador = nuevo();
+    const version = cuidador.version;
+
+    cuidador.cambiarFoto(
+      'http://localhost:3001/api/v1/fotos?clave=fotos%2Fabc.jpg',
+      AHORA,
+    );
+
+    expect(cuidador.fotoUrl).toBe(
+      'http://localhost:3001/api/v1/fotos?clave=fotos%2Fabc.jpg',
+    );
+    expect(cuidador.version).toBe(version + 1);
+  });
+
+  it('un suspendido no cambia su foto', () => {
+    const cuidador = nuevo();
+    cuidador.suspender(AHORA);
+
+    expect(() => cuidador.cambiarFoto('http://x/foto.jpg', AHORA)).toThrow(
+      expect.objectContaining({ codigo: 'cuidador.suspendido' }) as Error,
+    );
+  });
+
   it('solo un borrador se envía a revisión, una vez', () => {
     const cuidador = nuevo();
 

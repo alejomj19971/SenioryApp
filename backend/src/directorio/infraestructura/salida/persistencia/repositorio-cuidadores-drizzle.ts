@@ -117,6 +117,7 @@ export class RepositorioCuidadoresDrizzle implements RepositorioCuidadores {
           // trigger de verificaciones (solo mira filas que quedan visibles).
           ...(cuidador.visible ? {} : { visible: false }),
           // Lo que el propio cuidador edita en su perfil.
+          fotoUrl: cuidador.fotoUrl,
           especialidad: cuidador.especialidad,
           titulo: cuidador.titulo,
           aniosExperiencia: cuidador.aniosExperiencia,

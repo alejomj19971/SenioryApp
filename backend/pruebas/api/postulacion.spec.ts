@@ -61,6 +61,7 @@ const TIPOS_OBLIGATORIOS = ['cedula', 'antecedentes', 'titulo', 'psicotecnica'];
 interface Perfil {
   id: string;
   nombre: string;
+  fotoUrl: string | null;
   telefono: string;
   estado: string;
   visible: boolean;
@@ -184,6 +185,17 @@ describe('postulación y verificación de cuidadores (API)', () => {
       expect((await subir(p, tipo, PDF(tipo))).status).toBe(201);
     }
   }
+
+  const subirFoto = async (
+    p: Postulante,
+    contenido: Buffer = JPEG,
+    tipoDeContenido = 'image/jpeg',
+  ) =>
+    como(app)
+      .put('/api/v1/cuidadores/yo/foto')
+      .set('Cookie', await p.cookie())
+      .set('Content-Type', tipoDeContenido)
+      .send(contenido);
 
   const pedirRevision = async (p: Postulante) =>
     como(app)
@@ -667,6 +679,101 @@ describe('postulación y verificación de cuidadores (API)', () => {
 
       expect(comoFamilia.status).toBe(403);
       expect(sinSesion.status).toBe(401);
+    });
+  });
+
+  describe('PUT /cuidadores/yo/foto', () => {
+    it('guarda la foto y se ve de inmediato, sin pasar por revisión', async () => {
+      const p = await postulante();
+      await crearPerfil(p);
+
+      const respuesta = await subirFoto(p);
+
+      expect(respuesta.status).toBe(200);
+      const perfil = (respuesta.body as { perfil: Perfil }).perfil;
+      expect(perfil.fotoUrl).toMatch(/\/fotos\?clave=fotos%2F.+\.jpg$/);
+      expect(perfil.estado).toBe('borrador');
+
+      // Y se entrega de verdad por su propia ruta pública (sin firma, cacheable).
+      const url = new URL(perfil.fotoUrl as string);
+      const archivo = await como(app).get(`${url.pathname}${url.search}`);
+      expect(archivo.status).toBe(200);
+      expect(archivo.headers['content-type']).toBe('image/jpeg');
+      expect(archivo.headers['cache-control']).toBe(
+        'public, max-age=31536000, immutable',
+      );
+    });
+
+    it('lo que cuenta es el contenido, no lo que diga el cliente', async () => {
+      const p = await postulante();
+      await crearPerfil(p);
+
+      const comoPdf = await subirFoto(p, PDF(), 'application/pdf');
+
+      expect(comoPdf.status).toBe(400);
+      expect(comoPdf.body).toMatchObject({ codigo: 'foto.formato_invalido' });
+    });
+
+    it('reemplazarla en el mismo formato pisa el archivo anterior (misma URL)', async () => {
+      const p = await postulante();
+      await crearPerfil(p);
+      const primera = ((await subirFoto(p)).body as { perfil: Perfil }).perfil
+        .fotoUrl;
+
+      const segunda = (
+        (await subirFoto(p, Buffer.concat([JPEG, Buffer.from('otra')])))
+          .body as {
+          perfil: Perfil;
+        }
+      ).perfil.fotoUrl;
+
+      expect(segunda).toBe(primera);
+    });
+
+    it('solo un cuidador con perfil sube su foto; sin sesión es 401', async () => {
+      const sinPerfil = await postulante();
+      const familia = await nuevaFamilia(app);
+
+      expect((await subirFoto(sinPerfil)).status).toBe(404);
+      const comoFamilia = await como(app)
+        .put('/api/v1/cuidadores/yo/foto')
+        .set('Cookie', familia.cookie)
+        .set('Content-Type', 'image/jpeg')
+        .send(JPEG);
+      const sinSesion = await como(app)
+        .put('/api/v1/cuidadores/yo/foto')
+        .set('Content-Type', 'image/jpeg')
+        .send(JPEG);
+
+      expect(comoFamilia.status).toBe(403);
+      expect(sinSesion.status).toBe(401);
+    });
+  });
+
+  describe('GET /cuidadores/yo/foto', () => {
+    it('redirige a la foto propia, incluso en borrador (todavía no se muestra a nadie más)', async () => {
+      const p = await postulante();
+      await crearPerfil(p);
+      const subida = (await subirFoto(p)).body as { perfil: Perfil };
+
+      const respuesta = await como(app)
+        .get('/api/v1/cuidadores/yo/foto')
+        .set('Cookie', await p.cookie());
+
+      expect(respuesta.status).toBe(302);
+      expect(respuesta.headers.location).toBe(subida.perfil.fotoUrl);
+    });
+
+    it('sin foto todavía es 404', async () => {
+      const p = await postulante();
+      await crearPerfil(p);
+
+      const respuesta = await como(app)
+        .get('/api/v1/cuidadores/yo/foto')
+        .set('Cookie', await p.cookie());
+
+      expect(respuesta.status).toBe(404);
+      expect(respuesta.body).toMatchObject({ codigo: 'foto.no_encontrada' });
     });
   });
 

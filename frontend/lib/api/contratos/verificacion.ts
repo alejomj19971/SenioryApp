@@ -23,6 +23,7 @@ export interface ControlDelBackend {
 export interface MiPerfilDelBackend {
   id: string;
   nombre: string;
+  fotoUrl: string | null;
   especialidad: "auxiliar" | "enfermeria" | "fisioterapia" | "acompanamiento";
   titulo: string;
   aniosExperiencia: number;
