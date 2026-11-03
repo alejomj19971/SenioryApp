@@ -1,5 +1,5 @@
 import * as React from "react";
-import { CircleAlert } from "lucide-react";
+import { CircleAlert, type LucideIcon } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
@@ -14,9 +14,11 @@ export interface CampoProps extends Omit<React.ComponentProps<"input">, "id" | "
   ayuda?: string;
   // Algo a la derecha del campo (por ejemplo, el botón de mostrar la contraseña).
   accion?: React.ReactNode;
+  // Un ícono a la izquierda, puramente decorativo (la etiqueta ya dice de qué se trata).
+  icono?: LucideIcon;
 }
 
-export function Campo({ nombre, etiqueta, error, ayuda, accion, className, ...resto }: CampoProps) {
+export function Campo({ nombre, etiqueta, error, ayuda, accion, icono: Icono, className, ...resto }: CampoProps) {
   const idDeAyuda = `${nombre}-ayuda`;
   const idDeError = `${nombre}-error`;
   const descripcion = [ayuda !== undefined ? idDeAyuda : null, error !== undefined ? idDeError : null]
@@ -27,12 +29,15 @@ export function Campo({ nombre, etiqueta, error, ayuda, accion, className, ...re
     <div className="flex flex-col gap-2">
       <Label htmlFor={nombre}>{etiqueta}</Label>
       <div className="relative">
+        {Icono !== undefined && (
+          <Icono aria-hidden="true" className="pointer-events-none absolute inset-y-0 left-4 my-auto size-5 text-muted-foreground" />
+        )}
         <Input
           id={nombre}
           name={nombre}
           aria-invalid={error !== undefined ? true : undefined}
           aria-describedby={descripcion === "" ? undefined : descripcion}
-          className={cn(accion !== undefined && "pr-14", className)}
+          className={cn(Icono !== undefined && "pl-11", accion !== undefined && "pr-14", className)}
           {...resto}
         />
         {accion !== undefined && <div className="absolute inset-y-0 right-1 flex items-center">{accion}</div>}

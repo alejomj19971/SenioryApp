@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useActionState } from "react";
-import { MailCheck } from "lucide-react";
+import { Mail, MailCheck } from "lucide-react";
 import { Campo } from "@/components/cuenta/campo";
 import { ResumenDelFormulario } from "@/components/cuenta/resumen-del-formulario";
 import { Button } from "@/components/ui/button";
@@ -38,6 +38,7 @@ export function FormularioRecuperar() {
         nombre="correo"
         etiqueta="Correo de tu cuenta"
         type="email"
+        icono={Mail}
         autoComplete="email"
         inputMode="email"
         autoCapitalize="none"

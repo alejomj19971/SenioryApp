@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useActionState } from "react";
+import { Mail, Phone, User } from "lucide-react";
 import { Campo, MensajeDeCampo } from "@/components/cuenta/campo";
 import { CampoDeContrasena } from "@/components/cuenta/campo-de-contrasena";
 import { ResumenDelFormulario } from "@/components/cuenta/resumen-del-formulario";
@@ -21,6 +22,7 @@ export function FormularioRegistro({ comoCuidador = false }: { comoCuidador?: bo
       <Campo
         nombre="nombre"
         etiqueta="Tu nombre"
+        icono={User}
         autoComplete="name"
         required
         maxLength={100}
@@ -31,6 +33,7 @@ export function FormularioRegistro({ comoCuidador = false }: { comoCuidador?: bo
         nombre="correo"
         etiqueta="Correo"
         type="email"
+        icono={Mail}
         autoComplete="email"
         inputMode="email"
         autoCapitalize="none"
@@ -42,6 +45,7 @@ export function FormularioRegistro({ comoCuidador = false }: { comoCuidador?: bo
         nombre="telefono"
         etiqueta="Celular (opcional)"
         type="tel"
+        icono={Phone}
         autoComplete="tel"
         inputMode="tel"
         ayuda="Por ejemplo, 300 123 4567."

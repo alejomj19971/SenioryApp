@@ -16,7 +16,8 @@ export default function RegistroPage() {
           <SelectorDeTipoDeCuenta comoCuidador={false} />
           <TarjetaDeAcceso>
             <div className="flex flex-col gap-1">
-              <h1 className="text-2xl font-bold text-foreground">Crea tu cuenta</h1>
+              <span aria-hidden="true" className="mb-1 h-1 w-10 rounded-full bg-success" />
+              <h1 className="font-serif text-3xl font-bold text-foreground">Crea tu cuenta</h1>
               <p className="text-base text-muted-foreground">
                 Es gratis y te toma un minuto. Después te preguntaremos por la persona a la que vas a cuidar.
               </p>

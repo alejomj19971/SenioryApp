@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useActionState } from "react";
-import { CircleCheck } from "lucide-react";
+import { CircleCheck, Mail } from "lucide-react";
 import { Campo } from "@/components/cuenta/campo";
 import { CampoDeContrasena } from "@/components/cuenta/campo-de-contrasena";
 import { ResumenDelFormulario } from "@/components/cuenta/resumen-del-formulario";
@@ -27,6 +27,7 @@ export function FormularioIngresar({ volver, contrasenaRestablecida }: { volver?
         nombre="correo"
         etiqueta="Correo"
         type="email"
+        icono={Mail}
         autoComplete="email"
         inputMode="email"
         autoCapitalize="none"

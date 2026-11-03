@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, Lock } from "lucide-react";
 import { Campo, type CampoProps } from "@/components/cuenta/campo";
 import { Button } from "@/components/ui/button";
 
@@ -13,6 +13,7 @@ export function CampoDeContrasena({ etiqueta, ...resto }: Omit<CampoProps, "type
     <Campo
       {...resto}
       etiqueta={etiqueta}
+      icono={Lock}
       type={visible ? "text" : "password"}
       autoCapitalize="none"
       autoCorrect="off"
