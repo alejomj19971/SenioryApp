@@ -48,8 +48,9 @@ async function otraPersona(browser: Browser, cuenta: CuentaDePrueba, destino: Re
 
 const subirPdf = (page: Page, tipo: string, nombre = `${tipo}.pdf`) => page.locator(`#archivo-${tipo}`).setInputFiles({ name: nombre, mimeType: "application/pdf", buffer: PDF });
 
-// La tarjeta de una verificación de ESTA cuidadora (la cola es de todos los postulantes): por su nombre y por el control.
-const tarjeta = (admin: Page, nombre: string, control: string) => admin.getByRole("listitem").filter({ hasText: nombre }).filter({ has: admin.getByText(control, { exact: true }) });
+// La tarjeta de una verificación de ESTA cuidadora (la cola agrupa por persona: una tarjeta con su nombre, y dentro
+// una por cada control pendiente).
+const tarjeta = (admin: Page, nombre: string, control: string) => admin.getByRole("listitem", { name: nombre }).getByRole("listitem", { name: control });
 
 test("un cuidador se postula, un revisor lo aprueba (y rechaza lo que no se lee) y las familias lo encuentran", async ({ page, context, browser }) => {
   test.setTimeout(180_000);

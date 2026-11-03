@@ -1,6 +1,7 @@
 import { render, screen, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 import { beforeEach, describe, expect, it, vi } from "vitest";
+import { agruparPorCuidador } from "@/lib/agrupar-revision";
 import type { ControlDelCuidador, DocumentoSubido, HojaDeVidaPorRevisar, MiPerfilDeCuidador, VerificacionParaRevisor } from "@/lib/types";
 
 const refresh = vi.fn();
@@ -19,6 +20,7 @@ const { FormularioPerfil } = await import("@/components/postulacion/formulario-p
 const { EstadoDeControles } = await import("@/components/postulacion/estado-de-controles");
 const { BotonDeRevision } = await import("@/components/postulacion/acciones-de-postulacion");
 const { TarjetaDeVerificacion, TarjetaDeHojaDeVida } = await import("@/components/admin/tarjeta-de-verificacion");
+const { ColaDeRevision } = await import("@/components/admin/cola-de-revision");
 
 const UUID = "01a19299-ec3b-7012-b94b-a8cebad258d3";
 const documento = (extra: Partial<DocumentoSubido> = {}): DocumentoSubido => ({
@@ -302,5 +304,50 @@ describe("panel de revisores", () => {
     await usuario.click(screen.getByRole("button", { name: "Rechazar" }));
 
     await waitFor(() => expect(decidirHojaDeVidaAccion).toHaveBeenCalledWith("d-hoja", "rechazar", expect.anything(), expect.anything()));
+  });
+
+  it("agrupa a un cuidador con sus tres controles en una sola tarjeta: su nombre sale una vez", () => {
+    const grupos = agruparPorCuidador(
+      [
+        verificacion({ id: "v1", control: "antecedentes" }),
+        verificacion({ id: "v2", control: "titulos" }),
+        verificacion({ id: "v3", control: "psicotecnica" }),
+      ],
+      [],
+    );
+    render(<ColaDeRevision grupos={grupos} vacioTitulo="No hay nada" />);
+
+    expect(screen.getAllByText("Marta Gómez")).toHaveLength(1);
+    expect(screen.getByText("3 solicitudes")).toBeInTheDocument();
+  });
+
+  it("el buscador filtra por nombre, sin tildes ni mayúsculas", async () => {
+    const grupos = agruparPorCuidador(
+      [
+        verificacion({ cuidador: { id: "c1", nombre: "Andrés Pérez", especialidad: "enfermeria", zona: "Laureles" } }),
+        verificacion({ id: "v2", cuidador: { id: "c2", nombre: "Ana Ríos", especialidad: "fisioterapia", zona: "Envigado" } }),
+      ],
+      [],
+    );
+    const usuario = userEvent.setup();
+    render(<ColaDeRevision grupos={grupos} vacioTitulo="No hay nada" />);
+
+    await usuario.type(screen.getByLabelText("Buscar cuidador por nombre"), "andres");
+
+    expect(screen.getByText("Andrés Pérez")).toBeInTheDocument();
+    expect(screen.queryByText("Ana Ríos")).not.toBeInTheDocument();
+  });
+
+  it("sin resultados de la búsqueda lo dice, y con la cola vacía muestra el estado vacío que se le pase", async () => {
+    const grupos = agruparPorCuidador([verificacion()], []);
+    const usuario = userEvent.setup();
+    const { rerender } = render(<ColaDeRevision grupos={grupos} vacioTitulo="No hay nada" />);
+
+    await usuario.type(screen.getByLabelText("Buscar cuidador por nombre"), "nadie así");
+    expect(screen.getByText("No encontramos a nadie con ese nombre")).toBeInTheDocument();
+
+    rerender(<ColaDeRevision grupos={[]} vacioTitulo="No hay nada por revisar" vacioDescripcion="Vuelve más tarde." />);
+    expect(screen.getByText("No hay nada por revisar")).toBeInTheDocument();
+    expect(screen.getByText("Vuelve más tarde.")).toBeInTheDocument();
   });
 });

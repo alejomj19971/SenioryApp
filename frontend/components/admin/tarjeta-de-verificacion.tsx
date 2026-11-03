@@ -31,10 +31,11 @@ function EnlaceDeDocumento({ id, tipo, nombre }: { id: string; tipo: keyof typeo
   );
 }
 
-// Una verificación de la cola: quién es, qué control, sus documentos y la decisión. Aprobar pide hasta cuándo vale (los
+// Una verificación de la cola: qué control, sus documentos y la decisión. Aprobar pide hasta cuándo vale (los
 // antecedentes y la psicotécnica deben vencer, máximo en 5 años; el título puede no vencer); rechazar pide el motivo, que
-// el cuidador verá.
-export function TarjetaDeVerificacion({ verificacion }: { verificacion: VerificacionParaRevisor }) {
+// el cuidador verá. `mostrarCuidador` se apaga cuando ya está dentro de la tarjeta de la persona (agrupa sus controles):
+// repetir su nombre en cada uno era justo lo que había que buscar tres veces.
+export function TarjetaDeVerificacion({ verificacion, mostrarCuidador = true }: { verificacion: VerificacionParaRevisor; mostrarCuidador?: boolean }) {
   const [aprobacion, aprobar, aprobando] = useActionState(decidirControlAccion.bind(null, verificacion.id), ESTADO_INICIAL);
   const [rechazo, rechazar, rechazando] = useActionState(decidirControlAccion.bind(null, verificacion.id), ESTADO_INICIAL);
   const estado = ESTADO_DEL_CONTROL[verificacion.estado];
@@ -42,16 +43,24 @@ export function TarjetaDeVerificacion({ verificacion }: { verificacion: Verifica
   const idDelTitulo = `verificacion-${verificacion.id}`;
 
   return (
-    <li aria-labelledby={idDelTitulo} className="flex flex-col gap-4 rounded-2xl bg-card p-5 ring-1 ring-border">
+    <li
+      aria-labelledby={mostrarCuidador ? idDelTitulo : undefined}
+      aria-label={mostrarCuidador ? undefined : NOMBRE_DEL_CONTROL[verificacion.control]}
+      className={mostrarCuidador ? "flex flex-col gap-4 rounded-2xl bg-card p-5 ring-1 ring-border" : "flex flex-col gap-4 rounded-xl bg-card p-4 ring-1 ring-border/70"}
+    >
       <div className="flex flex-wrap items-start justify-between gap-2">
-        <div>
-          <h3 id={idDelTitulo} className="text-lg font-semibold text-foreground">
-            {verificacion.cuidador.nombre}
-          </h3>
-          <p className="text-sm text-muted-foreground">
-            {verificacion.cuidador.zona} · pidió revisión el {formatearFechaHora(verificacion.solicitadaEn)}
-          </p>
-        </div>
+        {mostrarCuidador ? (
+          <div>
+            <h3 id={idDelTitulo} className="text-lg font-semibold text-foreground">
+              {verificacion.cuidador.nombre}
+            </h3>
+            <p className="text-sm text-muted-foreground">
+              {verificacion.cuidador.zona} · pidió revisión el {formatearFechaHora(verificacion.solicitadaEn)}
+            </p>
+          </div>
+        ) : (
+          <p className="text-sm text-muted-foreground">pidió revisión el {formatearFechaHora(verificacion.solicitadaEn)}</p>
+        )}
         <div className="flex items-center gap-2">
           <Badge variant="outline">{NOMBRE_DEL_CONTROL[verificacion.control]}</Badge>
           <Badge variant={estado.variante}>{estado.texto}</Badge>
@@ -126,14 +135,21 @@ export function TarjetaDeVerificacion({ verificacion }: { verificacion: Verifica
 }
 
 // Una hoja de vida que verán las familias: se abre, y se aprueba o se rechaza.
-export function TarjetaDeHojaDeVida({ hoja }: { hoja: HojaDeVidaPorRevisar }) {
+export function TarjetaDeHojaDeVida({ hoja, mostrarCuidador = true }: { hoja: HojaDeVidaPorRevisar; mostrarCuidador?: boolean }) {
   const [aprobacion, aprobar, aprobando] = useActionState(decidirHojaDeVidaAccion.bind(null, hoja.documento.id, "aprobar"), ESTADO_INICIAL);
   const [rechazo, rechazar, rechazando] = useActionState(decidirHojaDeVidaAccion.bind(null, hoja.documento.id, "rechazar"), ESTADO_INICIAL);
   const mensaje = aprobacion.mensaje ?? rechazo.mensaje;
   return (
-    <li className="flex flex-col gap-3 rounded-2xl bg-card p-5 ring-1 ring-border">
+    <li
+      aria-label={mostrarCuidador ? undefined : "Hoja de vida"}
+      className={mostrarCuidador ? "flex flex-col gap-3 rounded-2xl bg-card p-5 ring-1 ring-border" : "flex flex-col gap-3 rounded-xl bg-card p-4 ring-1 ring-border/70"}
+    >
       <div className="flex flex-wrap items-center justify-between gap-2">
-        <h3 className="text-lg font-semibold text-foreground">{hoja.cuidador.nombre}</h3>
+        {mostrarCuidador ? (
+          <h3 className="text-lg font-semibold text-foreground">{hoja.cuidador.nombre}</h3>
+        ) : (
+          <Badge variant="outline">Hoja de vida</Badge>
+        )}
         <p className="text-sm text-muted-foreground">Subida el {formatearFechaHora(hoja.documento.subidoEn)}</p>
       </div>
       <div>

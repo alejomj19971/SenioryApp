@@ -1,8 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ClipboardCheck } from "lucide-react";
-import { TarjetaDeHojaDeVida, TarjetaDeVerificacion } from "@/components/admin/tarjeta-de-verificacion";
+import { ColaDeRevision } from "@/components/admin/cola-de-revision";
 import { buttonVariants } from "@/components/ui/button";
+import { agruparPorCuidador } from "@/lib/agrupar-revision";
 import { exigirRol } from "@/lib/sesion";
 import { ESTADOS_DE_LA_COLA, listarCola, listarHojasPorRevisar, type EstadoDeLaCola } from "@/lib/services/verificaciones";
 
@@ -25,6 +25,7 @@ export default async function AdminPage({ searchParams }: PageProps<"/admin">) {
   const pedido = (await searchParams).estado;
   const estado: EstadoDeLaCola = ESTADOS_DE_LA_COLA.find((e) => e === pedido) ?? "pendiente";
   const [cola, hojas] = await Promise.all([listarCola(estado), estado === "pendiente" ? listarHojasPorRevisar() : Promise.resolve([])]);
+  const grupos = agruparPorCuidador(cola, hojas);
 
   return (
     <div className="flex flex-col gap-8">
@@ -48,44 +49,19 @@ export default async function AdminPage({ searchParams }: PageProps<"/admin">) {
 
       <section aria-labelledby="verificaciones" className="flex flex-col gap-4">
         <h2 id="verificaciones" className="text-lg font-semibold text-foreground">
-          Verificaciones — {NOMBRE_DEL_ESTADO[estado].toLowerCase()} <span className="font-normal text-muted-foreground">({cola.length})</span>
+          Verificaciones — {NOMBRE_DEL_ESTADO[estado].toLowerCase()} <span className="font-normal text-muted-foreground">({grupos.length})</span>
         </h2>
+        {estado === "pendiente" && <p className="text-base text-muted-foreground">Un cuidador puede tener varios controles y su hoja de vida a la vez: aquí van todos juntos, no por separado.</p>}
         {cola.length >= LIMITE_DE_LA_COLA && (
           <p className="rounded-2xl bg-muted p-4 text-base text-foreground">
             Se muestran las {LIMITE_DE_LA_COLA} más antiguas de este estado. Al decidir estas, aparecen las siguientes.
           </p>
         )}
-        {cola.length === 0 ? (
-          <div className="flex flex-col items-center gap-3 rounded-2xl bg-muted p-8 text-center">
-            <ClipboardCheck className="size-10 text-muted-foreground" aria-hidden="true" />
-            <p className="text-base font-medium text-foreground">{estado === "pendiente" ? "No hay verificaciones por revisar" : "No hay verificaciones en este estado"}</p>
-          </div>
-        ) : (
-          <ul className="flex flex-col gap-4">
-            {cola.map((verificacion) => (
-              <TarjetaDeVerificacion key={verificacion.id} verificacion={verificacion} />
-            ))}
-          </ul>
-        )}
+        <ColaDeRevision
+          grupos={grupos}
+          vacioTitulo={estado === "pendiente" ? "No hay nada por revisar" : "No hay verificaciones en este estado"}
+        />
       </section>
-
-      {estado === "pendiente" && (
-        <section aria-labelledby="hojas" className="flex flex-col gap-4">
-          <h2 id="hojas" className="text-lg font-semibold text-foreground">
-            Hojas de vida por aprobar <span className="font-normal text-muted-foreground">({hojas.length})</span>
-          </h2>
-          <p className="text-base text-muted-foreground">Es el único documento que ven las familias: revísalo antes de aprobarlo.</p>
-          {hojas.length === 0 ? (
-            <p className="rounded-2xl bg-muted p-6 text-center text-base text-muted-foreground">No hay hojas de vida por revisar.</p>
-          ) : (
-            <ul className="flex flex-col gap-4">
-              {hojas.map((hoja) => (
-                <TarjetaDeHojaDeVida key={hoja.documento.id} hoja={hoja} />
-              ))}
-            </ul>
-          )}
-        </section>
-      )}
     </div>
   );
 }
