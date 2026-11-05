@@ -6,6 +6,7 @@ import {
   IsBoolean,
   IsIn,
   IsInt,
+  IsNumber,
   IsOptional,
   IsString,
   IsUUID,
@@ -26,6 +27,12 @@ import {
   LARGO_MAXIMO_DE_TITULO,
   LARGO_MAXIMO_DE_ZONA,
 } from '../../../dominio/cuidador.js';
+import {
+  LATITUD_MAXIMA,
+  LATITUD_MINIMA,
+  LONGITUD_MAXIMA,
+  LONGITUD_MINIMA,
+} from '../../../dominio/ubicacion.js';
 import {
   ESPECIALIDADES,
   ESTADOS_DE_VERIFICACION,
@@ -129,6 +136,22 @@ export class CambiosDePerfilDto {
   @IsOptional()
   @IsBoolean({ message: 'La aceptación automática debe ser verdadero o falso' })
   aceptacionAutomatica?: boolean;
+
+  // El pin que el cuidador fija en el mapa (nunca se geocodifica un texto de dirección). Las dos juntas o
+  // ninguna: el dominio rechaza una sola.
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber({}, { message: 'La latitud no es válida' })
+  @Min(LATITUD_MINIMA, { message: 'La latitud no es válida' })
+  @Max(LATITUD_MAXIMA, { message: 'La latitud no es válida' })
+  latitud?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber({}, { message: 'La longitud no es válida' })
+  @Min(LONGITUD_MINIMA, { message: 'La longitud no es válida' })
+  @Max(LONGITUD_MAXIMA, { message: 'La longitud no es válida' })
+  longitud?: number;
 }
 
 export class ListadoDeVerificacionesDto {

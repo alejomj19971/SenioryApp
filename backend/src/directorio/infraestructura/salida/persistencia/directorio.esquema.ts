@@ -4,6 +4,7 @@ import {
   boolean,
   check,
   date,
+  doublePrecision,
   index,
   integer,
   pgSchema,
@@ -40,6 +41,10 @@ export const cuidadores = esquemaDirectorio.table(
     telefono: text('telefono').notNull(),
     zona: text('zona').notNull(),
     zonaBusqueda: text('zona_busqueda').notNull(),
+    // Dónde atiende, para que la familia busque por cercanía (M2). Null hasta que el propio cuidador fija
+    // un pin en el mapa; las dos columnas se llenan o se quedan vacías juntas (nunca una sola).
+    latitud: doublePrecision('latitud'),
+    longitud: doublePrecision('longitud'),
     disponibilidad: text('disponibilidad').array().notNull(),
     bio: text('bio').notNull(),
     // Solo el propio cuidador activa la aceptación automática.
@@ -91,6 +96,18 @@ export const cuidadores = esquemaDirectorio.table(
       sql`(cantidad_resenas = 0 and suma_calificaciones = 0) or (cantidad_resenas > 0 and suma_calificaciones between cantidad_resenas and cantidad_resenas * 5)`,
     ),
     check('cuidadores_telefono_e164', sql`telefono ~ '^[+][1-9][0-9]{7,14}$'`),
+    check(
+      'cuidadores_ubicacion_coherente',
+      sql`(latitud is null) = (longitud is null)`,
+    ),
+    check(
+      'cuidadores_latitud_valida',
+      sql`latitud is null or latitud between -4.5 and 13.5`,
+    ),
+    check(
+      'cuidadores_longitud_valida',
+      sql`longitud is null or longitud between -82 and -66.5`,
+    ),
     // Solo se indexan los visibles: es lo que consulta la búsqueda.
     index('cuidadores_busqueda_idx')
       .on(t.especialidad, t.tarifaHora)

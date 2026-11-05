@@ -1,6 +1,7 @@
 import type { Jornada } from '../../compartido/dominio/jornada.js';
 import type { Cuidador } from '../dominio/cuidador.js';
 import type { Resena } from '../dominio/resena.js';
+import type { Ubicacion } from '../dominio/ubicacion.js';
 import {
   CONTROLES_DE_VERIFICACION,
   type ControlDeVerificacion,
@@ -39,13 +40,19 @@ export interface VistaDeCuidador {
   aceptacionAutomatica: boolean;
   // Los controles que superó. Para quien se muestra siempre son los tres.
   controlesVerificados: ControlDeVerificacion[];
+  // Distancia en kilómetros desde el punto de la búsqueda; null si no se buscó por cercanía o el cuidador
+  // todavía no fijó su ubicación.
+  distanciaKm: number | null;
 }
 
 export interface VistaDeCuidadorConResenas extends VistaDeCuidador {
   resenas: VistaDeResena[];
 }
 
-export function vistaDeCuidador(cuidador: Cuidador): VistaDeCuidador {
+export function vistaDeCuidador(
+  cuidador: Cuidador,
+  cercaDe?: Ubicacion,
+): VistaDeCuidador {
   return {
     id: cuidador.id,
     nombre: cuidador.nombre,
@@ -69,6 +76,8 @@ export function vistaDeCuidador(cuidador: Cuidador): VistaDeCuidador {
           verificacion.estado === 'aprobada',
       ),
     ),
+    distanciaKm:
+      cercaDe === undefined ? null : cuidador.distanciaHastaKm(cercaDe),
   };
 }
 

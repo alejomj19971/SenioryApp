@@ -1,6 +1,7 @@
 import { ErrorDeValidacion } from '../../compartido/dominio/errores.js';
 import { esJornada, type Jornada } from '../../compartido/dominio/jornada.js';
 import { normalizarParaBuscar } from './texto-de-busqueda.js';
+import { validarUbicacion, type Ubicacion } from './ubicacion.js';
 import {
   especialidadDesdeTexto,
   type Especialidad,
@@ -19,6 +20,9 @@ export interface FiltrosDeCuidadores {
   zona?: string;
   jornada?: Jornada;
   tarifaMaxima?: number;
+  // Si viene, la búsqueda ordena por distancia real en vez de calificación (y solo trae a quien tenga
+  // su propia ubicación guardada). Es la de la familia en ESE momento: nunca se guarda.
+  cercaDe?: Ubicacion;
 }
 
 export interface EntradaDeFiltros {
@@ -27,6 +31,8 @@ export interface EntradaDeFiltros {
   zona?: string;
   jornada?: string;
   tarifaMaxima?: number;
+  lat?: number;
+  lon?: number;
 }
 
 // Un filtro vacío («sin filtro») se ignora; uno mal formado se rechaza con un error claro.
@@ -64,6 +70,18 @@ export function crearFiltros(entrada: EntradaDeFiltros): FiltrosDeCuidadores {
     }
     filtros.tarifaMaxima = entrada.tarifaMaxima;
   }
+  if (entrada.lat !== undefined || entrada.lon !== undefined) {
+    if (entrada.lat === undefined || entrada.lon === undefined) {
+      throw new ErrorDeValidacion(
+        'La búsqueda por cercanía necesita latitud y longitud juntas',
+        'filtro.cerca_de_incompleto',
+      );
+    }
+    filtros.cercaDe = validarUbicacion({
+      latitud: entrada.lat,
+      longitud: entrada.lon,
+    });
+  }
   return filtros;
 }
 
@@ -98,14 +116,30 @@ export function limiteDe(solicitado: number | undefined): number {
   return solicitado;
 }
 
-// El orden de la búsqueda es mejor calificación, luego menor tarifa y, para desempatar, el id. El cursor
+// El orden por defecto es mejor calificación, luego menor tarifa y, para desempatar, el id. El cursor
 // guarda esos tres valores de la última fila vista: la página siguiente empieza justo después, aunque
 // mientras tanto cambien los demás cuidadores (la paginación no repite ni se salta a nadie).
-export interface CursorDeCuidadores {
+export interface CursorDeCalificacion {
   // La calificación de ordenamiento (0 si no tiene reseñas).
   calificacion: number;
   tarifaHora: number;
   id: string;
+}
+
+// Cuando la búsqueda pide cercanía (`cercaDe`), el orden es por distancia: el cursor guarda esa distancia
+// en vez de calificación y tarifa. Se distingue del otro cursor por la sola presencia de `distanciaKm`
+// (sin un campo `tipo` aparte) para que un cursor ya emitido antes de este cambio siga siendo válido.
+export interface CursorDeCercania {
+  distanciaKm: number;
+  id: string;
+}
+
+export type CursorDeCuidadores = CursorDeCalificacion | CursorDeCercania;
+
+export function esCursorDeCercania(
+  cursor: CursorDeCuidadores,
+): cursor is CursorDeCercania {
+  return 'distanciaKm' in cursor;
 }
 
 export function codificarCursor(cursor: CursorDeCuidadores): string {
@@ -123,7 +157,21 @@ export function decodificarCursor(texto: string): CursorDeCuidadores {
       Buffer.from(texto, 'base64url').toString('utf8'),
     );
     if (typeof crudo !== 'object' || crudo === null) throw invalido();
-    const { calificacion, tarifaHora, id } = crudo as Record<string, unknown>;
+    const registro = crudo as Record<string, unknown>;
+    if ('distanciaKm' in registro) {
+      const { distanciaKm, id } = registro;
+      if (
+        typeof distanciaKm !== 'number' ||
+        !Number.isFinite(distanciaKm) ||
+        distanciaKm < 0 ||
+        typeof id !== 'string' ||
+        !/^[0-9a-f-]{36}$/.test(id)
+      ) {
+        throw invalido();
+      }
+      return { distanciaKm, id };
+    }
+    const { calificacion, tarifaHora, id } = registro;
     if (
       typeof calificacion !== 'number' ||
       !Number.isFinite(calificacion) ||

@@ -41,6 +41,9 @@ export interface VistaDeMiPerfil {
   tarifaHora: number;
   telefono: string;
   zona: string;
+  // El pin que fijó en el mapa; null si todavía no lo hace.
+  latitud: number | null;
+  longitud: number | null;
   disponibilidad: string[];
   bio: string;
   aceptacionAutomatica: boolean;
@@ -103,6 +106,8 @@ export function vistaDeMiPerfil(
     tarifaHora: cuidador.tarifaHora.valor,
     telefono: cuidador.telefono,
     zona: cuidador.zona,
+    latitud: cuidador.ubicacion?.latitud ?? null,
+    longitud: cuidador.ubicacion?.longitud ?? null,
     disponibilidad: [...cuidador.disponibilidad],
     bio: cuidador.bio,
     aceptacionAutomatica: cuidador.aceptacionAutomatica,

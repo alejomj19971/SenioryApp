@@ -75,6 +75,10 @@ export function cuidadorDeFila(
     tarifaHora: Dinero.pesos(fila.tarifaHora),
     telefono: fila.telefono,
     zona: fila.zona,
+    ubicacion:
+      fila.latitud === null || fila.longitud === null
+        ? null
+        : { latitud: fila.latitud, longitud: fila.longitud },
     disponibilidad: fila.disponibilidad.map((jornada): Jornada => {
       if (!esJornada(jornada)) {
         throw new Error(

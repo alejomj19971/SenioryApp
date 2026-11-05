@@ -2,6 +2,7 @@ import { and, asc, desc, eq, inArray, lte, sql, type SQL } from 'drizzle-orm';
 import type { PgColumn } from 'drizzle-orm/pg-core';
 import {
   ConflictoDeEstado,
+  ErrorDeValidacion,
   RecursoNoEncontrado,
 } from '../../../../compartido/dominio/errores.js';
 import type { ContextoTransaccional } from '../../../../compartido/infraestructura/base-de-datos/contexto-transaccional.js';
@@ -14,12 +15,14 @@ import type {
 } from '../../../aplicacion/puertos/salida/repositorio-cuidadores.js';
 import type { FechaCivil } from '../../../../compartido/dominio/fecha-civil.js';
 import type { Cuidador } from '../../../dominio/cuidador.js';
-import type {
-  CursorDeCuidadores,
-  FiltrosDeCuidadores,
+import {
+  esCursorDeCercania,
+  type CursorDeCuidadores,
+  type FiltrosDeCuidadores,
 } from '../../../dominio/filtros-de-cuidadores.js';
 import type { CuidadorId, VerificacionId } from '../../../dominio/ids.js';
 import { normalizarParaBuscar } from '../../../dominio/texto-de-busqueda.js';
+import type { Ubicacion } from '../../../dominio/ubicacion.js';
 import {
   CONTROLES_DE_VERIFICACION,
   ESPECIALIDADES,
@@ -32,6 +35,13 @@ import { cuidadorDeFila, verificacionDeFila } from './mapeadores.js';
 // La calificación con la que se ordena: el promedio con un decimal, y 0 si todavía no tiene reseñas. Es
 // la MISMA cuenta que `Cuidador.calificacion()`, así el cursor (que guarda este valor) coincide.
 const CALIFICACION_DE_ORDEN = sql`coalesce(round(${cuidadores.sumaCalificaciones}::numeric / nullif(${cuidadores.cantidadResenas}, 0), 1), 0)`;
+
+// La distancia en kilómetros desde `punto` (la familia que busca) hasta cada cuidador, con la extensión
+// `earthdistance` (CREATE EXTENSION cube; CREATE EXTENSION earthdistance;). Solo tiene sentido sobre filas
+// con latitud y longitud propias: quien llama debe filtrar `latitud is not null` por su cuenta.
+function distanciaDeOrden(punto: Ubicacion): SQL {
+  return sql`earth_distance(ll_to_earth(${cuidadores.latitud}, ${cuidadores.longitud}), ll_to_earth(${punto.latitud}, ${punto.longitud})) / 1000`;
+}
 
 // Para un `LIKE '%texto%'`: el texto de la persona nunca debe actuar como comodín.
 function contiene(columna: PgColumn, texto: string): SQL {
@@ -61,6 +71,8 @@ export class RepositorioCuidadoresDrizzle implements RepositorioCuidadores {
           telefono: cuidador.telefono,
           zona: cuidador.zona,
           zonaBusqueda: normalizarParaBuscar(cuidador.zona),
+          latitud: cuidador.ubicacion?.latitud ?? null,
+          longitud: cuidador.ubicacion?.longitud ?? null,
           disponibilidad: [...cuidador.disponibilidad],
           bio: cuidador.bio,
           aceptacionAutomatica: cuidador.aceptacionAutomatica,
@@ -125,6 +137,8 @@ export class RepositorioCuidadoresDrizzle implements RepositorioCuidadores {
           telefono: cuidador.telefono,
           zona: cuidador.zona,
           zonaBusqueda: normalizarParaBuscar(cuidador.zona),
+          latitud: cuidador.ubicacion?.latitud ?? null,
+          longitud: cuidador.ubicacion?.longitud ?? null,
           disponibilidad: [...cuidador.disponibilidad],
           bio: cuidador.bio,
           estado: cuidador.estado,
@@ -306,27 +320,56 @@ export class RepositorioCuidadoresDrizzle implements RepositorioCuidadores {
     if (filtros.tarifaMaxima !== undefined) {
       condiciones.push(lte(cuidadores.tarifaHora, filtros.tarifaMaxima));
     }
+    // Buscar por cercanía exige que el propio cuidador tenga su punto guardado: sin él no hay distancia
+    // que calcular, así que ni siquiera entra en la página (en vez de ordenar al final sin orden real).
+    const cercaDe = filtros.cercaDe;
+    if (cercaDe !== undefined) {
+      condiciones.push(
+        sql`${cuidadores.latitud} is not null and ${cuidadores.longitud} is not null`,
+      );
+    }
     if (cursor !== null) {
-      // Lo que va DESPUÉS de la última fila vista, en el orden de la búsqueda.
-      condiciones.push(sql`(
-        ${CALIFICACION_DE_ORDEN} < ${cursor.calificacion}::numeric
-        or (${CALIFICACION_DE_ORDEN} = ${cursor.calificacion}::numeric and ${cuidadores.tarifaHora} > ${cursor.tarifaHora})
-        or (${CALIFICACION_DE_ORDEN} = ${cursor.calificacion}::numeric and ${cuidadores.tarifaHora} = ${cursor.tarifaHora} and ${cuidadores.id} > ${cursor.id}::uuid)
-      )`);
+      if (cercaDe !== undefined && esCursorDeCercania(cursor)) {
+        const distancia = distanciaDeOrden(cercaDe);
+        // Lo que va DESPUÉS de la última fila vista, en el orden de la búsqueda.
+        condiciones.push(sql`(
+          ${distancia} > ${cursor.distanciaKm}
+          or (${distancia} = ${cursor.distanciaKm} and ${cuidadores.id} > ${cursor.id}::uuid)
+        )`);
+      } else if (cercaDe === undefined && !esCursorDeCercania(cursor)) {
+        condiciones.push(sql`(
+          ${CALIFICACION_DE_ORDEN} < ${cursor.calificacion}::numeric
+          or (${CALIFICACION_DE_ORDEN} = ${cursor.calificacion}::numeric and ${cuidadores.tarifaHora} > ${cursor.tarifaHora})
+          or (${CALIFICACION_DE_ORDEN} = ${cursor.calificacion}::numeric and ${cuidadores.tarifaHora} = ${cursor.tarifaHora} and ${cuidadores.id} > ${cursor.id}::uuid)
+        )`);
+      } else {
+        // El cursor es de la otra página (p. ej. se cambió de orden a mitad de la paginación): no hay un
+        // «después» coherente que calcular, así que se trata como inválido en vez de adivinar un orden.
+        throw new ErrorDeValidacion(
+          'El cursor no corresponde a esta búsqueda',
+          'paginacion.cursor_no_corresponde',
+        );
+      }
     }
 
     // Una fila de más para saber si hay otra página sin hacer una segunda consulta.
-    const filas = await this.contexto
+    const consulta = this.contexto
       .conexion()
       .select()
       .from(cuidadores)
-      .where(and(...condiciones))
-      .orderBy(
-        desc(CALIFICACION_DE_ORDEN),
-        asc(cuidadores.tarifaHora),
-        asc(cuidadores.id),
-      )
-      .limit(limite + 1);
+      .where(and(...condiciones));
+    const filas =
+      cercaDe !== undefined
+        ? await consulta
+            .orderBy(asc(distanciaDeOrden(cercaDe)), asc(cuidadores.id))
+            .limit(limite + 1)
+        : await consulta
+            .orderBy(
+              desc(CALIFICACION_DE_ORDEN),
+              asc(cuidadores.tarifaHora),
+              asc(cuidadores.id),
+            )
+            .limit(limite + 1);
 
     const hayMas = filas.length > limite;
     const delaPagina = hayMas ? filas.slice(0, limite) : filas;
@@ -341,11 +384,17 @@ export class RepositorioCuidadoresDrizzle implements RepositorioCuidadores {
       cuidadores: lista,
       siguiente:
         hayMas && ultimo !== undefined
-          ? {
-              calificacion: ultimo.calificacion() ?? 0,
-              tarifaHora: ultimo.tarifaHora.valor,
-              id: ultimo.id,
-            }
+          ? cercaDe !== undefined
+            ? // Filtrado arriba a los que SÍ tienen ubicación: nunca da null aquí.
+              {
+                distanciaKm: ultimo.distanciaHastaKm(cercaDe) ?? 0,
+                id: ultimo.id,
+              }
+            : {
+                calificacion: ultimo.calificacion() ?? 0,
+                tarifaHora: ultimo.tarifaHora.valor,
+                id: ultimo.id,
+              }
           : null,
     };
   }

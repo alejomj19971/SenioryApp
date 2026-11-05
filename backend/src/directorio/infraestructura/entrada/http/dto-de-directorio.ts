@@ -1,6 +1,20 @@
 import { Type } from 'class-transformer';
-import { IsInt, IsOptional, IsString, Length, Max, Min } from 'class-validator';
+import {
+  IsInt,
+  IsNumber,
+  IsOptional,
+  IsString,
+  Length,
+  Max,
+  Min,
+} from 'class-validator';
 import { LIMITE_MAXIMO } from '../../../dominio/filtros-de-cuidadores.js';
+import {
+  LATITUD_MAXIMA,
+  LATITUD_MINIMA,
+  LONGITUD_MAXIMA,
+  LONGITUD_MINIMA,
+} from '../../../dominio/ubicacion.js';
 
 // Como en los demás DTO, solo se verifica la FORMA (que sea texto o número): las reglas (qué zona existe, qué
 // especialidad es válida, cuánto es una tarifa razonable) las aplica el dominio. Los parámetros que no se
@@ -46,6 +60,22 @@ export class BusquedaDeCuidadoresDto {
   @IsString({ message: 'El cursor no es válido' })
   @Length(0, 500, { message: 'El cursor no es válido' })
   cursor?: string;
+
+  // Buscar por cercanía: la coordenada la manda el navegador de la familia en cada búsqueda (geolocalización
+  // efímera); el backend nunca la guarda. Las dos juntas o ninguna (el dominio rechaza una sola).
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber({}, { message: 'La latitud no es válida' })
+  @Min(LATITUD_MINIMA, { message: 'La latitud no es válida' })
+  @Max(LATITUD_MAXIMA, { message: 'La latitud no es válida' })
+  lat?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber({}, { message: 'La longitud no es válida' })
+  @Min(LONGITUD_MINIMA, { message: 'La longitud no es válida' })
+  @Max(LONGITUD_MAXIMA, { message: 'La longitud no es válida' })
+  lon?: number;
 }
 
 export class ArchivoFirmadoDto {

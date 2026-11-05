@@ -332,6 +332,74 @@ describe('Cuidador: editar el perfil y enviarlo a revisión', () => {
     );
   });
 
+  it('fija el pin del mapa (nace sin ubicación)', () => {
+    const cuidador = nuevo();
+    expect(cuidador.ubicacion).toBeNull();
+
+    cuidador.actualizarPerfil(
+      { latitud: 6.244203, longitud: -75.581212 },
+      AHORA,
+    );
+
+    expect(cuidador.ubicacion).toEqual({
+      latitud: 6.244203,
+      longitud: -75.581212,
+    });
+  });
+
+  it('no deja mover solo una de las dos coordenadas', () => {
+    const cuidador = nuevo();
+
+    expect(() => cuidador.actualizarPerfil({ latitud: 6.24 }, AHORA)).toThrow(
+      expect.objectContaining({
+        codigo: 'cuidador.ubicacion_incompleta',
+      }) as Error,
+    );
+    expect(() =>
+      cuidador.actualizarPerfil({ longitud: -75.58 }, AHORA),
+    ).toThrow(
+      expect.objectContaining({
+        codigo: 'cuidador.ubicacion_incompleta',
+      }) as Error,
+    );
+    expect(cuidador.ubicacion).toBeNull();
+  });
+
+  it('rechaza un punto fuera de Colombia', () => {
+    const cuidador = nuevo();
+
+    expect(() =>
+      cuidador.actualizarPerfil({ latitud: 40.7128, longitud: -74.006 }, AHORA),
+    ).toThrow(
+      expect.objectContaining({
+        codigo: 'ubicacion.fuera_de_colombia',
+      }) as Error,
+    );
+  });
+
+  it('distanciaHastaKm es null sin ubicación propia, y crece con la distancia real', () => {
+    const sinUbicacion = nuevo();
+    expect(
+      sinUbicacion.distanciaHastaKm({ latitud: 6.25, longitud: -75.56 }),
+    ).toBeNull();
+
+    // Medellín.
+    const cuidador = nuevo();
+    cuidador.actualizarPerfil(
+      { latitud: 6.244203, longitud: -75.581212 },
+      AHORA,
+    );
+    // Bogotá: ~240 km en línea recta desde Medellín.
+    const distancia = cuidador.distanciaHastaKm({
+      latitud: 4.710989,
+      longitud: -74.072092,
+    });
+    expect(distancia).not.toBeNull();
+    expect(distancia as number).toBeGreaterThan(200);
+    expect(distancia as number).toBeLessThan(280);
+    expect(cuidador.distanciaHastaKm(cuidador.ubicacion!)).toBeCloseTo(0, 6);
+  });
+
   it('cambia la foto de inmediato, sin pasar por revisión', () => {
     const cuidador = nuevo();
     const version = cuidador.version;

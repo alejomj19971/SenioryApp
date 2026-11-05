@@ -43,6 +43,7 @@ export interface OpcionesDeCuidadorDePrueba {
   // Los controles que tiene aprobados (por defecto, los tres).
   controles?: readonly ControlDeVerificacion[];
   activo?: boolean;
+  ubicacion?: { latitud: number; longitud: number };
 }
 
 // Un cuidador con sus controles aprobados y, por defecto, activo y visible.
@@ -64,6 +65,15 @@ export function cuidadorDePrueba(
     bio: 'Cuido con paciencia y cariño.',
     ahora: AHORA,
   });
+  if (opciones.ubicacion !== undefined) {
+    cuidador.actualizarPerfil(
+      {
+        latitud: opciones.ubicacion.latitud,
+        longitud: opciones.ubicacion.longitud,
+      },
+      AHORA,
+    );
+  }
   for (const control of opciones.controles ?? CONTROLES_DE_VERIFICACION) {
     cuidador.conVerificacion(verificacionDePrueba(id, control));
   }

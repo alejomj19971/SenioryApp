@@ -200,6 +200,68 @@ describe('RepositorioCuidadoresDrizzle', () => {
       expect(cuidadores.map((c) => c.id)).toEqual([esperado.id]);
     });
 
+    it('busca por cercanía: ordena por distancia real y deja afuera a quien no tiene ubicación', async () => {
+      const zona = zonaUnica();
+      // Medellín (centro).
+      const medellin = { latitud: 6.244203, longitud: -75.581212 };
+      // El Poblado: a pocos km de `medellin`.
+      const cercano = await guardarCuidador(repos, {
+        zona,
+        ubicacion: { latitud: 6.209764, longitud: -75.567229 },
+      });
+      // Bogotá: a unos 240 km.
+      const lejano = await guardarCuidador(repos, {
+        zona,
+        ubicacion: { latitud: 4.710989, longitud: -74.072092 },
+      });
+      // Sin ubicación propia: no participa en esta búsqueda.
+      await guardarCuidador(repos, { zona });
+
+      const { cuidadores } = await listar(zona, {
+        lat: medellin.latitud,
+        lon: medellin.longitud,
+      });
+
+      expect(cuidadores.map((c) => c.id)).toEqual([cercano.id, lejano.id]);
+    });
+
+    it('la paginación por cercanía trae a todos una sola vez, en orden de distancia', async () => {
+      const zona = zonaUnica();
+      const medellin = { latitud: 6.244203, longitud: -75.581212 };
+      const a = await guardarCuidador(repos, {
+        zona,
+        ubicacion: { latitud: 6.209764, longitud: -75.567229 },
+      });
+      const b = await guardarCuidador(repos, {
+        zona,
+        ubicacion: { latitud: 5.069878, longitud: -75.517738 },
+      });
+      const c = await guardarCuidador(repos, {
+        zona,
+        ubicacion: { latitud: 4.710989, longitud: -74.072092 },
+      });
+
+      const vistos: string[] = [];
+      let cursor = null as Parameters<
+        typeof repos.cuidadores.listarVisibles
+      >[2];
+      let paginas = 0;
+      do {
+        const pagina = await listar(
+          zona,
+          { lat: medellin.latitud, lon: medellin.longitud },
+          1,
+          cursor,
+        );
+        vistos.push(...pagina.cuidadores.map((cuidador) => cuidador.id));
+        cursor = pagina.siguiente;
+        paginas += 1;
+      } while (cursor !== null && paginas < 10);
+
+      expect(vistos).toEqual([a.id, b.id, c.id]);
+      expect(paginas).toBe(3);
+    });
+
     it('el filtro de zona compara sin tildes ni mayúsculas', async () => {
       const marca = nuevoId().slice(0, 8);
       const cuidador = await guardarCuidador(repos, {

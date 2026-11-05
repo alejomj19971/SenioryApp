@@ -3,6 +3,7 @@ import {
   codificarCursor,
   crearFiltros,
   decodificarCursor,
+  esCursorDeCercania,
   LIMITE_MAXIMO,
   LIMITE_POR_DEFECTO,
   limiteDe,
@@ -256,6 +257,27 @@ describe('crearFiltros', () => {
       expect.objectContaining({ codigo }),
     );
   });
+
+  it('acepta lat y lon juntas, dentro de Colombia', () => {
+    expect(crearFiltros({ lat: 6.244203, lon: -75.581212 })).toEqual({
+      cercaDe: { latitud: 6.244203, longitud: -75.581212 },
+    });
+  });
+
+  it.each([
+    ['solo lat', { lat: 6.24 }],
+    ['solo lon', { lon: -75.58 }],
+  ])('rechaza %s sin la otra', (_caso, entrada) => {
+    expect(() => crearFiltros(entrada)).toThrow(
+      expect.objectContaining({ codigo: 'filtro.cerca_de_incompleto' }),
+    );
+  });
+
+  it('rechaza lat/lon fuera de Colombia', () => {
+    expect(() => crearFiltros({ lat: 40.7128, lon: -74.006 })).toThrow(
+      expect.objectContaining({ codigo: 'ubicacion.fuera_de_colombia' }),
+    );
+  });
 });
 
 describe('limiteDe', () => {
@@ -323,5 +345,32 @@ describe('cursor', () => {
     expect(() => decodificarCursor(texto)).toThrow(
       expect.objectContaining({ codigo: 'paginacion.cursor_invalido' }),
     );
+  });
+
+  describe('cursor de cercanía', () => {
+    const cursorDeCercania = {
+      distanciaKm: 4.2,
+      id: '0198aaaa-0000-7000-8000-000000000001',
+    };
+
+    it('se codifica y se decodifica sin perder nada, y se distingue del otro cursor', () => {
+      const decodificado = decodificarCursor(codificarCursor(cursorDeCercania));
+      expect(decodificado).toEqual(cursorDeCercania);
+      expect(esCursorDeCercania(decodificado)).toBe(true);
+      expect(
+        esCursorDeCercania(decodificarCursor(codificarCursor(cursor))),
+      ).toBe(false);
+    });
+
+    it.each([
+      ['distancia negativa', { ...cursorDeCercania, distanciaKm: -1 }],
+      ['distancia NaN', { ...cursorDeCercania, distanciaKm: Number.NaN }],
+      ['sin id', { distanciaKm: 4.2 }],
+    ])('rechaza %s', (_caso, cuerpo) => {
+      const texto = Buffer.from(JSON.stringify(cuerpo)).toString('base64url');
+      expect(() => decodificarCursor(texto)).toThrow(
+        expect.objectContaining({ codigo: 'paginacion.cursor_invalido' }),
+      );
+    });
   });
 });

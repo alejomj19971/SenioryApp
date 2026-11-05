@@ -6,6 +6,7 @@ import {
 import type { FechaCivil } from '../../compartido/dominio/fecha-civil.js';
 import { JORNADAS, type Jornada } from '../../compartido/dominio/jornada.js';
 import type { CuidadorId } from './ids.js';
+import { distanciaKm, validarUbicacion, type Ubicacion } from './ubicacion.js';
 import {
   CONTROLES_DE_VERIFICACION,
   type Especialidad,
@@ -39,6 +40,9 @@ export interface DatosDeCuidador {
   zona: string;
   disponibilidad: readonly Jornada[];
   bio: string;
+  // Dónde atiende, para que la familia busque por cercanía (M2). Null hasta que el propio cuidador fija un
+  // pin en el mapa: nunca se deriva de `zona` (ese texto no es una dirección geocodificable confiable).
+  ubicacion: Ubicacion | null;
   // Solo el propio cuidador la activa.
   aceptacionAutomatica: boolean;
   estado: EstadoDeCuidador;
@@ -81,6 +85,9 @@ export interface CambiosDePerfil {
   disponibilidad?: readonly Jornada[];
   bio?: string;
   aceptacionAutomatica?: boolean;
+  // Las dos juntas o ninguna: fijan el pin del mapa (M2). No se puede mover solo una coordenada del par.
+  latitud?: number;
+  longitud?: number;
 }
 
 // La persona que presta el cuidado y que las familias buscan.
@@ -111,6 +118,7 @@ export class Cuidador {
       zona,
       disponibilidad,
       bio,
+      ubicacion: null,
       aceptacionAutomatica: false,
       estado: 'borrador',
       visible: false,
@@ -165,6 +173,9 @@ export class Cuidador {
   get bio(): string {
     return this.datos.bio;
   }
+  get ubicacion(): Ubicacion | null {
+    return this.datos.ubicacion;
+  }
   get aceptacionAutomatica(): boolean {
     return this.datos.aceptacionAutomatica;
   }
@@ -204,6 +215,13 @@ export class Cuidador {
         (this.datos.sumaCalificaciones / this.datos.cantidadResenas) * 10,
       ) / 10
     );
+  }
+
+  // Distancia hasta un punto (la familia que busca); null si todavía no fijó su ubicación.
+  distanciaHastaKm(punto: Ubicacion): number | null {
+    return this.datos.ubicacion === null
+      ? null
+      : distanciaKm(this.datos.ubicacion, punto);
   }
 
   // E7: activo y con los tres controles aprobados y vigentes hoy.
@@ -280,6 +298,18 @@ export class Cuidador {
     this.datos.disponibilidad = validado.disponibilidad;
     if (cambios.aceptacionAutomatica !== undefined) {
       this.datos.aceptacionAutomatica = cambios.aceptacionAutomatica;
+    }
+    if (cambios.latitud !== undefined || cambios.longitud !== undefined) {
+      if (cambios.latitud === undefined || cambios.longitud === undefined) {
+        throw new ErrorDeValidacion(
+          'La ubicación necesita latitud y longitud juntas',
+          'cuidador.ubicacion_incompleta',
+        );
+      }
+      this.datos.ubicacion = validarUbicacion({
+        latitud: cambios.latitud,
+        longitud: cambios.longitud,
+      });
     }
     this.tocar(ahora);
   }

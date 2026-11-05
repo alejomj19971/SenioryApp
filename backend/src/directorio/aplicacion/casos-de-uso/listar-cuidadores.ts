@@ -38,7 +38,9 @@ export class ListarCuidadores {
       cursor,
     );
     return {
-      cuidadores: pagina.cuidadores.map(vistaDeCuidador),
+      cuidadores: pagina.cuidadores.map((cuidador) =>
+        vistaDeCuidador(cuidador, filtros.cercaDe),
+      ),
       siguiente:
         pagina.siguiente === null ? null : codificarCursor(pagina.siguiente),
     };
