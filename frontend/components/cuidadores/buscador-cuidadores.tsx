@@ -9,6 +9,7 @@ import { Aviso } from "@/components/ui/aviso";
 import { Button } from "@/components/ui/button";
 import { cargarMasCuidadores } from "@/lib/acciones/cuidadores";
 import { consultaDeFiltros } from "@/lib/filtros-de-cuidadores";
+import { useUbicacionDelNavegador, type Coordenada } from "@/lib/hooks/use-ubicacion";
 import type { CuidadorResumen, Especialidad, FiltrosCuidador as Filtros, Jornada } from "@/lib/types";
 
 // Cuánto se espera después de la última tecla o ajuste antes de buscar en el servidor.
@@ -43,6 +44,11 @@ export function BuscadorCuidadores({
   const [zona, setZona] = useState<string | null>(filtros.zona ?? null);
   // El tope del control deslizante significa «sin límite de tarifa»: no se envía.
   const [tarifaMaxima, setTarifaMaxima] = useState(Math.min(filtros.tarifaMaxima ?? tarifaLimite, tarifaLimite));
+  const [cercaDe, setCercaDe] = useState<Coordenada | null>(
+    filtros.cercaDeLat !== undefined && filtros.cercaDeLon !== undefined ? { latitud: filtros.cercaDeLat, longitud: filtros.cercaDeLon } : null,
+  );
+  const [errorDeUbicacion, setErrorDeUbicacion] = useState<string | null>(null);
+  const { obteniendo: buscandoUbicacion, obtenerUbicacion } = useUbicacionDelNavegador();
 
   // Lo que se muestra: la primera página (la que trajo el servidor para estos filtros) y las que se hayan pedido
   // con «Ver más» PARA ESTOS MISMOS filtros. Se guarda con la búsqueda a la que pertenecen, así una búsqueda nueva
@@ -69,6 +75,7 @@ export function BuscadorCuidadores({
       ...(jornada !== null ? { jornada } : {}),
       ...(zona !== null ? { zona } : {}),
       ...(tarifaMaxima < tarifaLimite ? { tarifaMaxima } : {}),
+      ...(cercaDe !== null ? { cercaDeLat: cercaDe.latitud, cercaDeLon: cercaDe.longitud } : {}),
     };
     const consulta = consultaDeFiltros(deseados);
     if (consulta === consultaActual) return;
@@ -76,7 +83,7 @@ export function BuscadorCuidadores({
       empezarBusqueda(() => enrutador.replace(consulta === "" ? ruta : `${ruta}?${consulta}`, { scroll: false }));
     }, ESPERA_DE_BUSQUEDA_MS);
     return () => clearTimeout(espera);
-  }, [busqueda, especialidad, jornada, zona, tarifaMaxima, tarifaLimite, consultaActual, enrutador, ruta]);
+  }, [busqueda, especialidad, jornada, zona, tarifaMaxima, tarifaLimite, cercaDe, consultaActual, enrutador, ruta]);
 
   function limpiarFiltros() {
     setBusqueda("");
@@ -84,6 +91,24 @@ export function BuscadorCuidadores({
     setJornada(null);
     setZona(null);
     setTarifaMaxima(tarifaLimite);
+    setCercaDe(null);
+    setErrorDeUbicacion(null);
+  }
+
+  // Geolocalización efímera: se pide cada vez, nunca se guarda. Si la persona ya la activó, apagarla solo
+  // quita el filtro (no hace falta volver a pedir permiso para prenderla de nuevo).
+  async function alternarCercaDeMi() {
+    if (cercaDe !== null) {
+      setCercaDe(null);
+      return;
+    }
+    setErrorDeUbicacion(null);
+    const resultado = await obtenerUbicacion();
+    if (!resultado.ok) {
+      setErrorDeUbicacion(resultado.mensaje);
+      return;
+    }
+    setCercaDe(resultado.datos);
   }
 
   async function verMas() {
@@ -122,13 +147,28 @@ export function BuscadorCuidadores({
         tarifaMaxima={tarifaMaxima}
         onTarifaMaximaChange={setTarifaMaxima}
         tarifaLimite={tarifaLimite}
+        cercaDeMiActivo={cercaDe !== null}
+        onCercaDeMiToggle={alternarCercaDeMi}
+        buscandoUbicacion={buscandoUbicacion}
       />
+
+      {errorDeUbicacion !== null && (
+        <Aviso
+          titulo="No pudimos usar tu ubicación"
+          descripcion={errorDeUbicacion}
+          accion={
+            <Button type="button" variant="outline" size="sm" onClick={alternarCercaDeMi}>
+              Reintentar
+            </Button>
+          }
+        />
+      )}
 
       <p className="flex items-center gap-2 text-sm text-muted-foreground" aria-live="polite">
         {buscando && <Loader2 className="size-4 animate-spin" aria-hidden="true" />}
         {buscando
           ? "Buscando…"
-          : `${cuidadores.length}${siguiente !== null ? " o más" : ""} ${cuidadores.length === 1 ? "cuidador encontrado" : "cuidadores encontrados"}`}
+          : `${cuidadores.length}${siguiente !== null ? " o más" : ""} ${cuidadores.length === 1 ? "cuidador encontrado" : "cuidadores encontrados"}${cercaDe !== null ? ", ordenados por cercanía" : ""}`}
       </p>
 
       {cuidadores.length > 0 ? (

@@ -29,6 +29,7 @@ const cuidador = (n: number, extra: Partial<CuidadorResumen> = {}): CuidadorResu
   serviciosCompletados: 1,
   bio: "",
   verificacion: { antecedentes: true, titulos: true, psicotecnica: true },
+  distanciaKm: null,
   ...extra,
 });
 

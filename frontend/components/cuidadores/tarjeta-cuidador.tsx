@@ -2,7 +2,7 @@ import Link from "next/link";
 import { ShieldCheck, Star, MapPin } from "lucide-react";
 import { AvatarCuidador } from "@/components/avatar-cuidador";
 import type { CuidadorResumen } from "@/lib/types";
-import { etiquetaEspecialidad, formatearCOP } from "@/lib/format";
+import { etiquetaEspecialidad, formatearCOP, formatearDistanciaKm } from "@/lib/format";
 
 export function TarjetaCuidador({ cuidador }: { cuidador: CuidadorResumen }) {
   return (
@@ -25,6 +25,7 @@ export function TarjetaCuidador({ cuidador }: { cuidador: CuidadorResumen }) {
         <div className="flex items-center gap-1 text-sm text-muted-foreground">
           <MapPin className="size-3.5 shrink-0" aria-hidden="true" />
           {cuidador.zona}
+          {cuidador.distanciaKm !== null && <span className="font-medium text-foreground">· a {formatearDistanciaKm(cuidador.distanciaKm)}</span>}
         </div>
         <div className="mt-1 flex items-center justify-between">
           {cuidador.calificacion !== null ? (

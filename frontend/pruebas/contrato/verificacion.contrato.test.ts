@@ -22,7 +22,7 @@ const disponible = (await backendDisponible()) && hayAdministradorDePrueba;
 const BFF = process.env.SENIORY_BFF_SECRETO ?? "";
 const PDF = Buffer.from("%PDF-1.4\n1 0 obj<</Type/Catalog>>endobj\ntrailer<</Root 1 0 R>>\n%%EOF\n");
 
-const CAMPOS_DEL_PERFIL = ["aceptacionAutomatica", "aniosExperiencia", "bio", "controles", "disponibilidad", "documentos", "especialidad", "estado", "id", "nombre", "tarifaHora", "telefono", "titulo", "visible", "zona"];
+const CAMPOS_DEL_PERFIL = ["aceptacionAutomatica", "aniosExperiencia", "bio", "controles", "disponibilidad", "documentos", "especialidad", "estado", "id", "latitud", "longitud", "nombre", "tarifaHora", "telefono", "titulo", "visible", "zona"];
 const CAMPOS_DEL_DOCUMENTO = ["estado", "id", "nombre", "subidoEn", "tamanoBytes", "tipo"];
 const CAMPOS_DEL_CONTROL = ["control", "estado", "motivoDeRechazo", "puedeRenovar", "vigenteHasta"];
 
@@ -32,6 +32,8 @@ interface Perfil {
   visible: boolean;
   controles: { control: string; estado: string; motivoDeRechazo: string | null; vigenteHasta: string | null; puedeRenovar: boolean }[];
   documentos: { id: string; tipo: string }[];
+  latitud: number | null;
+  longitud: number | null;
 }
 
 describe.skipIf(!disponible)("contrato de la postulación y verificación con el backend local", () => {
@@ -83,7 +85,7 @@ describe.skipIf(!disponible)("contrato de la postulación y verificación con el
     expect(respuesta.status).toBe(201);
     const { perfil } = (await respuesta.json()) as { perfil: Perfil };
     expect(Object.keys(perfil).sort()).toEqual(CAMPOS_DEL_PERFIL);
-    expect(perfil).toMatchObject({ visible: false, documentos: [] });
+    expect(perfil).toMatchObject({ visible: false, documentos: [], latitud: null, longitud: null });
     expect(perfil.estado).not.toBe("activo");
     expect(perfil.controles.map((c) => c.control)).toEqual(["antecedentes", "titulos", "psicotecnica"]);
     expect(perfil.controles.every((c) => c.estado === "sin_solicitar" && !c.puedeRenovar)).toBe(true);
@@ -100,6 +102,15 @@ describe.skipIf(!disponible)("contrato de la postulación y verificación con el
     expect(((await respuesta.json()) as { perfil: { bio: string; tarifaHora: number; zona: string } }).perfil).toMatchObject({ bio: "Bio corregida.", tarifaHora: 19_000, zona: "Belén" });
     expect((await comoCuidador("/cuidadores/yo", { metodo: "PATCH", cuerpo: { visible: true } })).status).toBe(400);
     expect((await comoCuidador("/cuidadores/yo", { metodo: "PATCH", cuerpo: { estado: "activo" } })).status).toBe(400);
+  });
+
+  it("fija el pin (M2): las dos coordenadas juntas o ninguna, y dentro de Colombia", async () => {
+    expect((await comoCuidador("/cuidadores/yo", { metodo: "PATCH", cuerpo: { latitud: 6.2442 } })).status).toBe(400);
+    expect((await comoCuidador("/cuidadores/yo", { metodo: "PATCH", cuerpo: { latitud: 40.7128, longitud: -74.006 } })).status).toBe(400);
+
+    const guardado = await comoCuidador("/cuidadores/yo", { metodo: "PATCH", cuerpo: { latitud: 6.2442, longitud: -75.5812 } });
+    expect(guardado.status).toBe(200);
+    expect(((await guardado.json()) as { perfil: Perfil }).perfil).toMatchObject({ latitud: 6.2442, longitud: -75.5812 });
   });
 
   it("los documentos viajan como cuerpo binario: se acepta el PDF, y se rechaza lo que no es lo que dice ser", async () => {

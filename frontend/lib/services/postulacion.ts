@@ -43,6 +43,8 @@ function aMiPerfil(p: MiPerfilDelBackend): MiPerfilDeCuidador {
     visible: p.visible,
     controles: p.controles.map((c) => ({ control: c.control, estado: c.estado, motivoDeRechazo: c.motivoDeRechazo, vigenteHasta: c.vigenteHasta, puedeRenovar: c.puedeRenovar })),
     documentos: p.documentos.map(aDocumento),
+    latitud: p.latitud,
+    longitud: p.longitud,
   };
 }
 
@@ -62,8 +64,9 @@ async function comoPerfil(resultado: Promise<ResultadoDeEscritura<RespuestaDeMiP
 
 export const crearMiPerfil = (datos: DatosDePerfil) => comoPerfil(escribirEnBackend<RespuestaDeMiPerfil>("/cuidadores/yo", { metodo: "POST", cuerpo: datos }));
 
-// Solo lo que cambia (un perfil activo no puede cambiar su especialidad ni su título).
-export const actualizarMiPerfil = (cambios: Partial<DatosDePerfil> & { aceptacionAutomatica?: boolean }) =>
+// Solo lo que cambia (un perfil activo no puede cambiar su especialidad ni su título). `latitud`/`longitud`:
+// el punto que fija en el mapa desde dónde sale a trabajar (M2); las dos juntas o ninguna.
+export const actualizarMiPerfil = (cambios: Partial<DatosDePerfil> & { aceptacionAutomatica?: boolean; latitud?: number; longitud?: number }) =>
   comoPerfil(escribirEnBackend<RespuestaDeMiPerfil>("/cuidadores/yo", { metodo: "PATCH", cuerpo: cambios }));
 
 export const solicitarRevision = () => comoPerfil(escribirEnBackend<RespuestaDeMiPerfil>("/cuidadores/yo/revision", { metodo: "POST" }));

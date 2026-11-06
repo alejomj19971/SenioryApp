@@ -10,7 +10,6 @@
 
 | Tema | Estado | Qué se necesita |
 |---|---|---|
-| Búsqueda por cercanía: quién guarda qué | **Decidido (2026-11-05)** | El **cuidador** guarda su punto (lat/lon) fijando un pin en un mapa — nunca se geocodifica un texto de dirección, porque las direcciones informales de Colombia no son confiables para eso. La **familia no guarda nada nuevo**: al buscar, el navegador pide el permiso de geolocalización y esa coordenada se manda solo como parámetro de la búsqueda (no se persiste), porque la dirección de un adulto mayor es un dato sensible que no hace falta guardar. Si rechaza el permiso, sigue pudiendo buscar por el campo de zona de texto, como hoy. Esto es **distinto** de «solicitudes abiertas por zona» (E8, fuera de alcance de la primera versión, ADR-01 §1): sigue siendo la familia quien busca y elige, no el cuidador aceptando solicitudes por cercanía. |
 | 🚀 **Proveedor de correo** | **Aplazado por decisión del equipo** (2026-10-31) | Elegir un proveedor y escribir su adaptador. Sin él, «olvidé mi contraseña» responde 503 en producción, y tampoco hay avisos por correo. Lo recibe el puerto `EnviadorDeRecuperacion` (M1) y, más adelante, `CanalDeNotificacion` (M5). |
 | 🚀 Hosting de staging y producción | Abierta | Elegir dónde se aloja (región cercana a Colombia o EE. UU., con Postgres gestionado y respaldos) y revisar la transferencia internacional de datos (Ley 1581). Bloquea el despliegue (M0 PR 7). |
 
@@ -47,11 +46,11 @@
 | 🔧 | Rotar el secreto de firma de los tokens sin invalidar los de acceso vigentes: hoy acepta una sola clave. |
 | 🔧 | Reintentos del envío del enlace de recuperación (hoy, si el canal falla, la persona pide otro): llegan con Notificaciones (M5). |
 
-### M2 — Directorio (lectura)  *(backend construido)*
+### M2 — Directorio (lectura)  *(backend y frontend construidos, incluida la búsqueda por cercanía)*
 
 | | Pendiente |
 |---|---|
-| 🔧 | **Frontend: búsqueda por cercanía.** El backend ya guarda un punto (lat/lon) por cuidador (`PATCH /cuidadores/yo`, mapa con un pin: no se geocodifican direcciones) y `GET /cuidadores?lat=&lon=` ordena por distancia real (extensión `earthdistance`). Falta: pantalla del cuidador para fijar su pin, y el botón «buscar cerca de mí» en el buscador de la familia (permiso de geolocalización del navegador, sin guardar la ubicación de la familia — ver decisión de diseño abajo). |
+| 🔧🚀 | **Correr las pruebas de contrato e integración de la búsqueda por cercanía contra Postgres real** (`npm run test:integracion` en `backend/`, `npm run test:contrato` en `frontend/`): se escribieron pero no se ejecutaron en la sesión que las creó (2026-11-05) porque Docker no estaba disponible. Antes de confiar en la consulta SQL (`earthdistance`) y en la paginación por cursor de distancia en producción, correrlas una vez. |
 | 🧑🚀 | **Cargar los primeros cuidadores reales** con `npm run cuidadores:importar`: quién revisa los documentos, en cuánto tiempo y con qué vigencia (procedimiento operativo), y el archivo revisado. Sin ellos, el directorio de producción está vacío por diseño. |
 | 🧑🚀 | **Almacén de archivos real** (bucket privado con URL firmadas) cuando haya hosting: hoy en producción la hoja de vida responde 503 (`ALMACEN_DE_ARCHIVOS=deshabilitado`); el almacén local es solo para desarrollo. |
 | 🔧🚀 | **Programar `npm run cuidadores:revisar-vigencias` cada día** (cron del hosting). Mientras no corra, un control vencido ya oculta el perfil al leerlo, pero la búsqueda lo seguiría listando hasta la revisión. |

@@ -6,6 +6,7 @@ import { EstadoDeControles } from "@/components/postulacion/estado-de-controles"
 import { FormularioPerfil } from "@/components/postulacion/formulario-perfil";
 import { SubirDocumento } from "@/components/postulacion/subir-documento";
 import { SubirFoto } from "@/components/postulacion/subir-foto";
+import { UbicacionDeCuidador } from "@/components/postulacion/ubicacion-de-cuidador";
 import { DOCUMENTOS_OBLIGATORIOS, NOMBRE_DEL_DOCUMENTO, resumenDeLaPostulacion, tieneLosDocumentos } from "@/lib/etiquetas-de-postulacion";
 import { exigirRol } from "@/lib/sesion";
 import { obtenerMiPerfil } from "@/lib/services/postulacion";
@@ -108,6 +109,13 @@ export default async function PerfilDelCuidadorPage() {
           Tus datos
         </h2>
         <FormularioPerfil perfil={perfil} />
+      </section>
+
+      <section aria-labelledby="ubicacion" className="flex flex-col gap-3">
+        <h2 id="ubicacion" className="text-lg font-semibold text-foreground">
+          Tu ubicación en el mapa
+        </h2>
+        <UbicacionDeCuidador ubicacionGuardada={perfil.latitud !== null && perfil.longitud !== null ? { latitud: perfil.latitud, longitud: perfil.longitud } : null} />
       </section>
     </div>
   );

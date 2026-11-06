@@ -28,6 +28,7 @@ const cuidador: Cuidador = {
   serviciosCompletados: 0,
   bio: "",
   verificacion: { antecedentes: true, titulos: true, psicotecnica: true },
+  distanciaKm: null,
   resenas: [],
 };
 

@@ -50,6 +50,8 @@ const perfil = (extra: Partial<MiPerfilDeCuidador> = {}): MiPerfilDeCuidador => 
   visible: false,
   controles: [],
   documentos: [],
+  latitud: null,
+  longitud: null,
   ...extra,
 });
 const archivo = (nombre: string, tipo: string, bytes = 100) => new File([new Uint8Array(bytes)], nombre, { type: tipo });

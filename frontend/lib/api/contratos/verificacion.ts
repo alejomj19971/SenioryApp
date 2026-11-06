@@ -37,6 +37,8 @@ export interface MiPerfilDelBackend {
   visible: boolean;
   controles: ControlDelBackend[];
   documentos: DocumentoDelBackend[];
+  latitud: number | null;
+  longitud: number | null;
 }
 export interface RespuestaDeMiPerfil {
   perfil: MiPerfilDelBackend;

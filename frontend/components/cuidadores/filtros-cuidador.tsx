@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ChevronDown, SlidersHorizontal, Search, Mic, MicOff } from "lucide-react";
+import { ChevronDown, SlidersHorizontal, Search, Mic, MicOff, LocateFixed, LocateOff } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Chip } from "@/components/chip";
 import { cn } from "@/lib/utils";
@@ -80,6 +80,9 @@ interface FiltrosCuidadorProps {
   tarifaMaxima: number;
   onTarifaMaximaChange: (valor: number) => void;
   tarifaLimite: number;
+  cercaDeMiActivo: boolean;
+  onCercaDeMiToggle: () => void;
+  buscandoUbicacion: boolean;
 }
 
 export function FiltrosCuidador({
@@ -95,6 +98,9 @@ export function FiltrosCuidador({
   tarifaMaxima,
   onTarifaMaximaChange,
   tarifaLimite,
+  cercaDeMiActivo,
+  onCercaDeMiToggle,
+  buscandoUbicacion,
 }: FiltrosCuidadorProps) {
   const [filtrosAbiertos, setFiltrosAbiertos] = useState(false);
 
@@ -219,6 +225,27 @@ export function FiltrosCuidador({
           />
         </button>
       </div>
+
+      <button
+        type="button"
+        onClick={onCercaDeMiToggle}
+        disabled={buscandoUbicacion}
+        aria-pressed={cercaDeMiActivo}
+        aria-label={cercaDeMiActivo ? "Dejar de buscar cerca de mí" : "Buscar cuidadores cerca de mí"}
+        className={cn(
+          "flex h-11 w-fit shrink-0 items-center gap-1.5 self-start rounded-full border px-4 text-sm font-medium transition-colors disabled:opacity-60",
+          cercaDeMiActivo
+            ? "border-primary bg-primary/10 text-primary"
+            : "border-border bg-background text-foreground hover:border-primary/50",
+        )}
+      >
+        {cercaDeMiActivo ? (
+          <LocateOff className="size-4" aria-hidden="true" />
+        ) : (
+          <LocateFixed className="size-4" aria-hidden="true" />
+        )}
+        {buscandoUbicacion ? "Buscando tu ubicación…" : cercaDeMiActivo ? "Cerca de mí" : "Buscar cerca de mí"}
+      </button>
 
       {filtrosAbiertos && (
         <div className="flex flex-col gap-4 rounded-2xl bg-muted/60 p-4">

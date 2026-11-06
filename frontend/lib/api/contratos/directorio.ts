@@ -31,6 +31,9 @@ export interface CuidadorDelBackend {
   serviciosCompletados: number;
   aceptacionAutomatica: boolean;
   controlesVerificados: ControlDeVerificacionDelBackend[];
+  // Distancia en kilómetros desde el punto de la búsqueda; null si no se buscó por cercanía o el cuidador
+  // todavía no fijó su ubicación.
+  distanciaKm: number | null;
 }
 
 // `GET /cuidadores`

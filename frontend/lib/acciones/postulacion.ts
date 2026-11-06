@@ -7,6 +7,7 @@ import { texto } from "@/lib/acciones/validar-cuenta";
 import { validarPerfil, validarVigencia } from "@/lib/acciones/validar-postulacion";
 import { ErrorDeApi } from "@/lib/api/error-de-api";
 import { ahoraEnColombia } from "@/lib/fecha-colombia";
+import { esUbicacionValida } from "@/lib/geo";
 import { exigirRol } from "@/lib/sesion";
 import { actualizarMiPerfil, crearMiPerfil, obtenerMiPerfil, renovarControl, solicitarRevision } from "@/lib/services/postulacion";
 import { decidirControl, decidirHojaDeVida } from "@/lib/services/verificaciones";
@@ -58,6 +59,17 @@ export async function guardarPerfilAccion(_previo: EstadoDeFormulario, datos: Fo
       ? await crearMiPerfil(resultadoDeValidar.datos as Required<typeof resultadoDeValidar.datos>)
       : await actualizarMiPerfil({ ...resultadoDeValidar.datos, aceptacionAutomatica: texto(datos, "aceptacionAutomatica") === "on" });
   if (!resultado.ok) return { mensaje: mensajeDeErrorDePostulacion(resultado.error), valores: resultadoDeValidar.valores };
+  revalidatePath("/cuidador", "layout");
+  return { listo: true };
+}
+
+// Fija el pin que el cuidador deja en el mapa (M2): desde dónde sale a trabajar. Las dos coordenadas son
+// entrada de cualquiera (vienen del navegador, no del formulario de texto validado más arriba).
+export async function guardarUbicacionAccion(latitud: number, longitud: number): Promise<EstadoDeFormulario> {
+  await exigirRol("cuidador");
+  if (!esUbicacionValida(latitud, longitud)) return { mensaje: "Esa ubicación no es válida." };
+  const resultado = await actualizarMiPerfil({ latitud, longitud });
+  if (!resultado.ok) return { mensaje: mensajeDeErrorDePostulacion(resultado.error) };
   revalidatePath("/cuidador", "layout");
   return { listo: true };
 }

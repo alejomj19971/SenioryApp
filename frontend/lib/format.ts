@@ -76,6 +76,13 @@ export function etiquetaJornada(jornada: Jornada): string {
   return etiquetasJornada[jornada];
 }
 
+// La distancia que manda el backend cuando la familia buscó por cercanía. Bajo el kilómetro se ve en metros,
+// redondeados a la decena (no tiene sentido fingir precisión de metro a metro con GPS de celular).
+export function formatearDistanciaKm(km: number): string {
+  if (km < 1) return `${Math.round((km * 1000) / 10) * 10} m`;
+  return `${km < 10 ? km.toFixed(1) : Math.round(km)} km`;
+}
+
 export function obtenerIniciales(nombre: string): string {
   const partes = nombre.trim().split(/\s+/);
   const iniciales = [partes[0], partes[partes.length - 1]]

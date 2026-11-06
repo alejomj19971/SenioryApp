@@ -53,6 +53,7 @@ function aResumen(cuidador: CuidadorDelBackend): CuidadorResumen {
       titulos: verifico("titulos"),
       psicotecnica: verifico("psicotecnica"),
     },
+    distanciaKm: cuidador.distanciaKm,
   };
 }
 
@@ -70,6 +71,14 @@ function aResena(resena: ResenaDelBackend): Resena {
 export async function listarCuidadores(filtros: FiltrosCuidador = {}, cursor?: string): Promise<PaginaDeCuidadores> {
   const consulta: Record<string, string> = {};
   for (const [nombre, valor] of new URLSearchParams(consultaDeFiltros(filtros))) consulta[nombre] = valor;
+  // El backend espera `lat`/`lon` (una lista blanca): nunca `cercaDeLat`/`cercaDeLon`, que son solo el nombre
+  // interno del frontend para que el filtro quepa en la URL junto a los demás.
+  delete consulta.cercaDeLat;
+  delete consulta.cercaDeLon;
+  if (filtros.cercaDeLat !== undefined && filtros.cercaDeLon !== undefined) {
+    consulta.lat = String(filtros.cercaDeLat);
+    consulta.lon = String(filtros.cercaDeLon);
+  }
   if (cursor !== undefined && cursor !== "") consulta.cursor = cursor;
 
   const pagina = await leerDelBackend<PaginaDeCuidadoresDelBackend>("/cuidadores", { consulta });

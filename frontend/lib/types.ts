@@ -38,6 +38,9 @@ export interface CuidadorResumen {
   serviciosCompletados: number;
   bio: string;
   verificacion: Verificacion;
+  // Distancia en kilómetros desde donde buscó la familia; null si no buscó por cercanía o el cuidador no ha
+  // fijado su ubicación todavía.
+  distanciaKm: number | null;
 }
 
 export interface Cuidador extends CuidadorResumen {
@@ -75,6 +78,9 @@ export interface FiltrosCuidador {
   zona?: string;
   jornada?: Jornada;
   tarifaMaxima?: number;
+  // Buscar por cercanía (geolocalización efímera del navegador, nunca se guarda): las dos juntas o ninguna.
+  cercaDeLat?: number;
+  cercaDeLon?: number;
 }
 
 // Teleasistencia (F6): datos de salud. Solo los ven la familia vinculada (con autorización) y el cuidador con un servicio
@@ -307,6 +313,9 @@ export interface MiPerfilDeCuidador {
   visible: boolean;
   controles: ControlDelCuidador[];
   documentos: DocumentoSubido[];
+  // El punto que fijó en el mapa (desde dónde sale a trabajar); null si todavía no lo ha fijado.
+  latitud: number | null;
+  longitud: number | null;
 }
 
 // Una fila de la cola de los revisores.

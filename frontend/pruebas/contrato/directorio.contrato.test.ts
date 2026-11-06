@@ -15,6 +15,7 @@ const CAMPOS_DEL_CUIDADOR = [
   "cantidadResenas",
   "controlesVerificados",
   "disponibilidad",
+  "distanciaKm",
   "especialidad",
   "fotoUrl",
   "id",
@@ -108,6 +109,22 @@ describe.skipIf(!disponible)("contrato de Directorio con el backend local", () =
     const sinTilde = objetivo.nombre.split(" ")[0]?.normalize("NFD").replace(/[̀-ͯ]/g, "").toUpperCase() ?? "";
     const porTexto = (await (await pedir(`/cuidadores?busqueda=${encodeURIComponent(sinTilde)}`, { cookie, ip: cuenta.ip })).json()) as { cuidadores: Cuidador[] };
     expect(porTexto.cuidadores.map((c) => c.id)).toContain(objetivo.id);
+  });
+
+  it("sin lat/lon, distanciaKm siempre es null; buscar cerca de un punto sin cuidadores ubicados trae lista vacía", async () => {
+    if (sinSembrar()) return;
+    for (const cuidador of primeros) expect(cuidador.distanciaKm).toBeNull();
+
+    // Un punto válido de Colombia donde las semillas no suelen tener a nadie ubicado: solo entran quienes SÍ
+    // fijaron su pin (M2), así que o viene vacío o trae distanciaKm numérico en todos.
+    const cerca = (await (await pedir("/cuidadores?lat=6.2442&lon=-75.5812", { cookie, ip: cuenta.ip })).json()) as { cuidadores: Cuidador[] };
+    for (const cuidador of cerca.cuidadores) expect(typeof cuidador.distanciaKm).toBe("number");
+  });
+
+  it("lat y lon van juntos (400 si falta uno) y fuera de Colombia también es 400", async () => {
+    expect((await pedir("/cuidadores?lat=6.24", { cookie, ip: cuenta.ip })).status).toBe(400);
+    expect((await pedir("/cuidadores?lon=-75.58", { cookie, ip: cuenta.ip })).status).toBe(400);
+    expect((await pedir("/cuidadores?lat=40.7128&lon=-74.006", { cookie, ip: cuenta.ip })).status).toBe(400);
   });
 
   it("un parámetro desconocido se rechaza (lista blanca): el frontend solo manda los suyos", async () => {

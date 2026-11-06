@@ -1,3 +1,4 @@
+import { esUbicacionValida } from "@/lib/geo";
 import type { Especialidad, FiltrosCuidador, Jornada } from "@/lib/types";
 
 // Los filtros de la búsqueda de cuidadores viven en la URL (`/app/cuidadores?especialidad=enfermeria&zona=Laureles`):
@@ -47,6 +48,15 @@ export function sanearFiltros(entrada: unknown): FiltrosCuidador {
   if (typeof tarifa === "number" && Number.isInteger(tarifa) && tarifa > 0 && tarifa <= TARIFA_MAXIMA_ADMITIDA) {
     filtros.tarifaMaxima = tarifa;
   }
+
+  // Búsqueda por cercanía: la coordenada la manda el navegador de la familia en cada búsqueda (geolocalización
+  // efímera, nunca se guarda). Las dos juntas o ninguna; una sola fuera de rango descarta el par entero.
+  const cercaDeLat = typeof bruto.cercaDeLat === "string" ? Number(bruto.cercaDeLat) : bruto.cercaDeLat;
+  const cercaDeLon = typeof bruto.cercaDeLon === "string" ? Number(bruto.cercaDeLon) : bruto.cercaDeLon;
+  if (esUbicacionValida(cercaDeLat, cercaDeLon)) {
+    filtros.cercaDeLat = cercaDeLat as number;
+    filtros.cercaDeLon = cercaDeLon as number;
+  }
   return filtros;
 }
 
@@ -57,15 +67,23 @@ export function filtrosDeConsulta(consulta: Consulta): FiltrosCuidador {
     zona: unico(consulta.zona),
     jornada: unico(consulta.jornada),
     tarifaMaxima: unico(consulta.tarifaMaxima),
+    cercaDeLat: unico(consulta.cercaDeLat),
+    cercaDeLon: unico(consulta.cercaDeLon),
   });
 }
 
-// La parte de la URL después de «?» (vacía si no hay filtros). Siempre en el mismo orden.
+// La parte de la URL después de «?» (vacía si no hay filtros). Siempre en el mismo orden. La coordenada de
+// cercanía se redondea a 3 decimales (unos 111 m): basta para ordenar por distancia y no deja un punto exacto
+// en una URL que se puede compartir o quedar en el historial.
 export function consultaDeFiltros(filtros: FiltrosCuidador): string {
   const consulta = new URLSearchParams();
   for (const campo of ["busqueda", "especialidad", "zona", "jornada", "tarifaMaxima"] as const) {
     const valor = filtros[campo];
     if (valor !== undefined) consulta.set(campo, String(valor));
+  }
+  if (filtros.cercaDeLat !== undefined && filtros.cercaDeLon !== undefined) {
+    consulta.set("cercaDeLat", filtros.cercaDeLat.toFixed(3));
+    consulta.set("cercaDeLon", filtros.cercaDeLon.toFixed(3));
   }
   return consulta.toString();
 }
