@@ -233,6 +233,70 @@
     display: none;
   }
 
+  /* Volumen en los botones sólidos (el toque que Apple y Android dan a sus botones rellenos): un filo de luz
+     arriba que sugiere una superficie curva y una sombra teñida del propio color del botón debajo — no una
+     sombra gris genérica. Se usa `color-mix` con el token (`--primary`, `--destructive`, `--secondary`), así que
+     sigue el valor de cada tema en vez de un color fijo. Crece un poco al pasar el cursor y se aplana al
+     presionar (junto con el `scale-[0.98]` del componente, da el "hundido" típico). Solo variantes rellenas:
+     `outline`, `ghost` y `link` son a propósito planas (así se distingue la énfasis, como en Material/HIG).
+     Se selecciona por las clases que `buttonVariants` siempre pone (`group/button` + el color de fondo), no por
+     `data-slot`: varios CTA (header, hero, cierre final) aplican `buttonVariants()` directo a un `Link`, sin pasar
+     por el componente `Button`, y igual deben llevar el mismo volumen. */
+  .group\/button.bg-primary {
+    box-shadow:
+      inset 0 1px 0 0 oklch(1 0 0 / 16%),
+      0 1px 2px oklch(0.24 0.04 250 / 6%),
+      0 8px 16px -8px color-mix(in oklch, var(--primary) 55%, transparent);
+  }
+  .group\/button.bg-primary:hover {
+    box-shadow:
+      inset 0 1px 0 0 oklch(1 0 0 / 20%),
+      0 1px 2px oklch(0.24 0.04 250 / 8%),
+      0 10px 20px -8px color-mix(in oklch, var(--primary) 62%, transparent);
+  }
+  .group\/button.bg-primary:active {
+    box-shadow:
+      inset 0 1px 1px 0 oklch(0 0 0 / 10%),
+      0 2px 6px -2px color-mix(in oklch, var(--primary) 45%, transparent);
+  }
+  .group\/button.bg-destructive {
+    box-shadow:
+      inset 0 1px 0 0 oklch(1 0 0 / 14%),
+      0 1px 2px oklch(0.24 0.04 250 / 6%),
+      0 8px 16px -8px color-mix(in oklch, var(--destructive) 48%, transparent);
+  }
+  .group\/button.bg-destructive:hover {
+    box-shadow:
+      inset 0 1px 0 0 oklch(1 0 0 / 18%),
+      0 1px 2px oklch(0.24 0.04 250 / 8%),
+      0 10px 20px -8px color-mix(in oklch, var(--destructive) 55%, transparent);
+  }
+  .group\/button.bg-destructive:active {
+    box-shadow:
+      inset 0 1px 1px 0 oklch(0 0 0 / 10%),
+      0 2px 6px -2px color-mix(in oklch, var(--destructive) 40%, transparent);
+  }
+  .group\/button.bg-secondary {
+    box-shadow:
+      inset 0 1px 0 0 oklch(1 0 0 / 50%),
+      0 1px 2px oklch(0.24 0.04 250 / 4%),
+      0 6px 12px -8px oklch(0.24 0.04 250 / 16%);
+  }
+  .group\/button.bg-secondary:hover {
+    box-shadow:
+      inset 0 1px 0 0 oklch(1 0 0 / 60%),
+      0 1px 2px oklch(0.24 0.04 250 / 5%),
+      0 8px 16px -8px oklch(0.24 0.04 250 / 20%);
+  }
+  .group\/button.bg-secondary:active {
+    box-shadow: inset 0 1px 2px 0 oklch(0.24 0.04 250 / 10%);
+  }
+  /* Mismo criterio que `.tarjeta-de-acceso`: en alto contraste la sombra es ambigua por naturaleza y se apaga
+     del todo; el borde y el anillo de foco, que no son decorativos, siguen intactos. */
+  :root[data-contrast="high"] .group\/button {
+    box-shadow: none;
+  }
+
   /* Entrada en cascada para listas (buscador de cuidadores, mis servicios): cada tarjeta aparece un poco después de
      la anterior, no todas de golpe — se lee como «aquí está lo que buscabas», no como un parpadeo. Tope de 7 pasos:
      una lista larga no hace esperar a las últimas. Cada tarjeta ya trae su propia animación (`animate-in`); esto
