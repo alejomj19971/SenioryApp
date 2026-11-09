@@ -166,6 +166,7 @@ describe('directorio de cuidadores (API)', () => {
             zona,
             disponibilidad: ['manana', 'tarde'],
             bio: 'Cuido con paciencia.',
+            distanciaKm: null,
             calificacion: null,
             cantidadResenas: 0,
             serviciosCompletados: 0,

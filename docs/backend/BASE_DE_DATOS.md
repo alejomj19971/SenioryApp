@@ -92,6 +92,7 @@ flowchart LR
 | Referencias a otro esquema | Columna `uuid` **sin clave foránea**, con sufijo `_id` y comentario del módulo dueño. | E13: ningún módulo depende de las tablas de otro. La coherencia se mantiene con puertos y eventos (§5). |
 | Valores cerrados (estados, roles) | `text` con `CHECK (col IN (...))`, no `ENUM` de Postgres. | Agregar un valor es cambiar un `CHECK`, no un `ALTER TYPE`; más simple con migraciones. |
 | Dinero | `bigint`, pesos COP enteros, con `CHECK (>= 0)`. | Sin errores de redondeo (PLAN_BACKEND §5). |
+| Coordenadas geográficas | **Única excepción** a «nunca `double precision`»: `latitud`/`longitud` del pin del cuidador (`directorio.cuidadores`, M2/F2), con `CHECK` de rango válido para Colombia. No es dinero; la precisión de un entero no sirve para un punto en el mapa. | `earthdistance` (la extensión de Postgres para ordenar por cercanía) exige `double precision`. |
 | Porcentajes | `integer` en puntos básicos (8 % = 800). | Aritmética entera. |
 | Instantes | `timestamptz`, guardados en UTC. | Sin ambigüedad de zona. |
 | Fechas de negocio | `date` (día civil en `America/Bogota`) y `time` para horas del día. | Hallazgo H2: «hoy» depende de la zona horaria de Colombia. |

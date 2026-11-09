@@ -33,11 +33,17 @@ export function validarUbicacion(datos: {
   return { latitud, longitud };
 }
 
-const RADIO_DE_LA_TIERRA_KM = 6371;
+// DEBE coincidir con el radio que usa `earthdistance` en Postgres (`select earth()` → 6378168 metros), no
+// con el radio medio terrestre (6371 km) que trae cualquier fórmula de Haversine de ejemplo. Si no coinciden,
+// esta distancia (la que arma el cursor de paginación) queda sistemáticamente un poco por debajo de la que
+// calcula la consulta SQL para la MISMA fila, así que el filtro «después del cursor» (`distancia >
+// cursor.distanciaKm`) nunca la excluye: la paginación repite la última fila vista para siempre en vez de
+// avanzar. No es un redondeo que se pueda ignorar — lo descubrió una prueba de integración real (M2/F2).
+const RADIO_DE_LA_TIERRA_KM = 6378.168;
 
 // Fórmula de Haversine: distancia en línea recta sobre la esfera terrestre, en kilómetros. No conoce vías
-// reales ni elevación; es la misma aproximación que usa la consulta SQL (earthdistance) para ordenar, así
-// que mostrarla aquí nunca contradice el orden de la búsqueda.
+// reales ni elevación; con el mismo radio que arriba, coincide con la consulta SQL (earthdistance) que
+// ordena la búsqueda, así que el cursor de paginación (construido con este valor) siempre encaja.
 export function distanciaKm(a: Ubicacion, b: Ubicacion): number {
   const radianes = (grados: number) => (grados * Math.PI) / 180;
   const deltaLat = radianes(b.latitud - a.latitud);

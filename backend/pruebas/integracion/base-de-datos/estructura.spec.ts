@@ -73,6 +73,10 @@ describe('estructura de la base de datos', () => {
   });
 
   it('nunca usa decimales de coma flotante ni numeric: el dinero va en enteros', async () => {
+    // Única excepción (BASE_DE_DATOS.md §2): el pin del cuidador (M2/F2). No es dinero, y `earthdistance`
+    // (la consulta de cercanía) exige `double precision`; cada columna lleva su propio CHECK de rango.
+    const EXCEPCIONES = new Set(['directorio.cuidadores.latitud', 'directorio.cuidadores.longitud']);
+
     const filas = await consultar<{ columna: string; tipo: string }>(
       `select table_schema || '.' || table_name || '.' || column_name as columna, data_type as tipo
          from information_schema.columns
@@ -80,7 +84,7 @@ describe('estructura de la base de datos', () => {
           and data_type in ('real', 'double precision', 'numeric', 'money')`,
     );
 
-    expect(filas).toEqual([]);
+    expect(filas.filter((f) => !EXCEPCIONES.has(f.columna))).toEqual([]);
   });
 
   it('todos los instantes llevan zona horaria (timestamptz)', async () => {
