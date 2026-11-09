@@ -50,7 +50,6 @@
 
 | | Pendiente |
 |---|---|
-| 🔧🚀 | **Correr las pruebas de contrato e integración de la búsqueda por cercanía contra Postgres real** (`npm run test:integracion` en `backend/`, `npm run test:contrato` en `frontend/`): se escribieron pero no se ejecutaron en la sesión que las creó (2026-11-05) porque Docker no estaba disponible. Antes de confiar en la consulta SQL (`earthdistance`) y en la paginación por cursor de distancia en producción, correrlas una vez. |
 | 🧑🚀 | **Cargar los primeros cuidadores reales** con `npm run cuidadores:importar`: quién revisa los documentos, en cuánto tiempo y con qué vigencia (procedimiento operativo), y el archivo revisado. Sin ellos, el directorio de producción está vacío por diseño. |
 | 🧑🚀 | **Almacén de archivos real** (bucket privado con URL firmadas) cuando haya hosting: hoy en producción la hoja de vida responde 503 (`ALMACEN_DE_ARCHIVOS=deshabilitado`); el almacén local es solo para desarrollo. |
 | 🔧🚀 | **Programar `npm run cuidadores:revisar-vigencias` cada día** (cron del hosting). Mientras no corra, un control vencido ya oculta el perfil al leerlo, pero la búsqueda lo seguiría listando hasta la revisión. |
@@ -60,7 +59,7 @@
 | 🔧 | Frontend: `cuidadores.ts` y el buscador contra la API (F2). |
 | 🧑 | Confirmar la **licencia de las fotos** de la landing (`frontend/public/img/*.jpg`) antes del lanzamiento. |
 
-*Resuelto en M2:* el directorio exige sesión y pasa por el límite global de peticiones (100 por minuto por IP); un límite propio y más estricto queda para M10 si hace falta.
+*Resuelto en M2:* el directorio exige sesión y pasa por el límite global de peticiones (100 por minuto por IP); un límite propio y más estricto queda para M10 si hace falta. Las pruebas de contrato e integración de la búsqueda por cercanía ya corrieron contra Postgres real (2026-11-09, con Docker disponible): encontraron y se corrigieron tres fallas — `Permissions-Policy` bloqueaba la geolocalización en todo el sitio, el CSP no dejaba cargar los tiles de OpenStreetMap, y el radio terrestre de la fórmula de Haversine en JS (6371 km) no coincidía con el de `earthdistance` en Postgres (6378,168 km), lo que rompía la paginación por cursor de distancia (repetía la última fila para siempre). Las 1320 pruebas de integración y las de contrato del directorio quedan en verde.
 
 ### M3 — Pagos I: cotización  *(backend construido)*
 
