@@ -40,8 +40,12 @@ async function leerConTope(peticion: Request, tope: number): Promise<Uint8Array<
 
 export async function POST(peticion: Request, contexto: RouteContext<"/api/cuidador/documentos/[tipo]">) {
   // Una subida solo puede venir de nuestra propia página (las rutas de Next no traen la defensa de las acciones).
+  // Se compara contra el encabezado Host (el navegador nunca deja que una página lo falsifique), no contra
+  // peticion.url: detrás de un proxy (Render, etc.) esa URL trae el host INTERNO del proceso, no el dominio
+  // público, y la comparación fallaba siempre.
   const origen = peticion.headers.get("origin");
-  if (origen !== null && new URL(origen).host !== new URL(peticion.url).host) return respuesta(403, { ok: false, mensaje: "Petición no permitida." });
+  const hostDePeticion = peticion.headers.get("host");
+  if (origen !== null && hostDePeticion !== null && new URL(origen).host !== hostDePeticion) return respuesta(403, { ok: false, mensaje: "Petición no permitida." });
 
   const { tipo } = await contexto.params;
   if (!TIPOS.includes(tipo as TipoDeDocumento)) return respuesta(404, { ok: false, mensaje: "Ese documento no existe." });

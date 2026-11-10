@@ -257,7 +257,7 @@ describe("decidirControlAccion (panel de revisores)", () => {
 describe("POST /api/cuidador/documentos/[tipo] (la subida)", () => {
   const llamar = (tipo: string, { tipoDeContenido = "application/pdf", cuerpo = new Uint8Array([37, 80, 68, 70]), cabeceras = {} }: { tipoDeContenido?: string; cuerpo?: Uint8Array<ArrayBuffer>; cabeceras?: Record<string, string> } = {}) =>
     rutaDeSubida.POST(
-      new Request("http://localhost:3100/api/cuidador/documentos/" + tipo, { method: "POST", headers: { "Content-Type": tipoDeContenido, "X-Nombre-De-Archivo": encodeURIComponent("mi cédula.pdf"), ...cabeceras }, body: cuerpo }),
+      new Request("http://localhost:3100/api/cuidador/documentos/" + tipo, { method: "POST", headers: { "Content-Type": tipoDeContenido, "Host": "localhost:3100", "X-Nombre-De-Archivo": encodeURIComponent("mi cédula.pdf"), ...cabeceras }, body: cuerpo }),
       { params: Promise.resolve({ tipo }) } as never,
     );
 

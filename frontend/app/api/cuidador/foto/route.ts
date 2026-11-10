@@ -69,8 +69,12 @@ async function leerConTope(peticion: Request, tope: number): Promise<Uint8Array<
 
 export async function POST(peticion: Request) {
   // Una subida solo puede venir de nuestra propia página (las rutas de Next no traen la defensa de las acciones).
+  // Se compara contra el encabezado Host (el navegador nunca deja que una página lo falsifique), no contra
+  // peticion.url: detrás de un proxy (Render, etc.) esa URL trae el host INTERNO del proceso, no el dominio
+  // público, y la comparación fallaba siempre.
   const origen = peticion.headers.get("origin");
-  if (origen !== null && new URL(origen).host !== new URL(peticion.url).host) return respuesta(403, { ok: false, mensaje: "Petición no permitida." });
+  const hostDePeticion = peticion.headers.get("host");
+  if (origen !== null && hostDePeticion !== null && new URL(origen).host !== hostDePeticion) return respuesta(403, { ok: false, mensaje: "Petición no permitida." });
 
   const declarado = (peticion.headers.get("content-type") ?? "").split(";")[0]?.trim() ?? "";
   if (!FORMATOS.includes(declarado)) return respuesta(415, { ok: false, mensaje: "La foto debe ser JPEG o PNG." });

@@ -50,7 +50,10 @@ describe("next.config.ts (F10): cabeceras de seguridad en toda ruta", () => {
     expect(cabeceras["Content-Security-Policy"]).toContain("default-src 'self'");
     expect(cabeceras["Content-Security-Policy"]).toContain("connect-src 'self'");
     expect(cabeceras["Content-Security-Policy"]).toContain("frame-ancestors 'none'");
-    expect(cabeceras["Content-Security-Policy"]).not.toMatch(/https?:\/\//); // ningún dominio externo permitido
+    // Única excepción documentada: los tiles de OpenStreetMap del mapa (M2/F2). Cualquier otro dominio externo
+    // en el CSP debe fallar esta prueba.
+    const sinExcepcion = (cabeceras["Content-Security-Policy"] ?? "").replace("https://*.tile.openstreetmap.org", "");
+    expect(sinExcepcion).not.toMatch(/https?:\/\//);
     expect(cabeceras["X-Frame-Options"]).toBe("DENY");
     expect(cabeceras["X-Content-Type-Options"]).toBe("nosniff");
     // El micrófono NO está vacío: el comando de voz lo necesita.
