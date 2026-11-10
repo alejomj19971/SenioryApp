@@ -32,6 +32,12 @@ COPY package.json ./
 #   node dist/compartido/infraestructura/base-de-datos/migrar-cli.js
 COPY drizzle ./drizzle
 
+# El almacén LOCAL de archivos (desarrollo y staging, ALMACEN_DE_ARCHIVOS=local) escribe aquí en tiempo de
+# ejecución. WORKDIR la crea como root; sin este chown, el usuario sin privilegios de abajo no podría
+# escribir ni un solo archivo (el valor por defecto de DIRECTORIO_DE_ARCHIVOS es «./archivos-locales»: si se
+# cambia esa variable, esta carpeta debe coincidir).
+RUN mkdir -p archivos-locales && chown node:node archivos-locales
+
 # Sin privilegios: si alguien explota una falla de la API, no es root en el contenedor.
 USER node
 EXPOSE 3001
