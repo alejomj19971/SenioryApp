@@ -5,11 +5,11 @@ export const LARGO_MINIMO_DE_CONTRASENA = 10;
 export const LARGO_MAXIMO_DE_CONTRASENA = 128;
 
 export const PARENTESCOS = [
-  { valor: "hijo_hija", etiqueta: "Hijo o hija" },
-  { valor: "nieto_nieta", etiqueta: "Nieto o nieta" },
-  { valor: "conyuge", etiqueta: "Cónyuge" },
-  { valor: "hermano_hermana", etiqueta: "Hermano o hermana" },
-  { valor: "otro", etiqueta: "Otro" },
+  { valor: "hijo_hija", etiqueta: "Soy su hijo o hija" },
+  { valor: "nieto_nieta", etiqueta: "Soy su nieto o nieta" },
+  { valor: "conyuge", etiqueta: "Soy su cónyuge" },
+  { valor: "hermano_hermana", etiqueta: "Soy su hermano o hermana" },
+  { valor: "otro", etiqueta: "Otro parentesco" },
 ] as const;
 
 const EDAD_MAXIMA = 120;

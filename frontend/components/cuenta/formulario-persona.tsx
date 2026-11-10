@@ -51,7 +51,7 @@ export function FormularioPersona({ anioActual }: { anioActual: number }) {
       </fieldset>
 
       <fieldset className="flex flex-col gap-3" aria-describedby={errorDeParentesco !== undefined ? "parentesco-error" : undefined}>
-        <legend className="mb-1 text-base font-medium">¿Qué es para ti?</legend>
+        <legend className="mb-1 text-base font-medium">¿Qué parentesco tienes con esta persona?</legend>
         <div className="flex flex-wrap gap-2">
           {PARENTESCOS.map(({ valor, etiqueta }) => (
             <label

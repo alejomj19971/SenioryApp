@@ -42,7 +42,7 @@ test("registro → persona → autorización → inicio con el nombre real → s
   await page.getByLabel("Día", { exact: true }).selectOption("14");
   await page.getByLabel("Mes", { exact: true }).selectOption("3");
   await page.getByLabel("Año", { exact: true }).selectOption("1948");
-  await page.getByText("Hijo o hija").click();
+  await page.getByText("Soy su hijo o hija").click();
   await page.getByRole("button", { name: "Continuar" }).click();
 
   // 2. La autorización de datos de salud
