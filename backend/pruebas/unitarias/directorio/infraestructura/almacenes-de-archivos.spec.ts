@@ -2,6 +2,7 @@ import { mkdtemp, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import {
+  AlmacenDeArchivosCloudinary,
   AlmacenDeArchivosDeshabilitado,
   AlmacenDeArchivosLocal,
   esClaveValida,
@@ -168,6 +169,58 @@ describe('AlmacenDeArchivosLocal', () => {
       expect(() => almacen.rutaDe(clave)).toThrow();
     }
     expect(almacen.firmaEsValida('../x.pdf', 9_999_999_999, 'x')).toBe(false);
+  });
+});
+
+describe('AlmacenDeArchivosCloudinary', () => {
+  const almacen = new AlmacenDeArchivosCloudinary({
+    cloudName: 'demo',
+    apiKey: '123456789012345',
+    apiSecret: 'un-secreto-de-prueba',
+  });
+  const CLAVE_DE_DOCUMENTO =
+    'documentos/0198aaaa-0000-7000-8000-000000000001.pdf';
+  const CLAVE_DE_FOTO = 'fotos/0198aaaa-0000-7000-8000-000000000001.jpg';
+
+  it('está disponible', () => {
+    expect(almacen.disponible).toBe(true);
+  });
+
+  it('la foto de perfil tiene una dirección pública (tipo «upload», sin firma)', () => {
+    const url = almacen.urlPublica(CLAVE_DE_FOTO);
+
+    expect(url).toBe(
+      'https://res.cloudinary.com/demo/image/upload/v1/fotos/0198aaaa-0000-7000-8000-000000000001.jpg',
+    );
+  });
+
+  it('se niega a dar una dirección pública de un documento (no es una foto)', () => {
+    expect(() => almacen.urlPublica(CLAVE_DE_DOCUMENTO)).toThrow(
+      /no se puede servir como archivo público/,
+    );
+  });
+
+  it('el documento tiene una dirección privada y firmada (tipo «authenticated»)', () => {
+    const url = almacen.urlFirmada(CLAVE_DE_DOCUMENTO, 300);
+
+    expect(url).toMatch(
+      /^https:\/\/res\.cloudinary\.com\/demo\/raw\/authenticated\/s--[\w-]+--\/v1\/documentos\/0198aaaa-0000-7000-8000-000000000001\.pdf$/,
+    );
+  });
+
+  it('dos claves distintas firman distinto (no se puede reusar la firma de un documento en otro)', () => {
+    const otraClave = 'documentos/0198aaaa-0000-7000-8000-000000000002.pdf';
+
+    expect(almacen.urlFirmada(CLAVE_DE_DOCUMENTO, 300)).not.toBe(
+      almacen.urlFirmada(otraClave, 300),
+    );
+  });
+
+  it('se niega a firmar o publicar claves peligrosas', () => {
+    for (const clave of ['../x.pdf', '/etc/passwd', 'a/b/x.pdf']) {
+      expect(() => almacen.urlFirmada(clave, 300)).toThrow();
+      expect(() => almacen.urlPublica(clave)).toThrow();
+    }
   });
 });
 

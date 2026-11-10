@@ -86,6 +86,7 @@ import { FotosController } from './infraestructura/entrada/http/fotos.controller
 import { MiPerfilController } from './infraestructura/entrada/http/mi-perfil.controller.js';
 import { VerificacionesController } from './infraestructura/entrada/http/verificaciones.controller.js';
 import {
+  AlmacenDeArchivosCloudinary,
   AlmacenDeArchivosDeshabilitado,
   AlmacenDeArchivosLocal,
 } from './infraestructura/salida/archivos/almacenes-de-archivos.js';
@@ -138,16 +139,32 @@ const MANEJADOR_DE_SERVICIOS_COMPLETADOS = Symbol(
       useFactory: (
         configuracion: Configuracion,
         reloj: Reloj,
-      ): AlmacenDeArchivos =>
-        configuracion.almacenDeArchivos === 'local' &&
-        configuracion.secretoDeArchivos !== null
-          ? new AlmacenDeArchivosLocal({
-              directorio: configuracion.directorioDeArchivos,
-              secreto: configuracion.secretoDeArchivos,
-              urlPublicaDeLaApi: configuracion.urlPublicaDeLaApi,
-              ahoraMs: () => reloj.ahora().getTime(),
-            })
-          : new AlmacenDeArchivosDeshabilitado(),
+      ): AlmacenDeArchivos => {
+        if (
+          configuracion.almacenDeArchivos === 'local' &&
+          configuracion.secretoDeArchivos !== null
+        ) {
+          return new AlmacenDeArchivosLocal({
+            directorio: configuracion.directorioDeArchivos,
+            secreto: configuracion.secretoDeArchivos,
+            urlPublicaDeLaApi: configuracion.urlPublicaDeLaApi,
+            ahoraMs: () => reloj.ahora().getTime(),
+          });
+        }
+        if (
+          configuracion.almacenDeArchivos === 'cloudinary' &&
+          configuracion.cloudinaryCloudName !== null &&
+          configuracion.cloudinaryApiKey !== null &&
+          configuracion.cloudinaryApiSecret !== null
+        ) {
+          return new AlmacenDeArchivosCloudinary({
+            cloudName: configuracion.cloudinaryCloudName,
+            apiKey: configuracion.cloudinaryApiKey,
+            apiSecret: configuracion.cloudinaryApiSecret,
+          });
+        }
+        return new AlmacenDeArchivosDeshabilitado();
+      },
     },
     {
       provide: EventosDeDirectorio,

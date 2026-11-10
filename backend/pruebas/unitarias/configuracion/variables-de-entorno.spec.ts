@@ -84,6 +84,9 @@ describe('validarVariables', () => {
         almacenDeArchivos: 'deshabilitado',
         directorioDeArchivos: './archivos-locales',
         secretoDeArchivos: null,
+        cloudinaryCloudName: null,
+        cloudinaryApiKey: null,
+        cloudinaryApiSecret: null,
         secretoDeOperacion: null,
         urlPublicaDeLaApi: 'http://localhost:3001/api/v1',
       });
@@ -585,6 +588,35 @@ describe('validarVariables', () => {
           }),
         ).join(),
       ).toContain('ALMACEN_DE_ARCHIVOS no puede ser local');
+    });
+
+    it('el almacén cloudinary exige sus tres credenciales', () => {
+      expect(
+        problemasDe(entornoBase({ ALMACEN_DE_ARCHIVOS: 'cloudinary' })).join(),
+      ).toContain('CLOUDINARY_CLOUD_NAME es obligatorio');
+      expect(
+        problemasDe(
+          entornoBase({
+            ALMACEN_DE_ARCHIVOS: 'cloudinary',
+            CLOUDINARY_CLOUD_NAME: 'nube',
+            CLOUDINARY_API_KEY: '123',
+            CLOUDINARY_API_SECRET: 'secreto',
+          }),
+        ),
+      ).toEqual([]);
+    });
+
+    it('en producción sí admite el almacén cloudinary (persiste entre despliegues)', () => {
+      expect(
+        problemasDe(
+          entornoDeProduccion({
+            ALMACEN_DE_ARCHIVOS: 'cloudinary',
+            CLOUDINARY_CLOUD_NAME: 'nube',
+            CLOUDINARY_API_KEY: '123',
+            CLOUDINARY_API_SECRET: 'secreto',
+          }),
+        ),
+      ).toEqual([]);
     });
 
     it('rechaza un almacén desconocido y una dirección pública inválida', () => {

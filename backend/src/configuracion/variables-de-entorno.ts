@@ -31,7 +31,11 @@ export const NIVELES_DE_LOG = [
 ] as const;
 export type NivelDeLog = (typeof NIVELES_DE_LOG)[number];
 
-export const ALMACENES_DE_ARCHIVOS = ['local', 'deshabilitado'] as const;
+export const ALMACENES_DE_ARCHIVOS = [
+  'local',
+  'cloudinary',
+  'deshabilitado',
+] as const;
 export type AlmacenDeArchivosConfigurado =
   (typeof ALMACENES_DE_ARCHIVOS)[number];
 
@@ -246,8 +250,8 @@ export class VariablesDeEntorno {
   CANAL_DE_RECUPERACION: CanalDeRecuperacion = 'deshabilitado';
 
   // Dónde se guardan los archivos de los cuidadores (hoja de vida). «local» usa una carpeta del servidor
-  // (solo desarrollo, pruebas y staging: en producción no se admite). «deshabilitado» responde «no
-  // disponible» hasta que haya un almacén real, según el hosting.
+  // (solo desarrollo, pruebas y staging: en producción no se admite). «cloudinary» es el almacén real
+  // (admitido en producción). «deshabilitado» responde «no disponible» hasta que se elija uno.
   @IsIn(ALMACENES_DE_ARCHIVOS, {
     message: `ALMACEN_DE_ARCHIVOS debe ser uno de: ${ALMACENES_DE_ARCHIVOS.join(', ')}`,
   })
@@ -255,6 +259,20 @@ export class VariablesDeEntorno {
 
   @IsString()
   DIRECTORIO_DE_ARCHIVOS: string = './archivos-locales';
+
+  // Credenciales de Cloudinary (obligatorias con ALMACEN_DE_ARCHIVOS=cloudinary). Se consiguen en el panel de
+  // Cloudinary (Dashboard → Product Environment Credentials).
+  @IsOptional()
+  @IsString()
+  CLOUDINARY_CLOUD_NAME?: string;
+
+  @IsOptional()
+  @IsString()
+  CLOUDINARY_API_KEY?: string;
+
+  @IsOptional()
+  @IsString()
+  CLOUDINARY_API_SECRET?: string;
 
   // Clave con la que el monitor del equipo consulta GET /salud/operacion (retraso del outbox y fallos). Si no se define, esa
   // ruta no existe. 32 caracteres o más.
@@ -322,6 +340,9 @@ export interface Configuracion {
   almacenDeArchivos: AlmacenDeArchivosConfigurado;
   directorioDeArchivos: string;
   secretoDeArchivos: string | null;
+  cloudinaryCloudName: string | null;
+  cloudinaryApiKey: string | null;
+  cloudinaryApiSecret: string | null;
   secretoDeOperacion: string | null;
   urlPublicaDeLaApi: string;
 }
@@ -411,6 +432,23 @@ function reglasAdicionales(variables: VariablesDeEntorno): string[] {
     ) {
       problemas.push(
         `SECRETO_DE_ARCHIVOS debe tener al menos ${LARGO_MINIMO_SECRETO_JWT} caracteres`,
+      );
+    }
+  }
+  if (variables.ALMACEN_DE_ARCHIVOS === 'cloudinary') {
+    if (variables.CLOUDINARY_CLOUD_NAME === undefined) {
+      problemas.push(
+        'CLOUDINARY_CLOUD_NAME es obligatorio con el almacén cloudinary',
+      );
+    }
+    if (variables.CLOUDINARY_API_KEY === undefined) {
+      problemas.push(
+        'CLOUDINARY_API_KEY es obligatorio con el almacén cloudinary',
+      );
+    }
+    if (variables.CLOUDINARY_API_SECRET === undefined) {
+      problemas.push(
+        'CLOUDINARY_API_SECRET es obligatorio con el almacén cloudinary',
       );
     }
   }
@@ -617,6 +655,9 @@ export function configuracionDesdeVariables(
     almacenDeArchivos: variables.ALMACEN_DE_ARCHIVOS,
     directorioDeArchivos: variables.DIRECTORIO_DE_ARCHIVOS,
     secretoDeArchivos: variables.SECRETO_DE_ARCHIVOS ?? null,
+    cloudinaryCloudName: variables.CLOUDINARY_CLOUD_NAME ?? null,
+    cloudinaryApiKey: variables.CLOUDINARY_API_KEY ?? null,
+    cloudinaryApiSecret: variables.CLOUDINARY_API_SECRET ?? null,
     secretoDeOperacion: variables.SECRETO_DE_OPERACION ?? null,
     urlPublicaDeLaApi: (
       variables.URL_PUBLICA_DE_LA_API ??

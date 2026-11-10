@@ -1,6 +1,7 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { dirname, resolve, sep } from 'node:path';
+import { v2 as cloudinary } from 'cloudinary';
 import type { AlmacenDeArchivos } from '../../../aplicacion/puertos/salida/almacen-de-archivos.js';
 
 // Una clave de almacén es «carpeta/uuid.extensión»: la genera el servidor, nunca la persona. Se valida
@@ -105,6 +106,111 @@ export class AlmacenDeArchivosLocal implements AlmacenDeArchivos {
       throw new Error('La clave del archivo sale de la carpeta del almacén');
     }
     return ruta;
+  }
+}
+
+// A qué carpeta de Cloudinary va una clave, y cómo se sube y se sirve: las fotos de perfil son públicas (se
+// ven en cada búsqueda) y los documentos de verificación son privados (solo el propio cuidador y un revisor).
+// El formato se manda SIEMPRE explícito: sin él, Cloudinary no sabe qué extensión servir y la deja fuera de
+// la dirección.
+function datosDeCloudinary(clave: string): {
+  tipoDeRecurso: 'image' | 'raw';
+  tipoDeEntrega: 'upload' | 'authenticated';
+  publicId: string;
+  formato: string;
+} {
+  const esFoto = clave.startsWith('fotos/');
+  const puntoFinal = clave.lastIndexOf('.');
+  return {
+    tipoDeRecurso: esFoto ? 'image' : 'raw',
+    tipoDeEntrega: esFoto ? 'upload' : 'authenticated',
+    publicId: clave.slice(0, puntoFinal),
+    formato: clave.slice(puntoFinal + 1),
+  };
+}
+
+export interface OpcionesDelAlmacenCloudinary {
+  cloudName: string;
+  apiKey: string;
+  apiSecret: string;
+}
+
+// Almacén REAL (M2/M9): sube los archivos a Cloudinary y los sirve directo desde su CDN, con sus propias
+// direcciones (esta clase nunca pasa por `/archivos` ni `/fotos`: esas rutas son solo del almacén local).
+//
+// La foto de perfil es pública (`type: upload`), igual que en el almacén local. El documento de verificación es
+// privado (`type: authenticated`, con `sign_url` para que la dirección no se pueda adivinar ni construir sin
+// las credenciales del servidor) — PERO, a diferencia del almacén local, esta firma NO vence por sí sola: Cloudinary
+// solo expira firmas con su función de pago «token-based authentication» (`auth_token`), que esta cuenta no
+// tiene activada todavía. Mientras tanto, la URL sigue siendo privada (nadie puede construirla sin el secreto),
+// solo que no «vence en minutos» como promete el puerto. Activar esa función es un paso aparte (Cloudinary →
+// Settings → Security) que no bloquea usar este almacén.
+export class AlmacenDeArchivosCloudinary implements AlmacenDeArchivos {
+  readonly disponible = true;
+
+  constructor(opciones: OpcionesDelAlmacenCloudinary) {
+    cloudinary.config({
+      cloud_name: opciones.cloudName,
+      api_key: opciones.apiKey,
+      api_secret: opciones.apiSecret,
+      secure: true,
+      // Sin el «?_a=…» de telemetría del SDK en cada dirección: no aporta nada a Seniory.
+      analytics: false,
+    });
+  }
+
+  async guardar(
+    clave: string,
+    contenido: Uint8Array,
+    _tipoMime: string,
+  ): Promise<void> {
+    if (!esClaveValida(clave)) {
+      throw new Error('La clave del archivo no tiene un formato válido');
+    }
+    const { tipoDeRecurso, tipoDeEntrega, publicId, formato } =
+      datosDeCloudinary(clave);
+    await new Promise<void>((resolver, rechazar) => {
+      const flujo = cloudinary.uploader.upload_stream(
+        {
+          public_id: publicId,
+          resource_type: tipoDeRecurso,
+          type: tipoDeEntrega,
+          format: formato,
+          overwrite: true,
+          invalidate: true,
+        },
+        (error) => (error ? rechazar(error) : resolver()),
+      );
+      flujo.end(Buffer.from(contenido));
+    });
+  }
+
+  urlFirmada(clave: string, _vigenciaEnSegundos: number): string {
+    if (!esClaveValida(clave)) {
+      throw new Error('La clave del archivo no tiene un formato válido');
+    }
+    const { tipoDeRecurso, tipoDeEntrega, publicId, formato } =
+      datosDeCloudinary(clave);
+    return cloudinary.url(publicId, {
+      format: formato,
+      resource_type: tipoDeRecurso,
+      type: tipoDeEntrega,
+      sign_url: true,
+      secure: true,
+    });
+  }
+
+  urlPublica(clave: string): string {
+    if (!esClaveValida(clave) || !clave.startsWith('fotos/')) {
+      throw new Error('Esa clave no se puede servir como archivo público');
+    }
+    const { tipoDeRecurso, publicId, formato } = datosDeCloudinary(clave);
+    return cloudinary.url(publicId, {
+      format: formato,
+      resource_type: tipoDeRecurso,
+      type: 'upload',
+      secure: true,
+    });
   }
 }
 

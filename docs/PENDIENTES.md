@@ -51,15 +51,13 @@
 | | Pendiente |
 |---|---|
 | 🧑🚀 | **Cargar los primeros cuidadores reales** con `npm run cuidadores:importar`: quién revisa los documentos, en cuánto tiempo y con qué vigencia (procedimiento operativo), y el archivo revisado. Sin ellos, el directorio de producción está vacío por diseño. |
-| 🧑🚀 | **Almacén de archivos real** (bucket privado con URL firmadas) cuando haya hosting: hoy en producción la hoja de vida responde 503 (`ALMACEN_DE_ARCHIVOS=deshabilitado`); el almacén local es solo para desarrollo. |
 | 🔧🚀 | **Programar `npm run cuidadores:revisar-vigencias` cada día** (cron del hosting). Mientras no corra, un control vencido ya oculta el perfil al leerlo, pero la búsqueda lo seguiría listando hasta la revisión. |
-| 🔧 | **Fotos de los cuidadores:** hoy `fotoUrl` es un texto sin almacén detrás; se resuelve con el almacén real (M9, subida por el cuidador). |
 | 🔧 | La búsqueda normaliza el texto en la aplicación (sin `unaccent`) y usa `LIKE` sobre columnas normalizadas con índices `pg_trgm`. Revisar con `EXPLAIN` cuando haya volumen real. |
 | 🔧 | La ruta `GET /cuidadores/:id/hoja-de-vida` responde un 302 hacia el API: el BFF (F2) decide si lo sigue por el servidor o redirige al navegador. |
 | 🔧 | Frontend: `cuidadores.ts` y el buscador contra la API (F2). |
 | 🧑 | Confirmar la **licencia de las fotos** de la landing (`frontend/public/img/*.jpg`) antes del lanzamiento. |
 
-*Resuelto en M2:* el directorio exige sesión y pasa por el límite global de peticiones (100 por minuto por IP); un límite propio y más estricto queda para M10 si hace falta. Las pruebas de contrato e integración de la búsqueda por cercanía ya corrieron contra Postgres real (2026-11-09, con Docker disponible): encontraron y se corrigieron tres fallas — `Permissions-Policy` bloqueaba la geolocalización en todo el sitio, el CSP no dejaba cargar los tiles de OpenStreetMap, y el radio terrestre de la fórmula de Haversine en JS (6371 km) no coincidía con el de `earthdistance` en Postgres (6378,168 km), lo que rompía la paginación por cursor de distancia (repetía la última fila para siempre). Las 1320 pruebas de integración y las de contrato del directorio quedan en verde.
+*Resuelto en M2:* el directorio exige sesión y pasa por el límite global de peticiones (100 por minuto por IP); un límite propio y más estricto queda para M10 si hace falta. Las pruebas de contrato e integración de la búsqueda por cercanía ya corrieron contra Postgres real (2026-11-09, con Docker disponible): encontraron y se corrigieron tres fallas — `Permissions-Policy` bloqueaba la geolocalización en todo el sitio, el CSP no dejaba cargar los tiles de OpenStreetMap, y el radio terrestre de la fórmula de Haversine en JS (6371 km) no coincidía con el de `earthdistance` en Postgres (6378,168 km), lo que rompía la paginación por cursor de distancia (repetía la última fila para siempre). Las 1320 pruebas de integración y las de contrato del directorio quedan en verde. **Almacén de archivos real:** ya se construyó el adaptador de Cloudinary (`AlmacenDeArchivosCloudinary`, `ALMACEN_DE_ARCHIVOS=cloudinary`); las fotos de perfil quedan públicas y los documentos privados con dirección firmada — con una diferencia frente al almacén local: la firma de Cloudinary no vence por sí sola (su función de pago «token-based authentication» no está activada todavía), aunque sigue sin poder adivinarse sin las credenciales del servidor.
 
 ### M3 — Pagos I: cotización  *(backend construido)*
 
@@ -145,7 +143,6 @@
 |---|---|
 | ⚖️🚀 | **Procedimiento de verificación:** quién revisa, en cuánto tiempo y con qué vigencia de cada control (hoy: antecedentes y psicotécnica **deben** traer fecha de vencimiento, máximo 5 años; títulos pueden no vencer; son propuestas provisionales), y los primeros cuidadores reales verificados. |
 | 🧑🚀 | **Antivirus para los archivos subidos** (puerto `AnalizadorDeArchivos` del plan, no construido). Hoy solo se valida el formato por contenido y el tamaño. |
-| 🔧🚀 | **Almacén real de archivos:** el local no se admite en producción, así que **sin bucket privado no se pueden subir documentos** (responde 503). Depende del hosting. |
 | 🔧 | **Quitar metadatos** de las imágenes subidas (EXIF con ubicación y fecha): hoy se guardan tal cual. Necesita una librería de imágenes. |
 | ⚖️🚀 | **Segundo factor para administradores** (el panel de revisores decide quién se muestra a las familias). Hoy basta la contraseña. |
 | 🔧 | **Avisar a los revisores** de que hay una postulación nueva (hoy la ven al abrir la cola) y **plazos de respuesta** a los cuidadores. |
@@ -153,6 +150,8 @@
 | 🔧 | Que un control vencido **cancele o reasigne** los servicios futuros del cuidador (hoy Reservas recibe `cuidador_oculto` pero no actúa), y una pantalla de administrador para suspender o reactivar cuidadores (`suspender` existe en el dominio). |
 | 🔧 | **Eliminar los documentos** de quien se retira o los rechazados, y los plazos de conservación (Ley 1581). |
 | 🔧 | Frontend: registro del cuidador, carga de documentos (envío como cuerpo binario, no multipart) y panel de revisión. |
+
+*Resuelto en M9:* el almacén real de archivos ya existe (`ALMACEN_DE_ARCHIVOS=cloudinary`, ver M2) — ya se pueden subir documentos de verificación y foto de perfil sin depender de un disco que se pierde en cada despliegue. De paso se corrigió un bug real: detrás de un proxy (Render), la validación de «mismo origen» de las rutas de subida del frontend comparaba contra el host INTERNO del proceso en vez del dominio público, así que toda subida devolvía 403 sin importar el almacén.
 
 ### M10 — Endurecimiento y producción  *(construido lo que no depende del hosting)*
 
@@ -222,8 +221,7 @@ El frontend se conecta al backend módulo por módulo, en el orden del [plan v2]
 | F9 — Postulación y revisión *(construido)* | 🔧 **Backend: la cola de revisión** entrega solo las 50 verificaciones **más antiguas** de cada estado, sin paginar ni ordenar de la más reciente a la más antigua. Con más de 50 por revisar, las siguientes aparecen al decidir las primeras; y en «Aprobadas», «Rechazadas» y «Vencidas» no salen las recientes. El panel avisa cuando llega al tope. Hay que paginar y ordenar por fecha de decisión en el backend. |
 | 🔧 | **Avisar a los revisores:** nada les avisa de una postulación nueva (la campana de F5 es solo del cuidador y de las familias): hoy el panel se consulta. Falta un aviso (correo o el canal que se elija) cuando entra una verificación a la cola. |
 | 🔧 | **Administradores:** solo se crean por consola (`npm run crear-admin`); no hay pantalla para invitar o quitar revisores, ni segundo factor (decisión abierta en M9). |
-| 🔧 | **Documentos propios:** el cuidador sube y reemplaza, pero no puede borrar ni descargar lo que subió; el derecho de supresión de sus datos se resuelve en F10. La foto de perfil todavía no se sube (la API no la acepta). |
-| 🚀 | **Almacén de archivos real:** con el almacén `deshabilitado` subir documentos responde «no disponible» (se dice, no se finge) y el `local` no se admite en producción. Hay que elegir el almacén al escoger el hosting. |
+| 🔧 | **Documentos propios:** el cuidador sube y reemplaza, pero no puede borrar ni descargar lo que subió; el derecho de supresión de sus datos se resuelve en F10. |
 | F10 — Cierre para producción *(construido)* | 🧑 **Sentry:** falta la cuenta y el `SENTRY_DSN` (ya anotado arriba, M0); mientras no exista, el frontend no instala `@sentry/nextjs` (es una dependencia nueva, y sin DSN quedaría sin configurar). Los errores del servidor ya traen un `digest` para buscarlos en el log; conectarlos a Sentry es agregar el SDK cuando haya cuenta. |
 | 🧑 | **Exportar y eliminar la cuenta** (Ley 1581): el backend todavía no tiene esas rutas (quedó anotado como opcional en M1, PR 8); el frontend las construye cuando existan. Hoy «eliminar tus datos» en la política de privacidad dice que el canal se publicará antes del lanzamiento. |
 | 🧑 | **Lighthouse:** no se corrió en esta sesión (la CLI pide descargar un paquete que la política de la sesión no permitió ejecutar). Córrelo contra la build de producción (`npm run build && npx next start`) en landing, ingresar, registro, perfil del cuidador y teleasistencia antes de lanzar; accesibilidad ≥ 90 (F10 §3.5). |
