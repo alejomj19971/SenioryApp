@@ -78,8 +78,10 @@ export class PasarelaSimulada implements PasarelaDePagos {
   }
 
   // Forma del aviso simulado: { idEvento, tipo: 'pago.aprobado' | 'pago.rechazado' | …, referencia, monto }.
-  interpretarAviso(cuerpo: unknown): AvisoDeLaPasarela | null {
-    if (typeof cuerpo !== 'object' || cuerpo === null) return null;
+  interpretarAviso(cuerpo: unknown): Promise<AvisoDeLaPasarela | null> {
+    if (typeof cuerpo !== 'object' || cuerpo === null) {
+      return Promise.resolve(null);
+    }
     const { idEvento, tipo, referencia, monto } = cuerpo as Record<
       string,
       unknown
@@ -91,10 +93,12 @@ export class PasarelaSimulada implements PasarelaDePagos {
       typeof referencia !== 'string' ||
       referencia === ''
     ) {
-      return null;
+      return Promise.resolve(null);
     }
-    if (monto !== undefined && !Number.isSafeInteger(monto)) return null;
-    return {
+    if (monto !== undefined && !Number.isSafeInteger(monto)) {
+      return Promise.resolve(null);
+    }
+    return Promise.resolve({
       idEventoExterno: idEvento,
       resultado:
         tipo === 'pago.aprobado'
@@ -105,7 +109,7 @@ export class PasarelaSimulada implements PasarelaDePagos {
       referencia,
       referenciaProveedor: `sim_${referencia}`,
       monto: typeof monto === 'number' ? monto : null,
-    };
+    });
   }
 
   // Solo para pruebas y para jugar en desarrollo: decide qué le responde esta pasarela a `consultarEstado`.

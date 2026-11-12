@@ -58,8 +58,10 @@ export interface PasarelaDePagos {
     encabezados: Readonly<Record<string, string | string[] | undefined>>,
   ): boolean;
 
-  // Null si el cuerpo no tiene la forma de un aviso de esta pasarela.
-  interpretarAviso(cuerpo: unknown): AvisoDeLaPasarela | null;
+  // Null si el cuerpo no tiene la forma de un aviso de esta pasarela. Es asíncrono porque algunos proveedores
+  // (MercadoPago) mandan un aviso «delgado» que solo dice qué cambió: hay que consultarle el estado real antes
+  // de poder traducirlo.
+  interpretarAviso(cuerpo: unknown): Promise<AvisoDeLaPasarela | null>;
 }
 
 export const PASARELA_DE_PAGOS = Symbol('PasarelaDePagos');

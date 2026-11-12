@@ -87,7 +87,7 @@ export class ProcesarAvisoDePasarela {
         'pagos.firma_invalida',
       );
     }
-    const aviso = this.pasarela.interpretarAviso(recibido.cuerpo);
+    const aviso = await this.pasarela.interpretarAviso(recibido.cuerpo);
     if (aviso === null) {
       throw new ErrorDeValidacion(
         'El aviso no tiene el formato esperado',

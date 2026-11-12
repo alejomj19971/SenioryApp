@@ -169,8 +169,8 @@ describe('PasarelaSimulada', () => {
       monto: 43_200,
     };
 
-    it('traduce un aviso de pago aprobado', () => {
-      expect(pasarela().interpretarAviso(base)).toEqual({
+    it('traduce un aviso de pago aprobado', async () => {
+      expect(await pasarela().interpretarAviso(base)).toEqual({
         idEventoExterno: 'evt-1',
         resultado: 'aprobado',
         referencia: PAGO,
@@ -183,16 +183,16 @@ describe('PasarelaSimulada', () => {
       ['pago.rechazado', 'rechazado'],
       ['pago.aprobado', 'aprobado'],
       ['pago.cualquier-otra-cosa', 'otro'],
-    ])('el tipo «%s» es un resultado «%s»', (tipo, resultado) => {
-      expect(pasarela().interpretarAviso({ ...base, tipo })).toMatchObject({
+    ])('el tipo «%s» es un resultado «%s»', async (tipo, resultado) => {
+      expect(await pasarela().interpretarAviso({ ...base, tipo })).toMatchObject({
         resultado,
       });
     });
 
-    it('el monto es opcional', () => {
+    it('el monto es opcional', async () => {
       const { monto: _monto, ...sinMonto } = base;
 
-      expect(pasarela().interpretarAviso(sinMonto)).toMatchObject({
+      expect(await pasarela().interpretarAviso(sinMonto)).toMatchObject({
         monto: null,
       });
     });
@@ -210,8 +210,8 @@ describe('PasarelaSimulada', () => {
       ['con referencia vacía', { ...base, referencia: '' }],
       ['con monto con decimales', { ...base, monto: 10.5 }],
       ['con monto en texto', { ...base, monto: '43200' }],
-    ])('devuelve null con %s', (_caso, cuerpo) => {
-      expect(pasarela().interpretarAviso(cuerpo)).toBeNull();
+    ])('devuelve null con %s', async (_caso, cuerpo) => {
+      expect(await pasarela().interpretarAviso(cuerpo)).toBeNull();
     });
   });
 });
@@ -237,9 +237,9 @@ describe('PasarelaDeshabilitada', () => {
     expect(() => pasarela.consultarEstado()).toThrow(ServicioNoDisponible);
   });
 
-  it('no da por válida ninguna firma ni entiende ningún aviso', () => {
+  it('no da por válida ninguna firma ni entiende ningún aviso', async () => {
     expect(pasarela.verificarFirma()).toBe(false);
-    expect(pasarela.interpretarAviso()).toBeNull();
+    expect(await pasarela.interpretarAviso()).toBeNull();
   });
 });
 

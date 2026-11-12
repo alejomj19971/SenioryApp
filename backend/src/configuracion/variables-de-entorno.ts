@@ -43,9 +43,15 @@ export const CANALES_DE_RECUPERACION = ['consola', 'deshabilitado'] as const;
 export type CanalDeRecuperacion = (typeof CANALES_DE_RECUPERACION)[number];
 
 // Con qué se cobra y con qué se le paga al cuidador. «simulada» y «simulado» son solo para desarrollo y pruebas
-// (en producción no se admiten: un cobro que no existe no puede darse por hecho). «deshabilitada» responde «no
-// disponible» hasta que se elija proveedor (decisión abierta, docs/PENDIENTES.md).
-export const PASARELAS_DE_PAGOS = ['simulada', 'deshabilitada'] as const;
+// (en producción no se admiten: un cobro que no existe no puede darse por hecho). «mercadopago» es la pasarela
+// real (Checkout Pro / API de Orders), admitida en producción con sus credenciales reales (en staging se usan
+// las de prueba de MercadoPago; Wompi quedó descartado por ahora: pide RUT y actividad comercial que todavía no
+// hay). «deshabilitada» responde «no disponible» hasta que se elija proveedor.
+export const PASARELAS_DE_PAGOS = [
+  'simulada',
+  'mercadopago',
+  'deshabilitada',
+] as const;
 export type PasarelaConfigurada = (typeof PASARELAS_DE_PAGOS)[number];
 
 export const DISPERSORES_DE_PAGOS = ['simulado', 'deshabilitado'] as const;
@@ -164,6 +170,17 @@ export class VariablesDeEntorno {
   @IsOptional()
   @IsString()
   SECRETO_DE_PASARELA?: string;
+
+  // Credenciales de MercadoPago (obligatorias con PASARELA_DE_PAGOS=mercadopago). El access token se consigue
+  // en el panel de desarrolladores de la aplicación (pestaña Credenciales); el secreto de firma, en
+  // «Configuración de webhooks» de esa misma aplicación.
+  @IsOptional()
+  @IsString()
+  MERCADOPAGO_ACCESS_TOKEN?: string;
+
+  @IsOptional()
+  @IsString()
+  MERCADOPAGO_SECRETO_DE_FIRMA?: string;
 
   // Con qué se le paga al cuidador. «deshabilitado» deja las liquidaciones pendientes hasta que haya dispersor.
   @IsIn(DISPERSORES_DE_PAGOS, {
@@ -322,6 +339,8 @@ export interface Configuracion {
   canalesDeNotificacionSimulados: boolean;
   pasarelaDePagos: PasarelaConfigurada;
   secretoDePasarela: string | null;
+  mercadopagoAccessToken: string | null;
+  mercadopagoSecretoDeFirma: string | null;
   dispersorDePagos: DispersorConfigurado;
   requierePagoAprobado: boolean;
   minutosParaPagar: number;
@@ -462,6 +481,18 @@ function reglasAdicionales(variables: VariablesDeEntorno): string[] {
     ) {
       problemas.push(
         `SECRETO_DE_PASARELA debe tener al menos ${LARGO_MINIMO_SECRETO_JWT} caracteres`,
+      );
+    }
+  }
+  if (variables.PASARELA_DE_PAGOS === 'mercadopago') {
+    if (variables.MERCADOPAGO_ACCESS_TOKEN === undefined) {
+      problemas.push(
+        'MERCADOPAGO_ACCESS_TOKEN es obligatorio con la pasarela mercadopago',
+      );
+    }
+    if (variables.MERCADOPAGO_SECRETO_DE_FIRMA === undefined) {
+      problemas.push(
+        'MERCADOPAGO_SECRETO_DE_FIRMA es obligatorio con la pasarela mercadopago',
       );
     }
   }
@@ -636,6 +667,8 @@ export function configuracionDesdeVariables(
       variables.CANALES_DE_NOTIFICACION_SIMULADOS === 'true',
     pasarelaDePagos: variables.PASARELA_DE_PAGOS,
     secretoDePasarela: variables.SECRETO_DE_PASARELA ?? null,
+    mercadopagoAccessToken: variables.MERCADOPAGO_ACCESS_TOKEN ?? null,
+    mercadopagoSecretoDeFirma: variables.MERCADOPAGO_SECRETO_DE_FIRMA ?? null,
     dispersorDePagos: variables.DISPERSOR_DE_PAGOS,
     requierePagoAprobado: variables.REQUIERE_PAGO_APROBADO === 'true',
     minutosParaPagar: variables.MINUTOS_PARA_PAGAR,

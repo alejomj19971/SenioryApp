@@ -89,6 +89,7 @@ import {
   DispersorDeshabilitado,
   DispersorSimulado,
 } from './infraestructura/salida/dispersion/dispersores.js';
+import { PasarelaDeMercadoPago } from './infraestructura/salida/pasarela/pasarela-mercadopago.js';
 import { PasarelaDeshabilitada } from './infraestructura/salida/pasarela/pasarela-deshabilitada.js';
 import { PasarelaSimulada } from './infraestructura/salida/pasarela/pasarela-simulada.js';
 import { RepositorioBolsasDrizzle } from './infraestructura/salida/persistencia/repositorio-bolsas-drizzle.js';
@@ -176,10 +177,28 @@ const SONDEO_DE_LIQUIDACIONES = Symbol('SondeoDeLiquidaciones');
     // Proveedores externos, según la configuración
     {
       provide: PASARELA_DE_PAGOS,
-      inject: [CONFIGURACION],
-      useFactory: (configuracion: Configuracion): PasarelaDePagos => {
+      inject: [CONFIGURACION, RELOJ],
+      useFactory: (
+        configuracion: Configuracion,
+        reloj: Reloj,
+      ): PasarelaDePagos => {
         if (configuracion.pasarelaDePagos === 'deshabilitada') {
           return new PasarelaDeshabilitada();
+        }
+        if (configuracion.pasarelaDePagos === 'mercadopago') {
+          if (
+            configuracion.mercadopagoAccessToken === null ||
+            configuracion.mercadopagoSecretoDeFirma === null
+          ) {
+            throw new Error(
+              'La pasarela mercadopago necesita MERCADOPAGO_ACCESS_TOKEN y MERCADOPAGO_SECRETO_DE_FIRMA',
+            );
+          }
+          return new PasarelaDeMercadoPago(
+            configuracion.mercadopagoAccessToken,
+            configuracion.mercadopagoSecretoDeFirma,
+            reloj,
+          );
         }
         if (configuracion.secretoDePasarela === null) {
           throw new Error('La pasarela simulada necesita SECRETO_DE_PASARELA');

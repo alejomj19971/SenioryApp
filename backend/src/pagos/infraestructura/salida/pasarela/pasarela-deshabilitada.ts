@@ -46,7 +46,7 @@ export class PasarelaDeshabilitada implements PasarelaDePagos {
     return false;
   }
 
-  interpretarAviso(): AvisoDeLaPasarela | null {
-    return null;
+  interpretarAviso(): Promise<AvisoDeLaPasarela | null> {
+    return Promise.resolve(null);
   }
 }

@@ -66,6 +66,8 @@ describe('validarVariables', () => {
         intervaloOmisionTomasMs: 60000,
         pasarelaDePagos: 'deshabilitada',
         secretoDePasarela: null,
+        mercadopagoAccessToken: null,
+        mercadopagoSecretoDeFirma: null,
         dispersorDePagos: 'deshabilitado',
         requierePagoAprobado: false,
         minutosParaPagar: 120,
@@ -310,6 +312,36 @@ describe('validarVariables', () => {
           }),
         ),
       ).toEqual(['SECRETO_DE_PASARELA debe tener al menos 32 caracteres']);
+    });
+
+    it('la pasarela mercadopago exige el access token y el secreto de firma', () => {
+      expect(
+        problemasDe(entornoBase({ PASARELA_DE_PAGOS: 'mercadopago' })),
+      ).toEqual([
+        'MERCADOPAGO_ACCESS_TOKEN es obligatorio con la pasarela mercadopago',
+        'MERCADOPAGO_SECRETO_DE_FIRMA es obligatorio con la pasarela mercadopago',
+      ]);
+      expect(
+        problemasDe(
+          entornoBase({
+            PASARELA_DE_PAGOS: 'mercadopago',
+            MERCADOPAGO_ACCESS_TOKEN: 'APP_USR-token',
+            MERCADOPAGO_SECRETO_DE_FIRMA: 'firma-de-prueba',
+          }),
+        ),
+      ).toEqual([]);
+    });
+
+    it('en producción sí admite la pasarela mercadopago', () => {
+      expect(
+        problemasDe(
+          entornoDeProduccion({
+            PASARELA_DE_PAGOS: 'mercadopago',
+            MERCADOPAGO_ACCESS_TOKEN: 'APP_USR-token',
+            MERCADOPAGO_SECRETO_DE_FIRMA: 'firma-de-prueba',
+          }),
+        ),
+      ).toEqual([]);
     });
 
     it.each([
