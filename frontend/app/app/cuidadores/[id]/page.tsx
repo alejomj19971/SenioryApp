@@ -1,8 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, Star, MapPin, Briefcase, ShieldCheck, Stethoscope, FileText } from "lucide-react";
-import { AvatarCuidador } from "@/components/avatar-cuidador";
 import { BadgesVerificacion } from "@/components/cuidadores/badges-verificacion";
+import { FotoDeCuidador } from "@/components/cuidadores/foto-de-cuidador";
 import { Resenas } from "@/components/cuidadores/resenas";
 import { buttonVariants } from "@/components/ui/button";
 import { obtenerCuidador, tieneHojaDeVida } from "@/lib/services/cuidadores";
@@ -31,7 +31,7 @@ export default async function PerfilCuidadorPage({
       </Link>
 
       <div className="flex items-center gap-4">
-        <AvatarCuidador nombre={cuidador.nombre} foto={cuidador.foto} size="lg" className="size-20 ring-4 ring-primary/10" />
+        <FotoDeCuidador nombre={cuidador.nombre} foto={cuidador.foto} />
         <div>
           <div className="flex flex-wrap items-center gap-2">
             <h1 className="text-xl font-bold text-foreground">{cuidador.nombre}</h1>
