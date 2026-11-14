@@ -83,6 +83,8 @@ describe('validarVariables', () => {
         versionPoliticaVigente: 'v1',
         versionConsentimientoSaludVigente: 'v1',
         canalDeRecuperacion: 'deshabilitado',
+        resendApiKey: null,
+        resendCorreoDesde: null,
         almacenDeArchivos: 'deshabilitado',
         directorioDeArchivos: './archivos-locales',
         secretoDeArchivos: null,
@@ -683,6 +685,36 @@ describe('validarVariables', () => {
       expect(
         problemasDe(entornoBase({ CANAL_DE_RECUPERACION: 'paloma' })).join(),
       ).toContain('CANAL_DE_RECUPERACION');
+    });
+
+    it('el canal de recuperación resend exige la llave y el remitente', () => {
+      expect(
+        problemasDe(entornoBase({ CANAL_DE_RECUPERACION: 'resend' })),
+      ).toEqual([
+        'RESEND_API_KEY es obligatorio con el canal de recuperación resend',
+        'RESEND_CORREO_DESDE es obligatorio con el canal de recuperación resend',
+      ]);
+      expect(
+        problemasDe(
+          entornoBase({
+            CANAL_DE_RECUPERACION: 'resend',
+            RESEND_API_KEY: 're_prueba',
+            RESEND_CORREO_DESDE: 'Seniory <onboarding@resend.dev>',
+          }),
+        ),
+      ).toEqual([]);
+    });
+
+    it('en producción sí admite el canal resend', () => {
+      expect(
+        problemasDe(
+          entornoDeProduccion({
+            CANAL_DE_RECUPERACION: 'resend',
+            RESEND_API_KEY: 're_prueba',
+            RESEND_CORREO_DESDE: 'Seniory <onboarding@resend.dev>',
+          }),
+        ),
+      ).toEqual([]);
     });
 
     it('en producción rechaza el canal «consola»: el enlace quedaría escrito en el log', () => {

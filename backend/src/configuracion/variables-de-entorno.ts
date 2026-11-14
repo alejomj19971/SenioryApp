@@ -39,7 +39,11 @@ export const ALMACENES_DE_ARCHIVOS = [
 export type AlmacenDeArchivosConfigurado =
   (typeof ALMACENES_DE_ARCHIVOS)[number];
 
-export const CANALES_DE_RECUPERACION = ['consola', 'deshabilitado'] as const;
+export const CANALES_DE_RECUPERACION = [
+  'consola',
+  'resend',
+  'deshabilitado',
+] as const;
 export type CanalDeRecuperacion = (typeof CANALES_DE_RECUPERACION)[number];
 
 // Con qué se cobra y con qué se le paga al cuidador. «simulada» y «simulado» son solo para desarrollo y pruebas
@@ -259,12 +263,23 @@ export class VariablesDeEntorno {
   VERSION_POLITICA_VIGENTE: string = 'v1';
 
   // Por dónde llega el enlace para recuperar la contraseña. «consola» lo escribe en el log del servidor
-  // (solo desarrollo y pruebas: en producción no se admite). «deshabilitado» deja la recuperación
-  // respondiendo «no disponible» hasta que exista un canal real de correo (M5).
+  // (solo desarrollo y pruebas: en producción no se admite). «resend» es el canal real, admitido en
+  // producción. «deshabilitado» deja la recuperación respondiendo «no disponible» hasta que se elija uno.
   @IsIn(CANALES_DE_RECUPERACION, {
     message: `CANAL_DE_RECUPERACION debe ser uno de: ${CANALES_DE_RECUPERACION.join(', ')}`,
   })
   CANAL_DE_RECUPERACION: CanalDeRecuperacion = 'deshabilitado';
+
+  // Credenciales de Resend (obligatorias con CANAL_DE_RECUPERACION=resend). RESEND_CORREO_DESDE debe usar un
+  // dominio verificado en Resend; mientras no haya uno, «Seniory <onboarding@resend.dev>» solo entrega al
+  // correo de la propia cuenta de Resend (restricción de su sandbox, no nuestra).
+  @IsOptional()
+  @IsString()
+  RESEND_API_KEY?: string;
+
+  @IsOptional()
+  @IsString()
+  RESEND_CORREO_DESDE?: string;
 
   // Dónde se guardan los archivos de los cuidadores (hoja de vida). «local» usa una carpeta del servidor
   // (solo desarrollo, pruebas y staging: en producción no se admite). «cloudinary» es el almacén real
@@ -356,6 +371,8 @@ export interface Configuracion {
   versionPoliticaVigente: string;
   versionConsentimientoSaludVigente: string;
   canalDeRecuperacion: CanalDeRecuperacion;
+  resendApiKey: string | null;
+  resendCorreoDesde: string | null;
   almacenDeArchivos: AlmacenDeArchivosConfigurado;
   directorioDeArchivos: string;
   secretoDeArchivos: string | null;
@@ -481,6 +498,18 @@ function reglasAdicionales(variables: VariablesDeEntorno): string[] {
     ) {
       problemas.push(
         `SECRETO_DE_PASARELA debe tener al menos ${LARGO_MINIMO_SECRETO_JWT} caracteres`,
+      );
+    }
+  }
+  if (variables.CANAL_DE_RECUPERACION === 'resend') {
+    if (variables.RESEND_API_KEY === undefined) {
+      problemas.push(
+        'RESEND_API_KEY es obligatorio con el canal de recuperación resend',
+      );
+    }
+    if (variables.RESEND_CORREO_DESDE === undefined) {
+      problemas.push(
+        'RESEND_CORREO_DESDE es obligatorio con el canal de recuperación resend',
       );
     }
   }
@@ -685,6 +714,8 @@ export function configuracionDesdeVariables(
     versionConsentimientoSaludVigente:
       variables.VERSION_CONSENTIMIENTO_SALUD_VIGENTE,
     canalDeRecuperacion: variables.CANAL_DE_RECUPERACION,
+    resendApiKey: variables.RESEND_API_KEY ?? null,
+    resendCorreoDesde: variables.RESEND_CORREO_DESDE ?? null,
     almacenDeArchivos: variables.ALMACEN_DE_ARCHIVOS,
     directorioDeArchivos: variables.DIRECTORIO_DE_ARCHIVOS,
     secretoDeArchivos: variables.SECRETO_DE_ARCHIVOS ?? null,

@@ -113,6 +113,7 @@ import {
   EnviadorDeRecuperacionDeshabilitado,
   EnviadorDeRecuperacionEnConsola,
 } from './infraestructura/salida/recuperacion/enviadores-de-recuperacion.js';
+import { EnviadorDeRecuperacionResend } from './infraestructura/salida/recuperacion/enviador-de-recuperacion-resend.js';
 import { RepositorioUsuariosDrizzle } from './infraestructura/salida/persistencia/repositorio-usuarios-drizzle.js';
 import { GeneradorDeTokensOpacosAleatorio } from './infraestructura/salida/seguridad/generador-de-tokens-opacos-aleatorio.js';
 import { HashDeContrasenasArgon2 } from './infraestructura/salida/seguridad/hash-de-contrasenas-argon2.js';
@@ -182,10 +183,26 @@ const MS_POR_DIA = 24 * 60 * MS_POR_MINUTO;
     {
       provide: ENVIADOR_DE_RECUPERACION,
       inject: [CONFIGURACION],
-      useFactory: (configuracion: Configuracion): EnviadorDeRecuperacion =>
-        configuracion.canalDeRecuperacion === 'consola'
-          ? new EnviadorDeRecuperacionEnConsola()
-          : new EnviadorDeRecuperacionDeshabilitado(),
+      useFactory: (configuracion: Configuracion): EnviadorDeRecuperacion => {
+        if (configuracion.canalDeRecuperacion === 'consola') {
+          return new EnviadorDeRecuperacionEnConsola();
+        }
+        if (configuracion.canalDeRecuperacion === 'resend') {
+          if (
+            configuracion.resendApiKey === null ||
+            configuracion.resendCorreoDesde === null
+          ) {
+            throw new Error(
+              'El canal de recuperación resend necesita RESEND_API_KEY y RESEND_CORREO_DESDE',
+            );
+          }
+          return new EnviadorDeRecuperacionResend(
+            configuracion.resendApiKey,
+            configuracion.resendCorreoDesde,
+          );
+        }
+        return new EnviadorDeRecuperacionDeshabilitado();
+      },
     },
 
     // Seguridad

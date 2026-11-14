@@ -54,7 +54,9 @@ const ENTORNO_COMPLETO: Record<string, string> = {
   CLOUDINARY_API_SECRET: 'secreto-de-prueba',
   SECRETO_DE_OPERACION: 'd'.repeat(32),
   URL_PUBLICA_DE_LA_API: 'https://api.seniory.test/api/v1',
-  CANAL_DE_RECUPERACION: 'deshabilitado',
+  CANAL_DE_RECUPERACION: 'resend',
+  RESEND_API_KEY: 're_prueba',
+  RESEND_CORREO_DESDE: 'Seniory <onboarding@resend.dev>',
   VERSION_CONSENTIMIENTO_SALUD_VIGENTE: 'v1',
 };
 
