@@ -229,8 +229,7 @@
   /* Las manchas de color de fondo y el destello de la tarjeta (prueba de diseño) son puro adorno: en alto
      contraste estorban más de lo que aportan, así que desaparecen. */
   :root[data-contrast="high"] .fondo-decorativo,
-  :root[data-contrast="high"] .adorno-tarjeta,
-  :root[data-contrast="high"] .adorno-panel-de-marca {
+  :root[data-contrast="high"] .adorno-tarjeta {
     display: none;
   }
 
