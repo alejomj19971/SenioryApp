@@ -12,8 +12,8 @@ import { ShieldCheck } from "lucide-react";
 // Puramente de marca: nada interactivo, así que no afecta el orden de tabulación ni lo que lee un lector de pantalla.
 export function PanelDeMarca() {
   return (
-    <div className="relative hidden w-[22rem] shrink-0 overflow-hidden bg-secondary lg:block xl:w-[26rem]">
-      <Image src="/img/dona-carmen.jpg" alt="" aria-hidden="true" fill sizes="26rem" priority className="object-cover" />
+    <div className="relative hidden overflow-hidden bg-secondary lg:block lg:w-[45%]">
+      <Image src="/img/dona-carmen.jpg" alt="" aria-hidden="true" fill sizes="(min-width: 1024px) 45vw, 100vw" priority className="object-cover" />
       <div aria-hidden="true" className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/85 via-black/35 to-black/5" />
       <div aria-hidden="true" className="relative z-10 flex h-full flex-col justify-end gap-5 p-10 text-center xl:p-12">
         <span className="mx-auto rounded-full bg-white px-4 py-1.5 text-sm font-semibold text-primary">Creciendo y cuidando juntos</span>
