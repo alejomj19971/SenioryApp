@@ -16,7 +16,7 @@ export default function CuentaLayout({ children }: LayoutProps<"/">) {
   return (
     <div className={`${lora.variable} flex min-h-dvh flex-col bg-background lg:flex-row`}>
       <BarraAccesibilidad />
-      <div className="mx-auto flex w-full max-w-md flex-1 flex-col px-4 py-8 lg:mx-0 lg:w-1/2 lg:max-w-none lg:justify-center lg:px-12 xl:px-20">
+      <div className="mx-auto flex w-full max-w-md flex-1 flex-col px-4 py-8 lg:mx-0 lg:max-w-none lg:flex-1 lg:justify-center lg:px-12 xl:px-20">
         <Link href="/" aria-label="Ir al inicio de Seniory" className="self-center">
           <Logo />
         </Link>
