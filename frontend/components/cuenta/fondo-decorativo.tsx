@@ -1,9 +1,12 @@
 // Un par de manchas de color detrás de la tarjeta (prueba: ¿le da un aire más fresco a las pantallas de cuenta?).
 // Puramente decorativo: `aria-hidden`, y se apaga en alto contraste (`globals.css`) para no restarle legibilidad a
 // quien más la necesita.
+//
+// Empieza un poco más abajo que la tarjeta (`top-8`, más que el radio de `rounded-3xl` de la tarjeta): si
+// empezara en la misma altura, se asomaría un triángulo recto justo donde la tarjeta se redondea hacia adentro.
 export function FondoDecorativo() {
   return (
-    <div aria-hidden="true" className="fondo-decorativo pointer-events-none absolute inset-x-0 top-0 h-[32rem] overflow-hidden">
+    <div aria-hidden="true" className="fondo-decorativo pointer-events-none absolute inset-x-0 top-8 h-[32rem] overflow-hidden">
       <svg viewBox="0 0 400 400" preserveAspectRatio="xMidYMin slice" className="h-full w-full">
         <path
           fill="var(--primary)"
