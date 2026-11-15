@@ -107,6 +107,7 @@ jobs:
             -e COOKIES_SEGURAS=true \
             -e SECRETO_BFF=bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb \
             -e SECRETO_JWT_ACCESO=jjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjjj \
+            -e SECRETO_DE_CIFRADO=cccccccccccccccccccccccccccccccccccccccc \
             -e REQUIERE_PAGO_APROBADO=true \
             -e PASARELA_DE_PAGOS=simulada \
             -e SECRETO_DE_PASARELA=pppppppppppppppppppppppppppppppppppppppp \

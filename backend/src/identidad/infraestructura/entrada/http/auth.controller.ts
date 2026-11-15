@@ -22,8 +22,12 @@ import {
   type ResultadoDeAutenticacion,
 } from '../../../aplicacion/casos-de-uso/registrar-familiar.js';
 import { RenovarSesion } from '../../../aplicacion/casos-de-uso/renovar-sesion.js';
-import { RestablecerContrasena } from '../../../aplicacion/casos-de-uso/restablecer-contrasena.js';
+import {
+  RestablecerContrasena,
+  type ResultadoDeRestablecimiento,
+} from '../../../aplicacion/casos-de-uso/restablecer-contrasena.js';
 import { SolicitarRecuperacion } from '../../../aplicacion/casos-de-uso/solicitar-recuperacion.js';
+import { VerificarSegundoFactorDeInicioDeSesion } from '../../../aplicacion/casos-de-uso/verificar-segundo-factor.js';
 import type { VistaDeUsuario } from '../../../aplicacion/vistas.js';
 import {
   borrarCookiesDeSesion,
@@ -35,12 +39,22 @@ import {
   RegistroDto,
   RestablecimientoDeContrasenaDto,
   SolicitudDeRecuperacionDto,
+  VerificacionDeSegundoFactorDto,
 } from './dto-de-autenticacion.js';
 
 const UN_MINUTO_MS = 60_000;
 
 interface RespuestaDeSesion {
   usuario: VistaDeUsuario;
+}
+
+// Cuando el login pasó la contraseña pero falta el código de la app autenticadora. El desafío viaja en
+// el CUERPO (no en una cookie): todavía no hay sesión que proteger, y el navegador lo necesita para
+// mandarlo de vuelta en el siguiente paso.
+interface RespuestaDeDesafio {
+  requiereSegundoFactor: true;
+  desafio: string;
+  expiraEn: Date;
 }
 
 // Todas son públicas: son la puerta de entrada. Los tokens viajan SOLO en cookies, nunca en el cuerpo.
@@ -58,6 +72,8 @@ export class AuthController {
     private readonly solicitarRecuperacion: SolicitarRecuperacion,
     @Inject(RestablecerContrasena)
     private readonly restablecer: RestablecerContrasena,
+    @Inject(VerificarSegundoFactorDeInicioDeSesion)
+    private readonly verificarSegundoFactor: VerificarSegundoFactorDeInicioDeSesion,
     @Inject(CONFIGURACION) private readonly configuracion: Configuracion,
   ) {}
 
@@ -92,8 +108,32 @@ export class AuthController {
   async login(
     @Body() cuerpo: InicioDeSesionDto,
     @Res({ passthrough: true }) respuesta: Response,
-  ): Promise<RespuestaDeSesion> {
+  ): Promise<RespuestaDeSesion | RespuestaDeDesafio> {
     const resultado = await this.iniciar.ejecutar(cuerpo);
+    if (resultado.tipo === 'requiere_segundo_factor') {
+      return {
+        requiereSegundoFactor: true,
+        desafio: resultado.desafio,
+        expiraEn: resultado.expiraEn,
+      };
+    }
+    return this.conSesion(respuesta, resultado.resultado);
+  }
+
+  // El segundo paso del login de un administrador con segundo factor: el código de su app autenticadora.
+  // Tan estricto como el login mismo: ambos protegen la misma cuenta.
+  @Publico()
+  @Throttle({ default: { limit: 10, ttl: UN_MINUTO_MS } })
+  @HttpCode(HttpStatus.OK)
+  @Post('login/segundo-factor')
+  async loginSegundoFactor(
+    @Body() cuerpo: VerificacionDeSegundoFactorDto,
+    @Res({ passthrough: true }) respuesta: Response,
+  ): Promise<RespuestaDeSesion> {
+    const resultado = await this.verificarSegundoFactor.ejecutar(
+      cuerpo.desafio,
+      cuerpo.codigo,
+    );
     return this.conSesion(respuesta, resultado);
   }
 
@@ -150,15 +190,17 @@ export class AuthController {
     await this.solicitarRecuperacion.ejecutar(cuerpo.correo);
   }
 
-  // Elegir una contraseña nueva con el enlace del correo. No inicia sesión: se entra con la nueva.
+  // Elegir una contraseña nueva con el enlace del correo. No inicia sesión: se entra con la nueva. Si
+  // tenía el segundo factor activo, demostrar que controla su correo también lo apaga (es el respaldo
+  // para cuando se pierde el celular); se avisa en la respuesta para que la pantalla lo diga.
   @Publico()
   @Throttle({ default: { limit: 5, ttl: UN_MINUTO_MS } })
-  @HttpCode(HttpStatus.NO_CONTENT)
+  @HttpCode(HttpStatus.OK)
   @Post('restablecer-contrasena')
-  async restablecerContrasena(
+  restablecerContrasena(
     @Body() cuerpo: RestablecimientoDeContrasenaDto,
-  ): Promise<void> {
-    await this.restablecer.ejecutar({
+  ): Promise<ResultadoDeRestablecimiento> {
+    return this.restablecer.ejecutar({
       token: cuerpo.token,
       contrasenaNueva: cuerpo.contrasenaNueva,
     });

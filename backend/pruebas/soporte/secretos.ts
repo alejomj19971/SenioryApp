@@ -2,3 +2,5 @@
 export const SECRETO_JWT_DE_PRUEBA = 'secreto-jwt-solo-para-pruebas-0123456789';
 export const SECRETO_DE_PASARELA_DE_PRUEBA =
   'secreto-de-pasarela-solo-para-pruebas-0123';
+export const SECRETO_DE_CIFRADO_DE_PRUEBA =
+  'secreto-de-cifrado-solo-para-pruebas-0123456789';

@@ -93,3 +93,21 @@ export class InicioDeSesionDto {
   @MaxLength(TOPE_DE_CONTRASENA, { message: 'La contraseña no es válida' })
   contrasena!: string;
 }
+
+// El código de 6 dígitos que muestra la app autenticadora. Se recorta cualquier espacio (algunas apps lo
+// muestran como «123 456») antes de validar.
+const recortarEspacios = ({ value }: { value: unknown }): unknown =>
+  typeof value === 'string' ? value.replaceAll(/\s+/g, '') : value;
+
+export class CodigoDeSegundoFactorDto {
+  @Transform(recortarEspacios)
+  @IsString({ message: 'El código es obligatorio' })
+  @Matches(/^\d{6}$/, { message: 'El código debe tener 6 dígitos' })
+  codigo!: string;
+}
+
+export class VerificacionDeSegundoFactorDto extends CodigoDeSegundoFactorDto {
+  @IsString({ message: 'El desafío es obligatorio' })
+  @Length(20, 200, { message: 'El desafío no es válido' })
+  desafio!: string;
+}

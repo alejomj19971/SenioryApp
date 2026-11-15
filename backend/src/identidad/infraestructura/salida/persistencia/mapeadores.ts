@@ -6,7 +6,9 @@ import { AdultoMayor } from '../../../dominio/adulto-mayor.js';
 import { Consentimiento } from '../../../dominio/consentimiento.js';
 import { Correo } from '../../../dominio/correo.js';
 import { Credencial } from '../../../dominio/credencial.js';
+import { DesafioDeSegundoFactor } from '../../../dominio/desafio-de-segundo-factor.js';
 import { NombrePersona } from '../../../dominio/nombre-persona.js';
+import { SegundoFactor } from '../../../dominio/segundo-factor.js';
 import { SesionDeRefresco } from '../../../dominio/sesion-de-refresco.js';
 import { TokenDeRecuperacion } from '../../../dominio/token-de-recuperacion.js';
 import { TelefonoE164 } from '../../../dominio/telefono-e164.js';
@@ -23,6 +25,8 @@ import type {
   adultosMayores,
   consentimientos,
   credenciales,
+  desafiosDeSegundoFactor,
+  segundosFactores,
   sesionesRefresco,
   tokensDeRecuperacion,
   usuarios,
@@ -95,6 +99,31 @@ export function tokenDeRecuperacionDeFila(
   fila: typeof tokensDeRecuperacion.$inferSelect,
 ): TokenDeRecuperacion {
   return TokenDeRecuperacion.reconstruir({
+    id: id(fila.id),
+    usuarioId: id(fila.usuarioId),
+    hashDelToken: fila.hashDelToken,
+    creadoEn: fila.creadoEn,
+    expiraEn: fila.expiraEn,
+    usadoEn: fila.usadoEn,
+  });
+}
+
+export function segundoFactorDeFila(
+  fila: typeof segundosFactores.$inferSelect,
+): SegundoFactor {
+  return SegundoFactor.reconstruir({
+    usuarioId: id(fila.usuarioId),
+    secretoCifrado: fila.secretoCifrado,
+    activadoEn: fila.activadoEn,
+    creadoEn: fila.creadoEn,
+    actualizadoEn: fila.actualizadoEn,
+  });
+}
+
+export function desafioDeSegundoFactorDeFila(
+  fila: typeof desafiosDeSegundoFactor.$inferSelect,
+): DesafioDeSegundoFactor {
+  return DesafioDeSegundoFactor.reconstruir({
     id: id(fila.id),
     usuarioId: id(fila.usuarioId),
     hashDelToken: fila.hashDelToken,

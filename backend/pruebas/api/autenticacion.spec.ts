@@ -386,7 +386,11 @@ describe('autenticación (API)', () => {
       });
       expect(() => sesionDe(respuesta)).not.toThrow();
       expect(await auditoriaDe('identidad.iniciar_sesion', usuarioId)).toEqual([
-        { resultado: 'permitido', actor_id: usuarioId, metadatos: null },
+        {
+          resultado: 'permitido',
+          actor_id: usuarioId,
+          metadatos: { requiereSegundoFactor: false },
+        },
       ]);
     });
 

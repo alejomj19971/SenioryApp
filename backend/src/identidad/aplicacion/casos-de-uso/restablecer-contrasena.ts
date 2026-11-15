@@ -9,6 +9,8 @@ import {
 import type { UsuarioId } from '../../dominio/ids.js';
 import type { GeneradorDeTokensOpacos } from '../puertos/salida/generador-de-tokens-opacos.js';
 import type { HashDeContrasenas } from '../puertos/salida/hash-de-contrasenas.js';
+import type { RepositorioDesafiosDeSegundoFactor } from '../puertos/salida/repositorio-desafios-de-segundo-factor.js';
+import type { RepositorioSegundosFactores } from '../puertos/salida/repositorio-segundos-factores.js';
 import type { RepositorioSesiones } from '../puertos/salida/repositorio-sesiones.js';
 import type { RepositorioTokensDeRecuperacion } from '../puertos/salida/repositorio-tokens-de-recuperacion.js';
 import type { RepositorioUsuarios } from '../puertos/salida/repositorio-usuarios.js';
@@ -19,8 +21,18 @@ export interface EntradaDeRestablecimiento {
   contrasenaNueva: string;
 }
 
+export interface ResultadoDeRestablecimiento {
+  // Si tenía un segundo factor activo, demostrar que controla su correo también lo apaga: es el
+  // respaldo para cuando se pierde el celular. Vuelve a activarse desde su panel cuando quiera.
+  segundoFactorDesactivado: boolean;
+}
+
 type Desenlace =
-  | { tipo: 'restablecida'; usuarioId: UsuarioId }
+  | {
+      tipo: 'restablecida';
+      usuarioId: UsuarioId;
+      segundoFactorDesactivado: boolean;
+    }
   | { tipo: 'rechazada'; usuarioId: UsuarioId | null; motivo: string };
 
 // Un enlace expirado, ya usado, inventado o de una cuenta eliminada se ven igual desde afuera: quien
@@ -42,6 +54,8 @@ export class RestablecerContrasena {
     private readonly usuarios: RepositorioUsuarios,
     private readonly tokens: RepositorioTokensDeRecuperacion,
     private readonly sesiones: RepositorioSesiones,
+    private readonly segundosFactores: RepositorioSegundosFactores,
+    private readonly desafios: RepositorioDesafiosDeSegundoFactor,
     private readonly tokensOpacos: GeneradorDeTokensOpacos,
     private readonly hash: HashDeContrasenas,
     private readonly comunes: DiccionarioDeContrasenasComunes,
@@ -50,7 +64,9 @@ export class RestablecerContrasena {
     private readonly reloj: Reloj,
   ) {}
 
-  async ejecutar(entrada: EntradaDeRestablecimiento): Promise<void> {
+  async ejecutar(
+    entrada: EntradaDeRestablecimiento,
+  ): Promise<ResultadoDeRestablecimiento> {
     const contrasena = Contrasena.crear(entrada.contrasenaNueva, this.comunes);
     const hashDelToken = this.tokensOpacos.hashDe(entrada.token);
     const ahora = this.reloj.ahora();
@@ -96,7 +112,26 @@ export class RestablecerContrasena {
         usuario.credencial.restablecer(nuevoHash, instante);
         await this.usuarios.actualizar(usuario);
         await this.sesiones.revocarTodasDeUsuario(usuario.id, instante);
-        return { tipo: 'restablecida', usuarioId: usuario.id };
+
+        // Demostrar que controla su correo (el enlace de recuperación) es el respaldo para cuando se
+        // pierde el celular: apaga el segundo factor para que pueda volver a entrar, y lo reconfigura
+        // desde su panel cuando quiera.
+        const segundoFactor = await this.segundosFactores.buscarPorUsuarioId(
+          usuario.id,
+        );
+        const segundoFactorDesactivado = segundoFactor !== null;
+        if (segundoFactorDesactivado) {
+          await this.segundosFactores.eliminar(usuario.id);
+          await this.desafios.invalidarPendientesDeUsuario(
+            usuario.id,
+            instante,
+          );
+        }
+        return {
+          tipo: 'restablecida',
+          usuarioId: usuario.id,
+          segundoFactorDesactivado,
+        };
       },
     );
 
@@ -110,7 +145,11 @@ export class RestablecerContrasena {
       recursoTipo: 'usuario',
       recursoId: desenlace.usuarioId,
       resultado: 'permitido',
+      metadatos: {
+        segundoFactorDesactivado: desenlace.segundoFactorDesactivado,
+      },
     });
+    return { segundoFactorDesactivado: desenlace.segundoFactorDesactivado };
   }
 
   private auditarDenegado(

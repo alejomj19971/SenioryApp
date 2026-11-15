@@ -25,10 +25,20 @@ import { ContextoTransaccional } from '../compartido/infraestructura/base-de-dat
 import { CONFIGURACION } from '../configuracion/configuracion.module.js';
 import type { Configuracion } from '../configuracion/variables-de-entorno.js';
 import { CerrarSesion } from './aplicacion/casos-de-uso/cerrar-sesion.js';
+import {
+  ConfirmarSegundoFactor,
+  DesactivarSegundoFactor,
+  IniciarConfiguracionDeSegundoFactor,
+} from './aplicacion/casos-de-uso/configurar-segundo-factor.js';
 import { IniciarSesion } from './aplicacion/casos-de-uso/iniciar-sesion.js';
 import { RegistrarCuidadorPropio } from './aplicacion/casos-de-uso/registrar-cuidador-propio.js';
 import { RegistrarFamiliar } from './aplicacion/casos-de-uso/registrar-familiar.js';
 import { RenovarSesion } from './aplicacion/casos-de-uso/renovar-sesion.js';
+import { VerificarSegundoFactorDeInicioDeSesion } from './aplicacion/casos-de-uso/verificar-segundo-factor.js';
+import {
+  CIFRADOR_DE_SECRETOS,
+  type CifradorDeSecretos,
+} from './aplicacion/puertos/salida/cifrador-de-secretos.js';
 import {
   EMISOR_DE_TOKENS,
   type EmisorDeTokens,
@@ -37,6 +47,10 @@ import {
   GENERADOR_DE_TOKENS_OPACOS,
   type GeneradorDeTokensOpacos,
 } from './aplicacion/puertos/salida/generador-de-tokens-opacos.js';
+import {
+  GENERADOR_DE_TOTP,
+  type GeneradorDeTotp,
+} from './aplicacion/puertos/salida/generador-de-totp.js';
 import {
   ENVIADOR_DE_RECUPERACION,
   type EnviadorDeRecuperacion,
@@ -49,6 +63,14 @@ import {
   REPOSITORIO_ACEPTACIONES_DE_POLITICA,
   type RepositorioAceptacionesDePolitica,
 } from './aplicacion/puertos/salida/repositorio-aceptaciones-de-politica.js';
+import {
+  REPOSITORIO_DESAFIOS_DE_SEGUNDO_FACTOR,
+  type RepositorioDesafiosDeSegundoFactor,
+} from './aplicacion/puertos/salida/repositorio-desafios-de-segundo-factor.js';
+import {
+  REPOSITORIO_SEGUNDOS_FACTORES,
+  type RepositorioSegundosFactores,
+} from './aplicacion/puertos/salida/repositorio-segundos-factores.js';
 import {
   REPOSITORIO_TOKENS_DE_RECUPERACION,
   type RepositorioTokensDeRecuperacion,
@@ -99,8 +121,11 @@ import { AdultosMayoresController } from './infraestructura/entrada/http/adultos
 import { AuthController } from './infraestructura/entrada/http/auth.controller.js';
 import { ConsentimientosController } from './infraestructura/entrada/http/consentimientos.controller.js';
 import { PerfilController } from './infraestructura/entrada/http/perfil.controller.js';
+import { SegundoFactorController } from './infraestructura/entrada/http/segundo-factor.controller.js';
 import { RepositorioAdultosMayoresDrizzle } from './infraestructura/salida/persistencia/repositorio-adultos-mayores-drizzle.js';
 import { RepositorioConsentimientosDrizzle } from './infraestructura/salida/persistencia/repositorio-consentimientos-drizzle.js';
+import { RepositorioDesafiosDeSegundoFactorDrizzle } from './infraestructura/salida/persistencia/repositorio-desafios-de-segundo-factor-drizzle.js';
+import { RepositorioSegundosFactoresDrizzle } from './infraestructura/salida/persistencia/repositorio-segundos-factores-drizzle.js';
 import { RepositorioVinculosDrizzle } from './infraestructura/salida/persistencia/repositorio-vinculos-drizzle.js';
 import {
   DICCIONARIO_DE_CONTRASENAS,
@@ -115,7 +140,9 @@ import {
 } from './infraestructura/salida/recuperacion/enviadores-de-recuperacion.js';
 import { EnviadorDeRecuperacionResend } from './infraestructura/salida/recuperacion/enviador-de-recuperacion-resend.js';
 import { RepositorioUsuariosDrizzle } from './infraestructura/salida/persistencia/repositorio-usuarios-drizzle.js';
+import { CifradorDeSecretosAes } from './infraestructura/salida/seguridad/cifrador-de-secretos-aes.js';
 import { GeneradorDeTokensOpacosAleatorio } from './infraestructura/salida/seguridad/generador-de-tokens-opacos-aleatorio.js';
+import { GeneradorDeTotpOtpauth } from './infraestructura/salida/seguridad/generador-de-totp-otpauth.js';
 import { HashDeContrasenasArgon2 } from './infraestructura/salida/seguridad/hash-de-contrasenas-argon2.js';
 import { TokensJwt } from './infraestructura/salida/seguridad/tokens-jwt.js';
 
@@ -133,6 +160,7 @@ const MS_POR_DIA = 24 * 60 * MS_POR_MINUTO;
     PerfilController,
     AdultosMayoresController,
     ConsentimientosController,
+    SegundoFactorController,
   ],
   providers: [
     // Persistencia
@@ -181,6 +209,18 @@ const MS_POR_DIA = 24 * 60 * MS_POR_MINUTO;
         new RepositorioTokensDeRecuperacionDrizzle(contexto),
     },
     {
+      provide: REPOSITORIO_SEGUNDOS_FACTORES,
+      inject: [ContextoTransaccional],
+      useFactory: (contexto: ContextoTransaccional) =>
+        new RepositorioSegundosFactoresDrizzle(contexto),
+    },
+    {
+      provide: REPOSITORIO_DESAFIOS_DE_SEGUNDO_FACTOR,
+      inject: [ContextoTransaccional],
+      useFactory: (contexto: ContextoTransaccional) =>
+        new RepositorioDesafiosDeSegundoFactorDrizzle(contexto),
+    },
+    {
       provide: ENVIADOR_DE_RECUPERACION,
       inject: [CONFIGURACION],
       useFactory: (configuracion: Configuracion): EnviadorDeRecuperacion => {
@@ -217,6 +257,16 @@ const MS_POR_DIA = 24 * 60 * MS_POR_MINUTO;
     {
       provide: DICCIONARIO_DE_CONTRASENAS,
       useFactory: () => new DiccionarioDeContrasenasComunesDeArchivo(),
+    },
+    {
+      provide: CIFRADOR_DE_SECRETOS,
+      inject: [CONFIGURACION],
+      useFactory: (configuracion: Configuracion) =>
+        new CifradorDeSecretosAes(configuracion.secretoDeCifrado),
+    },
+    {
+      provide: GENERADOR_DE_TOTP,
+      useFactory: () => new GeneradorDeTotpOtpauth(),
     },
     {
       provide: TOKENS_JWT,
@@ -351,6 +401,10 @@ const MS_POR_DIA = 24 * 60 * MS_POR_MINUTO;
         REPOSITORIO_USUARIOS,
         HASH_DE_CONTRASENAS,
         EmisorDeSesiones,
+        REPOSITORIO_SEGUNDOS_FACTORES,
+        REPOSITORIO_DESAFIOS_DE_SEGUNDO_FACTOR,
+        GENERADOR_DE_TOKENS_OPACOS,
+        GENERADOR_DE_IDS,
         UNIDAD_DE_TRABAJO,
         AUDITORIA,
         RELOJ,
@@ -359,6 +413,10 @@ const MS_POR_DIA = 24 * 60 * MS_POR_MINUTO;
         usuarios: RepositorioUsuarios,
         hash: HashDeContrasenas,
         sesiones: EmisorDeSesiones,
+        segundosFactores: RepositorioSegundosFactores,
+        desafios: RepositorioDesafiosDeSegundoFactor,
+        tokensOpacos: GeneradorDeTokensOpacos,
+        ids: GeneradorDeIds,
         unidadDeTrabajo: UnidadDeTrabajo,
         auditoria: Auditoria,
         reloj: Reloj,
@@ -367,6 +425,130 @@ const MS_POR_DIA = 24 * 60 * MS_POR_MINUTO;
           usuarios,
           hash,
           sesiones,
+          segundosFactores,
+          desafios,
+          tokensOpacos,
+          ids,
+          unidadDeTrabajo,
+          auditoria,
+          reloj,
+        ),
+    },
+    {
+      provide: VerificarSegundoFactorDeInicioDeSesion,
+      inject: [
+        REPOSITORIO_USUARIOS,
+        REPOSITORIO_SEGUNDOS_FACTORES,
+        REPOSITORIO_DESAFIOS_DE_SEGUNDO_FACTOR,
+        GENERADOR_DE_TOTP,
+        CIFRADOR_DE_SECRETOS,
+        GENERADOR_DE_TOKENS_OPACOS,
+        EmisorDeSesiones,
+        UNIDAD_DE_TRABAJO,
+        AUDITORIA,
+        RELOJ,
+      ],
+      useFactory: (
+        usuarios: RepositorioUsuarios,
+        segundosFactores: RepositorioSegundosFactores,
+        desafios: RepositorioDesafiosDeSegundoFactor,
+        totp: GeneradorDeTotp,
+        cifrador: CifradorDeSecretos,
+        tokensOpacos: GeneradorDeTokensOpacos,
+        sesiones: EmisorDeSesiones,
+        unidadDeTrabajo: UnidadDeTrabajo,
+        auditoria: Auditoria,
+        reloj: Reloj,
+      ) =>
+        new VerificarSegundoFactorDeInicioDeSesion(
+          usuarios,
+          segundosFactores,
+          desafios,
+          totp,
+          cifrador,
+          tokensOpacos,
+          sesiones,
+          unidadDeTrabajo,
+          auditoria,
+          reloj,
+        ),
+    },
+    {
+      provide: IniciarConfiguracionDeSegundoFactor,
+      inject: [
+        REPOSITORIO_USUARIOS,
+        REPOSITORIO_SEGUNDOS_FACTORES,
+        GENERADOR_DE_TOTP,
+        CIFRADOR_DE_SECRETOS,
+        UNIDAD_DE_TRABAJO,
+        AUDITORIA,
+        RELOJ,
+      ],
+      useFactory: (
+        usuarios: RepositorioUsuarios,
+        segundosFactores: RepositorioSegundosFactores,
+        totp: GeneradorDeTotp,
+        cifrador: CifradorDeSecretos,
+        unidadDeTrabajo: UnidadDeTrabajo,
+        auditoria: Auditoria,
+        reloj: Reloj,
+      ) =>
+        new IniciarConfiguracionDeSegundoFactor(
+          usuarios,
+          segundosFactores,
+          totp,
+          cifrador,
+          unidadDeTrabajo,
+          auditoria,
+          reloj,
+        ),
+    },
+    {
+      provide: ConfirmarSegundoFactor,
+      inject: [
+        REPOSITORIO_SEGUNDOS_FACTORES,
+        GENERADOR_DE_TOTP,
+        CIFRADOR_DE_SECRETOS,
+        UNIDAD_DE_TRABAJO,
+        AUDITORIA,
+        RELOJ,
+      ],
+      useFactory: (
+        segundosFactores: RepositorioSegundosFactores,
+        totp: GeneradorDeTotp,
+        cifrador: CifradorDeSecretos,
+        unidadDeTrabajo: UnidadDeTrabajo,
+        auditoria: Auditoria,
+        reloj: Reloj,
+      ) =>
+        new ConfirmarSegundoFactor(
+          segundosFactores,
+          totp,
+          cifrador,
+          unidadDeTrabajo,
+          auditoria,
+          reloj,
+        ),
+    },
+    {
+      provide: DesactivarSegundoFactor,
+      inject: [
+        REPOSITORIO_SEGUNDOS_FACTORES,
+        REPOSITORIO_DESAFIOS_DE_SEGUNDO_FACTOR,
+        UNIDAD_DE_TRABAJO,
+        AUDITORIA,
+        RELOJ,
+      ],
+      useFactory: (
+        segundosFactores: RepositorioSegundosFactores,
+        desafios: RepositorioDesafiosDeSegundoFactor,
+        unidadDeTrabajo: UnidadDeTrabajo,
+        auditoria: Auditoria,
+        reloj: Reloj,
+      ) =>
+        new DesactivarSegundoFactor(
+          segundosFactores,
+          desafios,
           unidadDeTrabajo,
           auditoria,
           reloj,
@@ -634,6 +816,8 @@ const MS_POR_DIA = 24 * 60 * MS_POR_MINUTO;
         REPOSITORIO_USUARIOS,
         REPOSITORIO_TOKENS_DE_RECUPERACION,
         REPOSITORIO_SESIONES,
+        REPOSITORIO_SEGUNDOS_FACTORES,
+        REPOSITORIO_DESAFIOS_DE_SEGUNDO_FACTOR,
         GENERADOR_DE_TOKENS_OPACOS,
         HASH_DE_CONTRASENAS,
         DICCIONARIO_DE_CONTRASENAS,
@@ -645,6 +829,8 @@ const MS_POR_DIA = 24 * 60 * MS_POR_MINUTO;
         usuarios: RepositorioUsuarios,
         tokens: RepositorioTokensDeRecuperacion,
         sesiones: RepositorioSesiones,
+        segundosFactores: RepositorioSegundosFactores,
+        desafios: RepositorioDesafiosDeSegundoFactor,
         tokensOpacos: GeneradorDeTokensOpacos,
         hash: HashDeContrasenas,
         comunes: DiccionarioDeContrasenasComunes,
@@ -656,6 +842,8 @@ const MS_POR_DIA = 24 * 60 * MS_POR_MINUTO;
           usuarios,
           tokens,
           sesiones,
+          segundosFactores,
+          desafios,
           tokensOpacos,
           hash,
           comunes,

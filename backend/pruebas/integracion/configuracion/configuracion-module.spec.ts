@@ -41,6 +41,7 @@ const ENTORNO_COMPLETO: Record<string, string> = {
   SENTRY_DSN: 'https://sentry.ejemplo/123',
   SECRETO_BFF: 'b'.repeat(32),
   SECRETO_JWT_ACCESO: SECRETO_JWT_DE_PRUEBA,
+  SECRETO_DE_CIFRADO: 'e'.repeat(32),
   ID_CLAVE_JWT: 'k1',
   DURACION_ACCESO_MIN: '15',
   DURACION_REFRESCO_DIAS: '30',

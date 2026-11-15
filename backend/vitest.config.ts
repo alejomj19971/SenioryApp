@@ -15,6 +15,7 @@ export default defineConfig({
       URL_BASE_DE_DATOS: 'postgres://seniory:seniory@localhost:5434/seniory',
       ORIGENES_PERMITIDOS: 'http://localhost:3000',
       SECRETO_JWT_ACCESO: 'secreto-jwt-solo-para-pruebas-0123456789',
+      SECRETO_DE_CIFRADO: 'secreto-de-cifrado-solo-para-pruebas-0123456789',
       COOKIES_SEGURAS: 'false',
       // Las pruebas que arrancan la aplicación completa no deben procesar eventos de ninguna base;
       // las pruebas del outbox controlan el despachador directamente.

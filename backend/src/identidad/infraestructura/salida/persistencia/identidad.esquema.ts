@@ -119,6 +119,46 @@ export const tokensDeRecuperacion = esquemaIdentidad.table(
   ],
 );
 
+// El segundo factor (TOTP) de un administrador: uno por cuenta. `activadoEn` null mientras espera
+// confirmarse con un código válido; hasta entonces no se exige en el login.
+export const segundosFactores = esquemaIdentidad.table('segundos_factores', {
+  usuarioId: uuid('usuario_id')
+    .primaryKey()
+    .references(() => usuarios.id, { onDelete: 'cascade' }),
+  secretoCifrado: bytea('secreto_cifrado').notNull(),
+  activadoEn: instante('activado_en'),
+  creadoEn: instante('creado_en').notNull().defaultNow(),
+  actualizadoEn: instante('actualizado_en').notNull().defaultNow(),
+});
+
+// El permiso de terminar un inicio de sesión tras pasar la contraseña, mientras falta el código del
+// segundo factor. Misma idea que tokensDeRecuperacion: de un solo uso y de vida muy corta (minutos).
+export const desafiosDeSegundoFactor = esquemaIdentidad.table(
+  'desafios_de_segundo_factor',
+  {
+    id: uuid('id').primaryKey(),
+    usuarioId: uuid('usuario_id')
+      .notNull()
+      .references(() => usuarios.id, { onDelete: 'cascade' }),
+    hashDelToken: bytea('hash_del_token').notNull(),
+    creadoEn: instante('creado_en').notNull().defaultNow(),
+    expiraEn: instante('expira_en').notNull(),
+    usadoEn: instante('usado_en'),
+  },
+  (t) => [
+    unique('desafios_segundo_factor_hash_unico').on(t.hashDelToken),
+    check(
+      'desafios_segundo_factor_hash_valido',
+      sql`octet_length(hash_del_token) = 32`,
+    ),
+    check(
+      'desafios_segundo_factor_vigencia_valida',
+      sql`expira_en > creado_en`,
+    ),
+    index('desafios_segundo_factor_usuario_idx').on(t.usuarioId, t.creadoEn),
+  ],
+);
+
 export const adultosMayores = esquemaIdentidad.table(
   'adultos_mayores',
   {

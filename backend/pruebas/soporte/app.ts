@@ -14,6 +14,7 @@ import {
 } from '../../src/configuracion/variables-de-entorno.js';
 
 import {
+  SECRETO_DE_CIFRADO_DE_PRUEBA,
   SECRETO_DE_PASARELA_DE_PRUEBA,
   SECRETO_JWT_DE_PRUEBA,
 } from './secretos.js';
@@ -37,6 +38,7 @@ export async function crearAppDePrueba(
       URL_BASE_DE_DATOS: inject('urlBdPrueba'),
       ORIGENES_PERMITIDOS: 'http://localhost:3000',
       SECRETO_JWT_ACCESO: SECRETO_JWT_DE_PRUEBA,
+      SECRETO_DE_CIFRADO: SECRETO_DE_CIFRADO_DE_PRUEBA,
       COOKIES_SEGURAS: 'false',
       INTERVALO_SONDEO_OUTBOX_MS: '0',
       INTERVALO_EXPIRACION_SERVICIOS_MS: '0',

@@ -6,6 +6,7 @@ import {
 
 const SECRETO_VALIDO = 'a'.repeat(32);
 const SECRETO_JWT_VALIDO = 'b'.repeat(32);
+const SECRETO_DE_CIFRADO_VALIDO = 'f'.repeat(32);
 
 function entornoBase(
   extra: Record<string, unknown> = {},
@@ -15,6 +16,7 @@ function entornoBase(
     URL_BASE_DE_DATOS: 'postgres://seniory:seniory@localhost:5434/seniory',
     ORIGENES_PERMITIDOS: 'http://localhost:3000',
     SECRETO_JWT_ACCESO: SECRETO_JWT_VALIDO,
+    SECRETO_DE_CIFRADO: SECRETO_DE_CIFRADO_VALIDO,
     COOKIES_SEGURAS: 'false',
     ...extra,
   };
@@ -76,6 +78,7 @@ describe('validarVariables', () => {
         sentryDsn: null,
         secretoBff: null,
         secretoJwtAcceso: SECRETO_JWT_VALIDO,
+        secretoDeCifrado: SECRETO_DE_CIFRADO_VALIDO,
         idClaveJwt: 'k1',
         duracionAccesoMin: 15,
         duracionRefrescoDias: 30,
@@ -533,6 +536,38 @@ describe('validarVariables', () => {
         ).join(),
       ).toContain('deben ser distintos');
     });
+
+    it('exige el secreto de cifrado en todos los entornos', () => {
+      const entorno = entornoBase();
+      delete entorno.SECRETO_DE_CIFRADO;
+
+      expect(problemasDe(entorno).join()).toContain(
+        'SECRETO_DE_CIFRADO es obligatorio',
+      );
+    });
+
+    it('rechaza un secreto de cifrado de menos de 256 bits', () => {
+      expect(
+        problemasDe(entornoBase({ SECRETO_DE_CIFRADO: 'corto' })).join(),
+      ).toContain('SECRETO_DE_CIFRADO debe tener al menos 32 caracteres');
+    });
+
+    it.each(['SECRETO_JWT_ACCESO', 'SECRETO_BFF'])(
+      'rechaza usar el mismo secreto de cifrado que %s',
+      (otraVariable) => {
+        expect(
+          problemasDe(
+            entornoBase({
+              SECRETO_BFF: SECRETO_VALIDO,
+              [otraVariable]: SECRETO_DE_CIFRADO_VALIDO,
+              SECRETO_DE_CIFRADO: SECRETO_DE_CIFRADO_VALIDO,
+            }),
+          ).join(),
+        ).toContain(
+          'SECRETO_DE_CIFRADO debe ser distinto de SECRETO_JWT_ACCESO y de SECRETO_BFF',
+        );
+      },
+    );
 
     it.each(['0', '61', 'x'])('rechaza una duración de acceso de %s', (min) => {
       expect(

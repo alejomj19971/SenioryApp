@@ -231,7 +231,7 @@ describe('recuperación y cambio de contraseña (API)', () => {
       const segundo = await pedirEnlace(c, persona.correo);
 
       expect((await restablecer(c, primero)).status).toBe(400);
-      expect((await restablecer(c, segundo)).status).toBe(204);
+      expect((await restablecer(c, segundo)).status).toBe(200);
     });
 
     it('dos peticiones simultáneas para la misma cuenta mandan UN solo correo', async () => {
@@ -313,7 +313,8 @@ describe('recuperación y cambio de contraseña (API)', () => {
 
       const respuesta = await restablecer(c, token);
 
-      expect(respuesta.status).toBe(204);
+      expect(respuesta.status).toBe(200);
+      expect(respuesta.body).toEqual({ segundoFactorDesactivado: false });
       expect((await entrar(c, persona.correo, NUEVA)).status).toBe(200);
       expect((await entrar(c, persona.correo, CONTRASENA)).status).toBe(401);
     });
@@ -413,7 +414,7 @@ describe('recuperación y cambio de contraseña (API)', () => {
         restablecer(c, token, 'una contraseña larga número dos'),
       ]);
 
-      expect([a.status, b.status].sort((x, y) => x - y)).toEqual([204, 400]);
+      expect([a.status, b.status].sort((x, y) => x - y)).toEqual([200, 400]);
     });
 
     it('un enlace vence a los 30 minutos', async () => {
@@ -423,7 +424,7 @@ describe('recuperación y cambio de contraseña (API)', () => {
 
       reloj.avanzar(30 * MINUTO - 1_000);
       const aTiempo = await restablecer(c, token);
-      expect(aTiempo.status).toBe(204);
+      expect(aTiempo.status).toBe(200);
 
       const otro = await registrarFamiliar(c);
       const tardio = await pedirEnlace(c, otro.correo);
@@ -464,7 +465,7 @@ describe('recuperación y cambio de contraseña (API)', () => {
 
       expect(comun.body).toMatchObject({ codigo: 'contrasena.comun' });
       expect(corta.body).toMatchObject({ codigo: 'contrasena.largo_invalido' });
-      expect((await restablecer(c, token)).status).toBe(204);
+      expect((await restablecer(c, token)).status).toBe(200);
     });
 
     it('una cuenta eliminada después de pedir el enlace no puede usarlo', async () => {
@@ -503,7 +504,10 @@ describe('recuperación y cambio de contraseña (API)', () => {
       );
 
       expect(entradas).toEqual([
-        { resultado: 'permitido', metadatos: null },
+        {
+          resultado: 'permitido',
+          metadatos: { segundoFactorDesactivado: false },
+        },
         { resultado: 'denegado', metadatos: { motivo: 'usado' } },
       ]);
       const todo = JSON.stringify(
@@ -708,7 +712,7 @@ describe('recuperación y cambio de contraseña (API)', () => {
     const token = await pedirEnlace(c, persona.correo);
     expect(
       (await restablecer(c, token, 'mi contraseña nueva y segura')).status,
-    ).toBe(204);
+    ).toBe(200);
 
     // Entra con la nueva y ve su perfil.
     const login = await entrar(

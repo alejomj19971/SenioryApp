@@ -1,4 +1,5 @@
 import type { Auditoria } from '../../../compartido/aplicacion/puertos/auditoria.js';
+import type { GeneradorDeIds } from '../../../compartido/aplicacion/puertos/generador-de-ids.js';
 import type { Reloj } from '../../../compartido/aplicacion/puertos/reloj.js';
 import type { UnidadDeTrabajo } from '../../../compartido/aplicacion/puertos/unidad-de-trabajo.js';
 import {
@@ -7,18 +8,30 @@ import {
 } from '../../../compartido/dominio/errores.js';
 import { Contrasena } from '../../dominio/contrasena.js';
 import { Correo } from '../../dominio/correo.js';
-import type { UsuarioId } from '../../dominio/ids.js';
+import { DesafioDeSegundoFactor } from '../../dominio/desafio-de-segundo-factor.js';
+import type { DesafioDeSegundoFactorId, UsuarioId } from '../../dominio/ids.js';
 import type { Usuario } from '../../dominio/usuario.js';
+import type { GeneradorDeTokensOpacos } from '../puertos/salida/generador-de-tokens-opacos.js';
 import type { HashDeContrasenas } from '../puertos/salida/hash-de-contrasenas.js';
+import type { RepositorioDesafiosDeSegundoFactor } from '../puertos/salida/repositorio-desafios-de-segundo-factor.js';
+import type { RepositorioSegundosFactores } from '../puertos/salida/repositorio-segundos-factores.js';
 import type { RepositorioUsuarios } from '../puertos/salida/repositorio-usuarios.js';
 import type { EmisorDeSesiones } from '../servicios/emisor-de-sesiones.js';
 import { vistaDeUsuario } from '../vistas.js';
 import type { ResultadoDeAutenticacion } from './registrar-familiar.js';
 
+// Cuánto tiempo hay entre pasar la contraseña y escribir el código del segundo factor.
+export const DURACION_DEL_DESAFIO_MS = 5 * 60_000;
+
 export interface EntradaDeInicioDeSesion {
   correo: string;
   contrasena: string;
 }
+
+export type ResultadoDeInicioDeSesion =
+  | { tipo: 'sesion'; resultado: ResultadoDeAutenticacion }
+  // La contraseña fue correcta, pero falta el código de la app autenticadora.
+  | { tipo: 'requiere_segundo_factor'; desafio: string; expiraEn: Date };
 
 type MotivoDeRechazo =
   | 'correo_invalido'
@@ -27,7 +40,7 @@ type MotivoDeRechazo =
   | 'contrasena_incorrecta';
 
 type Desenlace =
-  | { tipo: 'exito'; usuario: Usuario; resultado: ResultadoDeAutenticacion }
+  | { tipo: 'exito'; usuario: Usuario; resultado: ResultadoDeInicioDeSesion }
   | {
       tipo: 'rechazado';
       usuarioId: UsuarioId | null;
@@ -50,6 +63,10 @@ export class IniciarSesion {
     private readonly usuarios: RepositorioUsuarios,
     private readonly hash: HashDeContrasenas,
     private readonly sesiones: EmisorDeSesiones,
+    private readonly segundosFactores: RepositorioSegundosFactores,
+    private readonly desafios: RepositorioDesafiosDeSegundoFactor,
+    private readonly tokensOpacos: GeneradorDeTokensOpacos,
+    private readonly ids: GeneradorDeIds,
     private readonly unidadDeTrabajo: UnidadDeTrabajo,
     private readonly auditoria: Auditoria,
     private readonly reloj: Reloj,
@@ -57,7 +74,7 @@ export class IniciarSesion {
 
   async ejecutar(
     entrada: EntradaDeInicioDeSesion,
-  ): Promise<ResultadoDeAutenticacion> {
+  ): Promise<ResultadoDeInicioDeSesion> {
     const desenlace = await this.unidadDeTrabajo.ejecutar(() =>
       this.intentar(entrada),
     );
@@ -71,6 +88,10 @@ export class IniciarSesion {
         recursoTipo: 'usuario',
         recursoId: desenlace.usuario.id,
         resultado: 'permitido',
+        metadatos: {
+          requiereSegundoFactor:
+            desenlace.resultado.tipo === 'requiere_segundo_factor',
+        },
       });
       return desenlace.resultado;
     }
@@ -123,11 +144,41 @@ export class IniciarSesion {
 
     usuario.credencial.registrarExito(ahora);
     await this.usuarios.actualizar(usuario);
+
+    if (usuario.rol === 'administrador') {
+      const segundoFactor = await this.segundosFactores.buscarPorUsuarioId(
+        usuario.id,
+      );
+      if (segundoFactor?.estaActivo === true) {
+        const opaco = this.tokensOpacos.generar();
+        const desafio = DesafioDeSegundoFactor.emitir({
+          id: this.ids.nuevo<'DesafioDeSegundoFactor'>() as DesafioDeSegundoFactorId,
+          usuarioId: usuario.id,
+          hashDelToken: opaco.hash,
+          ahora,
+          duracionMs: DURACION_DEL_DESAFIO_MS,
+        });
+        await this.desafios.guardar(desafio);
+        return {
+          tipo: 'exito',
+          usuario,
+          resultado: {
+            tipo: 'requiere_segundo_factor',
+            desafio: opaco.token,
+            expiraEn: desafio.expiraEn,
+          },
+        };
+      }
+    }
+
     const { tokens } = await this.sesiones.emitir(usuario, ahora);
     return {
       tipo: 'exito',
       usuario,
-      resultado: { usuario: vistaDeUsuario(usuario), tokens },
+      resultado: {
+        tipo: 'sesion',
+        resultado: { usuario: vistaDeUsuario(usuario), tokens },
+      },
     };
   }
 

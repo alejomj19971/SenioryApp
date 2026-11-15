@@ -231,6 +231,12 @@ export class VariablesDeEntorno {
   @IsString({ message: 'SECRETO_JWT_ACCESO es obligatorio' })
   SECRETO_JWT_ACCESO!: string;
 
+  // Con qué se cifra el secreto TOTP del segundo factor de los administradores. Obligatorio en todos los
+  // entornos, por la misma razón que SECRETO_JWT_ACCESO: sin él, un secreto TOTP en la base de datos
+  // robada protegería a cualquiera que lea la fila.
+  @IsString({ message: 'SECRETO_DE_CIFRADO es obligatorio' })
+  SECRETO_DE_CIFRADO!: string;
+
   // Identifica la clave de firma (`kid`) para poder rotarla sin cerrar las sesiones abiertas.
   @Matches(/^[A-Za-z0-9._-]{1,32}$/, {
     message:
@@ -364,6 +370,7 @@ export interface Configuracion {
   sentryDsn: string | null;
   secretoBff: string | null;
   secretoJwtAcceso: string;
+  secretoDeCifrado: string;
   idClaveJwt: string;
   duracionAccesoMin: number;
   duracionRefrescoDias: number;
@@ -457,6 +464,20 @@ function reglasAdicionales(variables: VariablesDeEntorno): string[] {
       );
     } else if (variables.SECRETO_JWT_ACCESO === variables.SECRETO_BFF) {
       problemas.push('SECRETO_JWT_ACCESO y SECRETO_BFF deben ser distintos');
+    }
+  }
+  if (variables.SECRETO_DE_CIFRADO !== undefined) {
+    if (variables.SECRETO_DE_CIFRADO.length < LARGO_MINIMO_SECRETO_JWT) {
+      problemas.push(
+        `SECRETO_DE_CIFRADO debe tener al menos ${LARGO_MINIMO_SECRETO_JWT} caracteres`,
+      );
+    } else if (
+      variables.SECRETO_DE_CIFRADO === variables.SECRETO_JWT_ACCESO ||
+      variables.SECRETO_DE_CIFRADO === variables.SECRETO_BFF
+    ) {
+      problemas.push(
+        'SECRETO_DE_CIFRADO debe ser distinto de SECRETO_JWT_ACCESO y de SECRETO_BFF',
+      );
     }
   }
 
@@ -706,6 +727,7 @@ export function configuracionDesdeVariables(
     sentryDsn: variables.SENTRY_DSN ?? null,
     secretoBff: variables.SECRETO_BFF ?? null,
     secretoJwtAcceso: variables.SECRETO_JWT_ACCESO,
+    secretoDeCifrado: variables.SECRETO_DE_CIFRADO,
     idClaveJwt: variables.ID_CLAVE_JWT,
     duracionAccesoMin: variables.DURACION_ACCESO_MIN,
     duracionRefrescoDias: variables.DURACION_REFRESCO_DIAS,

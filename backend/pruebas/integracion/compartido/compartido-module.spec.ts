@@ -21,7 +21,10 @@ import {
 } from '../../../src/configuracion/variables-de-entorno.js';
 import { conectarBd, nuevoId } from '../../soporte/bd.js';
 import { RelojFalso } from '../../soporte/dobles.js';
-import { SECRETO_JWT_DE_PRUEBA } from '../../soporte/secretos.js';
+import {
+  SECRETO_DE_CIFRADO_DE_PRUEBA,
+  SECRETO_JWT_DE_PRUEBA,
+} from '../../soporte/secretos.js';
 
 // La aplicación completa, con la base de pruebas y el sondeo encendido cada 20 ms.
 // El reloj está en 1985 para que el sondeo solo vea los eventos de esta prueba.
@@ -37,6 +40,7 @@ describe('CompartidoModule en la aplicación', () => {
         URL_BASE_DE_DATOS: inject('urlBdPrueba'),
         ORIGENES_PERMITIDOS: 'http://localhost:3000',
         SECRETO_JWT_ACCESO: SECRETO_JWT_DE_PRUEBA,
+        SECRETO_DE_CIFRADO: SECRETO_DE_CIFRADO_DE_PRUEBA,
         COOKIES_SEGURAS: 'false',
         INTERVALO_SONDEO_OUTBOX_MS: '20',
       }),

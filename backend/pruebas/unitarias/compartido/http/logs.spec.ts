@@ -18,6 +18,7 @@ const configuracion = configuracionDesdeVariables(
     URL_BASE_DE_DATOS: 'postgres://seniory:seniory@localhost:5434/seniory',
     ORIGENES_PERMITIDOS: 'http://localhost:3000',
     SECRETO_JWT_ACCESO: 'secreto-jwt-solo-para-pruebas-0123456789',
+    SECRETO_DE_CIFRADO: 'secreto-de-cifrado-solo-para-pruebas-0123456789',
     NIVEL_DE_LOG: 'info',
   }),
 );
