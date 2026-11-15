@@ -13,7 +13,7 @@
     "test:contrato": "vitest run --config vitest.contrato.config.mts"
   },
   "dependencies": {
-    "@base-ui/react": "^1.8.0",
+    "@base-ui/react": "^1.9.0",
     "class-variance-authority": "^0.7.1",
     "cn": "^0.5.0",
     "leaflet": "^1.9.4",
