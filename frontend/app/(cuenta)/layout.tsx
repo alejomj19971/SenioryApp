@@ -19,7 +19,7 @@ export default function CuentaLayout({ children }: LayoutProps<"/">) {
       {/* La fila (el panel de marca solo entra desde `lg:`) queda SEPARADA de la barra de accesibilidad: si
           `flex-row` estuviera en el contenedor de arriba, la barra se volvería una columna angosta más. */}
       <div className="flex flex-1 flex-col lg:flex-row">
-        <div className="mx-auto flex w-full max-w-md flex-1 flex-col px-4 py-8 lg:mx-0 lg:w-[30%] lg:max-w-none lg:justify-center lg:px-12 xl:px-20">
+        <div className="mx-auto flex w-full max-w-md flex-1 flex-col px-4 py-8 lg:mx-0 lg:w-[55%] lg:max-w-none lg:justify-center lg:px-12 xl:px-20">
           <Link href="/" aria-label="Ir al inicio de Seniory" className="self-center">
             <Logo />
           </Link>
