@@ -1,7 +1,9 @@
 import Link from "next/link";
+import { ShieldCheck } from "lucide-react";
 import { BarraAccesibilidad } from "@/components/accesibilidad/barra-accesibilidad";
 import { Logo } from "@/components/logo";
 import { SalirDeLaCuenta } from "@/components/shell/salir-de-la-cuenta";
+import { buttonVariants } from "@/components/ui/button";
 
 // El panel de los revisores (F9). Se usa en computador: un ancho cómodo para leer una cola de verificaciones.
 export default function AdminLayout({ children }: LayoutProps<"/admin">) {
@@ -11,7 +13,12 @@ export default function AdminLayout({ children }: LayoutProps<"/admin">) {
         <Link href="/admin" aria-label="Ir al inicio del panel de revisión">
           <Logo />
         </Link>
-        <SalirDeLaCuenta compacto />
+        <div className="flex items-center gap-2">
+          <Link href="/admin/seguridad" className={buttonVariants({ variant: "ghost", size: "icon-sm" })} aria-label="Seguridad de tu cuenta">
+            <ShieldCheck aria-hidden="true" />
+          </Link>
+          <SalirDeLaCuenta compacto />
+        </div>
       </header>
       <BarraAccesibilidad />
       <main className="mx-auto w-full max-w-4xl flex-1 px-4 py-8">{children}</main>

@@ -14,6 +14,17 @@ import type { RepositorioDesafiosDeSegundoFactor } from '../puertos/salida/repos
 import type { RepositorioSegundosFactores } from '../puertos/salida/repositorio-segundos-factores.js';
 import type { RepositorioUsuarios } from '../puertos/salida/repositorio-usuarios.js';
 
+// Si ya está activo (para que la pantalla sepa si ofrecer «activar» o «desactivar»).
+export class ObtenerEstadoDeSegundoFactor {
+  constructor(private readonly segundosFactores: RepositorioSegundosFactores) {}
+
+  async ejecutar(usuarioId: string): Promise<{ activo: boolean }> {
+    const id = idDesdeTexto<'Usuario'>(usuarioId);
+    const segundoFactor = await this.segundosFactores.buscarPorUsuarioId(id);
+    return { activo: segundoFactor?.estaActivo === true };
+  }
+}
+
 export interface ConfiguracionIniciada {
   uriDeInscripcion: string;
   // El secreto en texto plano, SOLO en esta respuesta (para que quien no pueda escanear el código QR lo

@@ -78,6 +78,9 @@ describe('segundo factor de administradores (API)', () => {
     return { correo, cookie: conSesion(sesionDe(login)) };
   }
 
+  const estado = (c: Cliente, cookie: string) =>
+    c.get('/api/v1/cuentas/yo/segundo-factor').set('Cookie', cookie).send();
+
   const iniciar = (c: Cliente, cookie: string) =>
     c.post('/api/v1/cuentas/yo/segundo-factor').set('Cookie', cookie).send();
 
@@ -122,6 +125,19 @@ describe('segundo factor de administradores (API)', () => {
       expect(login.status).toBe(200);
       expect(login.body).toMatchObject({ usuario: { rol: 'administrador' } });
       expect(sesionDe(login)).toBeDefined();
+    });
+  });
+
+  describe('consultar el estado', () => {
+    it('dice si está activo, antes y después de confirmarlo', async () => {
+      const c = cliente();
+      const { cookie } = await crearAdmin(c);
+
+      expect((await estado(c, cookie)).body).toEqual({ activo: false });
+
+      await activar(c, cookie);
+
+      expect((await estado(c, cookie)).body).toEqual({ activo: true });
     });
   });
 

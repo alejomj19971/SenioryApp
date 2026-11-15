@@ -85,7 +85,43 @@ export async function registrarseComoCuidador(_previo: EstadoDeFormulario, datos
   return registrarCuenta("/auth/registro-cuidador", "/cuidador/perfil", datos);
 }
 
+// Cierra el ingreso una vez el backend dio la sesión de verdad (con o sin segundo factor de por medio).
+async function completarIngreso(respuestaDelBackend: Response, volver: string): Promise<never> {
+  await guardarSesion(respuestaDelBackend);
+  // La cookie recién guardada todavía no viaja en esta petición: se usa el token a mano para saber a dónde ir.
+  const acceso = cookiesDeSesionDe(respuestaDelBackend).find((c) => c.nombre === COOKIE_DE_ACCESO)?.valor;
+  const perfil = await leerDelBackend<RespuestaDePerfil>("/yo", acceso === undefined ? {} : { tokenDeAcceso: acceso });
+  redirect(destinoTrasIngresar({ rol: perfil.usuario.rol, adultosMayores: perfil.adultosMayores }, volver));
+}
+
+interface RespuestaDeIngreso {
+  requiereSegundoFactor?: true;
+  desafio?: string;
+}
+
+// Correo y contraseña, y a veces un segundo paso (el código de la app autenticadora de un administrador): la
+// propia presencia del campo oculto `desafio` dice en cuál de los dos pasos está el formulario.
 export async function iniciarSesion(_previo: EstadoDeFormulario, datos: FormData): Promise<EstadoDeFormulario> {
+  const volver = texto(datos, "volver");
+  const desafioPrevio = texto(datos, "desafio");
+
+  if (desafioPrevio !== "") {
+    const codigo = texto(datos, "codigo").trim();
+    if (codigo === "") return { errores: { codigo: "Escribe el código." }, valores: { desafio: desafioPrevio } };
+
+    const resultado = await enviarSinSesion("/auth/login/segundo-factor", { desafio: desafioPrevio, codigo });
+    if ("error" in resultado) {
+      // Un desafío vencido o ya usado no se puede reintentar: sin `desafio` en los valores, la pantalla vuelve
+      // a pedir correo y contraseña en vez de insistir con el código.
+      if (resultado.error.codigo === "segundo_factor.desafio_invalido") {
+        return estadoDeError(resultado.error);
+      }
+      return estadoDeError(resultado.error, { desafio: desafioPrevio });
+    }
+
+    return completarIngreso(resultado.respuesta, volver);
+  }
+
   const correo = texto(datos, "correo").trim();
   const contrasena = texto(datos, "contrasena");
   const errores = soloErrores({
@@ -97,13 +133,12 @@ export async function iniciarSesion(_previo: EstadoDeFormulario, datos: FormData
   const resultado = await enviarSinSesion("/auth/login", { correo, contrasena });
   if ("error" in resultado) return estadoDeError(resultado.error, { correo });
 
-  await guardarSesion(resultado.respuesta);
-  // La cookie recién guardada todavía no viaja en esta petición: se usa el token a mano para saber a dónde ir.
-  const acceso = cookiesDeSesionDe(resultado.respuesta).find((c) => c.nombre === COOKIE_DE_ACCESO)?.valor;
-  const perfil = await leerDelBackend<RespuestaDePerfil>("/yo", acceso === undefined ? {} : { tokenDeAcceso: acceso });
-  redirect(
-    destinoTrasIngresar({ rol: perfil.usuario.rol, adultosMayores: perfil.adultosMayores }, texto(datos, "volver")),
-  );
+  const cuerpo = (await resultado.respuesta.json()) as RespuestaDeIngreso;
+  if (cuerpo.requiereSegundoFactor === true && cuerpo.desafio !== undefined) {
+    return { valores: { desafio: cuerpo.desafio } };
+  }
+
+  return completarIngreso(resultado.respuesta, volver);
 }
 
 // Nunca falla para quien la usa: si el backend no responde, las cookies se borran igual.

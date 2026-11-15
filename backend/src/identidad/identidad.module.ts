@@ -29,6 +29,7 @@ import {
   ConfirmarSegundoFactor,
   DesactivarSegundoFactor,
   IniciarConfiguracionDeSegundoFactor,
+  ObtenerEstadoDeSegundoFactor,
 } from './aplicacion/casos-de-uso/configurar-segundo-factor.js';
 import { IniciarSesion } from './aplicacion/casos-de-uso/iniciar-sesion.js';
 import { RegistrarCuidadorPropio } from './aplicacion/casos-de-uso/registrar-cuidador-propio.js';
@@ -529,6 +530,12 @@ const MS_POR_DIA = 24 * 60 * MS_POR_MINUTO;
           auditoria,
           reloj,
         ),
+    },
+    {
+      provide: ObtenerEstadoDeSegundoFactor,
+      inject: [REPOSITORIO_SEGUNDOS_FACTORES],
+      useFactory: (segundosFactores: RepositorioSegundosFactores) =>
+        new ObtenerEstadoDeSegundoFactor(segundosFactores),
     },
     {
       provide: DesactivarSegundoFactor,

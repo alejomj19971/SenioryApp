@@ -209,6 +209,66 @@ describe("iniciarSesion", () => {
       await destinoDe(() => acciones.iniciarSesion({}, formulario({ correo: "a@b.co", contrasena: "bien", volver: "/app" }))),
     ).toBe(esperado);
   });
+
+  describe("segundo factor (administradores)", () => {
+    const requiereSegundoFactor = (desafio = "desafio-123") =>
+      new Response(JSON.stringify({ requiereSegundoFactor: true, desafio, expiraEn: "2026-01-01T00:05:00.000Z" }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      });
+
+    it("la contraseña correcta de un administrador con 2FA no da sesión: pide el código", async () => {
+      pedirAlBackend.mockResolvedValue(requiereSegundoFactor("desafio-abc"));
+
+      const estado = await acciones.iniciarSesion({}, formulario({ correo: "admin@seniory.test", contrasena: "bien" }));
+
+      expect(guardarSesion).not.toHaveBeenCalled();
+      expect(leerDelBackend).not.toHaveBeenCalled();
+      expect(estado.valores).toEqual({ desafio: "desafio-abc" });
+    });
+
+    it("sin código, no llega a pedirlo al backend", async () => {
+      const estado = await acciones.iniciarSesion({}, formulario({ desafio: "desafio-abc", codigo: "" }));
+
+      expect(pedirAlBackend).not.toHaveBeenCalled();
+      expect(estado.errores?.codigo).toBeDefined();
+      expect(estado.valores).toEqual({ desafio: "desafio-abc" });
+    });
+
+    it("con el código correcto, verifica el segundo factor y entra a su destino", async () => {
+      pedirAlBackend.mockResolvedValue(conSesion("seniory_acceso=t; Path=/"));
+      leerDelBackend.mockResolvedValue({ usuario: { rol: "administrador" }, adultosMayores: [] });
+
+      const destino = await destinoDe(() =>
+        acciones.iniciarSesion({}, formulario({ desafio: "desafio-abc", codigo: "123456", volver: "/admin" })),
+      );
+
+      expect(destino).toBe("/admin");
+      const [ruta, opciones] = pedirAlBackend.mock.calls[0] ?? [];
+      expect(ruta).toBe("/auth/login/segundo-factor");
+      expect(opciones).toMatchObject({ metodo: "POST", sinSesion: true, cuerpo: { desafio: "desafio-abc", codigo: "123456" } });
+      expect(guardarSesion).toHaveBeenCalledTimes(1);
+    });
+
+    it("un código incorrecto deja el mismo desafío para reintentar", async () => {
+      pedirAlBackend.mockResolvedValue(problema(400, "segundo_factor.codigo_invalido"));
+
+      const estado = await acciones.iniciarSesion({}, formulario({ desafio: "desafio-abc", codigo: "000000" }));
+
+      expect(estado.mensaje).toBe("Detalle del backend");
+      expect(estado.valores).toEqual({ desafio: "desafio-abc" });
+      expect(guardarSesion).not.toHaveBeenCalled();
+    });
+
+    it("un desafío vencido o ya usado vuelve a pedir correo y contraseña", async () => {
+      pedirAlBackend.mockResolvedValue(problema(401, "segundo_factor.desafio_invalido"));
+
+      const estado = await acciones.iniciarSesion({}, formulario({ desafio: "desafio-viejo", codigo: "123456" }));
+
+      expect(estado.valores?.desafio).toBeUndefined();
+      expect(estado.mensaje).toBeDefined();
+    });
+  });
 });
 
 describe("cerrarSesion", () => {

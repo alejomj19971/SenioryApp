@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Delete,
+  Get,
   HttpCode,
   HttpStatus,
   Inject,
@@ -14,6 +15,7 @@ import {
   ConfirmarSegundoFactor,
   DesactivarSegundoFactor,
   IniciarConfiguracionDeSegundoFactor,
+  ObtenerEstadoDeSegundoFactor,
   type ConfiguracionIniciada,
 } from '../../../aplicacion/casos-de-uso/configurar-segundo-factor.js';
 import { CodigoDeSegundoFactorDto } from './dto-de-autenticacion.js';
@@ -32,7 +34,17 @@ export class SegundoFactorController {
     private readonly confirmar: ConfirmarSegundoFactor,
     @Inject(DesactivarSegundoFactor)
     private readonly desactivar: DesactivarSegundoFactor,
+    @Inject(ObtenerEstadoDeSegundoFactor)
+    private readonly estado: ObtenerEstadoDeSegundoFactor,
   ) {}
+
+  // Para que la pantalla sepa si ofrecer «activar» o «desactivar».
+  @Get()
+  obtenerEstado(
+    @UsuarioActual() usuario: UsuarioAutenticado,
+  ): Promise<{ activo: boolean }> {
+    return this.estado.ejecutar(usuario.id);
+  }
 
   // Genera un secreto nuevo (reemplaza cualquiera pendiente de antes) y lo entrega como código QR y como
   // texto. Todavía no protege el login: hace falta `confirmacion`.
