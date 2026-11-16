@@ -19,7 +19,7 @@ export default function RegistroPage() {
               <span aria-hidden="true" className="mb-1 h-1 w-10 rounded-full bg-success" />
               <h1 className="font-serif text-3xl font-bold text-foreground">Crea tu cuenta</h1>
               <p className="text-base text-muted-foreground">
-                Es gratis y te toma un minuto. Después te preguntaremos por la persona a la que vas a cuidar.
+                Es gratis y te toma un minuto. Después te preguntaremos a quién quieres que cuidemos.
               </p>
             </div>
             <FormularioRegistro />

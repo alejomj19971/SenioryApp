@@ -4,7 +4,7 @@ import { FormularioPersona } from "@/components/cuenta/formulario-persona";
 import { destinoTrasIngresar } from "@/lib/redireccion";
 import { verificarSesion } from "@/lib/sesion";
 
-export const metadata: Metadata = { title: "¿A quién vas a cuidar?" };
+export const metadata: Metadata = { title: "¿A quién quieres que cuidemos?" };
 
 export default async function PersonaPage() {
   const perfil = await verificarSesion();
@@ -17,7 +17,7 @@ export default async function PersonaPage() {
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-1">
         <p className="text-sm font-medium text-muted-foreground">Paso 1 de 2</p>
-        <h1 className="text-2xl font-bold text-foreground">¿A quién vas a cuidar?</h1>
+        <h1 className="text-2xl font-bold text-foreground">¿A quién quieres que cuidemos?</h1>
         <p className="text-base text-muted-foreground">
           Con estos datos buscamos al cuidador adecuado y armamos su seguimiento.
         </p>
