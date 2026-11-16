@@ -74,6 +74,7 @@ export class RechazarServicio {
 export class IniciarServicio {
   constructor(
     private readonly ejecutor: EjecutorDeAcciones,
+    private readonly directorio: ConsultaDeDirectorio,
     private readonly eventos: EventosDeReservas,
     private readonly zonaHoraria: string,
     // Con true (producción) el servicio no inicia hasta que Pagos avise que el pago está aprobado.
@@ -84,13 +85,26 @@ export class IniciarServicio {
     return this.ejecutor.ejecutar(servicioId, cuidadorUsuarioId, {
       nombre: 'reservas.iniciar_servicio',
       rol: 'cuidador',
-      aplicar: (servicio, ahora) =>
+      aplicar: async (servicio, ahora) => {
+        // Un servicio se puede pedir con hasta 180 días de anticipación: un control que venció entre que
+        // aceptó y hoy no debe dejarlo iniciar, aunque sí siguió pudiendo iniciar los que ya tenía en curso.
+        if (
+          (await this.directorio.obtenerCuidadorParaContratar(
+            servicio.cuidadorId,
+          )) === null
+        ) {
+          throw new ConflictoDeEstado(
+            'Ya no puedes iniciar servicios: revisa el estado de tu perfil',
+            'servicio.cuidador_no_disponible',
+          );
+        }
         servicio.iniciar(
           cuidadorUsuarioId,
           ahora,
           this.zonaHoraria,
           this.exigirPago,
-        ),
+        );
+      },
       anunciar: (servicio, ahora) =>
         this.eventos.publicar(
           'reservas.servicio_iniciado',

@@ -287,14 +287,21 @@ const MANEJADORES_DE_PAGOS = Symbol('ManejadoresDePagos');
     },
     {
       provide: IniciarServicio,
-      inject: [EjecutorDeAcciones, EventosDeReservas, CONFIGURACION],
+      inject: [
+        EjecutorDeAcciones,
+        CONSULTA_DE_DIRECTORIO,
+        EventosDeReservas,
+        CONFIGURACION,
+      ],
       useFactory: (
         ejecutor: EjecutorDeAcciones,
+        directorio: ConsultaDeDirectorio,
         eventos: EventosDeReservas,
         configuracion: Configuracion,
       ) =>
         new IniciarServicio(
           ejecutor,
+          directorio,
           eventos,
           configuracion.zonaHorariaNegocio,
           configuracion.requierePagoAprobado,

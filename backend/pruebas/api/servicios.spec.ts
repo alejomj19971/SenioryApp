@@ -748,6 +748,24 @@ describe('servicios (API)', () => {
       });
     });
 
+    it('no puede iniciar si dejó de estar verificado después de aceptar', async () => {
+      const c = await nuevoCuidador();
+      const id = await crearServicio(c, { fecha: HOY, jornada: 'manana' });
+      await accion('aceptar', id, await c.cookie());
+      await bd.query(
+        `update directorio.cuidadores set visible = false, estado = 'suspendido' where id = $1`,
+        [c.cuidadorId],
+      );
+
+      const respuesta = await accion('iniciar', id, await c.cookie());
+
+      expect(respuesta.status).toBe(409);
+      expect(respuesta.body).toMatchObject({
+        codigo: 'servicio.cuidador_no_disponible',
+      });
+      expect((await estadoEnBd(id))?.estado).toBe('aceptado');
+    });
+
     it('iniciar dentro de la franja, finalizar, y cada paso publica su evento', async () => {
       const c = await nuevoCuidador();
       const id = await crearServicio(c, { fecha: HOY, jornada: 'manana' });
