@@ -28,6 +28,7 @@ export const ACCIONES_DE_SERVICIO = [
   'rechazar',
   'expirar',
   'cancelar',
+  'cancelar_cuidador',
   'iniciar',
   'finalizar',
   'cancelar_por_pago',

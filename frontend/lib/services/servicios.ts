@@ -150,7 +150,7 @@ export async function listarServiciosDelCuidador(estado?: EstadoDeServicio, curs
   return { servicios: pagina.servicios.map(aServicioDelCuidador), siguiente: pagina.siguiente };
 }
 
-export type AccionDelCuidador = "aceptar" | "rechazar" | "iniciar" | "finalizar";
+export type AccionDelCuidador = "aceptar" | "rechazar" | "iniciar" | "finalizar" | "cancelar-cuidador";
 
 export async function actuarComoCuidador(id: string, accion: AccionDelCuidador): Promise<ResultadoDeEscritura<ServicioDelCuidador>> {
   const resultado = await escribirEnBackend<RespuestaDeServicioParaCuidador>(`/servicios/${id}/${accion}`, { metodo: "POST" });

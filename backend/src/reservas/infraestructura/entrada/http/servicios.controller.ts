@@ -27,7 +27,10 @@ import {
   RechazarServicio,
 } from '../../../aplicacion/casos-de-uso/acciones-del-cuidador.js';
 import { CalificarServicio } from '../../../aplicacion/casos-de-uso/calificar-servicio.js';
-import { CancelarServicio } from '../../../aplicacion/casos-de-uso/cancelar-servicio.js';
+import {
+  CancelarServicio,
+  CancelarServicioPorCuidador,
+} from '../../../aplicacion/casos-de-uso/cancelar-servicio.js';
 import {
   ListarMisServicios,
   ObtenerServicio,
@@ -63,6 +66,8 @@ export class ServiciosController {
     @Inject(IniciarServicio) private readonly iniciar: IniciarServicio,
     @Inject(FinalizarServicio) private readonly finalizar: FinalizarServicio,
     @Inject(CancelarServicio) private readonly cancelar: CancelarServicio,
+    @Inject(CancelarServicioPorCuidador)
+    private readonly cancelarComoCuidador: CancelarServicioPorCuidador,
     @Inject(CalificarServicio) private readonly calificar: CalificarServicio,
     @Inject(ObtenerServicio) private readonly obtener: ObtenerServicio,
     @Inject(ListarMisServicios) private readonly listar: ListarMisServicios,
@@ -166,6 +171,20 @@ export class ServiciosController {
         await this.cancelar.ejecutar(usuario.id, id),
       ),
     };
+  }
+
+  // El cuidador ya había aceptado, pero avisa que no puede prestarlo (H1): antes no tenía ningún camino
+  // formal para esto y el servicio se quedaba «aceptado» para siempre sin que nadie llegara.
+  @Roles('cuidador')
+  @HttpCode(HttpStatus.OK)
+  @Post(':id/cancelar-cuidador')
+  async cancelarServicioComoCuidador(
+    @UsuarioActual() usuario: UsuarioAutenticado,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    return this.comoCuidador(
+      await this.cancelarComoCuidador.ejecutar(usuario.id, id),
+    );
   }
 
   @Roles('familiar')

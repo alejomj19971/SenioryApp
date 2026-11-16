@@ -15,6 +15,7 @@ import type {
 //   solicitado ── aceptar / rechazar / expirar / cancelar ──▶ aceptado / cancelado / cancelado / cancelado
 //   aceptado ── iniciar ──▶ en_curso        aceptado ── cancelar ──▶ cancelado
 //   aceptado ── cancelar_por_pago ──▶ cancelado   (el sistema, cuando el pago se rechaza o vence)
+//   aceptado ── cancelar_cuidador ──▶ cancelado   (el cuidador ya no puede prestarlo)
 //   en_curso ── finalizar ──▶ finalizado
 //
 // `finalizado` y `cancelado` son finales: ya no admiten ninguna acción.
@@ -39,6 +40,13 @@ const REGLAS: Readonly<Record<AccionDeServicio, Regla>> = {
   cancelar: {
     actores: ['familiar'],
     desde: ['solicitado', 'aceptado'],
+    hacia: 'cancelado',
+  },
+  // El cuidador ya se comprometió (aceptó) pero no puede prestarlo: se le da un camino formal para avisar,
+  // en vez de dejar el servicio «aceptado» para siempre sin que nadie llegue.
+  cancelar_cuidador: {
+    actores: ['cuidador'],
+    desde: ['aceptado'],
     hacia: 'cancelado',
   },
   // El cuidador marca que inició (check-in). Si se decide el inicio automático, se agrega `sistema` aquí.

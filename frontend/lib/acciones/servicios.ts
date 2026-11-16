@@ -22,7 +22,7 @@ import type { Cotizacion, DatosDeSolicitud, Jornada, MedioDePago, Servicio } fro
 const FORMATO_DE_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const JORNADAS: readonly Jornada[] = ["manana", "tarde", "noche"];
 const MEDIOS: readonly MedioDePago[] = ["pasarela", "bolsa"];
-const ACCIONES_DEL_CUIDADOR: readonly AccionDelCuidador[] = ["aceptar", "rechazar", "iniciar", "finalizar"];
+const ACCIONES_DEL_CUIDADOR: readonly AccionDelCuidador[] = ["aceptar", "rechazar", "iniciar", "finalizar", "cancelar-cuidador"];
 const HORAS_MINIMAS = 1;
 const HORAS_MAXIMAS = 8;
 
@@ -107,7 +107,7 @@ export async function calificarServicioAccion(servicioId: unknown, calificacion:
   return { ok: true };
 }
 
-// Aceptar, rechazar, iniciar y finalizar: solo el cuidador del servicio (el backend lo verifica).
+// Aceptar, rechazar, iniciar, finalizar y cancelar-cuidador: solo el cuidador del servicio (el backend lo verifica).
 export async function actuarServicioAccion(servicioId: unknown, accion: unknown): Promise<ResultadoSimple> {
   if (!idValido(servicioId)) return { ok: false, mensaje: "No encontramos ese servicio." };
   if (typeof accion !== "string" || !ACCIONES_DEL_CUIDADOR.includes(accion as AccionDelCuidador)) {

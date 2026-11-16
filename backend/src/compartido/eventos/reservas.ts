@@ -66,6 +66,7 @@ export const MOTIVOS_DE_CANCELACION = [
   'rechazada', // el cuidador dijo que no
   'expirada', // el cuidador no respondió a tiempo
   'cancelada_por_familia', // la familia canceló
+  'cancelada_por_cuidador', // el cuidador ya había aceptado, pero avisó que no puede prestarlo
   'pago_fallido', // el pago se rechazó o venció
 ] as const;
 export type MotivoDeCancelacion = (typeof MOTIVOS_DE_CANCELACION)[number];

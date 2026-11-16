@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { useRouter } from "next/navigation";
 import { Aviso } from "@/components/ui/aviso";
 import { Button } from "@/components/ui/button";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { actuarServicioAccion } from "@/lib/acciones/servicios";
 import type { EstadoDeServicio } from "@/lib/types";
 
@@ -13,7 +14,7 @@ export function AccionesDelServicio({ servicioId, estado }: { servicioId: string
   const [pendiente, empezar] = useTransition();
   const [error, setError] = useState<string | null>(null);
 
-  function hacer(accion: "aceptar" | "rechazar" | "iniciar" | "finalizar") {
+  function hacer(accion: "aceptar" | "rechazar" | "iniciar" | "finalizar" | "cancelar-cuidador") {
     empezar(async () => {
       const resultado = await actuarServicioAccion(servicioId, accion);
       if (!resultado.ok) {
@@ -41,9 +42,12 @@ export function AccionesDelServicio({ servicioId, estado }: { servicioId: string
         </div>
       )}
       {estado === "aceptado" && (
-        <Button onClick={() => hacer("iniciar")} disabled={pendiente}>
-          Ya llegué: iniciar servicio
-        </Button>
+        <>
+          <Button onClick={() => hacer("iniciar")} disabled={pendiente}>
+            Ya llegué: iniciar servicio
+          </Button>
+          <CancelarComoCuidador pendiente={pendiente} onConfirmar={() => hacer("cancelar-cuidador")} />
+        </>
       )}
       {estado === "en_curso" && (
         <Button onClick={() => hacer("finalizar")} disabled={pendiente}>
@@ -51,5 +55,41 @@ export function AccionesDelServicio({ servicioId, estado }: { servicioId: string
         </Button>
       )}
     </div>
+  );
+}
+
+// Avisar que ya no puede atender un servicio que había aceptado (una emergencia, por ejemplo). Pide
+// confirmación porque no se puede deshacer y le avisamos a la familia de inmediato.
+function CancelarComoCuidador({ pendiente, onConfirmar }: { pendiente: boolean; onConfirmar: () => void }) {
+  const [abierto, setAbierto] = useState(false);
+
+  function confirmar() {
+    onConfirmar();
+    setAbierto(false);
+  }
+
+  return (
+    <Dialog open={abierto} onOpenChange={setAbierto}>
+      <DialogTrigger render={<Button variant="outline" className="text-destructive" />}>
+        No puedo atender este servicio
+      </DialogTrigger>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>¿Avisar que no puedes atenderlo?</DialogTitle>
+          <DialogDescription>
+            Le avisamos a la familia de inmediato para que pueda buscar a alguien más. Si ya se había cobrado, el
+            dinero vuelve a ella. Esto no se puede deshacer.
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => setAbierto(false)}>
+            No, mantenerlo
+          </Button>
+          <Button variant="destructive" onClick={confirmar} disabled={pendiente}>
+            {pendiente ? "Avisando…" : "Sí, no puedo atenderlo"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   );
 }

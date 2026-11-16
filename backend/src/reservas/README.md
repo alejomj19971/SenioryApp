@@ -5,7 +5,7 @@ Contratar a un cuidador y el ciclo de vida del servicio: solicitado → aceptado
 ## Qué hace
 
 - **Familia:** `POST /servicios` (con `Idempotency-Key`), `POST /servicios/:id/cancelar`, `POST /servicios/:id/calificacion`.
-- **Cuidador:** `POST /servicios/:id/aceptar`, `/rechazar`, `/iniciar` y `/finalizar`.
+- **Cuidador:** `POST /servicios/:id/aceptar`, `/rechazar`, `/iniciar`, `/finalizar` y `/cancelar-cuidador` (ya aceptado, pero avisa que no puede atenderlo).
 - **Ambos:** `GET /servicios` (mis servicios, paginado, filtro por `estado`) y `GET /servicios/:id`.
 - **Cuidador en turno:** `GET /adultos-mayores/:id/cuidador-en-turno` (solo la familia vinculada).
 - **Tarea programada:** cancela con motivo «expirada» las solicitudes que el cuidador no respondió a tiempo.
@@ -19,11 +19,12 @@ solicitado ── rechazar (cuidador) ──────▶ cancelado  (motivo �
 solicitado ── expirar (sistema) ────────▶ cancelado  (motivo «expirada»)
 solicitado / aceptado ── cancelar (familia) ▶ cancelado  (motivo «cancelada_por_familia»)
 aceptado ── cancelar_por_pago (sistema) ▶ cancelado  (motivo «pago_fallido»: el pago se rechazó o venció)
+aceptado ── cancelar_cuidador (cuidador) ▶ cancelado  (motivo «cancelada_por_cuidador»: ya no puede atenderlo)
 aceptado ── iniciar (cuidador) ─────────▶ en_curso
 en_curso ── finalizar (cuidador) ───────▶ finalizado
 ```
 
-Es una función pura sobre una tabla (`maquina-de-estados.ts`); una prueba la compara con esta misma tabla y comprueba que las otras 135 combinaciones de estado × acción × actor se rechazan (403 si ese actor nunca puede hacerlo, 409 si el estado no lo admite). `finalizado` y `cancelado` son finales. Cada transición deja una fila en `historial_de_estados`.
+Es una función pura sobre una tabla (`maquina-de-estados.ts`); una prueba la compara con esta misma tabla y comprueba que las otras 152 combinaciones de estado × acción × actor se rechazan (403 si ese actor nunca puede hacerlo, 409 si el estado no lo admite). `finalizado` y `cancelado` son finales. Cada transición deja una fila en `historial_de_estados`.
 
 ## Reglas que conviene saber
 

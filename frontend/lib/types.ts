@@ -173,7 +173,7 @@ export interface MensajeDeChat {
 
 // Servicios (F3+F4): lo que la familia pide y el cuidador atiende. El dinero lo calcula SIEMPRE el servidor.
 export type EstadoDeServicio = "solicitado" | "aceptado" | "en_curso" | "finalizado" | "cancelado";
-export type MotivoDeCancelacion = "rechazada" | "expirada" | "cancelada_por_familia" | "pago_fallido";
+export type MotivoDeCancelacion = "rechazada" | "expirada" | "cancelada_por_familia" | "cancelada_por_cuidador" | "pago_fallido";
 export type MedioDePago = "pasarela" | "bolsa";
 
 export interface ServicioBase {

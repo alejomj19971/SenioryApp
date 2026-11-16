@@ -50,7 +50,10 @@ import {
   RechazarServicio,
 } from './aplicacion/casos-de-uso/acciones-del-cuidador.js';
 import { CalificarServicio } from './aplicacion/casos-de-uso/calificar-servicio.js';
-import { CancelarServicio } from './aplicacion/casos-de-uso/cancelar-servicio.js';
+import {
+  CancelarServicio,
+  CancelarServicioPorCuidador,
+} from './aplicacion/casos-de-uso/cancelar-servicio.js';
 import {
   ListarMisServicios,
   ObtenerCuidadorEnTurno,
@@ -217,6 +220,20 @@ const MANEJADORES_DE_PAGOS = Symbol('ManejadoresDePagos');
         configuracion: Configuracion,
       ) =>
         new CancelarServicio(
+          ejecutor,
+          eventos,
+          configuracion.zonaHorariaNegocio,
+        ),
+    },
+    {
+      provide: CancelarServicioPorCuidador,
+      inject: [EjecutorDeAcciones, EventosDeReservas, CONFIGURACION],
+      useFactory: (
+        ejecutor: EjecutorDeAcciones,
+        eventos: EventosDeReservas,
+        configuracion: Configuracion,
+      ) =>
+        new CancelarServicioPorCuidador(
           ejecutor,
           eventos,
           configuracion.zonaHorariaNegocio,

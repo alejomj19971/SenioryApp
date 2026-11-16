@@ -335,6 +335,18 @@ export class Servicio {
     this.cancelarCon('cancelada_por_familia', familiarUsuarioId, ahora);
   }
 
+  // El cuidador ya había aceptado, pero avisa que no puede prestarlo (una emergencia, por ejemplo). Antes de
+  // esto no existía ningún camino formal: el servicio se quedaba «aceptado» sin que nadie llegara.
+  cancelarPorCuidador(cuidadorUsuarioId: string, ahora: Date): void {
+    const estado = transicionar(
+      this.datos.estado,
+      'cancelar_cuidador',
+      'cuidador',
+    );
+    this.mover(estado, 'cancelar_cuidador', cuidadorUsuarioId, ahora);
+    this.cancelarCon('cancelada_por_cuidador', cuidadorUsuarioId, ahora);
+  }
+
   // Pagos avisa que el pago quedó aprobado. Devuelve falso si no hay nada que anotar: ya estaba anotado, o el
   // servicio se canceló mientras tanto (el dinero se devuelve por otro camino).
   registrarPago(ahora: Date): boolean {
