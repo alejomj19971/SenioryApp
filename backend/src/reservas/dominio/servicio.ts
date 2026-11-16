@@ -359,6 +359,20 @@ export class Servicio {
     return true;
   }
 
+  // La tarea programada: la franja ya terminó y nadie marcó que inició (ni la familia canceló). Antes de
+  // esto, un cuidador que no llegaba ni avisaba dejaba el servicio «aceptado» para siempre.
+  marcarNoShow(ahora: Date, zonaHoraria: string): void {
+    const estado = transicionar(this.datos.estado, 'marcar_no_show', 'sistema');
+    if (!franjaYaTermino(this.datos.fecha, this.datos.jornada, ahora, zonaHoraria)) {
+      throw new ConflictoDeEstado(
+        'La franja todavía no termina',
+        'servicio.franja_vigente',
+      );
+    }
+    this.mover(estado, 'marcar_no_show', null, ahora);
+    this.cancelarCon('no_show', null, ahora);
+  }
+
   // Pagos avisa que el pago no se hizo (la pasarela lo rechazó, venció o el saldo de la bolsa no alcanzó).
   cancelarPorPago(ahora: Date): void {
     const estado = transicionar(

@@ -123,6 +123,21 @@ export class VariablesDeEntorno {
   })
   INTERVALO_EXPIRACION_SERVICIOS_MS: number = 60_000;
 
+  // Cada cuánto se cancela (motivo «no_show») un servicio que quedó «aceptado» sin que nadie marcara que
+  // inició, una vez que su franja ya terminó. Sin esto, un cuidador que no llega deja el servicio huérfano
+  // para siempre. 0 lo apaga (solo en pruebas).
+  @Type(() => Number)
+  @IsInt({
+    message: 'INTERVALO_DETECCION_NO_SHOW_MS debe ser un número entero',
+  })
+  @Min(0, {
+    message: 'INTERVALO_DETECCION_NO_SHOW_MS debe estar entre 0 y 3600000',
+  })
+  @Max(3_600_000, {
+    message: 'INTERVALO_DETECCION_NO_SHOW_MS debe estar entre 0 y 3600000',
+  })
+  INTERVALO_DETECCION_NO_SHOW_MS: number = 300_000;
+
   // Cada cuánto se envían los avisos pendientes. Corto, porque una alerta no puede esperar. 0 lo apaga (solo en
   // pruebas).
   @Type(() => Number)
@@ -354,6 +369,7 @@ export interface Configuracion {
   zonaHorariaNegocio: string;
   intervaloSondeoOutboxMs: number;
   intervaloExpiracionServiciosMs: number;
+  intervaloDeteccionNoShowMs: number;
   intervaloEntregaNotificacionesMs: number;
   toleranciaDeTomaMinutos: number;
   intervaloOmisionTomasMs: number;
@@ -633,6 +649,11 @@ function reglasAdicionales(variables: VariablesDeEntorno): string[] {
         'En producción, INTERVALO_EXPIRACION_SERVICIOS_MS no puede ser 0 (las solicitudes sin respuesta nunca expirarían)',
       );
     }
+    if (variables.INTERVALO_DETECCION_NO_SHOW_MS === 0) {
+      problemas.push(
+        'En producción, INTERVALO_DETECCION_NO_SHOW_MS no puede ser 0 (un servicio sin iniciar se quedaría aceptado para siempre)',
+      );
+    }
     if (variables.PASARELA_DE_PAGOS === 'simulada') {
       problemas.push(
         'En producción, PASARELA_DE_PAGOS no puede ser simulada (un pago de mentira se daría por cobrado)',
@@ -709,6 +730,7 @@ export function configuracionDesdeVariables(
     zonaHorariaNegocio: variables.ZONA_HORARIA_NEGOCIO,
     intervaloSondeoOutboxMs: variables.INTERVALO_SONDEO_OUTBOX_MS,
     intervaloExpiracionServiciosMs: variables.INTERVALO_EXPIRACION_SERVICIOS_MS,
+    intervaloDeteccionNoShowMs: variables.INTERVALO_DETECCION_NO_SHOW_MS,
     intervaloEntregaNotificacionesMs:
       variables.INTERVALO_ENTREGA_NOTIFICACIONES_MS,
     toleranciaDeTomaMinutos: variables.TOLERANCIA_DE_TOMA_MINUTOS,

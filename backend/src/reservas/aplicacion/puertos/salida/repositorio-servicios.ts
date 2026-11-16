@@ -52,6 +52,10 @@ export interface RepositorioServicios {
   // Solicitudes pendientes cuyo plazo ya venció (para la tarea de expiración).
   listarSolicitudesVencidas(ahora: Date, limite: number): Promise<ServicioId[]>;
 
+  // Candidatos «aceptado» cuya fecha ya llegó (para la tarea de no-show). Es un filtro amplio por fecha
+  // civil: el filtro fino por franja (que puede cruzar la medianoche) lo hace el dominio.
+  listarAceptadosHasta(hasta: FechaCivil, limite: number): Promise<ServicioId[]>;
+
   // ¿Hay un servicio vivo (solicitado, aceptado o en curso) entre esta familia y este cuidador?
   existeActivoEntre(familiarId: string, cuidadorId: string): Promise<boolean>;
 

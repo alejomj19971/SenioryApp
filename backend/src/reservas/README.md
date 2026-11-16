@@ -20,11 +20,14 @@ solicitado ── expirar (sistema) ────────▶ cancelado  (moti
 solicitado / aceptado ── cancelar (familia) ▶ cancelado  (motivo «cancelada_por_familia»)
 aceptado ── cancelar_por_pago (sistema) ▶ cancelado  (motivo «pago_fallido»: el pago se rechazó o venció)
 aceptado ── cancelar_cuidador (cuidador) ▶ cancelado  (motivo «cancelada_por_cuidador»: ya no puede atenderlo)
+aceptado ── marcar_no_show (sistema) ───▶ cancelado  (motivo «no_show»: la franja terminó y nadie inició)
 aceptado ── iniciar (cuidador) ─────────▶ en_curso
 en_curso ── finalizar (cuidador) ───────▶ finalizado
 ```
 
-Es una función pura sobre una tabla (`maquina-de-estados.ts`); una prueba la compara con esta misma tabla y comprueba que las otras 152 combinaciones de estado × acción × actor se rechazan (403 si ese actor nunca puede hacerlo, 409 si el estado no lo admite). `finalizado` y `cancelado` son finales. Cada transición deja una fila en `historial_de_estados`.
+Es una función pura sobre una tabla (`maquina-de-estados.ts`); una prueba la compara con esta misma tabla y comprueba que las otras 169 combinaciones de estado × acción × actor se rechazan (403 si ese actor nunca puede hacerlo, 409 si el estado no lo admite). `finalizado` y `cancelado` son finales. Cada transición deja una fila en `historial_de_estados`.
+
+La tarea `SondeoDeNoShows` (cada `INTERVALO_DETECCION_NO_SHOW_MS`) cancela los servicios «aceptado» cuya franja ya terminó sin que nadie marcara que inició — misma idea que `SondeoDeExpiraciones`, pero para el no-show en vez de la solicitud sin responder.
 
 ## Reglas que conviene saber
 

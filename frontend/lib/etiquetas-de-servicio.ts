@@ -35,6 +35,8 @@ export function explicacionDeCancelacion(motivo: MotivoDeCancelacion | null): st
       return "Lo cancelaste tú. Si ya se había cobrado, el dinero vuelve.";
     case "cancelada_por_cuidador":
       return "El cuidador avisó que no puede atenderte. Si ya se había cobrado, el dinero vuelve: puedes elegir a otra persona.";
+    case "no_show":
+      return "El cuidador no llegó ni avisó. Si ya se había cobrado, el dinero vuelve: puedes elegir a otra persona.";
     case "pago_fallido":
       return "El pago no se completó a tiempo, así que se canceló el servicio.";
     default:
@@ -65,7 +67,9 @@ export function etiquetaDeEstadoParaElCuidador(estado: EstadoDeServicio, motivo:
                 ? "La familia no completó el pago."
                 : motivo === "cancelada_por_cuidador"
                   ? "Avisaste que no podías atenderlo."
-                  : "La familia lo canceló.",
+                  : motivo === "no_show"
+                    ? "No marcaste que iniciaste y la franja ya terminó."
+                    : "La familia lo canceló.",
       };
   }
 }

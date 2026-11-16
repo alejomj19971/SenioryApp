@@ -62,6 +62,7 @@ describe('validarVariables', () => {
         zonaHorariaNegocio: 'America/Bogota',
         intervaloSondeoOutboxMs: 1000,
         intervaloExpiracionServiciosMs: 60000,
+        intervaloDeteccionNoShowMs: 300000,
         intervaloEntregaNotificacionesMs: 2000,
         canalesDeNotificacionSimulados: false,
         toleranciaDeTomaMinutos: 60,
@@ -260,6 +261,17 @@ describe('validarVariables', () => {
       },
     );
 
+    it.each(['-1', '3600001', '1.5', 'cada-rato'])(
+      'rechaza el intervalo de detección de no-show %s',
+      (intervalo) => {
+        expect(
+          problemasDe(
+            entornoBase({ INTERVALO_DETECCION_NO_SHOW_MS: intervalo }),
+          ).join(),
+        ).toContain('INTERVALO_DETECCION_NO_SHOW_MS');
+      },
+    );
+
     it('exige el pago aprobado en staging y producción', () => {
       for (const entorno of ['staging', 'production']) {
         expect(
@@ -352,6 +364,10 @@ describe('validarVariables', () => {
     it.each([
       ['INTERVALO_EXPIRACION_PAGOS_MS', 'los pagos sin pagar nunca vencerían'],
       ['INTERVALO_LIQUIDACION_MS', 'las liquidaciones nunca se enviarían'],
+      [
+        'INTERVALO_DETECCION_NO_SHOW_MS',
+        'un servicio sin iniciar se quedaría aceptado para siempre',
+      ],
     ])('en producción no permite apagar %s', (variable, consecuencia) => {
       expect(problemasDe(entornoDeProduccion({ [variable]: '0' }))).toEqual([
         `En producción, ${variable} no puede ser 0 (${consecuencia})`,

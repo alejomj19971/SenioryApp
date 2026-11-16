@@ -32,6 +32,7 @@ export const ACCIONES_DE_SERVICIO = [
   'iniciar',
   'finalizar',
   'cancelar_por_pago',
+  'marcar_no_show',
 ] as const;
 export type AccionDeServicio = (typeof ACCIONES_DE_SERVICIO)[number];
 

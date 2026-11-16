@@ -16,6 +16,7 @@ import type {
 //   aceptado ── iniciar ──▶ en_curso        aceptado ── cancelar ──▶ cancelado
 //   aceptado ── cancelar_por_pago ──▶ cancelado   (el sistema, cuando el pago se rechaza o vence)
 //   aceptado ── cancelar_cuidador ──▶ cancelado   (el cuidador ya no puede prestarlo)
+//   aceptado ── marcar_no_show ──▶ cancelado   (el sistema, cuando la franja termina sin que nadie inicie)
 //   en_curso ── finalizar ──▶ finalizado
 //
 // `finalizado` y `cancelado` son finales: ya no admiten ninguna acción.
@@ -46,6 +47,13 @@ const REGLAS: Readonly<Record<AccionDeServicio, Regla>> = {
   // en vez de dejar el servicio «aceptado» para siempre sin que nadie llegue.
   cancelar_cuidador: {
     actores: ['cuidador'],
+    desde: ['aceptado'],
+    hacia: 'cancelado',
+  },
+  // La tarea programada: la franja ya terminó y nadie marcó que inició. Sin esto, un cuidador que no
+  // llega ni avisa deja el servicio «aceptado» para siempre.
+  marcar_no_show: {
+    actores: ['sistema'],
     desde: ['aceptado'],
     hacia: 'cancelado',
   },

@@ -59,6 +59,7 @@ import {
   ObtenerCuidadorEnTurno,
   ObtenerServicio,
 } from './aplicacion/casos-de-uso/consultar-servicios.js';
+import { DetectarNoShows } from './aplicacion/casos-de-uso/detectar-no-shows.js';
 import { ExpirarSolicitudes } from './aplicacion/casos-de-uso/expirar-solicitudes.js';
 import { SolicitarServicio } from './aplicacion/casos-de-uso/solicitar-servicio.js';
 import {
@@ -85,6 +86,7 @@ import { VistasDeServicios } from './aplicacion/servicios/vistas-de-servicios.js
 import { CuidadorEnTurnoController } from './infraestructura/entrada/http/cuidador-en-turno.controller.js';
 import { ServiciosController } from './infraestructura/entrada/http/servicios.controller.js';
 import { SondeoDeExpiraciones } from './infraestructura/entrada/programado/sondeo-de-expiraciones.js';
+import { SondeoDeNoShows } from './infraestructura/entrada/programado/sondeo-de-no-shows.js';
 import { RepositorioCalificacionesDrizzle } from './infraestructura/salida/persistencia/repositorio-calificaciones-drizzle.js';
 import { RepositorioServiciosDrizzle } from './infraestructura/salida/persistencia/repositorio-servicios-drizzle.js';
 
@@ -388,6 +390,44 @@ const MANEJADORES_DE_PAGOS = Symbol('ManejadoresDePagos');
         new SondeoDeExpiraciones(
           expirar,
           configuracion.intervaloExpiracionServiciosMs,
+        ),
+    },
+
+    // La tarea programada que cancela los servicios sin iniciar cuya franja ya terminó (no-show)
+    {
+      provide: DetectarNoShows,
+      inject: [
+        REPOSITORIO_SERVICIOS,
+        UNIDAD_DE_TRABAJO,
+        EventosDeReservas,
+        AUDITORIA,
+        RELOJ,
+        CONFIGURACION,
+      ],
+      useFactory: (
+        servicios: RepositorioServicios,
+        unidadDeTrabajo: UnidadDeTrabajo,
+        eventos: EventosDeReservas,
+        auditoria: Auditoria,
+        reloj: Reloj,
+        configuracion: Configuracion,
+      ) =>
+        new DetectarNoShows(
+          servicios,
+          unidadDeTrabajo,
+          eventos,
+          auditoria,
+          reloj,
+          configuracion.zonaHorariaNegocio,
+        ),
+    },
+    {
+      provide: SondeoDeNoShows,
+      inject: [DetectarNoShows, CONFIGURACION],
+      useFactory: (detectar: DetectarNoShows, configuracion: Configuracion) =>
+        new SondeoDeNoShows(
+          detectar,
+          configuracion.intervaloDeteccionNoShowMs,
         ),
     },
 
