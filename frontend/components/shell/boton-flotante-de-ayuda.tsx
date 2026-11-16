@@ -13,11 +13,11 @@ export function BotonFlotanteDeAyuda() {
   if (pathname.startsWith("/app/teleasistencia")) return null;
 
   return (
-    <div className="pointer-events-none fixed inset-x-0 bottom-24 z-40 mx-auto flex w-full max-w-md justify-end px-4">
+    <div className="pointer-events-none fixed inset-x-0 bottom-28 z-40 mx-auto flex w-full max-w-md justify-end px-5">
       <Link
         href="/app/teleasistencia?alerta=1"
         aria-label="Pedir ayuda ahora"
-        className="pointer-events-auto flex size-16 items-center justify-center rounded-full bg-destructive text-destructive-foreground shadow-lg transition-transform active:scale-95"
+        className="pointer-events-auto flex size-16 items-center justify-center rounded-full bg-destructive text-destructive-foreground shadow-lg ring-4 ring-background transition-transform active:scale-95"
       >
         <Siren className="size-7" aria-hidden="true" />
       </Link>
