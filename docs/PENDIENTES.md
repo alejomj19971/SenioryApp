@@ -45,6 +45,7 @@
 | 🧑 | **Bloqueo de cuenta como vector de denegación de servicio** (decisión 7): que los fallos caduquen con el tiempo y desbloquear por correo (M10). |
 | 🔧 | Rotar el secreto de firma de los tokens sin invalidar los de acceso vigentes: hoy acepta una sola clave. |
 | 🔧 | Reintentos del envío del enlace de recuperación (hoy, si el canal falla, la persona pide otro): llegan con Notificaciones (M5). |
+| 🔧🚀 | **Foto de perfil de la familia** (pedido 2026-11-16, importante): hoy solo el cuidador tiene foto (`AlmacenDeArchivos` vive solo en Directorio). Para que la familia también pueda subir la suya desde «Mi cuenta» hay que: (1) mover `AlmacenDeArchivos` y su adaptador de Cloudinary de Directorio a `compartido`, para que Identidad pueda usarlo sin romper las reglas de dependencia; (2) campo de foto en `Usuario` (migración); (3) caso de uso y endpoint `PUT /yo/foto` (mismo patrón que `PUT /cuidadores/yo/foto`); (4) la pantalla de Mi Cuenta en el frontend. |
 
 ### M2 — Directorio (lectura)  *(backend y frontend construidos, incluida la búsqueda por cercanía)*
 
@@ -150,6 +151,7 @@
 | 🔧 | Que un control vencido **cancele o reasigne** los servicios futuros del cuidador (hoy Reservas recibe `cuidador_oculto` pero no actúa), y una pantalla de administrador para suspender o reactivar cuidadores (`suspender` existe en el dominio). |
 | 🔧 | **Eliminar los documentos** de quien se retira o los rechazados, y los plazos de conservación (Ley 1581). |
 | 🔧 | Frontend: registro del cuidador, carga de documentos (envío como cuerpo binario, no multipart) y panel de revisión. |
+| 🧑 | **Alojamiento de archivos en S3** (en vez de o además de Cloudinary) para servir archivos y vistas a nivel global. Decisión del equipo (2026-11-16): **por ahora no se hace**; queda anotado para revisar más adelante. |
 
 *Resuelto en M9:* el almacén real de archivos ya existe (`ALMACEN_DE_ARCHIVOS=cloudinary`, ver M2) — ya se pueden subir documentos de verificación y foto de perfil sin depender de un disco que se pierde en cada despliegue. De paso se corrigió un bug real: detrás de un proxy (Render), la validación de «mismo origen» de las rutas de subida del frontend comparaba contra el host INTERNO del proceso en vez del dominio público, así que toda subida devolvía 403 sin importar el almacén.
 
