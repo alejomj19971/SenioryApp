@@ -10,7 +10,7 @@
 
 | Tema | Estado | Qué se necesita |
 |---|---|---|
-| 🚀 **Proveedor de correo** | **Aplazado por decisión del equipo** (2026-10-31) | Elegir un proveedor y escribir su adaptador. Sin él, «olvidé mi contraseña» responde 503 en producción, y tampoco hay avisos por correo. Lo recibe el puerto `EnviadorDeRecuperacion` (M1) y, más adelante, `CanalDeNotificacion` (M5). |
+| 🚀 **Proveedor de correo** | **Aplazado por decisión del equipo** (2026-10-31); el adaptador ya existe (2026-11-16) | La decisión de negocio (comprometerse con Resend u otro) sigue abierta, pero el código ya está listo para los dos puertos: `EnviadorDeRecuperacion` (M1, `CANAL_DE_RECUPERACION=resend`) y `CanalDeNotificacion` (M5, `CANAL_DE_CORREO_PARA_AVISOS=resend`), ambos con las mismas credenciales `RESEND_API_KEY`/`RESEND_CORREO_DESDE`. Mientras no haya un dominio propio verificado en Resend, ninguno de los dos entrega a usuarios reales — solo al correo de la cuenta de Resend. |
 | 🚀 Hosting de staging y producción | Abierta | Elegir dónde se aloja (región cercana a Colombia o EE. UU., con Postgres gestionado y respaldos) y revisar la transferencia internacional de datos (Ley 1581). Bloquea el despliegue (M0 PR 7). |
 
 ---
@@ -86,7 +86,7 @@
 
 | | Pendiente |
 |---|---|
-| 🧑🚀 | **Proveedor de correo y de SMS o WhatsApp.** Hoy el único canal real es la aplicación (la campana, `GET /notificaciones`); correo, SMS, WhatsApp y push no se registran hasta que haya proveedor. **Sin un canal confiable fuera de la app, una alerta de teleasistencia solo llegaría a quien tenga la app abierta: no se puede lanzar así.** |
+| 🧑🚀 | **Proveedor de SMS o WhatsApp** (push y un dominio verificado en Resend también). Hoy los canales reales son la aplicación (la campana) y el correo (`CanalDeCorreoResend`, 2026-11-16, apagado por defecto); SMS, WhatsApp y push no se registran hasta que haya proveedor. **Sin un canal confiable fuera de la app para quien no tiene correo a mano, una alerta de teleasistencia solo llegaría a quien tenga la app abierta: no se puede lanzar así.** |
 | 🔧🚀 | **Un adaptador por canal real** (`CanalDeNotificacion`) y probar el tiempo de entrega de alertas en staging con el canal real (E11): `entregada_en − creada_en` ya queda guardado en cada aviso. |
 | 🔧 | **Confirmación de entrega** de SMS y WhatsApp: hoy un canal con proveedor responde `enviada` (aceptado) y no pasa a `entregada`; falta el webhook del proveedor que lo confirme. |
 | 🔧 | **Preferencias de la persona** (qué canales usa) y **horario silencioso** (las alertas lo ignoran): la tabla `preferencias_de_notificacion` existe, falta la API y usarla al elegir canales. |

@@ -71,6 +71,7 @@ import {
   type RepositorioNotificaciones,
 } from './aplicacion/puertos/salida/repositorio-notificaciones.js';
 import { NotificacionesController } from './infraestructura/entrada/http/notificaciones.controller.js';
+import { CanalDeCorreoResend } from './infraestructura/salida/canales/canal-de-correo-resend.js';
 import {
   CanalDeApp,
   CanalSimulado,
@@ -95,9 +96,10 @@ const EVENTOS_CON_AVISO = [
 ] as const;
 
 // Módulo de Notificaciones (M5): convierte lo que pasa en el sistema en avisos para las personas. No exporta
-// nada: nadie lo llama, solo reacciona a eventos. Los canales son adaptadores intercambiables; hoy solo hay la
-// aplicación misma (la campana), y el correo, el SMS y WhatsApp llegan cuando se elijan proveedores. Las clases se
-// crean con fábricas para que la capa de aplicación no dependa de decoradores de Nest.
+// nada: nadie lo llama, solo reacciona a eventos. Los canales son adaptadores intercambiables: la aplicación
+// misma (la campana) y el correo (Resend, con CANAL_DE_CORREO_PARA_AVISOS=resend) son reales; SMS, WhatsApp y
+// push llegan cuando se elijan proveedores. Las clases se crean con fábricas para que la capa de aplicación no
+// dependa de decoradores de Nest.
 @Module({
   imports: [IdentidadModule, DirectorioModule, ReservasModule],
   controllers: [NotificacionesController],
@@ -112,14 +114,26 @@ const EVENTOS_CON_AVISO = [
     {
       provide: CANALES_DE_NOTIFICACION,
       inject: [CONFIGURACION],
-      useFactory: (configuracion: Configuracion): CanalDeNotificacion[] => [
-        new CanalDeApp(),
-        ...(configuracion.canalesDeNotificacionSimulados
-          ? (['correo', 'sms', 'whatsapp', 'push'] as const).map(
-              (canal) => new CanalSimulado(canal),
-            )
-          : []),
-      ],
+      useFactory: (configuracion: Configuracion): CanalDeNotificacion[] => {
+        const correoReal =
+          configuracion.canalDeCorreoParaAvisos === 'resend'
+            ? new CanalDeCorreoResend(
+                configuracion.resendApiKey as string,
+                configuracion.resendCorreoDesde as string,
+              )
+            : null;
+        // El correo simulado solo tiene sentido mientras no haya uno real: no se registran los dos a la vez.
+        const simulados = configuracion.canalesDeNotificacionSimulados
+          ? (['correo', 'sms', 'whatsapp', 'push'] as const)
+              .filter((canal) => canal !== 'correo' || correoReal === null)
+              .map((canal) => new CanalSimulado(canal))
+          : [];
+        return [
+          new CanalDeApp(),
+          ...(correoReal === null ? [] : [correoReal]),
+          ...simulados,
+        ];
+      },
     },
     {
       provide: CrearAvisos,

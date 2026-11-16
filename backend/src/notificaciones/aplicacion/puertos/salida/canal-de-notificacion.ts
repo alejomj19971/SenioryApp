@@ -28,9 +28,9 @@ export class FalloDeEnvio extends Error {
   }
 }
 
-// Un medio por el que sale un aviso. Los adaptadores son intercambiables: la aplicación (la app misma) y, cuando
-// se elijan proveedores, correo, SMS y WhatsApp (decisión abierta). Un canal sin proveedor NO se registra:
-// no se finge que existe.
+// Un medio por el que sale un aviso. Los adaptadores son intercambiables: la aplicación (la app misma) y el
+// correo (Resend) ya son reales; SMS, WhatsApp y push llegan cuando se elijan proveedores (decisión abierta).
+// Un canal sin proveedor NO se registra: no se finge que existe.
 export interface CanalDeNotificacion {
   readonly canal: Canal;
 

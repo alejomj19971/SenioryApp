@@ -14,7 +14,9 @@ Convierte lo que pasa en el sistema en avisos para las personas. Hoy avisa de ca
 | Canal                               | Estado hoy                                                                                                                                                                                                                                                        |
 | ----------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `app` (la campana)                  | **Real.** El aviso guardado ES el mensaje; se entrega al instante.                                                                                                                                                                                                |
-| `correo`, `sms`, `whatsapp`, `push` | **Sin proveedor** (decisión abierta). No se registran: no se finge que existen. Con `CANALES_DE_NOTIFICACION_SIMULADOS=true` (solo desarrollo y pruebas) se simulan escribiendo el título en el log; la configuración **no deja arrancar en producción** con eso. |
+| `correo`                            | **Real con `CANAL_DE_CORREO_PARA_AVISOS=resend`** (reutiliza `RESEND_API_KEY`/`RESEND_CORREO_DESDE`, las mismas credenciales de la recuperación de contraseña). Mientras no haya un dominio propio verificado en Resend, solo entrega al correo de la cuenta de Resend. `deshabilitado` (por defecto) no lo registra. |
+| `sms`, `whatsapp`, `push`           | **Sin proveedor** (decisión abierta). No se registran: no se finge que existen. |
+| Simulación (desarrollo y pruebas)   | Con `CANALES_DE_NOTIFICACION_SIMULADOS=true` se simulan `sms`, `whatsapp` y `push` (y `correo` también, si no hay uno real configurado) escribiendo el título en el log; la configuración **no deja arrancar en producción** con eso. |
 
 Un canal es un adaptador intercambiable (`CanalDeNotificacion`); agregar el real es escribir uno y registrarlo en el módulo.
 
@@ -77,7 +79,7 @@ Los textos viven en [`dominio/plantillas.ts`](./dominio/plantillas.ts), con un t
 
 ## Variables de entorno
 
-`INTERVALO_ENTREGA_NOTIFICACIONES_MS` (por defecto 2 000; 0 apaga el envío, **solo en pruebas**) y `CANALES_DE_NOTIFICACION_SIMULADOS` (por defecto `false`). Ambas se validan al arrancar: en producción no se admite 0 ni `true`. Detalle en [`.env.ejemplo`](../../.env.ejemplo).
+`INTERVALO_ENTREGA_NOTIFICACIONES_MS` (por defecto 2 000; 0 apaga el envío, **solo en pruebas**) y `CANALES_DE_NOTIFICACION_SIMULADOS` (por defecto `false`). Ambas se validan al arrancar: en producción no se admite 0 ni `true`. `CANAL_DE_CORREO_PARA_AVISOS` (`deshabilitado` por defecto, o `resend`) activa el correo real; admitido en producción. Detalle en [`.env.ejemplo`](../../.env.ejemplo).
 
 ## Para agregar un aviso nuevo (por ejemplo, las alertas de M6)
 

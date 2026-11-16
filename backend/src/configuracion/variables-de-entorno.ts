@@ -46,6 +46,12 @@ export const CANALES_DE_RECUPERACION = [
 ] as const;
 export type CanalDeRecuperacion = (typeof CANALES_DE_RECUPERACION)[number];
 
+// Por dónde sale el correo de los avisos (M5) fuera de la campana. A diferencia de la recuperación, no hay
+// «consola»: para probar sin enviar de verdad ya está CANALES_DE_NOTIFICACION_SIMULADOS.
+export const CANALES_DE_CORREO_PARA_AVISOS = ['deshabilitado', 'resend'] as const;
+export type CanalDeCorreoParaAvisos =
+  (typeof CANALES_DE_CORREO_PARA_AVISOS)[number];
+
 // Con qué se cobra y con qué se le paga al cuidador. «simulada» y «simulado» son solo para desarrollo y pruebas
 // (en producción no se admiten: un cobro que no existe no puede darse por hecho). «mercadopago» es la pasarela
 // real (Checkout Pro / API de Orders), admitida en producción con sus credenciales reales (en staging se usan
@@ -302,6 +308,13 @@ export class VariablesDeEntorno {
   @IsString()
   RESEND_CORREO_DESDE?: string;
 
+  // El correo de los avisos del ciclo de vida (servicio confirmado, cancelado, etc.), fuera de la campana.
+  // «resend» reutiliza las mismas credenciales RESEND_API_KEY/RESEND_CORREO_DESDE que la recuperación.
+  @IsIn(CANALES_DE_CORREO_PARA_AVISOS, {
+    message: `CANAL_DE_CORREO_PARA_AVISOS debe ser uno de: ${CANALES_DE_CORREO_PARA_AVISOS.join(', ')}`,
+  })
+  CANAL_DE_CORREO_PARA_AVISOS: CanalDeCorreoParaAvisos = 'deshabilitado';
+
   // Dónde se guardan los archivos de los cuidadores (hoja de vida). «local» usa una carpeta del servidor
   // (solo desarrollo, pruebas y staging: en producción no se admite). «cloudinary» es el almacén real
   // (admitido en producción). «deshabilitado» responde «no disponible» hasta que se elija uno.
@@ -396,6 +409,7 @@ export interface Configuracion {
   canalDeRecuperacion: CanalDeRecuperacion;
   resendApiKey: string | null;
   resendCorreoDesde: string | null;
+  canalDeCorreoParaAvisos: CanalDeCorreoParaAvisos;
   almacenDeArchivos: AlmacenDeArchivosConfigurado;
   directorioDeArchivos: string;
   secretoDeArchivos: string | null;
@@ -547,6 +561,18 @@ function reglasAdicionales(variables: VariablesDeEntorno): string[] {
     if (variables.RESEND_CORREO_DESDE === undefined) {
       problemas.push(
         'RESEND_CORREO_DESDE es obligatorio con el canal de recuperación resend',
+      );
+    }
+  }
+  if (variables.CANAL_DE_CORREO_PARA_AVISOS === 'resend') {
+    if (variables.RESEND_API_KEY === undefined) {
+      problemas.push(
+        'RESEND_API_KEY es obligatorio con el canal de correo de avisos resend',
+      );
+    }
+    if (variables.RESEND_CORREO_DESDE === undefined) {
+      problemas.push(
+        'RESEND_CORREO_DESDE es obligatorio con el canal de correo de avisos resend',
       );
     }
   }
@@ -760,6 +786,7 @@ export function configuracionDesdeVariables(
     canalDeRecuperacion: variables.CANAL_DE_RECUPERACION,
     resendApiKey: variables.RESEND_API_KEY ?? null,
     resendCorreoDesde: variables.RESEND_CORREO_DESDE ?? null,
+    canalDeCorreoParaAvisos: variables.CANAL_DE_CORREO_PARA_AVISOS,
     almacenDeArchivos: variables.ALMACEN_DE_ARCHIVOS,
     directorioDeArchivos: variables.DIRECTORIO_DE_ARCHIVOS,
     secretoDeArchivos: variables.SECRETO_DE_ARCHIVOS ?? null,

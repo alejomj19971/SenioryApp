@@ -89,6 +89,7 @@ describe('validarVariables', () => {
         canalDeRecuperacion: 'deshabilitado',
         resendApiKey: null,
         resendCorreoDesde: null,
+        canalDeCorreoParaAvisos: 'deshabilitado',
         almacenDeArchivos: 'deshabilitado',
         directorioDeArchivos: './archivos-locales',
         secretoDeArchivos: null,
@@ -761,6 +762,42 @@ describe('validarVariables', () => {
         problemasDe(
           entornoDeProduccion({
             CANAL_DE_RECUPERACION: 'resend',
+            RESEND_API_KEY: 're_prueba',
+            RESEND_CORREO_DESDE: 'Seniory <onboarding@resend.dev>',
+          }),
+        ),
+      ).toEqual([]);
+    });
+
+    it('rechaza un canal de correo de avisos desconocido', () => {
+      expect(
+        problemasDe(entornoBase({ CANAL_DE_CORREO_PARA_AVISOS: 'paloma' })).join(),
+      ).toContain('CANAL_DE_CORREO_PARA_AVISOS');
+    });
+
+    it('el canal de correo de avisos resend exige la llave y el remitente', () => {
+      expect(
+        problemasDe(entornoBase({ CANAL_DE_CORREO_PARA_AVISOS: 'resend' })),
+      ).toEqual([
+        'RESEND_API_KEY es obligatorio con el canal de correo de avisos resend',
+        'RESEND_CORREO_DESDE es obligatorio con el canal de correo de avisos resend',
+      ]);
+      expect(
+        problemasDe(
+          entornoBase({
+            CANAL_DE_CORREO_PARA_AVISOS: 'resend',
+            RESEND_API_KEY: 're_prueba',
+            RESEND_CORREO_DESDE: 'Seniory <onboarding@resend.dev>',
+          }),
+        ),
+      ).toEqual([]);
+    });
+
+    it('en producción sí admite el canal de correo de avisos resend', () => {
+      expect(
+        problemasDe(
+          entornoDeProduccion({
+            CANAL_DE_CORREO_PARA_AVISOS: 'resend',
             RESEND_API_KEY: 're_prueba',
             RESEND_CORREO_DESDE: 'Seniory <onboarding@resend.dev>',
           }),

@@ -8,8 +8,9 @@ import {
 import type { Canal } from '../../../dominio/valores-cerrados.js';
 
 // El aviso dentro de la aplicación. No necesita proveedor: el aviso guardado ES el mensaje, y la persona lo ve en
-// su campana (`GET /notificaciones`). Es el único canal real que hay hoy; los demás esperan la decisión de
-// proveedores y no se registran mientras tanto.
+// su campana (`GET /notificaciones`). El correo también puede ser real (`CanalDeCorreoResend`, con
+// CANAL_DE_CORREO_PARA_AVISOS=resend); SMS, WhatsApp y push esperan la decisión de proveedores y no se
+// registran mientras tanto.
 export class CanalDeApp implements CanalDeNotificacion {
   readonly canal = 'app';
 
