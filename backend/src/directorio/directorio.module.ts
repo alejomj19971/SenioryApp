@@ -22,6 +22,7 @@ import {
 } from '../compartido/aplicacion/puertos/unidad-de-trabajo.js';
 import { ContextoTransaccional } from '../compartido/infraestructura/base-de-datos/contexto-transaccional.js';
 import { RegistroDeManejadores } from '../compartido/infraestructura/outbox/registro-de-manejadores.js';
+import { SondeoPeriodico } from '../compartido/infraestructura/sondeo-periodico.js';
 import { CONFIGURACION } from '../configuracion/configuracion.module.js';
 import type { Configuracion } from '../configuracion/variables-de-entorno.js';
 import {
@@ -99,6 +100,7 @@ const MANEJADOR_DE_RESENAS = Symbol('ManejadorDeResenas');
 const MANEJADOR_DE_SERVICIOS_COMPLETADOS = Symbol(
   'ManejadorDeServiciosCompletados',
 );
+const SONDEO_DE_VIGENCIAS = Symbol('SondeoDeVigencias');
 
 // Módulo de Directorio (M2): los cuidadores que las familias buscan. Exporta SOLO `CONSULTA_DE_DIRECTORIO`
 // (el puerto de entrada para Reservas, Notificaciones y Teleasistencia). Repositorios y almacén son
@@ -615,6 +617,18 @@ const MANEJADOR_DE_SERVICIOS_COMPLETADOS = Symbol(
           auditoria,
           reloj,
           configuracion.zonaHorariaNegocio,
+        ),
+    },
+    // La tarea programada que oculta a los cuidadores con un control vencido. Antes dependía de programar
+    // `npm run cuidadores:revisar-vigencias` como cron del hosting; ahora corre sola.
+    {
+      provide: SONDEO_DE_VIGENCIAS,
+      inject: [RevisarVigencias, CONFIGURACION],
+      useFactory: (revisar: RevisarVigencias, configuracion: Configuracion) =>
+        new SondeoPeriodico(
+          'SondeoDeVigencias',
+          async () => (await revisar.ejecutar()).ocultados,
+          configuracion.intervaloRevisionDeVigenciasMs,
         ),
     },
 

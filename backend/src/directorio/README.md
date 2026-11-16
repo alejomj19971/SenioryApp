@@ -10,7 +10,7 @@ Los cuidadores que las familias buscan, cómo llegan a serlo (postulación y ver
 - **Carga de cuidadores reales:** `npm run cuidadores:importar` (cuidadores que el equipo ya verificó fuera del sistema).
 - **Postulación (M9):** el cuidador crea su cuenta (`POST /auth/registro-cuidador`), arma su perfil (`POST/GET/PATCH /cuidadores/yo`), sube sus documentos (`PUT /cuidadores/yo/documentos/:tipo`) y pide la revisión (`POST /cuidadores/yo/revision`). Si un control se rechaza o vence, lo vuelve a pedir (`POST /cuidadores/yo/verificaciones/:control/renovacion`).
 - **Panel de revisores (M9, solo administradores):** `GET /verificaciones?estado=` (la cola), `GET /verificaciones/documentos/:id` (abre un documento privado con dirección firmada), `PATCH /verificaciones/:id` (aprobar con su vigencia, o rechazar con motivo), `GET /verificaciones/hojas-de-vida` y `PATCH /verificaciones/documentos/:id` (la hoja de vida que verán las familias).
-- **Revisión diaria:** `npm run cuidadores:revisar-vigencias` oculta a quien se le venció un control.
+- **Revisión de vigencias:** `SondeoDeVigencias` oculta sola, cada `INTERVALO_REVISION_DE_VIGENCIAS_MS`, a quien se le venció un control; `npm run cuidadores:revisar-vigencias` la fuerza a mano.
 
 ## Reglas que conviene saber
 
@@ -68,7 +68,7 @@ Contratos en [`compartido/eventos/directorio.ts`](../compartido/eventos/director
 
 ## Variables de entorno
 
-`ALMACEN_DE_ARCHIVOS` (`local` o `deshabilitado`, por defecto `deshabilitado`), `DIRECTORIO_DE_ARCHIVOS`, `SECRETO_DE_ARCHIVOS` (32 caracteres o más; obligatorio con `local`) y `URL_PUBLICA_DE_LA_API`. El almacén **local** guarda en una carpeta del servidor y **no se admite en producción** (los discos de los hosting pierden los archivos al desplegar). Detalle en [`.env.ejemplo`](../../.env.ejemplo).
+`ALMACEN_DE_ARCHIVOS` (`local` o `deshabilitado`, por defecto `deshabilitado`), `DIRECTORIO_DE_ARCHIVOS`, `SECRETO_DE_ARCHIVOS` (32 caracteres o más; obligatorio con `local`) y `URL_PUBLICA_DE_LA_API`. El almacén **local** guarda en una carpeta del servidor y **no se admite en producción** (los discos de los hosting pierden los archivos al desplegar). `INTERVALO_REVISION_DE_VIGENCIAS_MS` (por defecto 3 600 000, cada hora; 0 apaga la revisión, **solo en pruebas**, y en producción no se admite). Detalle en [`.env.ejemplo`](../../.env.ejemplo).
 
 ## Estructura
 

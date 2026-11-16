@@ -1,8 +1,9 @@
 import { RevisarVigencias } from '../../../aplicacion/casos-de-uso/revisar-vigencias.js';
 import { ejecutarComando } from './ejecutar-comando.js';
 
-// Comando: npm run cuidadores:revisar-vigencias  (programarlo una vez al día).
-// Oculta a los cuidadores a quienes se les venció un control.
+// Comando: npm run cuidadores:revisar-vigencias
+// Oculta a los cuidadores a quienes se les venció un control. Ya no hace falta programarlo: `SondeoDeVigencias`
+// corre esta misma revisión sola, cada INTERVALO_REVISION_DE_VIGENCIAS_MS. Este comando queda para forzarla a mano.
 try {
   const resultado = await ejecutarComando((aplicacion) =>
     aplicacion.get(RevisarVigencias, { strict: false }).ejecutar(),

@@ -63,6 +63,7 @@ describe('validarVariables', () => {
         intervaloSondeoOutboxMs: 1000,
         intervaloExpiracionServiciosMs: 60000,
         intervaloDeteccionNoShowMs: 300000,
+        intervaloRevisionDeVigenciasMs: 3600000,
         intervaloEntregaNotificacionesMs: 2000,
         canalesDeNotificacionSimulados: false,
         toleranciaDeTomaMinutos: 60,
@@ -273,6 +274,17 @@ describe('validarVariables', () => {
       },
     );
 
+    it.each(['-1', '3600001', '1.5', 'cada-rato'])(
+      'rechaza el intervalo de revisión de vigencias %s',
+      (intervalo) => {
+        expect(
+          problemasDe(
+            entornoBase({ INTERVALO_REVISION_DE_VIGENCIAS_MS: intervalo }),
+          ).join(),
+        ).toContain('INTERVALO_REVISION_DE_VIGENCIAS_MS');
+      },
+    );
+
     it('exige el pago aprobado en staging y producción', () => {
       for (const entorno of ['staging', 'production']) {
         expect(
@@ -368,6 +380,10 @@ describe('validarVariables', () => {
       [
         'INTERVALO_DETECCION_NO_SHOW_MS',
         'un servicio sin iniciar se quedaría aceptado para siempre',
+      ],
+      [
+        'INTERVALO_REVISION_DE_VIGENCIAS_MS',
+        'un cuidador con un control vencido seguiría apareciendo en la búsqueda',
       ],
     ])('en producción no permite apagar %s', (variable, consecuencia) => {
       expect(problemasDe(entornoDeProduccion({ [variable]: '0' }))).toEqual([

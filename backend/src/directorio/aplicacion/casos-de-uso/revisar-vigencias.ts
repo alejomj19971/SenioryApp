@@ -10,10 +10,11 @@ export interface ResultadoDeRevision {
   ocultados: number;
 }
 
-// La revisión diaria: a quien se le venció un control (antecedentes, títulos o psicotécnica) deja de
-// mostrarse en las búsquedas, y Reservas se entera con `directorio.cuidador_oculto`. Corre desde la consola
-// del servidor (`npm run cuidadores:revisar-vigencias`) y debe programarse cada día (cron del hosting).
-// Mientras no corra, la lectura individual igual rechaza a quien tenga un control vencido.
+// La revisión: a quien se le venció un control (antecedentes, títulos o psicotécnica) deja de mostrarse en
+// las búsquedas, y Reservas se entera con `directorio.cuidador_oculto`. La corre sola `SondeoDeVigencias`
+// (cada `INTERVALO_REVISION_DE_VIGENCIAS_MS`); `npm run cuidadores:revisar-vigencias` sigue existiendo para
+// forzarla a mano. Mientras no corra ninguna de las dos, la lectura individual igual rechaza a quien tenga
+// un control vencido — solo la búsqueda seguiría listándolo.
 export class RevisarVigencias {
   constructor(
     private readonly cuidadores: RepositorioCuidadores,

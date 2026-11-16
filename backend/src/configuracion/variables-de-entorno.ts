@@ -144,6 +144,21 @@ export class VariablesDeEntorno {
   })
   INTERVALO_DETECCION_NO_SHOW_MS: number = 300_000;
 
+  // Cada cuánto se oculta a un cuidador al que se le venció un control (antecedentes, título o psicotécnica).
+  // Antes esto dependía de programar `npm run cuidadores:revisar-vigencias` como cron del hosting; ahora corre
+  // solo. 0 lo apaga (solo en pruebas).
+  @Type(() => Number)
+  @IsInt({
+    message: 'INTERVALO_REVISION_DE_VIGENCIAS_MS debe ser un número entero',
+  })
+  @Min(0, {
+    message: 'INTERVALO_REVISION_DE_VIGENCIAS_MS debe estar entre 0 y 3600000',
+  })
+  @Max(3_600_000, {
+    message: 'INTERVALO_REVISION_DE_VIGENCIAS_MS debe estar entre 0 y 3600000',
+  })
+  INTERVALO_REVISION_DE_VIGENCIAS_MS: number = 3_600_000;
+
   // Cada cuánto se envían los avisos pendientes. Corto, porque una alerta no puede esperar. 0 lo apaga (solo en
   // pruebas).
   @Type(() => Number)
@@ -383,6 +398,7 @@ export interface Configuracion {
   intervaloSondeoOutboxMs: number;
   intervaloExpiracionServiciosMs: number;
   intervaloDeteccionNoShowMs: number;
+  intervaloRevisionDeVigenciasMs: number;
   intervaloEntregaNotificacionesMs: number;
   toleranciaDeTomaMinutos: number;
   intervaloOmisionTomasMs: number;
@@ -680,6 +696,11 @@ function reglasAdicionales(variables: VariablesDeEntorno): string[] {
         'En producción, INTERVALO_DETECCION_NO_SHOW_MS no puede ser 0 (un servicio sin iniciar se quedaría aceptado para siempre)',
       );
     }
+    if (variables.INTERVALO_REVISION_DE_VIGENCIAS_MS === 0) {
+      problemas.push(
+        'En producción, INTERVALO_REVISION_DE_VIGENCIAS_MS no puede ser 0 (un cuidador con un control vencido seguiría apareciendo en la búsqueda)',
+      );
+    }
     if (variables.PASARELA_DE_PAGOS === 'simulada') {
       problemas.push(
         'En producción, PASARELA_DE_PAGOS no puede ser simulada (un pago de mentira se daría por cobrado)',
@@ -757,6 +778,7 @@ export function configuracionDesdeVariables(
     intervaloSondeoOutboxMs: variables.INTERVALO_SONDEO_OUTBOX_MS,
     intervaloExpiracionServiciosMs: variables.INTERVALO_EXPIRACION_SERVICIOS_MS,
     intervaloDeteccionNoShowMs: variables.INTERVALO_DETECCION_NO_SHOW_MS,
+    intervaloRevisionDeVigenciasMs: variables.INTERVALO_REVISION_DE_VIGENCIAS_MS,
     intervaloEntregaNotificacionesMs:
       variables.INTERVALO_ENTREGA_NOTIFICACIONES_MS,
     toleranciaDeTomaMinutos: variables.TOLERANCIA_DE_TOMA_MINUTOS,

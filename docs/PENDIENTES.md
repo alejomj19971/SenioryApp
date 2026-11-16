@@ -52,7 +52,7 @@
 | | Pendiente |
 |---|---|
 | 🧑🚀 | **Cargar los primeros cuidadores reales** con `npm run cuidadores:importar`: quién revisa los documentos, en cuánto tiempo y con qué vigencia (procedimiento operativo), y el archivo revisado. Sin ellos, el directorio de producción está vacío por diseño. |
-| 🔧🚀 | **Programar `npm run cuidadores:revisar-vigencias` cada día** (cron del hosting). Mientras no corra, un control vencido ya oculta el perfil al leerlo, pero la búsqueda lo seguiría listando hasta la revisión. |
+| ✅ | ~~**Programar `npm run cuidadores:revisar-vigencias` cada día** (cron del hosting).~~ Resuelto (2026-11-16): `SondeoDeVigencias` corre esta revisión sola dentro de la app, cada `INTERVALO_REVISION_DE_VIGENCIAS_MS` (1 hora por defecto); ya no depende de un cron del hosting. El comando sigue para forzarla a mano. |
 | 🔧 | La búsqueda normaliza el texto en la aplicación (sin `unaccent`) y usa `LIKE` sobre columnas normalizadas con índices `pg_trgm`. Revisar con `EXPLAIN` cuando haya volumen real. |
 | 🔧 | La ruta `GET /cuidadores/:id/hoja-de-vida` responde un 302 hacia el API: el BFF (F2) decide si lo sigue por el servidor o redirige al navegador. |
 | 🔧 | Frontend: `cuidadores.ts` y el buscador contra la API (F2). |
