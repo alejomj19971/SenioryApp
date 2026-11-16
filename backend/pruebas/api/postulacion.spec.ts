@@ -682,6 +682,63 @@ describe('postulación y verificación de cuidadores (API)', () => {
     });
   });
 
+  describe('GET /cuidadores/yo/documentos/:id', () => {
+    it('el cuidador abre un documento propio con una dirección firmada que vence, y queda auditado', async () => {
+      const p = await postulante();
+      await crearPerfil(p);
+      await subir(p, 'cedula');
+      const documento = (await miPerfil(p)).documentos.find(
+        (d) => d.tipo === 'cedula',
+      );
+
+      const respuesta = await como(app)
+        .get(`/api/v1/cuidadores/yo/documentos/${documento?.id}`)
+        .set('Cookie', await p.cookie());
+
+      expect(respuesta.status).toBe(302);
+      expect(respuesta.headers.location).toMatch(/\/archivos\?.*firma=/);
+      expect(respuesta.headers['cache-control']).toBe('no-store');
+      expect(
+        await filas(
+          `select resultado from compartido.auditoria where accion = 'directorio.ver_mi_documento' and recurso_id = $1`,
+          [documento?.id],
+        ),
+      ).toEqual([{ resultado: 'permitido' }]);
+    });
+
+    it('no puede abrir el documento de otro cuidador (responde igual que si no existiera)', async () => {
+      const dueno = await postulante();
+      await crearPerfil(dueno);
+      await subir(dueno, 'cedula');
+      const documento = (await miPerfil(dueno)).documentos.find(
+        (d) => d.tipo === 'cedula',
+      );
+      const otro = await postulante();
+      await crearPerfil(otro);
+
+      const respuesta = await como(app)
+        .get(`/api/v1/cuidadores/yo/documentos/${documento?.id}`)
+        .set('Cookie', await otro.cookie());
+
+      expect(respuesta.status).toBe(404);
+    });
+
+    it('un id inexistente también es 404, y sin sesión es 401', async () => {
+      const p = await postulante();
+      await crearPerfil(p);
+
+      const inexistente = await como(app)
+        .get(`/api/v1/cuidadores/yo/documentos/${nuevoId()}`)
+        .set('Cookie', await p.cookie());
+      const sinSesion = await como(app).get(
+        `/api/v1/cuidadores/yo/documentos/${nuevoId()}`,
+      );
+
+      expect(inexistente.status).toBe(404);
+      expect(sinSesion.status).toBe(401);
+    });
+  });
+
   describe('PUT /cuidadores/yo/foto', () => {
     it('guarda la foto y se ve de inmediato, sin pasar por revisión', async () => {
       const p = await postulante();

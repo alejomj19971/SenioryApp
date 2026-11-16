@@ -92,3 +92,8 @@ export const subirFoto = (contenido: Uint8Array<ArrayBuffer>, tipoDeContenido: s
 // Abre la foto de perfil PROPIA, igual que la de un cuidador cualquiera (`archivos.ts`), pero sin exigir que el
 // perfil ya se muestre a las familias: la ve mientras lo arma.
 export const abrirFotoPropia = (): Promise<ResultadoDeArchivo> => descargarArchivoDelBackend("/cuidadores/yo/foto", ["image/jpeg", "image/png"]);
+
+// Abre uno de los documentos que el propio cuidador ya subió (PDF, JPEG o PNG): antes no tenía ningún camino
+// para volver a verlos, solo el nombre del archivo como texto.
+export const abrirMiDocumento = (id: string): Promise<ResultadoDeArchivo> =>
+  descargarArchivoDelBackend(`/cuidadores/yo/documentos/${id}`, ["application/pdf", "image/jpeg", "image/png"]);

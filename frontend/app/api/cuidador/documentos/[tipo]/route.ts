@@ -1,16 +1,52 @@
-import { TAMANO_MAXIMO_DE_DOCUMENTO, subirDocumento } from "@/lib/services/postulacion";
+import { TAMANO_MAXIMO_DE_DOCUMENTO, abrirMiDocumento, subirDocumento } from "@/lib/services/postulacion";
 import { MENSAJE_DEMASIADAS_SOLICITUDES } from "@/lib/acciones/errores-de-servicio";
 import type { TipoDeDocumento } from "@/lib/types";
 
 // Subida de documentos del cuidador (F9, INTEGRACION §7). El navegador manda el archivo como cuerpo de esta petición
 // (sin multipart ni base64); el servidor de Next comprueba lo evidente (tipo declarado y tamaño, leyendo con tope) y lo
 // reenvía al backend, que decide por el CONTENIDO. El navegador nunca habla con el backend.
+//
+// Ver uno ya subido (GET) comparte el segmento dinámico con la subida (POST) aunque sean cosas distintas: el
+// de subir es el TIPO de documento (cedula, hoja_de_vida…) y el de ver es el ID del documento ya guardado. Next
+// no deja usar dos nombres de parámetro distintos en el mismo segmento.
 
 const TIPOS: TipoDeDocumento[] = ["cedula", "antecedentes", "titulo", "psicotecnica", "hoja_de_vida"];
 const FORMATOS = ["application/pdf", "image/jpeg", "image/png"];
 
 function respuesta(estado: number, cuerpo: object): Response {
   return Response.json(cuerpo, { status: estado, headers: { "Cache-Control": "no-store" } });
+}
+
+function texto(estado: number, mensaje: string): Response {
+  return new Response(mensaje, {
+    status: estado,
+    headers: { "Content-Type": "text/plain; charset=utf-8", "Cache-Control": "no-store" },
+  });
+}
+
+// El propio cuidador vuelve a ver (o descarga) un documento que ya subió: antes no tenía ningún camino para
+// esto, solo veía el nombre del archivo como texto.
+export async function GET(peticion: Request, contexto: RouteContext<"/api/cuidador/documentos/[tipo]">) {
+  const { tipo: id } = await contexto.params;
+  const resultado = await abrirMiDocumento(id);
+  switch (resultado.tipo) {
+    case "archivo":
+      return new Response(resultado.cuerpo, {
+        status: 200,
+        headers: { "Content-Type": resultado.tipoDeContenido, "X-Content-Type-Options": "nosniff", "Cache-Control": "private, no-store" },
+      });
+    case "sin_sesion": {
+      const origen = new URL(peticion.url);
+      const volver = encodeURIComponent(`${origen.pathname}${origen.search}`);
+      return Response.redirect(new URL(`/ingresar?volver=${volver}`, origen), 307);
+    }
+    case "sin_archivo":
+      return texto(404, "No encontramos ese documento.");
+    case "no_disponible":
+      return texto(503, "Los documentos no están disponibles por ahora.");
+    case "fallo":
+      return texto(502, "No pudimos abrir el documento. Inténtalo de nuevo.");
+  }
 }
 
 // Lee el cuerpo hasta el tope: más grande se corta sin guardarlo entero en memoria.

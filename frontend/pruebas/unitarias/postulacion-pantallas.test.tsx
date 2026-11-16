@@ -121,7 +121,9 @@ describe("SubirDocumento", () => {
   it("muestra lo ya subido con su estado y deja subir uno nuevo", () => {
     render(<SubirDocumento tipo="cedula" titulo="Cédula" ayuda="Foto o PDF." subidos={[documento({ estado: "rechazado", nombre: "vieja.pdf" }), documento({ id: "d2", nombre: "nueva.pdf", subidoEn: "2026-11-02T15:00:00.000Z" })]} />);
 
-    expect(screen.getByText(/Último archivo: nueva\.pdf \(2 KB\)/)).toBeInTheDocument();
+    const enlace = screen.getByRole("link", { name: "nueva.pdf" });
+    expect(enlace).toHaveAttribute("href", "/api/cuidador/documentos/d2");
+    expect(enlace.closest("p")).toHaveTextContent("Último archivo: nueva.pdf (2 KB)");
     expect(screen.getByText("En revisión")).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Subir uno nuevo" })).toBeInTheDocument();
   });

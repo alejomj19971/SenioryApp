@@ -36,6 +36,7 @@ import { IdentidadModule } from '../identidad/identidad.module.js';
 import { ImportarCuidador } from './aplicacion/casos-de-uso/importar-cuidador.js';
 import { ListarCuidadores } from './aplicacion/casos-de-uso/listar-cuidadores.js';
 import {
+  AbrirMiDocumento,
   ActualizarMiPerfil,
   CrearMiPerfil,
   ObtenerMiPerfil,
@@ -361,6 +362,33 @@ const MANEJADOR_DE_SERVICIOS_COMPLETADOS = Symbol(
           auditoria,
           reloj,
           ids,
+          configuracion.zonaHorariaNegocio,
+        ),
+    },
+    {
+      provide: AbrirMiDocumento,
+      inject: [
+        REPOSITORIO_CUIDADORES,
+        REPOSITORIO_DOCUMENTOS,
+        ALMACEN_DE_ARCHIVOS,
+        AUDITORIA,
+        RELOJ,
+        CONFIGURACION,
+      ],
+      useFactory: (
+        cuidadores: RepositorioCuidadores,
+        documentos: RepositorioDocumentos,
+        almacen: AlmacenDeArchivos,
+        auditoria: Auditoria,
+        reloj: Reloj,
+        configuracion: Configuracion,
+      ) =>
+        new AbrirMiDocumento(
+          cuidadores,
+          documentos,
+          almacen,
+          auditoria,
+          reloj,
           configuracion.zonaHorariaNegocio,
         ),
     },

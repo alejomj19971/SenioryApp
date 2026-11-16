@@ -294,6 +294,59 @@ export class SubirDocumento extends MiPerfil {
   }
 }
 
+// Cuánto dura la dirección con que el cuidador abre uno de sus propios documentos: lo justo para abrirlo.
+export const VIGENCIA_DEL_DOCUMENTO_PROPIO_SEGUNDOS = 120;
+
+// El cuidador ve (o descarga) un documento que él mismo subió. Antes no tenía ningún camino para esto: solo
+// veía el nombre del archivo como texto, sin poder abrirlo de nuevo.
+export class AbrirMiDocumento extends MiPerfil {
+  constructor(
+    cuidadores: RepositorioCuidadores,
+    private readonly documentos: RepositorioDocumentos,
+    private readonly almacen: AlmacenDeArchivos,
+    private readonly auditoria: Auditoria,
+    reloj: Reloj,
+    zonaHorariaNegocio: string,
+  ) {
+    super(cuidadores, reloj, zonaHorariaNegocio);
+  }
+
+  async ejecutar(
+    usuario: UsuarioAutenticado,
+    documentoId: DocumentoId,
+  ): Promise<{ url: string }> {
+    const cuidador = await this.cuidadorDe(usuario);
+    const documento = await this.documentos.buscarPorId(documentoId);
+    // Ajeno o inexistente responden igual: no se delata que el documento existe pero es de otro.
+    if (documento === null || documento.cuidadorId !== cuidador.id) {
+      throw new RecursoNoEncontrado(
+        'No encontramos ese documento',
+        'documento.no_encontrado',
+      );
+    }
+    if (!this.almacen.disponible) {
+      throw new ServicioNoDisponible(
+        'Los documentos no están disponibles por ahora',
+        'archivos.no_disponible',
+      );
+    }
+    await this.auditoria.registrar({
+      actorId: usuario.id,
+      accion: 'directorio.ver_mi_documento',
+      recursoTipo: 'documento',
+      recursoId: documento.id,
+      resultado: 'permitido',
+      metadatos: { tipo: documento.tipo },
+    });
+    return {
+      url: this.almacen.urlFirmada(
+        documento.claveDeAlmacenamiento,
+        VIGENCIA_DEL_DOCUMENTO_PROPIO_SEGUNDOS,
+      ),
+    };
+  }
+}
+
 // 3 MB: una foto de perfil no necesita el tope de 5 MB de los documentos.
 export const TAMANO_MAXIMO_DE_FOTO = 3 * 1024 * 1024;
 

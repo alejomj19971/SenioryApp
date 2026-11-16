@@ -95,7 +95,16 @@ export function SubirDocumento({ tipo, titulo, ayuda, subidos, soloPdf = false }
       </p>
       {ultimo !== undefined && (
         <p className="text-sm text-foreground">
-          Último archivo: {ultimo.nombre} ({kilobytes(ultimo.tamanoBytes)})
+          Último archivo:{" "}
+          <a
+            href={`/api/cuidador/documentos/${ultimo.id}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="font-medium underline underline-offset-2 hover:text-primary"
+          >
+            {ultimo.nombre}
+          </a>{" "}
+          ({kilobytes(ultimo.tamanoBytes)})
         </p>
       )}
       {subioAhora && (

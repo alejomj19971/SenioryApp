@@ -7,6 +7,7 @@ import {
   HttpStatus,
   Inject,
   Param,
+  ParseUUIDPipe,
   Patch,
   Post,
   Put,
@@ -25,6 +26,7 @@ import {
   UsuarioActual,
 } from '../../../../compartido/http/decoradores.js';
 import {
+  AbrirMiDocumento,
   ActualizarMiPerfil,
   CrearMiPerfil,
   ObtenerMiPerfil,
@@ -39,6 +41,7 @@ import type {
   VistaDeMiPerfil,
 } from '../../../aplicacion/vistas-de-postulacion.js';
 import { TAMANO_MAXIMO_DE_DOCUMENTO } from '../../../dominio/documento.js';
+import type { DocumentoId } from '../../../dominio/ids.js';
 import {
   controlDesdeTexto,
   tipoDeDocumentoDesdeTexto,
@@ -62,6 +65,7 @@ export class MiPerfilController {
     @Inject(ObtenerMiPerfil) private readonly obtener: ObtenerMiPerfil,
     @Inject(ActualizarMiPerfil) private readonly actualizar: ActualizarMiPerfil,
     @Inject(SubirDocumento) private readonly subir: SubirDocumento,
+    @Inject(AbrirMiDocumento) private readonly abrirDocumento: AbrirMiDocumento,
     @Inject(SubirFoto) private readonly subirFoto: SubirFoto,
     @Inject(SolicitarRevision) private readonly revision: SolicitarRevision,
     @Inject(RenovarVerificacion)
@@ -103,6 +107,23 @@ export class MiPerfilController {
     }
     respuesta.setHeader('Cache-Control', 'no-store');
     respuesta.redirect(302, perfil.fotoUrl);
+  }
+
+  // Ver (o descargar) uno de sus propios documentos ya subidos. Antes no existía: solo se veía el nombre del
+  // archivo como texto, sin poder abrirlo de nuevo. Redirige a una dirección firmada que vence pronto.
+  @Roles('cuidador')
+  @Get('documentos/:id')
+  async miDocumento(
+    @UsuarioActual() usuario: UsuarioAutenticado,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Res() respuesta: Response,
+  ): Promise<void> {
+    const { url } = await this.abrirDocumento.ejecutar(
+      usuario,
+      id as DocumentoId,
+    );
+    respuesta.setHeader('Cache-Control', 'no-store');
+    respuesta.redirect(302, url);
   }
 
   @Roles('cuidador')
