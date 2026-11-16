@@ -1,7 +1,7 @@
 import "server-only";
 import { redirect } from "next/navigation";
 import type { AdultoMayorDelBackend, RespuestaDePerfil } from "@/lib/api/contratos/identidad";
-import { obtenerCuidadorEnTurnoDe } from "@/lib/services/servicios";
+import { obtenerCuidadoresEnTurnoDe } from "@/lib/services/servicios";
 import { verificarSesion } from "@/lib/sesion";
 import type { AdultoMayor, CuidadorEnTurno, Familiar } from "@/lib/types";
 
@@ -39,9 +39,10 @@ export async function obtenerAdultoMayor(): Promise<AdultoMayor> {
   };
 }
 
-// El cuidador que está con la persona AHORA (un servicio en curso, o aceptado y dentro de su franja); null si no hay.
-// Es el único lugar donde la familia recibe el teléfono de un cuidador (H1, H4).
-export async function obtenerCuidadorEnTurno(): Promise<CuidadorEnTurno | null> {
+// Los cuidadores que están con la persona AHORA (un servicio en curso, o aceptado y dentro de su franja);
+// arreglo vacío si no hay ninguno. Normalmente es uno solo, pero nada impide tener más de uno contratado a
+// la vez. Es el único lugar donde la familia recibe el teléfono de un cuidador (H1, H4).
+export async function obtenerCuidadoresEnTurno(): Promise<CuidadorEnTurno[]> {
   const { persona } = await exigirFamiliaLista();
-  return obtenerCuidadorEnTurnoDe(persona.id);
+  return obtenerCuidadoresEnTurnoDe(persona.id);
 }

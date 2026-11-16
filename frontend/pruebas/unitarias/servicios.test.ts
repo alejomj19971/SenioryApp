@@ -197,24 +197,28 @@ describe("servicios: la vista de la familia y la del cuidador", () => {
     expect(await servicios.solicitarServicio("a1", { cuidadorId: UUID, fecha: "2026-11-10", jornada: "tarde", horas: 1, medioDePago: "pasarela" }, "clave-1234")).toEqual(falla);
   });
 
-  it("el cuidador en turno trae el teléfono SOLO por aquí, y null si no hay", async () => {
-    leerDelBackend.mockResolvedValueOnce({ cuidadorEnTurno: null });
-    expect(await servicios.obtenerCuidadorEnTurnoDe("a1")).toBeNull();
+  it("los cuidadores en turno traen el teléfono SOLO por aquí, y un arreglo vacío si no hay ninguno", async () => {
+    leerDelBackend.mockResolvedValueOnce({ cuidadoresEnTurno: [] });
+    expect(await servicios.obtenerCuidadoresEnTurnoDe("a1")).toEqual([]);
 
     leerDelBackend.mockResolvedValueOnce({
-      cuidadorEnTurno: {
-        servicio: vistaBasica({ subtotal: 1, cargoDeServicio: 0, totalFamilia: 1 }),
-        cuidador: { id: "c1", nombre: "Marta Elena", telefono: "+573001234567", fotoUrl: null, especialidad: "enfermeria" },
+      cuidadoresEnTurno: [
+        {
+          servicio: vistaBasica({ subtotal: 1, cargoDeServicio: 0, totalFamilia: 1 }),
+          cuidador: { id: "c1", nombre: "Marta Elena", telefono: "+573001234567", fotoUrl: null, especialidad: "enfermeria" },
+        },
+      ],
+    });
+    expect(await servicios.obtenerCuidadoresEnTurnoDe("a1")).toEqual([
+      {
+        id: "c1",
+        nombre: "Marta Elena",
+        foto: "",
+        especialidad: "enfermeria",
+        telefono: "+573001234567",
+        servicioId: UUID,
       },
-    });
-    expect(await servicios.obtenerCuidadorEnTurnoDe("a1")).toEqual({
-      id: "c1",
-      nombre: "Marta Elena",
-      foto: "",
-      especialidad: "enfermeria",
-      telefono: "+573001234567",
-      servicioId: UUID,
-    });
+    ]);
   });
 
   it("cotizar mapea el porcentaje y el monto del cargo", async () => {

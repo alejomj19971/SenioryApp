@@ -4,7 +4,7 @@ import type {
   CuidadorEnTurnoDelBackend,
   PaginaDeServiciosDelBackend,
   RespuestaDeCotizacion,
-  RespuestaDeCuidadorEnTurno,
+  RespuestaDeCuidadoresEnTurno,
   RespuestaDeServicioParaCuidador,
   RespuestaDeServicioParaFamilia,
   ServicioParaCuidadorDelBackend,
@@ -125,10 +125,11 @@ export async function calificarServicio(id: string, calificacion: number, coment
   return mapear(resultado, () => undefined);
 }
 
-// El cuidador que está con la persona ahora mismo; null si no hay. Es el ÚNICO lugar donde llega un teléfono.
-export async function obtenerCuidadorEnTurnoDe(adultoMayorId: string): Promise<CuidadorEnTurno | null> {
-  const { cuidadorEnTurno } = await leerDelBackend<RespuestaDeCuidadorEnTurno>(`/adultos-mayores/${adultoMayorId}/cuidador-en-turno`);
-  return cuidadorEnTurno === null ? null : aCuidadorEnTurno(cuidadorEnTurno);
+// Los cuidadores que están con la persona ahora mismo (normalmente uno solo, pero nada impide tener más de
+// uno contratado a la vez). Es el ÚNICO lugar donde llega un teléfono.
+export async function obtenerCuidadoresEnTurnoDe(adultoMayorId: string): Promise<CuidadorEnTurno[]> {
+  const { cuidadoresEnTurno } = await leerDelBackend<RespuestaDeCuidadoresEnTurno>(`/adultos-mayores/${adultoMayorId}/cuidador-en-turno`);
+  return cuidadoresEnTurno.map(aCuidadorEnTurno);
 }
 
 function aCuidadorEnTurno({ cuidador, servicio }: CuidadorEnTurnoDelBackend): CuidadorEnTurno {

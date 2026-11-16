@@ -24,6 +24,7 @@ import type {
   PaginaDeVistasDeServicios,
   VistaDeCuidadorEnTurno,
   VistaDeServicio,
+  VistaDeServicioParaFamilia,
 } from '../vistas.js';
 
 export interface Consultante {
@@ -123,9 +124,11 @@ function estadoOpcional(
   return estado;
 }
 
-// El cuidador que está atendiendo ahora a una persona mayor (H4): su servicio está aceptado o en curso y su
-// franja contiene el momento actual. Es la ÚNICA ruta que entrega el teléfono del cuidador, y solo a la
-// familia vinculada. Sin cuidador en turno responde `null`, no un error.
+// Los cuidadores que están atendiendo ahora a una persona mayor (H4): su servicio está aceptado o en curso y
+// su franja contiene el momento actual. Normalmente es uno solo, pero nada le impide a una familia tener más
+// de un cuidador contratado a la vez (cada uno con su propia franja, o incluso la misma): se devuelven todos.
+// Es la ÚNICA ruta que entrega el teléfono del cuidador, y solo a la familia vinculada. Sin nadie en turno
+// responde un arreglo vacío, no un error.
 export class ObtenerCuidadorEnTurno {
   constructor(
     private readonly servicios: RepositorioServicios,
@@ -140,7 +143,7 @@ export class ObtenerCuidadorEnTurno {
   async ejecutar(
     familiarId: string,
     adultoMayorId: string,
-  ): Promise<VistaDeCuidadorEnTurno | null> {
+  ): Promise<VistaDeCuidadorEnTurno[]> {
     if (
       !(await this.identidad.esFamiliarVinculado(familiarId, adultoMayorId))
     ) {
@@ -163,30 +166,39 @@ export class ObtenerCuidadorEnTurno {
       adultoMayorId,
       desde,
     );
-    const enTurno = activos.find((s) => s.estaEnTurno(ahora, this.zonaHoraria));
-    if (enTurno === undefined) return null;
-
-    const contacto = await this.directorio.obtenerContactoDeCuidador(
-      enTurno.cuidadorId,
+    const enTurno = activos.filter((s) =>
+      s.estaEnTurno(ahora, this.zonaHoraria),
     );
-    if (contacto === null) return null;
-    const [servicio] = await this.vistas.paraFamilia([enTurno]);
-    await this.auditoria.registrar({
-      actorId: familiarId,
-      accion: 'reservas.consultar_cuidador_en_turno',
-      recursoTipo: 'adulto_mayor',
-      recursoId: adultoMayorId,
-      resultado: 'permitido',
-    });
-    return {
-      servicio: servicio as NonNullable<typeof servicio>,
-      cuidador: {
-        id: contacto.cuidadorId,
-        nombre: contacto.nombre,
-        telefono: contacto.telefono,
-        fotoUrl: contacto.fotoUrl,
-        especialidad: contacto.especialidad,
-      },
-    };
+    if (enTurno.length === 0) return [];
+
+    const vistasDeServicio = await this.vistas.paraFamilia(enTurno);
+    const resultado: VistaDeCuidadorEnTurno[] = [];
+    for (const [i, servicio] of enTurno.entries()) {
+      const contacto = await this.directorio.obtenerContactoDeCuidador(
+        servicio.cuidadorId,
+      );
+      // Ajeno a este cuidador en particular: se omite él, no toda la lista.
+      if (contacto === null) continue;
+      resultado.push({
+        servicio: vistasDeServicio[i] as VistaDeServicioParaFamilia,
+        cuidador: {
+          id: contacto.cuidadorId,
+          nombre: contacto.nombre,
+          telefono: contacto.telefono,
+          fotoUrl: contacto.fotoUrl,
+          especialidad: contacto.especialidad,
+        },
+      });
+    }
+    if (resultado.length > 0) {
+      await this.auditoria.registrar({
+        actorId: familiarId,
+        accion: 'reservas.consultar_cuidador_en_turno',
+        recursoTipo: 'adulto_mayor',
+        recursoId: adultoMayorId,
+        resultado: 'permitido',
+      });
+    }
+    return resultado;
   }
 }

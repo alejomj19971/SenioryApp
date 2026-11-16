@@ -7,7 +7,7 @@ import { RegistrarLectura } from "@/components/teleasistencia/formulario-lectura
 import { ListaMedicamentos } from "@/components/teleasistencia/lista-medicamentos";
 import { RefrescoPeriodico } from "@/components/teleasistencia/refresco-periodico";
 import { formatearFechaHora } from "@/lib/format";
-import { obtenerAdultoMayor, obtenerCuidadorEnTurno } from "@/lib/services/paciente";
+import { obtenerAdultoMayor, obtenerCuidadoresEnTurno } from "@/lib/services/paciente";
 import { listarLecturas, listarMedicamentosDeHoy, obtenerResumen } from "@/lib/services/teleasistencia";
 
 export const metadata = {
@@ -15,9 +15,9 @@ export const metadata = {
 };
 
 export default async function TeleasistenciaPage() {
-  const [adultoMayor, cuidadorEnTurno, medicamentos, lecturas, resumen] = await Promise.all([
+  const [adultoMayor, cuidadoresEnTurno, medicamentos, lecturas, resumen] = await Promise.all([
     obtenerAdultoMayor(),
-    obtenerCuidadorEnTurno(),
+    obtenerCuidadoresEnTurno(),
     listarMedicamentosDeHoy(),
     listarLecturas(),
     obtenerResumen(),
@@ -49,7 +49,9 @@ export default async function TeleasistenciaPage() {
         </p>
       )}
 
-      {cuidadorEnTurno && <CuidadorEnTurno cuidador={cuidadorEnTurno} adultoMayorNombre={adultoMayor.nombre} />}
+      {cuidadoresEnTurno.map((cuidador) => (
+        <CuidadorEnTurno key={cuidador.servicioId} cuidador={cuidador} adultoMayorNombre={adultoMayor.nombre} />
+      ))}
 
       <Suspense fallback={<div className="min-h-24 w-full animate-pulse rounded-2xl bg-muted" />}>
         <BotonAlerta nombreDeLaPersona={adultoMayor.nombre} />

@@ -1397,25 +1397,64 @@ describe('servicios (API)', () => {
 
       expect(respuesta.status).toBe(200);
       expect(respuesta.body).toMatchObject({
-        cuidadorEnTurno: {
-          servicio: { id, estado: 'aceptado' },
-          cuidador: {
-            id: c.cuidadorId,
-            telefono: TELEFONO_DEL_CUIDADOR,
-            especialidad: 'enfermeria',
-            fotoUrl: null,
+        cuidadoresEnTurno: [
+          {
+            servicio: { id, estado: 'aceptado' },
+            cuidador: {
+              id: c.cuidadorId,
+              telefono: TELEFONO_DEL_CUIDADOR,
+              especialidad: 'enfermeria',
+              fotoUrl: null,
+            },
           },
-        },
+        ],
       });
     });
 
-    it('sin servicio activo ahora, responde 200 con null', async () => {
+    it('sin servicio activo ahora, responde 200 con un arreglo vacío', async () => {
       const nueva = await nuevaFamilia();
 
       const respuesta = await enTurno(nueva.cookie, nueva.adultoMayorId);
 
       expect(respuesta.status).toBe(200);
-      expect(respuesta.body).toEqual({ cuidadorEnTurno: null });
+      expect(respuesta.body).toEqual({ cuidadoresEnTurno: [] });
+    });
+
+    it('con dos cuidadores distintos en turno a la vez, entrega a los dos', async () => {
+      const nueva = await nuevaFamilia();
+      const c1 = await nuevoCuidador();
+      const c2 = await nuevoCuidador();
+      const pedir = (c: Awaited<ReturnType<typeof nuevoCuidador>>, jornada: string) =>
+        cliente
+          .post('/api/v1/servicios')
+          .set('Cookie', nueva.cookie)
+          .set('Idempotency-Key', clave())
+          .send({
+            adultoMayorId: nueva.adultoMayorId,
+            cuidadorId: c.cuidadorId,
+            fecha: HOY,
+            jornada,
+            horas: 1,
+            medioDePago: 'pasarela',
+          });
+      const id1 = (
+        (await pedir(c1, 'manana')).body as { servicio: { id: string } }
+      ).servicio.id;
+      const id2 = (
+        (await pedir(c2, 'manana')).body as { servicio: { id: string } }
+      ).servicio.id;
+      await accion('aceptar', id1, await c1.cookie());
+      await accion('aceptar', id2, await c2.cookie());
+
+      const respuesta = await enTurno(nueva.cookie, nueva.adultoMayorId);
+
+      expect(respuesta.status).toBe(200);
+      const { cuidadoresEnTurno } = respuesta.body as {
+        cuidadoresEnTurno: { cuidador: { id: string } }[];
+      };
+      expect(cuidadoresEnTurno.map((c) => c.cuidador.id).sort()).toEqual(
+        [c1.cuidadorId, c2.cuidadorId].sort(),
+      );
     });
 
     it('un servicio solicitado (sin aceptar) o de otra franja no cuenta', async () => {
@@ -1442,7 +1481,7 @@ describe('servicios (API)', () => {
 
       const respuesta = await enTurno(nueva.cookie, nueva.adultoMayorId);
 
-      expect(respuesta.body).toEqual({ cuidadorEnTurno: null });
+      expect(respuesta.body).toEqual({ cuidadoresEnTurno: [] });
     });
 
     it('la noche de ayer sigue en turno de madrugada (cruza la medianoche)', async () => {
@@ -1479,9 +1518,9 @@ describe('servicios (API)', () => {
       );
 
       expect(propia.body).toMatchObject({
-        cuidadorEnTurno: { servicio: { id } },
+        cuidadoresEnTurno: [{ servicio: { id } }],
       });
-      expect(despues.body).toEqual({ cuidadorEnTurno: null });
+      expect(despues.body).toEqual({ cuidadoresEnTurno: [] });
     });
 
     it('un servicio finalizado o cancelado deja de estar en turno de inmediato', async () => {
@@ -1511,9 +1550,9 @@ describe('servicios (API)', () => {
       const despues = await enTurno(nueva.cookie, nueva.adultoMayorId);
 
       expect(
-        (durante.body as { cuidadorEnTurno: unknown }).cuidadorEnTurno,
-      ).not.toBeNull();
-      expect(despues.body).toEqual({ cuidadorEnTurno: null });
+        (durante.body as { cuidadoresEnTurno: unknown[] }).cuidadoresEnTurno,
+      ).toHaveLength(1);
+      expect(despues.body).toEqual({ cuidadoresEnTurno: [] });
     });
 
     it('una persona mayor que no es de la familia es 404', async () => {

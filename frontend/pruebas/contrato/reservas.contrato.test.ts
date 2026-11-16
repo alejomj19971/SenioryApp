@@ -191,10 +191,10 @@ describe.skipIf(!disponible)("contrato de Reservas con el backend local", () => 
     expect(soloCancelados.servicios.every((s) => s.estado === "cancelado")).toBe(true);
   });
 
-  it("cuidador en turno: sin servicio activo ahora responde 200 con null (no es un error)", async () => {
+  it("cuidador en turno: sin servicio activo ahora responde 200 con un arreglo vacío (no es un error)", async () => {
     const respuesta = await pedir(`/adultos-mayores/${familia.adultoMayorId}/cuidador-en-turno`, { cookie: familia.cookie, ip: familia.cuenta.ip });
 
     expect(respuesta.status).toBe(200);
-    expect(await respuesta.json()).toEqual({ cuidadorEnTurno: null });
+    expect(await respuesta.json()).toEqual({ cuidadoresEnTurno: [] });
   });
 });

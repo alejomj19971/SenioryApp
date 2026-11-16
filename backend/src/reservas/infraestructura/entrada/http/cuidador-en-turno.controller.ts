@@ -16,13 +16,15 @@ export class CuidadorEnTurnoController {
     private readonly obtener: ObtenerCuidadorEnTurno,
   ) {}
 
-  // Sin cuidador en turno responde 200 con `null`: no es un error, y así no se confunde con un 404 de acceso.
+  // Normalmente es uno solo, pero nada impide que una familia tenga más de un cuidador contratado a la vez.
+  // Sin nadie en turno responde 200 con un arreglo vacío: no es un error, y así no se confunde con un 404 de
+  // acceso.
   @Roles('familiar')
   @Get(':id/cuidador-en-turno')
   async enTurno(
     @UsuarioActual() usuario: UsuarioAutenticado,
     @Param('id', ParseUUIDPipe) id: string,
-  ): Promise<{ cuidadorEnTurno: VistaDeCuidadorEnTurno | null }> {
-    return { cuidadorEnTurno: await this.obtener.ejecutar(usuario.id, id) };
+  ): Promise<{ cuidadoresEnTurno: VistaDeCuidadorEnTurno[] }> {
+    return { cuidadoresEnTurno: await this.obtener.ejecutar(usuario.id, id) };
   }
 }

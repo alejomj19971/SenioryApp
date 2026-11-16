@@ -65,8 +65,9 @@ export interface CuidadorEnTurnoDelBackend {
     especialidad: "auxiliar" | "enfermeria" | "fisioterapia" | "acompanamiento";
   };
 }
-export interface RespuestaDeCuidadorEnTurno {
-  cuidadorEnTurno: CuidadorEnTurnoDelBackend | null;
+export interface RespuestaDeCuidadoresEnTurno {
+  // Normalmente uno solo, pero nada impide que una familia tenga más de un cuidador contratado a la vez.
+  cuidadoresEnTurno: CuidadorEnTurnoDelBackend[];
 }
 
 // `POST /pagos/cotizaciones`
