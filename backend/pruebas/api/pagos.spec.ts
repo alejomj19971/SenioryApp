@@ -1114,6 +1114,52 @@ describe('pagos (API)', () => {
       expect(evento.procesado_en).toBeNull();
       expect(evento.intentos).toBeGreaterThanOrEqual(1);
     });
+
+    it('cancelación tardía (menos de 2 horas): se reparte mitad y mitad entre la familia y el cuidador', async () => {
+      const c = await cuidadorAutomatico();
+      const { id, pagoId } = await confirmado(c, { fecha: HOY, jornada: 'manana' });
+      await aprobarPago(pagoId);
+      const reembolsar = vi.spyOn(pasarela(), 'reembolsar');
+
+      expect((await accion('cancelar', id, familia.cookie)).status).toBe(200);
+      await procesarEventos();
+
+      expect((await pagoPorId(pagoId)).estado).toBe('reembolsado');
+      expect(reembolsar).toHaveBeenCalledWith({
+        referenciaProveedor: `sim_${pagoId}`,
+        monto: TOTAL / 2,
+        claveDeIdempotencia: `reembolso:${pagoId}`,
+      });
+      expect(await liquidacionDe(id)).toMatchObject({
+        cuidador_id: c.cuidadorId,
+        monto: TOTAL / 2,
+        estado: 'pendiente',
+      });
+      expect(
+        await eventos('servicioId', id, 'pagos.liquidacion_realizada'),
+      ).toHaveLength(1);
+    });
+
+    it('reprocesar una cancelación tardía no paga al cuidador ni reembolsa dos veces', async () => {
+      const c = await cuidadorAutomatico();
+      const { id, pagoId } = await confirmado(c, { fecha: HOY, jornada: 'manana' });
+      await aprobarPago(pagoId);
+      await accion('cancelar', id, familia.cookie);
+      await procesarEventos();
+      const reembolsar = vi.spyOn(pasarela(), 'reembolsar');
+
+      await repetirEvento(
+        'reservas.servicio_cancelado',
+        'pagos.reembolsar_servicio_cancelado',
+        id,
+      );
+
+      expect(reembolsar).not.toHaveBeenCalled();
+      expect((await pagoPorId(pagoId)).estado).toBe('reembolsado');
+      expect(
+        await eventos('servicioId', id, 'pagos.liquidacion_realizada'),
+      ).toHaveLength(1);
+    });
   });
 
   // ─── Liquidación al cuidador ───────────────────────────────────────────────────────────────
@@ -1685,6 +1731,35 @@ describe('pagos (API)', () => {
       );
 
       expect(await saldosDe(f)).toEqual({ disponible: 100_000, reservado: 0 });
+    });
+
+    it('cancelación tardía con la bolsa: libera la mitad y consume la otra mitad para compensar al cuidador', async () => {
+      const f = await nuevaFamilia(app);
+      const c = await cuidadorAutomatico();
+      await darSaldo(f, 100_000);
+      const { id, pagoId } = await confirmado(
+        c,
+        { medioDePago: 'bolsa', fecha: HOY, jornada: 'manana' },
+        f,
+      );
+
+      expect((await accion('cancelar', id, f.cookie)).status).toBe(200);
+      await procesarEventos();
+
+      expect(await saldosDe(f)).toEqual({
+        disponible: 100_000 - TOTAL / 2,
+        reservado: 0,
+      });
+      expect((await movimientosDe(f)).map((m) => m.tipo)).toEqual([
+        'reserva',
+        'liberacion',
+        'consumo',
+      ]);
+      expect((await pagoPorId(pagoId)).estado).toBe('reembolsado');
+      expect(await liquidacionDe(id)).toMatchObject({
+        cuidador_id: c.cuidadorId,
+        monto: TOTAL / 2,
+      });
     });
 
     it('si el saldo se gastó entre pedir y confirmar, el pago se rechaza y el servicio se cancela', async () => {

@@ -95,6 +95,34 @@ describe('renderizarAviso', () => {
       expect(aviso.cuerpo).toContain('martes 11 de junio');
     });
 
+    it.each([
+      ['familia', 1, 'Cancelaste con poco tiempo', 'la mitad'],
+      ['cuidador', 0, 'La familia canceló con poco tiempo', 'mitad de lo acordado'],
+    ])(
+      '%s / cancelada_por_familia tardía (horasDeAnticipacion=%i) → «%s»',
+      (rol, horasDeAnticipacion, titulo, fragmento) => {
+        const aviso = renderizarAviso(
+          `servicio_cancelado:${rol}`,
+          con({ motivo: 'cancelada_por_familia', horasDeAnticipacion }),
+        );
+
+        expect(aviso.titulo).toBe(titulo);
+        expect(aviso.cuerpo).toContain(fragmento);
+      },
+    );
+
+    it.each(['familia', 'cuidador'])(
+      'a las %s, cancelar con 2 horas o más de anticipación no cuenta como tardía',
+      (rol) => {
+        const aviso = renderizarAviso(
+          `servicio_cancelado:${rol}`,
+          con({ motivo: 'cancelada_por_familia', horasDeAnticipacion: 2 }),
+        );
+
+        expect(aviso.titulo).not.toContain('poco tiempo');
+      },
+    );
+
     it('a la familia le dice que elija a otro cuando no hubo servicio', () => {
       for (const motivo of ['rechazada', 'expirada']) {
         expect(

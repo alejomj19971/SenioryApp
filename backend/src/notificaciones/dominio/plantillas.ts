@@ -86,6 +86,16 @@ function horas(parametros: Parametros): string {
 
 type Plantilla = (parametros: Parametros) => TextoDeAviso;
 
+// Cancelación tardía de la familia (decisión de negocio, 2026-11-15): con menos de 2 horas de anticipación no
+// hay reembolso completo. Ver `ReembolsarServicioCancelado`, que aplica el reparto; aquí solo se explica.
+function esCancelacionTardiaDeLaFamilia(p: Parametros): boolean {
+  return (
+    p.motivo === 'cancelada_por_familia' &&
+    typeof p.horasDeAnticipacion === 'number' &&
+    p.horasDeAnticipacion < 2
+  );
+}
+
 function cancelado(rol: 'familia' | 'cuidador'): Plantilla {
   return (p) => {
     const motivo = texto(p, 'motivo');
@@ -121,9 +131,15 @@ function cancelado(rol: 'familia' | 'cuidador'): Plantilla {
           cuerpo: `El servicio del ${momento} se canceló: el cuidador no llegó ni avisó. Si ya se había cobrado, el dinero vuelve. Elige a otra persona en Seniory.`,
         };
       }
+      if (motivo === 'cancelada_por_familia' && esCancelacionTardiaDeLaFamilia(p)) {
+        return {
+          titulo: 'Cancelaste con poco tiempo',
+          cuerpo: `Cancelaste el servicio del ${momento} con menos de 2 horas de anticipación: te devolvimos la mitad de lo que pagaste. La otra mitad es la compensación del cuidador por la franja que ya había reservado.`,
+        };
+      }
       return {
         titulo: 'Servicio cancelado',
-        cuerpo: `Cancelaste el servicio del ${momento}.`,
+        cuerpo: `Cancelaste el servicio del ${momento}. Si ya se había cobrado, el dinero vuelve.`,
       };
     }
     if (motivo === 'rechazada') {
@@ -154,6 +170,12 @@ function cancelado(rol: 'familia' | 'cuidador'): Plantilla {
       return {
         titulo: 'Un servicio se canceló por no iniciarlo',
         cuerpo: `El servicio del ${momento} se canceló: no marcaste que iniciaste y la franja ya terminó.`,
+      };
+    }
+    if (motivo === 'cancelada_por_familia' && esCancelacionTardiaDeLaFamilia(p)) {
+      return {
+        titulo: 'La familia canceló con poco tiempo',
+        cuerpo: `La familia canceló el servicio del ${momento} con menos de 2 horas de anticipación. Como compensación por la franja que ya habías reservado, te pagamos la mitad de lo acordado.`,
       };
     }
     return {

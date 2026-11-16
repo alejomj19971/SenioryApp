@@ -41,6 +41,7 @@ export class AvisarCambioDeServicio<
     };
     if (evento.tipo === 'reservas.servicio_cancelado') {
       parametros.motivo = evento.datos.motivo;
+      parametros.horasDeAnticipacion = evento.datos.horasDeAnticipacion;
     }
     const base = evento.tipo.replace('reservas.', '');
 

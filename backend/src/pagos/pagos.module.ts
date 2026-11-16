@@ -492,6 +492,7 @@ const SONDEO_DE_LIQUIDACIONES = Symbol('SondeoDeLiquidaciones');
         new ReembolsarServicioCancelado(
           pagos,
           bolsas,
+          liquidaciones,
           pasarela,
           eventos,
           ids,

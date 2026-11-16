@@ -71,9 +71,9 @@
 
 | | Pendiente |
 |---|---|
-| ⚖️🚀 | **Política de cancelación y reembolso.** El evento `servicio_cancelado` ya lleva las horas de anticipación; Pagos (M7) hoy **siempre devuelve todo**. Cuando el negocio la defina, se aplica en `ReembolsarServicioCancelado`. |
+| ✅ | ~~**Política de cancelación y reembolso.**~~ Decidido (2026-11-15): con 2 horas o más de anticipación se devuelve todo; con menos, se reparte mitad y mitad entre el reembolso a la familia y la compensación al cuidador (`ReembolsarServicioCancelado`). |
 | 🧑 | **Cómo pasa un servicio a «en curso»:** hoy el cuidador marca el inicio (check-in), solo dentro de su franja o hasta 30 minutos antes. Decidir si además debe ser automático. |
-| 🔧 | **Servicios aceptados que nunca se iniciaron** (el cuidador no llegó, o no marcó): hoy se quedan «aceptado» para siempre. Falta decidir qué pasa (marcar «no se presentó», avisar, reembolsar) — M10. |
+| ✅ | ~~**Servicios aceptados que nunca se iniciaron.**~~ Decidido (2026-11-15): `SondeoDeNoShows` los cancela (motivo «no_show») cuando la franja termina sin que nadie marcara que inició. |
 | 🔧 | **Exigir el pago aprobado para iniciar:** ya está hecho (`REQUIERE_PAGO_APROBADO`, obligatorio en staging y producción). En desarrollo viene apagado para poder probar sin pagar. |
 | 🔧 | Que el cuidador defina su propia `aceptacionAutomatica`: ya está hecho (`PATCH /cuidadores/yo`, M9). |
 | 🧑 | **Anticipación máxima de 180 días** y **plazos de aceptación** (2 h, o 30 min si es para hoy) están en el dominio como constantes: confirmarlos con el equipo. |
@@ -117,7 +117,7 @@
 | 🧑🚀 | **Elegir la pasarela de pagos** (que acepte marketplace y devoluciones) y **cómo se le paga al cuidador** (transferencia, dispersión de la pasarela). Hoy hay una pasarela y un dispersor **simulados** (solo desarrollo, pruebas y staging; la configuración los prohíbe en producción) y uno **deshabilitado** que responde «no disponible». **Sin esto no se puede cobrar en producción:** con `REQUIERE_PAGO_APROBADO=true` ningún servicio podría iniciar. |
 | 🔧🚀 | **Un adaptador por proveedor** (`PasarelaDePagos` y `DispersorDePagos`): crear el cobro con el id del pago como referencia, consultar estado, reembolsar con clave de idempotencia, **verificar la firma sobre el cuerpo crudo** e interpretar el aviso. El adaptador debe quitar los datos de tarjeta antes de guardar el aviso. Probar el webhook real en staging. |
 | ⚖️🚀 | **Bolsa en pesos u horas, sus paquetes y descuentos.** La tabla de paquetes está **vacía** hasta que el negocio los apruebe (el saldo ya se lleva en pesos; `horas_referencia` es solo para mostrar). `GET /catalogo/bolsas` devuelve la lista vacía mientras tanto. |
-| ⚖️🚀 | **Política de cancelación tardía.** Hoy se devuelve todo siempre; si la familia debe perder algo, hay que decidir qué pasa con ese dinero (¿se liquida al cuidador, parcial?). `servicio_cancelado` ya trae `horasDeAnticipacion`. |
+| ✅ | ~~**Política de cancelación tardía.**~~ Decidido (2026-11-15): con menos de 2 horas de anticipación, mitad y mitad entre la familia y el cuidador (`ReembolsarServicioCancelado`, `HORAS_MINIMAS_PARA_CANCELAR_GRATIS`). |
 | ⚖️🚀 | Empresa constituida, cuenta comercial aprobada, **facturación electrónica ante la DIAN** y tratamiento de retenciones. |
 | 🔧 | **Conciliación diaria** contra el reporte de la pasarela (tabla `conciliaciones`): hoy solo se recupera cada pago pendiente preguntándole su estado antes de vencerlo. Depende del reporte del proveedor. |
 | 🔧 | **Pagos tardíos y reembolsos fallidos** (`pagos.aprobacion_tardia`, `pagos.reembolso_tardio_fallido` en la auditoría): hoy los atiende una persona; falta una alarma (Sentry) y una pantalla para el administrador (M10). |
@@ -197,7 +197,7 @@ El frontend se conecta al backend módulo por módulo, en el orden del [plan v2]
 | F3+F4 — Contratación *(construido)* | 🔧 **Pagar un servicio con la pasarela:** un servicio aceptado con medio «pasarela» necesita que la familia pague; la pantalla del servicio todavía no ofrece «Pagar» (llega con F7). Con la bolsa, el pago es inmediato. |
 | 🔧 | **Avisos al cuidador:** hoy el cuidador solo ve una solicitud al abrir su panel; el aviso por correo/SMS/WhatsApp espera proveedor; la campana (F5) ya lo muestra al abrir la aplicación. Una solicitud sin respuesta vence a las 2 horas (30 minutos si es para hoy). |
 | 🔧 | **Panel del cuidador:** solo los servicios más recientes (sin «ver más»), sin calendario ni historial de pagos (liquidaciones en F7; su perfil y documentos ya están en F9). |
-| 🔧 | **Reprogramar:** no existe; hoy se cancela y se pide de nuevo. Y la política de cancelación tardía (hoy siempre se devuelve todo) es una decisión de negocio abierta. |
+| 🔧 | **Reprogramar:** no existe; hoy se cancela y se pide de nuevo (la política de cancelación tardía ya está decidida, ver M4). |
 | F7 — Pagos y bolsas *(construido)* | ⚖️🚀 **Pasarela y dispersor reales:** hoy solo hay la simulada (sin página de pago: el pago se aprueba con un aviso firmado que fabrican las pruebas). Con la pasarela real hay que revisar que la **página de retorno** lleve de vuelta a `/app/servicios/[id]` y, si hace falta, `URL_PUBLICA_DE_LA_API`/dominios. Ver [pagos/README](../backend/src/pagos/README.md). |
 | ⚖️ | **Precios de las bolsas:** el catálogo está vacío en producción hasta que el negocio apruebe paquetes (las pruebas crean `prueba-5h` y `prueba-10h` **solo en la base local**). La landing y «Mi bolsa» ya los muestran en cuanto existan. |
 | 🔧 | **La landing es dinámica** (lee el catálogo en cada visita) y por eso ya no es estática; si pesa en el rendimiento, cachear unos minutos. |
