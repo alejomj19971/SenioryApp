@@ -134,6 +134,7 @@ describe('Usuario', () => {
         rol: original.rol,
         estado: 'eliminado',
         correoVerificadoEn: null,
+        reglasDelNegocioVistasEn: null,
         creadoEn: AHORA,
         actualizadoEn: AHORA,
         credencial: original.credencial,

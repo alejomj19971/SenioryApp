@@ -6,6 +6,7 @@ import {
   HttpStatus,
   Inject,
   Patch,
+  Post,
   Res,
 } from '@nestjs/common';
 import { Throttle } from '@nestjs/throttler';
@@ -14,6 +15,7 @@ import type { UsuarioAutenticado } from '../../../../compartido/aplicacion/puert
 import { UsuarioActual } from '../../../../compartido/http/decoradores.js';
 import { CONFIGURACION } from '../../../../configuracion/configuracion.module.js';
 import type { Configuracion } from '../../../../configuracion/variables-de-entorno.js';
+import { AceptarReglasDelNegocio } from '../../../aplicacion/casos-de-uso/aceptar-reglas-del-negocio.js';
 import { ActualizarPerfilPropio } from '../../../aplicacion/casos-de-uso/actualizar-perfil-propio.js';
 import { CambiarContrasena } from '../../../aplicacion/casos-de-uso/cambiar-contrasena.js';
 import {
@@ -35,6 +37,8 @@ export class PerfilController {
     private readonly actualizar: ActualizarPerfilPropio,
     @Inject(CambiarContrasena)
     private readonly cambiarContrasena: CambiarContrasena,
+    @Inject(AceptarReglasDelNegocio)
+    private readonly aceptarReglas: AceptarReglasDelNegocio,
     @Inject(CONFIGURACION) private readonly configuracion: Configuracion,
   ) {}
 
@@ -68,5 +72,14 @@ export class PerfilController {
     @Body() cuerpo: ActualizarPerfilDto,
   ): Promise<{ usuario: VistaDePerfil }> {
     return { usuario: await this.actualizar.ejecutar(usuario.id, cuerpo) };
+  }
+
+  // El instructivo con las reglas del negocio, al final de la bienvenida (M1). Idempotente.
+  @HttpCode(HttpStatus.OK)
+  @Post('reglas-del-negocio')
+  async aceptarReglasDelNegocio(
+    @UsuarioActual() usuario: UsuarioAutenticado,
+  ): Promise<{ usuario: VistaDePerfil }> {
+    return { usuario: await this.aceptarReglas.ejecutar(usuario.id) };
   }
 }

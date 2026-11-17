@@ -16,6 +16,9 @@ export interface DatosDeUsuario {
   rol: Rol;
   estado: EstadoDeUsuario;
   correoVerificadoEn: Date | null;
+  // Cuándo aceptó el instructivo con las reglas del negocio (jornadas, cuándo se cobra, cancelación…),
+  // al final de la bienvenida (M1). Solo se pide una vez; null hasta que lo vea.
+  reglasDelNegocioVistasEn: Date | null;
   creadoEn: Date;
   actualizadoEn: Date;
   credencial: Credencial;
@@ -80,6 +83,7 @@ export class Usuario {
       estado: 'activo',
       // La verificación del correo llega con el canal de correo (M5).
       correoVerificadoEn: null,
+      reglasDelNegocioVistasEn: null,
       creadoEn: datos.ahora,
       actualizadoEn: datos.ahora,
       credencial: datos.credencial,
@@ -107,6 +111,9 @@ export class Usuario {
   get correoVerificadoEn(): Date | null {
     return this.datos.correoVerificadoEn;
   }
+  get reglasDelNegocioVistasEn(): Date | null {
+    return this.datos.reglasDelNegocioVistasEn;
+  }
   get creadoEn(): Date {
     return this.datos.creadoEn;
   }
@@ -123,6 +130,13 @@ export class Usuario {
       this.datos.estado === 'activo' &&
       !this.datos.credencial.estaBloqueada(ahora)
     );
+  }
+
+  // Idempotente: una vez vistas, un segundo llamado no hace nada (no se pisa la fecha original).
+  aceptarReglasDelNegocio(ahora: Date): void {
+    if (this.datos.reglasDelNegocioVistasEn !== null) return;
+    this.datos.reglasDelNegocioVistasEn = ahora;
+    this.datos.actualizadoEn = ahora;
   }
 
   actualizarPerfil(cambios: CambiosDePerfil, ahora: Date): void {

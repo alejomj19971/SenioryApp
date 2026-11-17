@@ -62,29 +62,54 @@ describe("destinoTrasIngresar", () => {
   const conPersona = (consentimiento: boolean) => [{ consentimientoDeSalud: consentimiento }];
 
   it("una familia sin persona empieza por la bienvenida", () => {
-    expect(destinoTrasIngresar({ rol: "familiar", adultosMayores: [] })).toBe("/bienvenida/persona");
+    expect(
+      destinoTrasIngresar({ rol: "familiar", adultosMayores: [], reglasDelNegocioVistas: false }),
+    ).toBe("/bienvenida/persona");
   });
 
   it("una familia con persona pero sin autorización sigue por el consentimiento", () => {
-    expect(destinoTrasIngresar({ rol: "familiar", adultosMayores: conPersona(false) })).toBe(
-      "/bienvenida/consentimiento",
-    );
+    expect(
+      destinoTrasIngresar({
+        rol: "familiar",
+        adultosMayores: conPersona(false),
+        reglasDelNegocioVistas: false,
+      }),
+    ).toBe("/bienvenida/consentimiento");
+  });
+
+  it("una familia con persona y autorización, pero sin ver las reglas, sigue por ahí", () => {
+    expect(
+      destinoTrasIngresar({
+        rol: "familiar",
+        adultosMayores: conPersona(true),
+        reglasDelNegocioVistas: false,
+      }),
+    ).toBe("/bienvenida/reglas");
   });
 
   it("una familia lista va a `volver` si es interna, o al inicio", () => {
-    const datos = { rol: "familiar" as const, adultosMayores: conPersona(true) };
+    const datos = { rol: "familiar" as const, adultosMayores: conPersona(true), reglasDelNegocioVistas: true };
     expect(destinoTrasIngresar(datos, "/app/cuidadores")).toBe("/app/cuidadores");
     expect(destinoTrasIngresar(datos, "//otro.com")).toBe("/app");
     expect(destinoTrasIngresar(datos)).toBe("/app");
   });
 
   it("completar la bienvenida pesa más que `volver`", () => {
-    expect(destinoTrasIngresar({ rol: "familiar", adultosMayores: [] }, "/app/cuidadores")).toBe("/bienvenida/persona");
+    expect(
+      destinoTrasIngresar(
+        { rol: "familiar", adultosMayores: [], reglasDelNegocioVistas: true },
+        "/app/cuidadores",
+      ),
+    ).toBe("/bienvenida/persona");
   });
 
-  it("el cuidador y el administrador van a su área", () => {
-    expect(destinoTrasIngresar({ rol: "cuidador", adultosMayores: [] }, "/app")).toBe("/cuidador");
-    expect(destinoTrasIngresar({ rol: "administrador", adultosMayores: [] }, "/app")).toBe("/admin");
+  it("el cuidador y el administrador van a su área (no les aplican las reglas de la familia)", () => {
+    expect(
+      destinoTrasIngresar({ rol: "cuidador", adultosMayores: [], reglasDelNegocioVistas: false }, "/app"),
+    ).toBe("/cuidador");
+    expect(
+      destinoTrasIngresar({ rol: "administrador", adultosMayores: [], reglasDelNegocioVistas: false }, "/app"),
+    ).toBe("/admin");
   });
 });
 

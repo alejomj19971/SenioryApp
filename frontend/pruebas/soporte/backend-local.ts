@@ -67,8 +67,8 @@ export interface CuentaDePrueba {
   ip: string;
 }
 
-// Registra una familia por la API del backend. Con `lista: true` además le da su persona y la autorización de
-// salud, que es como llega una familia al inicio de la app.
+// Registra una familia por la API del backend. Con `lista: true` además le da su persona, la autorización de
+// salud y acepta las reglas del negocio, que es como llega una familia al inicio de la app.
 export async function crearCuenta({ lista = true, nombre = "Familia de Prueba" } = {}): Promise<CuentaDePrueba> {
   const cuenta: CuentaDePrueba = {
     nombre,
@@ -102,6 +102,8 @@ export async function crearCuenta({ lista = true, nombre = "Familia de Prueba" }
     cuerpo: { finalidad: "datos_de_salud", calidad: "representante", versionDelTexto: "v1" },
   });
   if (!consentimiento.ok) throw new Error(`No se pudo dar la autorización (${consentimiento.status}).`);
+  const reglas = await llamar({ ruta: "/yo/reglas-del-negocio", ip: cuenta.ip, cookie: acceso });
+  if (!reglas.ok) throw new Error(`No se pudo aceptar las reglas del negocio (${reglas.status}).`);
   return cuenta;
 }
 

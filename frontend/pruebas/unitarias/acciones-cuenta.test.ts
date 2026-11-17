@@ -146,7 +146,10 @@ describe("registrarse", () => {
 });
 
 describe("iniciarSesion", () => {
-  const perfil = (rol: string, adultosMayores: object[] = []) => ({ usuario: { rol }, adultosMayores });
+  const perfil = (rol: string, adultosMayores: object[] = [], reglasDelNegocioVistas = true) => ({
+    usuario: { rol, reglasDelNegocioVistas },
+    adultosMayores,
+  });
 
   it("pide los dos campos sin ir al backend", async () => {
     const estado = await acciones.iniciarSesion({}, formulario({ correo: "", contrasena: "" }));
@@ -199,6 +202,7 @@ describe("iniciarSesion", () => {
   it.each([
     ["una familia sin persona", perfil("familiar"), "/bienvenida/persona"],
     ["una familia sin autorización", perfil("familiar", [{ consentimientoDeSalud: false }]), "/bienvenida/consentimiento"],
+    ["una familia que no ha visto las reglas", perfil("familiar", [{ consentimientoDeSalud: true }], false), "/bienvenida/reglas"],
     ["un cuidador", perfil("cuidador"), "/cuidador"],
     ["un administrador", perfil("administrador"), "/admin"],
   ])("manda a %s a su destino", async (_nombre, datos, esperado) => {
@@ -401,7 +405,10 @@ describe("registrarAdultoMayor", () => {
 });
 
 describe("otorgarConsentimiento", () => {
-  const perfil = (adultosMayores: object[]) => ({ usuario: { rol: "familiar" }, adultosMayores });
+  const perfil = (adultosMayores: object[], reglasDelNegocioVistas = true) => ({
+    usuario: { rol: "familiar", reglasDelNegocioVistas },
+    adultosMayores,
+  });
 
   it("exige marcar la autorización", async () => {
     const estado = await acciones.otorgarConsentimiento({}, formulario({}));
@@ -450,6 +457,36 @@ describe("otorgarConsentimiento", () => {
     const estado = await acciones.otorgarConsentimiento({}, formulario({ autorizo: "on" }));
 
     expect(estado.mensaje).toContain("versión vigente");
+  });
+
+  it("quien no ha visto las reglas del negocio sigue por ahí, no por la app", async () => {
+    verificarSesion.mockResolvedValue(perfil([{ id: "p-uno", consentimientoDeSalud: false }], false));
+    escribirEnBackend.mockResolvedValue({ ok: true, datos: {} });
+
+    expect(await destinoDe(() => acciones.otorgarConsentimiento({}, formulario({ autorizo: "on" })))).toBe(
+      "/bienvenida/reglas",
+    );
+  });
+});
+
+describe("aceptarReglasDelNegocio", () => {
+  it("acepta las reglas y entra a la app", async () => {
+    escribirEnBackend.mockResolvedValue({ ok: true, datos: {} });
+
+    expect(await destinoDe(() => acciones.aceptarReglasDelNegocio({}))).toBe("/app");
+    expect(escribirEnBackend).toHaveBeenCalledWith("/yo/reglas-del-negocio", { metodo: "POST" });
+  });
+
+  it("si el backend falla, lo dice sin redirigir", async () => {
+    escribirEnBackend.mockResolvedValue({
+      ok: false,
+      error: new ErrorDeApi({ estado: 503, codigo: "no_disponible", mensaje: "No disponible" }),
+    });
+
+    const estado = await acciones.aceptarReglasDelNegocio({});
+
+    expect(estado.mensaje).toContain("no está disponible por ahora");
+    expect(redirect).not.toHaveBeenCalled();
   });
 });
 

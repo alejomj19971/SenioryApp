@@ -12,10 +12,12 @@ export function rutaInternaSegura(volver: string | null | undefined): string | n
 export interface DatosParaElDestino {
   rol: "familiar" | "adulto_mayor" | "cuidador" | "administrador";
   adultosMayores: { consentimientoDeSalud: boolean }[];
+  // Si ya vio y aceptó el instructivo con las reglas del negocio (último paso de la bienvenida).
+  reglasDelNegocioVistas: boolean;
 }
 
-// Familia: primero la persona a cuidar, luego el consentimiento de salud; después, `volver` o el inicio.
-// Cuidador y administrador tienen su propia área.
+// Familia: primero la persona a cuidar, luego el consentimiento de salud, luego las reglas del negocio;
+// después, `volver` o el inicio. Cuidador y administrador tienen su propia área.
 export function destinoTrasIngresar(datos: DatosParaElDestino, volver?: string | null): string {
   if (datos.rol === "cuidador") return "/cuidador";
   if (datos.rol === "administrador") return "/admin";
@@ -24,6 +26,7 @@ export function destinoTrasIngresar(datos: DatosParaElDestino, volver?: string |
     if (!datos.adultosMayores.some((persona) => persona.consentimientoDeSalud)) {
       return "/bienvenida/consentimiento";
     }
+    if (!datos.reglasDelNegocioVistas) return "/bienvenida/reglas";
   }
   return rutaInternaSegura(volver) ?? "/app";
 }

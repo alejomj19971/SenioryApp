@@ -25,12 +25,15 @@ export function vistaDeUsuario(usuario: Usuario): VistaDeUsuario {
 // El perfil propio suma el teléfono, que la persona puede cambiar.
 export interface VistaDePerfil extends VistaDeUsuario {
   telefono: string | null;
+  // Si ya vio y aceptó el instructivo con las reglas del negocio (M1), al final de la bienvenida.
+  reglasDelNegocioVistas: boolean;
 }
 
 export function vistaDePerfil(usuario: Usuario): VistaDePerfil {
   return {
     ...vistaDeUsuario(usuario),
     telefono: usuario.telefono?.valor ?? null,
+    reglasDelNegocioVistas: usuario.reglasDelNegocioVistasEn !== null,
   };
 }
 

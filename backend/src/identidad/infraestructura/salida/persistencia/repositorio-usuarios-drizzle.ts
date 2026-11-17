@@ -62,6 +62,7 @@ export class RepositorioUsuariosDrizzle implements RepositorioUsuarios {
           telefono: usuario.telefono?.valor ?? null,
           estado: usuario.estado,
           correoVerificadoEn: usuario.correoVerificadoEn,
+          reglasDelNegocioVistasEn: usuario.reglasDelNegocioVistasEn,
           actualizadoEn: usuario.actualizadoEn,
         })
         .where(eq(usuarios.id, usuario.id))

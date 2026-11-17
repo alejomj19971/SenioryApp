@@ -84,6 +84,7 @@ import {
 } from './aplicacion/puertos/salida/repositorio-usuarios.js';
 import { EmisorDeSesiones } from './aplicacion/servicios/emisor-de-sesiones.js';
 import type { DiccionarioDeContrasenasComunes } from './dominio/contrasena.js';
+import { AceptarReglasDelNegocio } from './aplicacion/casos-de-uso/aceptar-reglas-del-negocio.js';
 import { ActualizarPerfilPropio } from './aplicacion/casos-de-uso/actualizar-perfil-propio.js';
 import { CambiarContrasena } from './aplicacion/casos-de-uso/cambiar-contrasena.js';
 import { CrearAdministrador } from './aplicacion/casos-de-uso/crear-administrador.js';
@@ -669,6 +670,15 @@ const MS_POR_DIA = 24 * 60 * MS_POR_MINUTO;
         reloj: Reloj,
       ) =>
         new ActualizarPerfilPropio(usuarios, unidadDeTrabajo, auditoria, reloj),
+    },
+    {
+      provide: AceptarReglasDelNegocio,
+      inject: [REPOSITORIO_USUARIOS, UNIDAD_DE_TRABAJO, RELOJ],
+      useFactory: (
+        usuarios: RepositorioUsuarios,
+        unidadDeTrabajo: UnidadDeTrabajo,
+        reloj: Reloj,
+      ) => new AceptarReglasDelNegocio(usuarios, unidadDeTrabajo, reloj),
     },
     {
       provide: RegistrarAdultoMayor,

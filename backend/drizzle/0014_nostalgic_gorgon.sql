@@ -1,0 +1,1 @@
+ALTER TABLE "identidad"."usuarios" ADD COLUMN "reglas_del_negocio_vistas_en" timestamp with time zone;

@@ -17,6 +17,8 @@ export interface PerfilDelBackend {
   correo: string;
   rol: Rol;
   telefono: string | null;
+  // Si ya vio y aceptó el instructivo con las reglas del negocio, al final de la bienvenida.
+  reglasDelNegocioVistas: boolean;
 }
 
 export interface AdultoMayorDelBackend {

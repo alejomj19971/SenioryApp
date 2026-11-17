@@ -158,6 +158,7 @@ describe('perfil, personas mayores y consentimientos (API)', () => {
           correo: persona.correo,
           rol: 'familiar',
           telefono: null,
+          reglasDelNegocioVistas: false,
         },
         adultosMayores: [],
       });
@@ -281,6 +282,7 @@ describe('perfil, personas mayores y consentimientos (API)', () => {
           correo: persona.correo,
           rol: 'familiar',
           telefono: '+573001234567',
+          reglasDelNegocioVistas: false,
         },
       });
       expect(
@@ -388,6 +390,68 @@ describe('perfil, personas mayores y consentimientos (API)', () => {
         .send({ nombre: 'X' });
 
       expect(respuesta.status).toBe(401);
+    });
+  });
+
+  // ─── POST /yo/reglas-del-negocio ───────────────────────────────────────────────────────────
+  describe('POST /yo/reglas-del-negocio', () => {
+    const aceptar = (c: Cliente, persona: Persona) =>
+      c
+        .post('/api/v1/yo/reglas-del-negocio')
+        .set('Cookie', conSesion(persona.sesion));
+
+    it('antes de aceptarlas, reglasDelNegocioVistas es false', async () => {
+      const c = cliente();
+      const persona = await registrarFamiliar(c);
+
+      expect(
+        ((await yo(c, persona)).body as { usuario: { reglasDelNegocioVistas: boolean } })
+          .usuario.reglasDelNegocioVistas,
+      ).toBe(false);
+    });
+
+    it('las acepta, y queda así en /yo', async () => {
+      const c = cliente();
+      const persona = await registrarFamiliar(c);
+
+      const respuesta = await aceptar(c, persona);
+
+      expect(respuesta.status).toBe(200);
+      expect(
+        (respuesta.body as { usuario: { reglasDelNegocioVistas: boolean } }).usuario
+          .reglasDelNegocioVistas,
+      ).toBe(true);
+      expect(
+        ((await yo(c, persona)).body as { usuario: { reglasDelNegocioVistas: boolean } })
+          .usuario.reglasDelNegocioVistas,
+      ).toBe(true);
+    });
+
+    it('es idempotente: aceptarlas de nuevo no cambia la fecha original', async () => {
+      const c = cliente();
+      const persona = await registrarFamiliar(c);
+      await aceptar(c, persona);
+      const [antes] = await filas<{ reglas_del_negocio_vistas_en: Date }>(
+        'select reglas_del_negocio_vistas_en from identidad.usuarios where id = $1',
+        [persona.id],
+      );
+
+      reloj.avanzar(60_000);
+      await aceptar(c, persona);
+
+      const [despues] = await filas<{ reglas_del_negocio_vistas_en: Date }>(
+        'select reglas_del_negocio_vistas_en from identidad.usuarios where id = $1',
+        [persona.id],
+      );
+      expect(despues?.reglas_del_negocio_vistas_en).toEqual(
+        antes?.reglas_del_negocio_vistas_en,
+      );
+    });
+
+    it('sin sesión responde 401', async () => {
+      expect((await cliente().post('/api/v1/yo/reglas-del-negocio')).status).toBe(
+        401,
+      );
     });
   });
 

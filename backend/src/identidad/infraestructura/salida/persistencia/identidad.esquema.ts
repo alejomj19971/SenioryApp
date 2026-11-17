@@ -34,6 +34,7 @@ export const usuarios = esquemaIdentidad.table(
     rol: text('rol').notNull(),
     estado: text('estado').notNull().default('activo'),
     correoVerificadoEn: instante('correo_verificado_en'),
+    reglasDelNegocioVistasEn: instante('reglas_del_negocio_vistas_en'),
     creadoEn: instante('creado_en').notNull().defaultNow(),
     actualizadoEn: instante('actualizado_en').notNull().defaultNow(),
   },

@@ -44,7 +44,13 @@ export const verificarSesion = cache((): Promise<RespuestaDePerfil> => leerDelBa
 export async function exigirRol(rol: Rol): Promise<RespuestaDePerfil> {
   const perfil = await verificarSesion();
   if (perfil.usuario.rol !== rol) {
-    redirect(destinoTrasIngresar({ rol: perfil.usuario.rol, adultosMayores: perfil.adultosMayores }));
+    redirect(
+      destinoTrasIngresar({
+        rol: perfil.usuario.rol,
+        adultosMayores: perfil.adultosMayores,
+        reglasDelNegocioVistas: perfil.usuario.reglasDelNegocioVistas,
+      }),
+    );
   }
   return perfil;
 }

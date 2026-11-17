@@ -11,13 +11,19 @@ export default async function ConsentimientoPage() {
   const persona = perfil.adultosMayores.find((p) => !p.consentimientoDeSalud);
   // Sin persona o con todo autorizado, no hay nada que pedir aquí.
   if (perfil.usuario.rol !== "familiar" || persona === undefined) {
-    redirect(destinoTrasIngresar({ rol: perfil.usuario.rol, adultosMayores: perfil.adultosMayores }));
+    redirect(
+      destinoTrasIngresar({
+        rol: perfil.usuario.rol,
+        adultosMayores: perfil.adultosMayores,
+        reglasDelNegocioVistas: perfil.usuario.reglasDelNegocioVistas,
+      }),
+    );
   }
 
   return (
     <div className="flex flex-col gap-6">
       <div className="flex flex-col gap-1">
-        <p className="text-sm font-medium text-muted-foreground">Paso 2 de 2</p>
+        <p className="text-sm font-medium text-muted-foreground">Paso 2 de 3</p>
         <h1 className="text-2xl font-bold text-foreground">Tu autorización</h1>
         <p className="text-base text-muted-foreground">
           Los datos de salud son sensibles. Los usamos solo con tu permiso.

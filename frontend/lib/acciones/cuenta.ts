@@ -91,7 +91,16 @@ async function completarIngreso(respuestaDelBackend: Response, volver: string): 
   // La cookie recién guardada todavía no viaja en esta petición: se usa el token a mano para saber a dónde ir.
   const acceso = cookiesDeSesionDe(respuestaDelBackend).find((c) => c.nombre === COOKIE_DE_ACCESO)?.valor;
   const perfil = await leerDelBackend<RespuestaDePerfil>("/yo", acceso === undefined ? {} : { tokenDeAcceso: acceso });
-  redirect(destinoTrasIngresar({ rol: perfil.usuario.rol, adultosMayores: perfil.adultosMayores }, volver));
+  redirect(
+    destinoTrasIngresar(
+      {
+        rol: perfil.usuario.rol,
+        adultosMayores: perfil.adultosMayores,
+        reglasDelNegocioVistas: perfil.usuario.reglasDelNegocioVistas,
+      },
+      volver,
+    ),
+  );
 }
 
 interface RespuestaDeIngreso {
@@ -213,8 +222,14 @@ export async function otorgarConsentimiento(_previo: EstadoDeFormulario, datos: 
   }
   // La persona se toma de la sesión, no del formulario: nadie puede autorizar por otra con un campo oculto.
   const perfil = await verificarSesion();
+  const siguienteDestino = (adultosMayores: typeof perfil.adultosMayores) =>
+    destinoTrasIngresar({
+      rol: "familiar",
+      adultosMayores,
+      reglasDelNegocioVistas: perfil.usuario.reglasDelNegocioVistas,
+    });
   const persona = perfil.adultosMayores.find((p) => !p.consentimientoDeSalud);
-  if (persona === undefined) redirect("/app");
+  if (persona === undefined) redirect(siguienteDestino(perfil.adultosMayores));
 
   const resultado = await escribirEnBackend(`/adultos-mayores/${persona.id}/consentimientos`, {
     metodo: "POST",
@@ -227,6 +242,18 @@ export async function otorgarConsentimiento(_previo: EstadoDeFormulario, datos: 
   });
   // «Ya hay una autorización vigente» no es un problema: la persona ya está donde quería llegar.
   if (!resultado.ok && resultado.error.codigo !== "consentimiento.ya_vigente") return estadoDeError(resultado.error);
+  const adultosMayoresActualizados = perfil.adultosMayores.map((p) =>
+    p.id === persona.id ? { ...p, consentimientoDeSalud: true } : p,
+  );
+  redirect(siguienteDestino(adultosMayoresActualizados));
+}
+
+// Último paso de la bienvenida: acepta el instructivo con las reglas del negocio y entra a la aplicación.
+// Idempotente en el backend, así que un reintento (o un doble clic) no es un problema.
+// eslint-disable-next-line @typescript-eslint/no-unused-vars -- la firma la exige `useActionState`.
+export async function aceptarReglasDelNegocio(_previo: EstadoDeFormulario): Promise<EstadoDeFormulario> {
+  const resultado = await escribirEnBackend("/yo/reglas-del-negocio", { metodo: "POST" });
+  if (!resultado.ok) return estadoDeError(resultado.error);
   redirect("/app");
 }
 

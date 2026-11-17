@@ -51,7 +51,11 @@ test("registro → persona → autorización → inicio con el nombre real → s
   await page.getByLabel(/Autorizo el tratamiento/).check();
   await page.getByRole("button", { name: "Autorizo y continúo" }).click();
 
-  // 3. El inicio con los nombres de verdad (no los del prototipo)
+  // 3. Las reglas del negocio
+  await expect(page).toHaveURL(/\/bienvenida\/reglas$/);
+  await page.getByRole("button", { name: "Entendido, continuar" }).click();
+
+  // 4. El inicio con los nombres de verdad (no los del prototipo)
   await expect(page).toHaveURL(/\/app$/);
   await expect(page.getByRole("heading", { name: "Hola, Andrea Gómez" })).toBeVisible();
   await expect(page.getByText(/Doña Carmen/).first()).toBeVisible();

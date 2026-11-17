@@ -127,7 +127,14 @@ describe.skipIf(!disponible)("contrato de Identidad con el backend local", () =>
 
       expect(respuesta.status).toBe(200);
       const cuerpo = (await respuesta.json()) as { usuario: Record<string, unknown>; adultosMayores: unknown[] };
-      expect(Object.keys(cuerpo.usuario).sort()).toEqual(["correo", "id", "nombre", "rol", "telefono"]);
+      expect(Object.keys(cuerpo.usuario).sort()).toEqual([
+        "correo",
+        "id",
+        "nombre",
+        "reglasDelNegocioVistas",
+        "rol",
+        "telefono",
+      ]);
       expect(cuerpo.usuario.rol).toBe("familiar");
       expect(cuerpo.adultosMayores).toEqual([]);
     });

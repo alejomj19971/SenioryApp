@@ -89,6 +89,7 @@ export function usuarioDeFilas(
     rol: fila.rol,
     estado,
     correoVerificadoEn: fila.correoVerificadoEn,
+    reglasDelNegocioVistasEn: fila.reglasDelNegocioVistasEn,
     creadoEn: fila.creadoEn,
     actualizadoEn: fila.actualizadoEn,
     credencial: credencialDeFila(credencial),
