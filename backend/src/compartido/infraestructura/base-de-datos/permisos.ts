@@ -1,4 +1,5 @@
 import pg from 'pg';
+import { sslSiHaceFalta } from './migrar.js';
 
 // El rol con el que corre la API en producción: puede LEER y ESCRIBIR datos, pero no cambiar la estructura de la base.
 // Las migraciones las aplica OTRA cuenta (la dueña de las tablas). Así, si alguien explota una vulnerabilidad de la
@@ -80,6 +81,7 @@ export async function aplicarRolDeAplicacion(
   const cliente = new pg.Client({
     connectionString: urlDelDueno,
     application_name: 'seniory-permisos',
+    ssl: sslSiHaceFalta(urlDelDueno),
   });
   await cliente.connect();
   try {
