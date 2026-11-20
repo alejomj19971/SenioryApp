@@ -2,11 +2,12 @@
 
 import { useEffect, useRef, useState, useTransition } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import Link from "next/link";
 import { Loader2, SearchX } from "lucide-react";
 import { FiltrosCuidador } from "@/components/cuidadores/filtros-cuidador";
 import { TarjetaCuidador } from "@/components/cuidadores/tarjeta-cuidador";
 import { Aviso } from "@/components/ui/aviso";
-import { Button } from "@/components/ui/button";
+import { Button, buttonVariants } from "@/components/ui/button";
 import { cargarMasCuidadores } from "@/lib/acciones/cuidadores";
 import { consultaDeFiltros } from "@/lib/filtros-de-cuidadores";
 import { useUbicacionDelNavegador, type Coordenada } from "@/lib/hooks/use-ubicacion";
@@ -60,6 +61,18 @@ export function BuscadorCuidadores({
   const siguiente = vigentes === null ? primeraSiguiente : vigentes.siguiente;
   const [cargandoMas, setCargandoMas] = useState(false);
   const [errorAlCargar, setErrorAlCargar] = useState<string | null>(null);
+
+  // Para contratar a varios cuidadores juntos (el carrito, F4): se conserva al cambiar de filtro, para no
+  // perder la selección mientras se sigue explorando.
+  const [seleccionados, setSeleccionados] = useState<Set<string>>(new Set());
+  function alternarSeleccion(id: string) {
+    setSeleccionados((actuales) => {
+      const siguiente = new Set(actuales);
+      if (siguiente.has(id)) siguiente.delete(id);
+      else siguiente.add(id);
+      return siguiente;
+    });
+  }
 
   // Al cambiar un filtro, se actualiza la URL (con espera) y el servidor busca de nuevo.
   const consultaActual = clave;
@@ -172,9 +185,14 @@ export function BuscadorCuidadores({
       </p>
 
       {cuidadores.length > 0 ? (
-        <div className="lista-con-entrada flex flex-col gap-3" aria-busy={buscando}>
+        <div className="lista-con-entrada flex flex-col gap-3 pb-20" aria-busy={buscando}>
           {cuidadores.map((cuidador) => (
-            <TarjetaCuidador key={cuidador.id} cuidador={cuidador} />
+            <TarjetaCuidador
+              key={cuidador.id}
+              cuidador={cuidador}
+              seleccionado={seleccionados.has(cuidador.id)}
+              onAlternarSeleccion={() => alternarSeleccion(cuidador.id)}
+            />
           ))}
         </div>
       ) : (
@@ -212,6 +230,20 @@ export function BuscadorCuidadores({
         <Button type="button" variant="outline" size="lg" className="w-full" disabled={cargandoMas} onClick={verMas}>
           {cargandoMas ? "Cargando…" : "Ver más cuidadores"}
         </Button>
+      )}
+
+      {seleccionados.size > 0 && (
+        <div className="fixed inset-x-0 bottom-16 z-20 mx-auto flex w-full max-w-md items-center justify-between gap-3 border-t border-border bg-background/95 p-4 backdrop-blur">
+          <p className="text-base font-medium text-foreground">
+            {seleccionados.size === 1 ? "1 cuidador seleccionado" : `${seleccionados.size} cuidadores seleccionados`}
+          </p>
+          <Link
+            href={`/app/contratar/carrito?ids=${[...seleccionados].join(",")}`}
+            className={buttonVariants({ size: "lg", className: "rounded-full" })}
+          >
+            Continuar
+          </Link>
+        </div>
       )}
     </div>
   );

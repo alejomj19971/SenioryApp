@@ -130,6 +130,42 @@ test("sin doble reserva: otra familia que pide la misma franja recibe un mensaje
   }
 });
 
+test("contratar a varios cuidadores juntos desde el carrito", async ({ page, context }) => {
+  const zonaUnica = `ZonaCarrito${Date.now()}`;
+  const maria = await crearCuidadorVerificado({ tarifaHora: 20_000, nombre: "María Carrito", zona: zonaUnica });
+  const carlos = await crearCuidadorVerificado({ tarifaHora: 25_000, nombre: "Carlos Carrito", zona: zonaUnica });
+  await context.setExtraHTTPHeaders({ "x-forwarded-for": ipAleatoria() });
+  const familia = await crearCuenta({ nombre: "Andrea" });
+  await entrar(page, familia, /\/app$/);
+
+  // Se filtra por la zona única de esta prueba para no depender de cuántos cuidadores haya de más en el directorio.
+  await page.goto(`/app/cuidadores?zona=${encodeURIComponent(zonaUnica)}`);
+  await page.getByRole("button", { name: `Seleccionar a ${maria.nombre} para contratar junto con otros` }).click();
+  await page.getByRole("button", { name: `Seleccionar a ${carlos.nombre} para contratar junto con otros` }).click();
+  await expect(page.getByText("2 cuidadores seleccionados")).toBeVisible();
+  await page.getByRole("link", { name: "Continuar" }).click();
+  await expect(page).toHaveURL(/\/app\/contratar\/carrito\?ids=/);
+
+  const tarjetaMaria = page.getByRole("region", { name: maria.nombre });
+  await tarjetaMaria.getByRole("group", { name: "Elegir fecha" }).getByRole("button", { name: "Mañana" }).click();
+  await tarjetaMaria.getByRole("group", { name: "Elegir franja horaria" }).getByRole("button", { name: "Tarde" }).click();
+
+  const tarjetaCarlos = page.getByRole("region", { name: carlos.nombre });
+  await tarjetaCarlos.getByRole("group", { name: "Elegir fecha" }).getByRole("button", { name: "Mañana" }).click();
+  await tarjetaCarlos.getByRole("group", { name: "Elegir franja horaria" }).getByRole("button", { name: "Tarde" }).click();
+
+  // Total combinado: 20.000×1,08 + 25.000×1,08 = 21.600 + 27.000 = 48.600
+  await expect(page.getByText(/48\.600/)).toBeVisible();
+
+  await page.getByRole("button", { name: "Enviar las 2 solicitudes" }).click();
+  await expect(tarjetaMaria.getByText("Solicitud enviada")).toBeVisible();
+  await expect(tarjetaCarlos.getByText("Solicitud enviada")).toBeVisible();
+
+  await page.getByRole("button", { name: "Ir a mis servicios" }).click();
+  await expect(page).toHaveURL(/\/app\/servicios$/);
+  await expect(page.getByRole("link", { name: /Esperando al cuidador/ })).toHaveCount(2);
+});
+
 test("un servicio ajeno es «no encontrado» y un cuidador no entra al área de las familias", async ({ page, context, browser }) => {
   const cuidador = await crearCuidadorVerificado();
   await context.setExtraHTTPHeaders({ "x-forwarded-for": ipAleatoria() });

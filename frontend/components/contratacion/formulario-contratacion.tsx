@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState, useTransition } from "react";
+import { useMemo, useRef, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Wallet } from "lucide-react";
@@ -10,8 +10,9 @@ import { Aviso } from "@/components/ui/aviso";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
-import { cotizarServicio, solicitarServicioAccion } from "@/lib/acciones/servicios";
+import { solicitarServicioAccion } from "@/lib/acciones/servicios";
 import { franjasPedibles, sumarDias, type AhoraEnColombia } from "@/lib/fecha-colombia";
+import { useCotizacion } from "@/lib/hooks/use-cotizacion";
 import { formatearCOP } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { Cotizacion, Cuidador, Jornada } from "@/lib/types";
@@ -45,33 +46,7 @@ export function FormularioContratacion({ cuidador, ahora, cotizacionInicial, sal
   const jornadaElegida = jornada !== null && jornadasPedibles.includes(jornada) ? jornada : (jornadasPedibles[0] ?? null);
 
   // ── La cotización del servidor ────────────────────────────────────────────────────────────────────────────────
-  const [cotizacion, setCotizacion] = useState<Cotizacion | null>(cotizacionInicial);
-  const [cotizando, setCotizando] = useState(false);
-  const [errorDeCotizacion, setErrorDeCotizacion] = useState<string | null>(
-    cotizacionInicial === null ? "No pudimos calcular el precio. Inténtalo de nuevo." : null,
-  );
-  const [intento, setIntento] = useState(0);
-  const turno = useRef(0);
-  const primeraVez = useRef(true);
-  useEffect(() => {
-    if (primeraVez.current) {
-      primeraVez.current = false;
-      if (cotizacionInicial !== null) return;
-    }
-    const miTurno = ++turno.current;
-    setCotizando(true);
-    void cotizarServicio(cuidador.id, horas).then((resultado) => {
-      // Si la persona ya cambió las horas otra vez, esta respuesta quedó vieja.
-      if (miTurno !== turno.current) return;
-      setCotizando(false);
-      if (resultado.ok) {
-        setCotizacion(resultado.cotizacion);
-        setErrorDeCotizacion(null);
-      } else {
-        setErrorDeCotizacion(resultado.mensaje);
-      }
-    });
-  }, [cuidador.id, horas, cotizacionInicial, intento]);
+  const { cotizacion, cotizando, errorDeCotizacion, reintentar } = useCotizacion(cuidador.id, horas, cotizacionInicial);
 
   const total = cotizacion?.totalFamilia ?? 0;
   const bolsaAlcanza = cotizacion !== null && saldoDeLaBolsa >= total;
@@ -167,7 +142,7 @@ export function FormularioContratacion({ cuidador, ahora, cotizacionInicial, sal
           titulo="No pudimos calcular el precio"
           descripcion={errorDeCotizacion}
           accion={
-            <Button type="button" variant="outline" size="sm" onClick={() => setIntento((actual) => actual + 1)}>
+            <Button type="button" variant="outline" size="sm" onClick={reintentar}>
               Reintentar
             </Button>
           }

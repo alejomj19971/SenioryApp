@@ -172,10 +172,11 @@ export async function crearCuidadorVerificado({
   tarifaHora = 20_000,
   zona = "Laureles",
   conHojaDeVida = false,
-}: { tarifaHora?: number; zona?: string; conHojaDeVida?: boolean } = {}): Promise<CuidadorDePrueba> {
+  nombre = "Cuidadora de Prueba",
+}: { tarifaHora?: number; zona?: string; conHojaDeVida?: boolean; nombre?: string } = {}): Promise<CuidadorDePrueba> {
   if (!hayAdministradorDePrueba) throw new Error("Falta ADMIN_DE_PRUEBA_CORREO / ADMIN_DE_PRUEBA_CONTRASENA en .env.local.");
   const cuenta: CuentaDePrueba = {
-    nombre: "Cuidadora de Prueba",
+    nombre,
     correo: correoUnico("cuidadora"),
     contrasena: CONTRASENA_DE_PRUEBA,
     nombreDeLaPersona: "",

@@ -168,4 +168,50 @@ describe("BuscadorCuidadores", () => {
     await new Promise((resolver) => setTimeout(resolver, 600));
     expect(replace).not.toHaveBeenCalled();
   });
+
+  describe("contratar a varios (el carrito)", () => {
+    it("sin seleccionar a nadie, no se ofrece continuar", () => {
+      mostrar();
+
+      expect(screen.queryByText(/seleccionado/)).not.toBeInTheDocument();
+      expect(screen.queryByRole("link", { name: "Continuar" })).not.toBeInTheDocument();
+    });
+
+    it("al marcar cuidadores aparece cuántos van y un enlace al carrito con sus ids", async () => {
+      mostrar();
+
+      await userEvent.click(screen.getByRole("button", { name: /Seleccionar a Cuidadora 1/ }));
+      expect(screen.getByText("1 cuidador seleccionado")).toBeInTheDocument();
+
+      await userEvent.click(screen.getByRole("button", { name: /Seleccionar a Cuidadora 2/ }));
+      expect(screen.getByText("2 cuidadores seleccionados")).toBeInTheDocument();
+
+      const enlace = screen.getByRole("link", { name: "Continuar" });
+      expect(enlace).toHaveAttribute("href", expect.stringContaining("/app/contratar/carrito?ids="));
+      expect(enlace.getAttribute("href")).toContain("00000000-0000-4000-8000-000000000001");
+      expect(enlace.getAttribute("href")).toContain("00000000-0000-4000-8000-000000000002");
+    });
+
+    it("desmarcar a todos quita la barra de continuar", async () => {
+      mostrar();
+
+      const boton = screen.getByRole("button", { name: /Seleccionar a Cuidadora 1/ });
+      await userEvent.click(boton);
+      expect(screen.getByRole("link", { name: "Continuar" })).toBeInTheDocument();
+
+      await userEvent.click(screen.getByRole("button", { name: /Quitar a Cuidadora 1/ }));
+      expect(screen.queryByRole("link", { name: "Continuar" })).not.toBeInTheDocument();
+    });
+
+    it("la selección sobrevive a una búsqueda nueva (no se remonta la pantalla)", async () => {
+      const { rerender } = mostrar();
+      await userEvent.click(screen.getByRole("button", { name: /Seleccionar a Cuidadora 1/ }));
+
+      rerender(
+        <BuscadorCuidadores cuidadores={[cuidador(1), cuidador(4)]} siguiente={null} filtros={{ zona: "Belén" }} zonas={["Belén"]} tarifaLimite={38_000} />,
+      );
+
+      expect(screen.getByText("1 cuidador seleccionado")).toBeInTheDocument();
+    });
+  });
 });
