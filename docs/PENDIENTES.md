@@ -39,7 +39,7 @@
 | ⚖️🚀 | **Quién puede dar el consentimiento por la persona mayor** (decisión 1 de [M1 §10](./backend/M1-identidad.md)): asesoría legal. El modelo ya guarda con qué calidad se consintió. |
 | ⚖️ | **Vincular a un segundo familiar** (`POST /vinculos`): necesita decidir quién autoriza la invitación (el responsable, la persona mayor…). |
 | 🔧 | Contraseña de un solo uso del administrador, que se cambia al primer ingreso (M10: obliga al guard global a conocer esa marca). |
-| 🔧🚀 | **Autenticación en dos pasos para administradores** (decisión 4, antes de producción, M10). |
+| 🧑 | **Segundo factor obligatorio para administradores** (decisión 4, M10): el TOTP ya está construido y cada administrador lo activa por su cuenta (`segundo-factor.controller.ts`); falta decidir si antes de producción debe ser obligatorio para todos, no solo opcional. |
 | 🔧 | Verificar el correo de las cuentas (necesita el canal de correo, M5). |
 | 🔧 | Tarea programada diaria que borre las sesiones y los enlaces de recuperación vencidos (los repositorios ya tienen el método; falta programarla, M10). |
 | 🧑 | **Bloqueo de cuenta como vector de denegación de servicio** (decisión 7): que los fallos caduquen con el tiempo y desbloquear por correo (M10). |
@@ -79,9 +79,10 @@
 | 🔧 | Que el cuidador defina su propia `aceptacionAutomatica`: ya está hecho (`PATCH /cuidadores/yo`, M9). |
 | 🧑 | **Anticipación máxima de 180 días** y **plazos de aceptación** (2 h, o 30 min si es para hoy) están en el dominio como constantes: confirmarlos con el equipo. |
 | 🔧 | Una franja de 6 h admite servicios de hasta 8 h (rango de la base de datos): decidir si las horas deben caber en la franja. |
-| 🔧 | Frontend (F4): `contratacion.ts`, la confirmación con id, `CuidadorEnTurno` y la vista mínima del cuidador (`/cuidador`). |
 | 🧑 | Horas exactas de cada franja (mañana 06–12, tarde 12–18, noche 18–06): decididas el 2026-10-26; confirmar con el negocio. |
 | ⚖️ | Evaluar un seguro de responsabilidad civil y el manejo de quejas entre familias y cuidadores. |
+| 🧑 | **Por revisar (2026-11-19):** la hora exacta la coordinan familia y cuidador por chat, pero la política de cancelación mide la anticipación contra el inicio **fijo** de la franja (06:00/12:00/18:00), no contra esa hora negociada — confirmar con el equipo que esa diferencia es aceptable antes de explicarla a los usuarios. |
+| ✅ | ~~**Contratar uno o varios cuidadores a la vez.**~~ Resuelto (2026-11-20): carrito en `/app/contratar/carrito` — selección múltiple en la búsqueda, cada cuidador con su propia fecha/franja/horas, total combinado, bolsa como saldo compartido, y envío con reintento individual si uno falla. |
 
 ### M5 — Notificaciones  *(backend construido)*
 
@@ -109,7 +110,8 @@
 | 🔧 | Alertas **automáticas** por una lectura fuera de rango o una toma omitida (los orígenes `signos` y `medicamento` existen en la base pero hoy solo avisan por notificación). |
 | 🔧 | Editar un medicamento (hoy se agrega y se desactiva) y la **auditoría de lectura masiva** (alertar si alguien consulta demasiados). |
 | 🔧 | Convenio real con un servicio de emergencias: solo con un acuerdo y su propio ADR (hoy no hay «línea de emergencia», ni simulada). |
-| 🔧 | Frontend (F5): `teleasistencia.ts`, `BotonAlerta` con clave de idempotencia y estado real, `ListaMedicamentos` optimista y `GraficaSignos` con estado vacío. |
+| 🧑 | **Idea (2026-11-17, sin construir):** itinerario o rutina diaria para la persona mayor (comidas, higiene, caminata, hidratación, actividades), con el mismo patrón de días/horario/vigencia y seguimiento de cumplimiento que ya tiene `Medicamento`. Le da a la familia una forma concreta de decir qué espera del cuidador, en vez de algo vago. No bloquea el lanzamiento; se valida con el piloto si las familias realmente lo usarían antes de construirlo. |
+| 🧑 | **Por revisar (2026-11-19):** mejorar el módulo de teleasistencia en general — sin alcance definido todavía, queda por conversar qué mejorar primero (ver también la idea de la rutina diaria, arriba). |
 
 ### M7 — Pagos II: cobro, bolsas y liquidación  *(backend construido)*
 
@@ -125,7 +127,8 @@
 | 🔧 | **Liquidaciones `fallidas`** (rechazo definitivo del dispersor): no se reintentan solas; falta la acción de administrador para corregir la cuenta y reintentar (`Liquidacion.reintentar` ya existe), y confirmar las `enviadas` por el webhook del dispersor. |
 | 🔧 | **Datos de la cuenta del cuidador** (banco, número, titular, cifrados): hoy el dispersor recibe solo el id del cuidador. Llega con M9 (registro del cuidador) y la elección del dispersor. |
 | 🔧 | Un pago de servicio con **cobro parcial o con propina**, y **reembolsos parciales**: no están en el alcance. |
-| 🔧 | Frontend (F3 y F4): `/bolsa` y la compra con `Idempotency-Key`, el enlace de pago, el estado «falta pagar» del servicio y la vista de liquidaciones del cuidador. |
+| 🧑 | **Por revisar (2026-11-19):** la lógica de cuándo se cobra — `REQUIERE_PAGO_APROBADO` exige el pago antes de que el cuidador pueda iniciar el servicio; confirmar que esto no contradice la regla de negocio que se había explicado de que el cobro es «al final del servicio» (puede ser solo una diferencia de redacción: se cobra desde que el cuidador acepta, no al terminar, pero vale la pena dejarlo explícito en el texto que ve la familia). |
+| 🧑 | **Por hacer (2026-11-19):** crear las cuentas de prueba de Mercado Pago (una Vendedor y una Comprador, del mismo país) desde el panel de desarrolladores, para poder probar pagos de principio a fin sin el error «una de las partes es de prueba». |
 
 ### M8 — Mensajería  *(backend construido)*
 
@@ -136,7 +139,6 @@
 | 🔧 | **Reportar o bloquear** una conversación abusiva, y moderación: hoy solo hay el tope de 60 mensajes por minuto por IP. |
 | 🔧 | **Varias instancias:** el flujo en vivo consulta la base cada 2 s y no depende de la memoria, pero solo el servidor que procesa el evento despierta a sus conexiones al instante. Para latencia inmediata en todas hará falta `LISTEN/NOTIFY` o un bus (decisión de hosting, M10). |
 | 🔧 | **Flujo en vivo de Teleasistencia** (`GET /adultos-mayores/:id/eventos`, pendiente de M6): ya hay la infraestructura (`ConexionesDeFlujos`, patrón de `FlujoDeMensajes`); falta construirlo y que verifique el acceso en cada vuelta. |
-| 🔧 | Frontend (F4): `mensajeria.ts`, quitar las respuestas automáticas y los indicadores simulados de `ChatMensajes`, `EventSource` con reconexión y **reconocer los mensajes por su `id`** (el flujo entrega al menos una vez). |
 
 ### M9 — Directorio II: registro y verificación  *(backend construido)*
 
@@ -145,7 +147,6 @@
 | ⚖️🚀 | **Procedimiento de verificación:** quién revisa, en cuánto tiempo y con qué vigencia de cada control (hoy: antecedentes y psicotécnica **deben** traer fecha de vencimiento, máximo 5 años; títulos pueden no vencer; son propuestas provisionales), y los primeros cuidadores reales verificados. |
 | 🧑🚀 | **Antivirus para los archivos subidos** (puerto `AnalizadorDeArchivos` del plan, no construido). Hoy solo se valida el formato por contenido y el tamaño. |
 | 🔧 | **Quitar metadatos** de las imágenes subidas (EXIF con ubicación y fecha): hoy se guardan tal cual. Necesita una librería de imágenes. |
-| ⚖️🚀 | **Segundo factor para administradores** (el panel de revisores decide quién se muestra a las familias). Hoy basta la contraseña. |
 | 🔧 | **Avisar a los revisores** de que hay una postulación nueva (hoy la ven al abrir la cola) y **plazos de respuesta** a los cuidadores. |
 | 🔧 | La **foto** del cuidador no se sube por la API (la base la admite): llega con el almacén real. |
 | 🔧 | Que un control vencido **cancele o reasigne** los servicios futuros del cuidador (hoy Reservas recibe `cuidador_oculto` pero no actúa), y una pantalla de administrador para suspender o reactivar cuidadores (`suspender` existe en el dominio). |
@@ -166,7 +167,7 @@ Construido: imagen de Docker y CI que la verifica (arranque seguro), rol de base
 | 🔧🚀 | **Prueba de carga ligera** (búsqueda de cuidadores, alertas) y revisión de índices con volumen real; ajustar los límites de peticiones con sus resultados. |
 | 🔧 | **Un rol de base de datos por módulo.** Hoy hay uno de mínimos permisos para toda la aplicación, porque los módulos comparten transacciones (p. ej. importar un cuidador escribe en Identidad y Directorio). Separarlos pide rediseñar esas transacciones: necesita su propio ADR. |
 | 🔧 | **Exportar y suprimir los datos de una persona** (Ley 1581; PR 8 de M1) y los plazos de retención. Pide decisión legal sobre qué se conserva (registros financieros, de salud, auditoría). |
-| 🔧 | **Segundo factor para administradores**, verificación del correo, cifrado de columnas clínicas, quitar metadatos de imágenes y antivirus (ver [SEGURIDAD](./SEGURIDAD.md)). |
+| 🔧 | **Verificación del correo**, cifrado de columnas clínicas, quitar metadatos de imágenes y antivirus (ver [SEGURIDAD](./SEGURIDAD.md)). |
 | 🔧 | Publicar los contratos **OpenAPI y AsyncAPI** versionados. |
 | 🧑 | Definir con el equipo la **guardia, la comunicación de caídas** y el contacto con la SIC ante un incidente con datos personales; la periodicidad de rotación de secretos. |
 | ⚖️🚀 | Los requisitos de la [sección 12 del plan](./PLAN_BACKEND_SENIORY.md): términos y condiciones, política de datos, atención de consultas y reclamos (SIC), soporte, piloto cerrado con unas 20 familias. |
