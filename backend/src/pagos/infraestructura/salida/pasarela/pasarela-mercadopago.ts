@@ -1,4 +1,5 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
+import { Logger } from '@nestjs/common';
 import type { Reloj } from '../../../../compartido/aplicacion/puertos/reloj.js';
 import type {
   AvisoDeLaPasarela,
@@ -71,6 +72,7 @@ function partesDeLaFirma(firma: string): {
 export class PasarelaDeMercadoPago implements PasarelaDePagos {
   readonly nombre = 'mercadopago';
   readonly habilitada = true;
+  private readonly logger = new Logger(PasarelaDeMercadoPago.name);
 
   constructor(
     private readonly accessToken: string,
@@ -187,12 +189,26 @@ export class PasarelaDeMercadoPago implements PasarelaDePagos {
   }
 
   async interpretarAviso(cuerpo: unknown): Promise<AvisoDeLaPasarela | null> {
-    if (typeof cuerpo !== 'object' || cuerpo === null) return null;
+    if (typeof cuerpo !== 'object' || cuerpo === null) {
+      this.logger.warn(`Aviso sin cuerpo JSON: ${JSON.stringify(cuerpo)}`);
+      return null;
+    }
     const { id, type, data } = cuerpo as Record<string, unknown>;
-    if (type !== 'order') return null;
-    if (typeof id !== 'string' && typeof id !== 'number') return null;
+    if (type !== 'order') {
+      // No es un rechazo silencioso: si MercadoPago manda otro campo para el tipo (p. ej. `topic` en vez de
+      // `type`), o un valor distinto a «order» para este tópico, hace falta verlo para ajustar el adaptador.
+      this.logger.warn(`Aviso con "type" inesperado: ${JSON.stringify(cuerpo)}`);
+      return null;
+    }
+    if (typeof id !== 'string' && typeof id !== 'number') {
+      this.logger.warn(`Aviso sin "id" de notificación: ${JSON.stringify(cuerpo)}`);
+      return null;
+    }
     const idDeLaOrden = (data as Record<string, unknown> | undefined)?.id;
-    if (typeof idDeLaOrden !== 'string' || idDeLaOrden === '') return null;
+    if (typeof idDeLaOrden !== 'string' || idDeLaOrden === '') {
+      this.logger.warn(`Aviso sin "data.id": ${JSON.stringify(cuerpo)}`);
+      return null;
+    }
 
     // El aviso no trae el estado: hay que ir a buscarlo.
     const respuesta = await this.cliente(
