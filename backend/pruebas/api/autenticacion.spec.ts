@@ -560,10 +560,10 @@ describe('autenticación (API)', () => {
       });
     });
 
-    it('limita a 10 inicios de sesión por minuto por IP: el 11.º recibe 429', async () => {
+    it('limita a 20 inicios de sesión por minuto por IP: el 21.º recibe 429', async () => {
       const cliente = como(nuevaIp());
       const correo = correoNuevo();
-      for (let i = 0; i < 10; i++) {
+      for (let i = 0; i < 20; i++) {
         expect((await iniciarSesion(cliente, correo)).status).toBe(401);
       }
 

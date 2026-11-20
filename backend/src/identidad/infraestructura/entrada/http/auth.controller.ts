@@ -102,7 +102,7 @@ export class AuthController {
   }
 
   @Publico()
-  @Throttle({ default: { limit: 10, ttl: UN_MINUTO_MS } })
+  @Throttle({ default: { limit: 20, ttl: UN_MINUTO_MS } })
   @HttpCode(HttpStatus.OK)
   @Post('login')
   async login(
@@ -123,7 +123,7 @@ export class AuthController {
   // El segundo paso del login de un administrador con segundo factor: el código de su app autenticadora.
   // Tan estricto como el login mismo: ambos protegen la misma cuenta.
   @Publico()
-  @Throttle({ default: { limit: 10, ttl: UN_MINUTO_MS } })
+  @Throttle({ default: { limit: 20, ttl: UN_MINUTO_MS } })
   @HttpCode(HttpStatus.OK)
   @Post('login/segundo-factor')
   async loginSegundoFactor(
