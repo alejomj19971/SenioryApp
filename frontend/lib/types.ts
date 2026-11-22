@@ -207,6 +207,7 @@ export interface Servicio extends ServicioBase {
 // El cuidador ve lo que recibe y NUNCA lo que paga la familia.
 export interface ServicioDelCuidador extends ServicioBase {
   pagoProfesional: number;
+  familiar: { id: string; nombre: string } | null;
 }
 
 export interface Cotizacion {

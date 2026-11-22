@@ -132,6 +132,7 @@ const MANEJADOR_DE_FLUJOS = Symbol('ManejadorDeFlujos');
       inject: [
         REPOSITORIO_CONVERSACIONES,
         CONSULTA_DE_DIRECTORIO,
+        CONSULTA_DE_IDENTIDAD,
         CONSULTA_DE_RESERVAS,
         VistasDeConversaciones,
         AUDITORIA,
@@ -141,6 +142,7 @@ const MANEJADOR_DE_FLUJOS = Symbol('ManejadorDeFlujos');
       useFactory: (
         conversaciones: RepositorioConversaciones,
         directorio: ConsultaDeDirectorio,
+        identidad: ConsultaDeIdentidad,
         reservas: ConsultaDeReservas,
         vistas: VistasDeConversaciones,
         auditoria: Auditoria,
@@ -150,6 +152,7 @@ const MANEJADOR_DE_FLUJOS = Symbol('ManejadorDeFlujos');
         new AbrirConversacion(
           conversaciones,
           directorio,
+          identidad,
           reservas,
           vistas,
           auditoria,

@@ -18,6 +18,7 @@ import { Throttle } from '@nestjs/throttler';
 import type { Response } from 'express';
 import type { Observable } from 'rxjs';
 import type { UsuarioAutenticado } from '../../../../compartido/aplicacion/puertos/verificador-de-tokens.js';
+import { ErrorDeValidacion } from '../../../../compartido/dominio/errores.js';
 import {
   Roles,
   UsuarioActual,
@@ -61,8 +62,9 @@ export class ConversacionesController {
     @Inject(FlujoDeMensajes) private readonly flujo: FlujoDeMensajes,
   ) {}
 
-  // Obtiene o crea la conversación con ese cuidador: 201 si la creó, 200 si ya existía.
-  @Roles('familiar')
+  // Obtiene o crea la conversación con la otra parte: 201 si la creó, 200 si ya existía. La familia manda
+  // `cuidadorId`; el cuidador manda `familiarId` (cualquiera de las dos puede escribir primero).
+  @Roles('familiar', 'cuidador')
   @Throttle({ default: { limit: 30, ttl: UN_MINUTO_MS } })
   @Post('conversaciones')
   async abrirConversacion(
@@ -70,9 +72,19 @@ export class ConversacionesController {
     @Body() cuerpo: AperturaDeConversacionDto,
     @Res({ passthrough: true }) respuesta: Response,
   ): Promise<{ conversacion: VistaDeConversacion }> {
+    const otraParteId =
+      usuario.rol === 'cuidador' ? cuerpo.familiarId : cuerpo.cuidadorId;
+    if (typeof otraParteId !== 'string') {
+      throw new ErrorDeValidacion(
+        usuario.rol === 'cuidador'
+          ? 'Falta la familia con la que quieres hablar'
+          : 'Falta el cuidador con el que quieres hablar',
+        'conversacion.falta_destinatario',
+      );
+    }
     const { conversacion, creada } = await this.abrir.ejecutar(
       usuario,
-      cuerpo.cuidadorId,
+      otraParteId,
     );
     respuesta.status(creada ? HttpStatus.CREATED : HttpStatus.OK);
     return { conversacion };

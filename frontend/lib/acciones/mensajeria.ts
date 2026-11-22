@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { mensajeDeErrorDeServicio } from "@/lib/acciones/errores-de-servicio";
 import type { EstadoDeFormulario } from "@/lib/acciones/estado";
 import { ErrorDeApi } from "@/lib/api/error-de-api";
-import { abrirConversacion, enviarMensaje, listarMensajes, type PaginaDeMensajes } from "@/lib/services/mensajeria";
+import { abrirConversacion, abrirConversacionConFamilia, enviarMensaje, listarMensajes, type PaginaDeMensajes } from "@/lib/services/mensajeria";
 import type { MensajeDeChat } from "@/lib/types";
 
 // Acciones de mensajería (F8). Son endpoints públicos de Next: validan su entrada y el backend autoriza (quien no es
@@ -37,6 +37,22 @@ export async function abrirConversacionAccion(cuidadorId: string): Promise<Estad
     };
   }
   redirect(`/app/mensajes/${resultado.datos.id}`);
+}
+
+// Lo mismo, del lado del cuidador: «Escribir a la familia» abre (o recupera) la conversación y lleva a ella.
+// Solo con un servicio vivo con esa familia.
+export async function abrirConversacionComoCuidadorAccion(familiarId: string): Promise<EstadoDeFormulario> {
+  if (typeof familiarId !== "string" || !FORMATO_DE_UUID.test(familiarId)) return { mensaje: "No encontramos a esa familia." };
+  const resultado = await abrirConversacionConFamilia(familiarId);
+  if (!resultado.ok) {
+    return {
+      mensaje:
+        resultado.error.estado === 404 || resultado.error.estado === 422 || resultado.error.estado === 403
+          ? "Solo puedes escribirle a una familia mientras tengas un servicio pedido con ella."
+          : mensajeDeError(resultado.error),
+    };
+  }
+  redirect(`/cuidador/mensajes/${resultado.datos.id}`);
 }
 
 export type ResultadoDeEnvio = { ok: true; mensaje: MensajeDeChat } | { ok: false; mensaje: string };

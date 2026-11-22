@@ -55,9 +55,15 @@ export async function obtenerConversacion(id: string): Promise<Conversacion | nu
   return (await listarConversaciones()).find((conversacion) => conversacion.id === id) ?? null;
 }
 
-// Abre (o recupera) la conversación con un cuidador. Solo las familias, y solo con un servicio vivo con él o ella.
+// Abre (o recupera) la conversación con un cuidador. Solo con un servicio vivo con él o ella.
 export async function abrirConversacion(cuidadorId: string): Promise<ResultadoDeEscritura<Conversacion>> {
   const resultado = await escribirEnBackend<RespuestaDeConversacion>("/conversaciones", { metodo: "POST", cuerpo: { cuidadorId } });
+  return resultado.ok ? { ok: true, datos: aConversacion(resultado.datos.conversacion) } : resultado;
+}
+
+// Lo mismo, pero del lado del cuidador: abre (o recupera) la conversación con una familia.
+export async function abrirConversacionConFamilia(familiarId: string): Promise<ResultadoDeEscritura<Conversacion>> {
+  const resultado = await escribirEnBackend<RespuestaDeConversacion>("/conversaciones", { metodo: "POST", cuerpo: { familiarId } });
   return resultado.ok ? { ok: true, datos: aConversacion(resultado.datos.conversacion) } : resultado;
 }
 

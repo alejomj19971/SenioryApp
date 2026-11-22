@@ -24,7 +24,7 @@ const CAMPOS_BASE = [
   "iniciadoEn", "jornada", "medioDePago", "motivoDeCancelacion", "solicitadoEn", "solicitudExpiraEn", "tarifaHora",
 ];
 const CAMPOS_PARA_LA_FAMILIA = [...CAMPOS_BASE, "cargoDeServicio", "politicaVersion", "subtotal", "totalFamilia"].sort();
-const CAMPOS_PARA_EL_CUIDADOR = [...CAMPOS_BASE, "pagoProfesional"].sort();
+const CAMPOS_PARA_EL_CUIDADOR = [...CAMPOS_BASE, "familiar", "pagoProfesional"].sort();
 
 interface Familia {
   cuenta: CuentaDePrueba;

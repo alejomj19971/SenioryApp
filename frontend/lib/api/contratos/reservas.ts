@@ -38,6 +38,7 @@ export interface ServicioParaFamiliaDelBackend extends VistaBasicaDelBackend {
 export interface ServicioParaCuidadorDelBackend extends VistaBasicaDelBackend {
   tarifaHora: number;
   pagoProfesional: number;
+  familiar: { id: string; nombre: string } | null;
 }
 
 // `POST /servicios` y las acciones de la familia

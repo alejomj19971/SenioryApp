@@ -13,9 +13,17 @@ import { LIMITE_MAXIMO } from '../../../dominio/cursor-de-mensajes.js';
 
 // Solo la FORMA. El largo y el contenido exactos del texto los valida el dominio (1 a 1000 caracteres, texto plano);
 // aquí solo se corta lo absurdo antes de llegar a él. El ValidationPipe rechaza cualquier campo no declarado.
+//
+// Quién manda cuál: la familia manda `cuidadorId` (con quién quiere hablar); el cuidador manda `familiarId`. El
+// controlador lee el que le toca según el rol de quien hace la petición.
 export class AperturaDeConversacionDto {
+  @IsOptional()
   @IsUUID(undefined, { message: 'El cuidador no es válido' })
-  cuidadorId!: string;
+  cuidadorId?: string;
+
+  @IsOptional()
+  @IsUUID(undefined, { message: 'La familia no es válida' })
+  familiarId?: string;
 }
 
 export class EnvioDeMensajeDto {

@@ -237,26 +237,98 @@ describe('mensajería (API)', () => {
       });
     });
 
-    it('el cuidador no abre conversaciones; sin sesión es 401; y solo se acepta el cuidador', async () => {
+    it('sin sesión es 401; un id que no es UUID y un campo desconocido son 400', async () => {
       await contratar();
 
-      const comoCuidador = await abrir(
-        await cuidador.cookie(),
-        cuidador.cuidadorId,
-      );
       const sinSesion = await como(app)
         .post('/api/v1/conversaciones')
         .send({ cuidadorId: cuidador.cuidadorId });
-      const conCampoExtra = await como(app)
+      const conCampoDesconocido = await como(app)
         .post('/api/v1/conversaciones')
         .set('Cookie', familia.cookie)
-        .send({ cuidadorId: cuidador.cuidadorId, familiarId: nuevoId() });
+        .send({ cuidadorId: cuidador.cuidadorId, cosaRara: 'x' });
       const malId = await abrir(familia.cookie, 'no-es-un-uuid');
 
-      expect(comoCuidador.status).toBe(403);
       expect(sinSesion.status).toBe(401);
-      expect(conCampoExtra.status).toBe(400);
+      expect(conCampoDesconocido.status).toBe(400);
       expect(malId.status).toBe(400);
+    });
+
+    // El cuidador también puede escribir primero: manda `familiarId` en vez de `cuidadorId`.
+    describe('el cuidador abre la conversación con la familia', () => {
+      const abrirComoCuidador = (cookie: string, familiarId: string) =>
+        como(app)
+          .post('/api/v1/conversaciones')
+          .set('Cookie', cookie)
+          .send({ familiarId });
+
+      it('con un servicio, la crea (201)', async () => {
+        await contratar();
+
+        const respuesta = await abrirComoCuidador(
+          await cuidador.cookie(),
+          familia.persona.id,
+        );
+
+        expect(respuesta.status).toBe(201);
+        expect(respuesta.body).toMatchObject({
+          conversacion: { otraParte: { nombre: 'Andrea Gómez' } },
+        });
+      });
+
+      it('sin un servicio con esa familia, no se abre (422)', async () => {
+        const respuesta = await abrirComoCuidador(
+          await cuidador.cookie(),
+          familia.persona.id,
+        );
+
+        expect(respuesta.status).toBe(422);
+        expect(respuesta.body).toMatchObject({
+          codigo: 'conversacion.sin_servicio_activo',
+        });
+      });
+
+      it('una familia que no existe responde 404', async () => {
+        const respuesta = await abrirComoCuidador(
+          await cuidador.cookie(),
+          nuevoId(),
+        );
+
+        expect(respuesta.status).toBe(404);
+        expect(respuesta.body).toMatchObject({
+          codigo: 'familiar.no_encontrado',
+        });
+      });
+
+      it('sin mandar familiarId, 400', async () => {
+        await contratar();
+
+        const respuesta = await como(app)
+          .post('/api/v1/conversaciones')
+          .set('Cookie', await cuidador.cookie())
+          .send({});
+
+        expect(respuesta.status).toBe(400);
+        expect(respuesta.body).toMatchObject({
+          codigo: 'conversacion.falta_destinatario',
+        });
+      });
+
+      it('si la familia ya la había abierto, el cuidador recibe la misma', async () => {
+        await contratar();
+        const abierta = await abrir(familia.cookie, cuidador.cuidadorId);
+
+        const respuesta = await abrirComoCuidador(
+          await cuidador.cookie(),
+          familia.persona.id,
+        );
+
+        expect(respuesta.status).toBe(200);
+        expect(
+          (respuesta.body as { conversacion: { id: string } }).conversacion
+            .id,
+        ).toBe((abierta.body as { conversacion: { id: string } }).conversacion.id);
+      });
     });
 
     it('no muestra el teléfono ni el correo de nadie', async () => {

@@ -8,24 +8,28 @@ import {
   SinPermiso,
 } from '../../../compartido/dominio/errores.js';
 import type { ConsultaDeDirectorio } from '../../../directorio/aplicacion/puertos/entrada/consulta-de-directorio.js';
+import type { ConsultaDeIdentidad } from '../../../identidad/aplicacion/puertos/entrada/consulta-de-identidad.js';
 import type { ConsultaDeReservas } from '../../../reservas/aplicacion/puertos/entrada/consulta-de-reservas.js';
 import { Conversacion } from '../../dominio/conversacion.js';
 import type { ConversacionId } from '../../dominio/ids.js';
 import type { RepositorioConversaciones } from '../puertos/salida/repositorios.js';
-import type { AccesoAConversaciones } from '../servicios/acceso-a-conversaciones.js';
+import type {
+  AccesoAConversaciones,
+  Participante,
+} from '../servicios/acceso-a-conversaciones.js';
 import type { VistasDeConversaciones } from '../servicios/vistas-de-conversaciones.js';
 import type { VistaDeConversacion } from '../vistas.js';
 
 export const CONVERSACIONES_EN_EL_LISTADO = 50;
 
-// La familia abre (u obtiene) su conversación con un cuidador. Si ya existe, la devuelve tal cual; si no, la crea,
-// pero solo mientras haya un servicio vivo entre los dos: no se escribe a un cuidador con quien no se ha contratado
-// nada. Dos aperturas simultáneas devuelven la misma conversación. El cuidador no abre conversaciones: contesta las
-// que la familia empezó.
+// Cualquiera de las dos partes abre (u obtiene) su conversación con la otra. Si ya existe, la devuelve tal cual;
+// si no, la crea, pero solo mientras haya un servicio vivo entre los dos: no se escribe con alguien con quien no
+// se ha contratado nada. Dos aperturas simultáneas devuelven la misma conversación.
 export class AbrirConversacion {
   constructor(
     private readonly conversaciones: RepositorioConversaciones,
     private readonly directorio: ConsultaDeDirectorio,
+    private readonly identidad: ConsultaDeIdentidad,
     private readonly reservas: ConsultaDeReservas,
     private readonly vistas: VistasDeConversaciones,
     private readonly auditoria: Auditoria,
@@ -33,49 +37,37 @@ export class AbrirConversacion {
     private readonly ids: GeneradorDeIds,
   ) {}
 
+  // `otraParteId` es el cuidador si quien pide es la familia, o la familia si quien pide es el cuidador.
   async ejecutar(
     usuario: UsuarioAutenticado,
-    cuidadorId: string,
+    otraParteId: string,
   ): Promise<{ conversacion: VistaDeConversacion; creada: boolean }> {
-    if (usuario.rol !== 'familiar') {
-      throw new SinPermiso(
-        'Solo las familias abren una conversación',
-        'conversacion.solo_familias',
-      );
-    }
-    const contacto =
-      await this.directorio.obtenerContactoDeCuidador(cuidadorId);
-    if (contacto === null) {
-      throw new RecursoNoEncontrado(
-        'No encontramos a ese cuidador',
-        'cuidador.no_encontrado',
-      );
-    }
+    const { familiarId, cuidadorId, participante } = await this.identificar(
+      usuario,
+      otraParteId,
+    );
 
     const existente = await this.conversaciones.buscarPorPareja(
-      usuario.id,
+      familiarId,
       cuidadorId,
     );
     if (existente !== null) {
       return {
-        conversacion: await this.vistas.vistaDe(existente, {
-          rol: 'familiar',
-          id: usuario.id,
-        }),
+        conversacion: await this.vistas.vistaDe(existente, participante),
         creada: false,
       };
     }
 
-    if (!(await this.reservas.hayServicioActivoEntre(usuario.id, cuidadorId))) {
+    if (!(await this.reservas.hayServicioActivoEntre(familiarId, cuidadorId))) {
       throw new ReglaDeNegocioIncumplida(
-        'Solo puedes escribirle a un cuidador con quien tienes un servicio',
+        'Solo puedes escribir con alguien con quien tienes un servicio',
         'conversacion.sin_servicio_activo',
       );
     }
     const { conversacion, creada } = await this.conversaciones.obtenerOCrear(
       Conversacion.abrir({
         id: this.ids.nuevo<'Conversacion'>() as ConversacionId,
-        familiarId: usuario.id,
+        familiarId,
         cuidadorId,
         ahora: this.reloj.ahora(),
       }),
@@ -90,12 +82,61 @@ export class AbrirConversacion {
       });
     }
     return {
-      conversacion: await this.vistas.vistaDe(conversacion, {
-        rol: 'familiar',
-        id: usuario.id,
-      }),
+      conversacion: await this.vistas.vistaDe(conversacion, participante),
       creada,
     };
+  }
+
+  private async identificar(
+    usuario: UsuarioAutenticado,
+    otraParteId: string,
+  ): Promise<{
+    familiarId: string;
+    cuidadorId: string;
+    participante: Participante;
+  }> {
+    if (usuario.rol === 'familiar') {
+      const cuidador =
+        await this.directorio.obtenerContactoDeCuidador(otraParteId);
+      if (cuidador === null) {
+        throw new RecursoNoEncontrado(
+          'No encontramos a ese cuidador',
+          'cuidador.no_encontrado',
+        );
+      }
+      return {
+        familiarId: usuario.id,
+        cuidadorId: otraParteId,
+        participante: { rol: 'familiar', id: usuario.id },
+      };
+    }
+    if (usuario.rol === 'cuidador') {
+      const cuidador = await this.directorio.obtenerCuidadorPorUsuario(
+        usuario.id,
+      );
+      if (cuidador === null) {
+        throw new RecursoNoEncontrado(
+          'No encontramos tu perfil de cuidador',
+          'cuidador.no_encontrado',
+        );
+      }
+      const familia = await this.identidad.obtenerContacto(otraParteId);
+      if (familia === null) {
+        throw new RecursoNoEncontrado(
+          'No encontramos a esa familia',
+          'familiar.no_encontrado',
+        );
+      }
+      return {
+        familiarId: otraParteId,
+        cuidadorId: cuidador.cuidadorId,
+        participante: { rol: 'cuidador', id: cuidador.cuidadorId },
+      };
+    }
+    throw new SinPermiso(
+      'Solo la familia o el cuidador abren una conversación',
+      'conversacion.rol_no_permitido',
+    );
   }
 }
 

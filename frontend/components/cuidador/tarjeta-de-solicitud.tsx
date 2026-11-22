@@ -1,5 +1,6 @@
 import { CalendarDays, Clock, UserRound } from "lucide-react";
 import { AccionesDelServicio } from "@/components/cuidador/acciones-del-servicio";
+import { BotonEscribirALaFamilia } from "@/components/mensajeria/boton-escribir-familia";
 import { EstadoDelServicio } from "@/components/servicios/estado-del-servicio";
 import { horaEnColombia } from "@/lib/fecha-colombia";
 import { etiquetaDeEstadoParaElCuidador } from "@/lib/etiquetas-de-servicio";
@@ -34,6 +35,9 @@ export function TarjetaDeSolicitud({ servicio }: { servicio: ServicioDelCuidador
       <p className="text-base text-muted-foreground">{etiqueta.explicacion}</p>
       {servicio.estado === "solicitado" && servicio.solicitudExpiraEn !== null && (
         <p className="text-base font-medium text-foreground">Responde antes de las {horaEnColombia(servicio.solicitudExpiraEn)}.</p>
+      )}
+      {servicio.familiar !== null && (servicio.estado === "solicitado" || servicio.estado === "aceptado" || servicio.estado === "en_curso") && (
+        <BotonEscribirALaFamilia familiarId={servicio.familiar.id} nombre={servicio.familiar.nombre} />
       )}
       <AccionesDelServicio servicioId={servicio.id} estado={servicio.estado} />
     </article>

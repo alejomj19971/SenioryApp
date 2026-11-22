@@ -41,10 +41,18 @@ export class VistasDeServicios {
     servicios: readonly Servicio[],
   ): Promise<VistaDeServicioParaCuidador[]> {
     const basicas = await this.basicas(servicios);
+    const familiares = await this.porId(
+      servicios.map((s) => s.familiarId),
+      async (id) => {
+        const contacto = await this.identidad.obtenerContacto(id);
+        return contacto === null ? null : { id, nombre: contacto.nombre };
+      },
+    );
     return servicios.map((servicio, i) => ({
       ...(basicas[i] as VistaBasica),
       tarifaHora: servicio.tarifaHora,
       pagoProfesional: servicio.pagoProfesional,
+      familiar: familiares.get(servicio.familiarId) ?? null,
     }));
   }
 

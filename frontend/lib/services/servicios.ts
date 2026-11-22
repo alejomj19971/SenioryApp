@@ -56,7 +56,7 @@ export function aServicioDeFamilia(v: ServicioParaFamiliaDelBackend): Servicio {
 }
 
 export function aServicioDelCuidador(v: ServicioParaCuidadorDelBackend): ServicioDelCuidador {
-  return { ...aBase(v), pagoProfesional: v.pagoProfesional };
+  return { ...aBase(v), pagoProfesional: v.pagoProfesional, familiar: v.familiar };
 }
 
 function mapear<D, T>(resultado: ResultadoDeEscritura<D>, convertir: (datos: D) => T): ResultadoDeEscritura<T> {

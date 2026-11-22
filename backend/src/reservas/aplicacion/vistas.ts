@@ -50,6 +50,8 @@ export interface VistaDeServicioParaCuidador extends VistaBasica {
   tarifaHora: number;
   // Lo que recibe el cuidador por el servicio.
   pagoProfesional: number;
+  // Con quién puede escribir (M8): solo el nombre, nunca el teléfono ni el correo.
+  familiar: { id: string; nombre: string } | null;
 }
 
 export type VistaDeServicio =
