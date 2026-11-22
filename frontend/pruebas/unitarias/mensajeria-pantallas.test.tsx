@@ -8,6 +8,9 @@ const cargarMensajesAccion = vi.fn();
 const abrirConversacionAccion = vi.fn();
 vi.mock("@/lib/acciones/mensajeria", () => ({ enviarMensajeAccion, cargarMensajesAccion, abrirConversacionAccion }));
 
+const reproducirSonido = vi.fn();
+vi.mock("@/lib/hooks/use-sonido-de-mensaje", () => ({ useSonidoDeMensaje: () => reproducirSonido }));
+
 // El navegador de las pruebas no trae EventSource: este controla lo que «llega por la red».
 class FuenteFalsa {
   static ultima: FuenteFalsa | null = null;
@@ -58,6 +61,7 @@ beforeEach(() => {
   enviarMensajeAccion.mockReset();
   cargarMensajesAccion.mockReset();
   abrirConversacionAccion.mockReset();
+  reproducirSonido.mockReset();
   FuenteFalsa.ultima = null;
 });
 
@@ -80,12 +84,41 @@ describe("Chat", () => {
     expect(await screen.findAllByText("Ya voy para allá")).toHaveLength(1);
   });
 
+  it("un mensaje nuevo de la otra parte suena; una redición del mismo no vuelve a sonar", async () => {
+    render(<Chat conversacion={conversacion()} inicial={[]} anteriores={null} base="/app" />);
+    const nuevo = { id: "m2", conversacionId: CONVERSACION_ID, autor: "otro", texto: "Ya voy para allá", enviadoEn: "2026-11-01T15:05:00.000Z" };
+
+    act(() => FuenteFalsa.ultima?.emitir(nuevo));
+    await screen.findAllByText("Ya voy para allá");
+    expect(reproducirSonido).toHaveBeenCalledTimes(1);
+
+    act(() => FuenteFalsa.ultima?.emitir(nuevo));
+    expect(reproducirSonido).toHaveBeenCalledTimes(1);
+  });
+
+  it("lo que yo mismo escribo, al llegar por el flujo, no suena", async () => {
+    let resolver: (valor: unknown) => void = () => undefined;
+    enviarMensajeAccion.mockReturnValue(new Promise((r) => (resolver = r)));
+    const usuario = userEvent.setup();
+    render(<Chat conversacion={conversacion()} inicial={[]} anteriores={null} base="/app" />);
+    await usuario.type(screen.getByLabelText(/Mensaje para/), "Hola");
+    await usuario.click(screen.getByRole("button", { name: "Enviar mensaje" }));
+    const [, , idDeCliente] = enviarMensajeAccion.mock.calls[0] as [string, string, string];
+    const delServidor = { id: "m1", conversacionId: CONVERSACION_ID, autor: "yo", texto: "Hola", enviadoEn: "2026-11-01T15:00:00.000Z", idDeCliente };
+
+    act(() => FuenteFalsa.ultima?.emitir(delServidor));
+    await act(async () => resolver({ ok: true, mensaje: mensaje("m1", "Hola", { autor: "yo", idDeCliente }) }));
+
+    expect(reproducirSonido).not.toHaveBeenCalled();
+  });
+
   it("ignora los mensajes de otras conversaciones", () => {
     render(<Chat conversacion={conversacion()} inicial={[]} anteriores={null} base="/app" />);
 
     act(() => FuenteFalsa.ultima?.emitir({ id: "m9", conversacionId: "otra", autor: "otro", texto: "No es para ti", enviadoEn: "2026-11-01T15:05:00.000Z" }));
 
     expect(screen.queryByText("No es para ti")).not.toBeInTheDocument();
+    expect(reproducirSonido).not.toHaveBeenCalled();
   });
 
   it("al enviar aparece de inmediato y, con la respuesta, queda una sola vez", async () => {

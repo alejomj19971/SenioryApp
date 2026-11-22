@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { cargarMensajesAccion, enviarMensajeAccion } from "@/lib/acciones/mensajeria";
 import { formatearHora } from "@/lib/format";
 import { useFlujoDeMensajes, type MensajeDelFlujo } from "@/lib/hooks/use-flujo-de-mensajes";
+import { useSonidoDeMensaje } from "@/lib/hooks/use-sonido-de-mensaje";
 import { fusionarMensajes, idLocalDe, marcarEnviando, marcarFallido, quitarLocal } from "@/lib/mensajes-de-chat";
 import { cn } from "@/lib/utils";
 import type { Conversacion, MensajeDeChat } from "@/lib/types";
@@ -41,13 +42,23 @@ export function Chat({ conversacion, inicial, anteriores: primerosAnteriores, ba
   const [puedeEscribir, setPuedeEscribir] = useState(conversacion.puedeEscribir);
   const finRef = useRef<HTMLDivElement>(null);
   const textosPendientes = useRef(new Map<string, string>());
+  const mensajesRef = useRef(mensajes);
+  useEffect(() => {
+    mensajesRef.current = mensajes;
+  }, [mensajes]);
 
   // ── En vivo ──────────────────────────────────────────────────────────────────────────────────────────────────
+  const reproducirSonido = useSonidoDeMensaje();
   const alRecibir = useCallback(
     ({ conversacionId, mensaje }: MensajeDelFlujo) => {
-      if (conversacionId === conversacion.id) setMensajes((actuales) => fusionarMensajes(actuales, [mensaje]));
+      if (conversacionId !== conversacion.id) return;
+      // Suena solo con lo que de verdad es nuevo (no una redición del mismo mensaje) y de la otra parte
+      // (lo que yo mismo escribo ya se ve al instante, no necesita avisar con sonido).
+      const esNuevoDeLaOtraParte = mensaje.autor === "otro" && !mensajesRef.current.some((m) => m.id === mensaje.id);
+      setMensajes((actuales) => fusionarMensajes(actuales, [mensaje]));
+      if (esNuevoDeLaOtraParte) reproducirSonido();
     },
-    [conversacion.id],
+    [conversacion.id, reproducirSonido],
   );
   const estadoDelFlujo = useFlujoDeMensajes(alRecibir);
 
