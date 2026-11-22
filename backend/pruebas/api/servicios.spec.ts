@@ -174,7 +174,7 @@ describe('servicios (API)', () => {
     adultoMayorId: familia.adultoMayorId,
     cuidadorId,
     fecha: MANANA,
-    jornada: 'manana',
+    horaInicio: 360,
     horas: 2,
     medioDePago: 'pasarela',
     ...cambios,
@@ -251,6 +251,7 @@ describe('servicios (API)', () => {
         id: servicio.id,
         estado: 'solicitado',
         fecha: MANANA,
+        horaInicio: 360,
         jornada: 'manana',
         horas: 2,
         medioDePago: 'pasarela',
@@ -296,7 +297,7 @@ describe('servicios (API)', () => {
     it('para hoy, el cuidador tiene 30 minutos para responder', async () => {
       const c = await nuevoCuidador();
 
-      const respuesta = await solicitar(c, { fecha: HOY, jornada: 'tarde' });
+      const respuesta = await solicitar(c, { fecha: HOY, horaInicio: 720 });
 
       expect(
         (respuesta.body as { servicio: { solicitudExpiraEn: string } }).servicio
@@ -356,7 +357,7 @@ describe('servicios (API)', () => {
         reloj.fijar('2030-06-11T01:00:00.000Z'); // 20:00 del 10 en Bogotá
         const nueva = await nuevaFamilia();
         const c = await nuevoCuidador();
-        const pedir = (jornada: string) =>
+        const pedir = (horaInicio: number) =>
           cliente
             .post('/api/v1/servicios')
             .set('Cookie', nueva.cookie)
@@ -365,13 +366,13 @@ describe('servicios (API)', () => {
               adultoMayorId: nueva.adultoMayorId,
               cuidadorId: c.cuidadorId,
               fecha: HOY,
-              jornada,
+              horaInicio,
               horas: 1,
               medioDePago: 'pasarela',
             });
 
-        const tarde = await pedir('tarde');
-        const noche = await pedir('noche');
+        const tarde = await pedir(720);
+        const noche = await pedir(1320);
 
         expect(tarde.status).toBe(422);
         expect(tarde.body).toMatchObject({
@@ -413,7 +414,7 @@ describe('servicios (API)', () => {
       it('rechaza una jornada que el cuidador no atiende con 422', async () => {
         const c = await nuevoCuidador({ disponibilidad: ['manana'] });
 
-        const respuesta = await solicitar(c, { jornada: 'noche' });
+        const respuesta = await solicitar(c, { horaInicio: 1080 });
 
         expect(respuesta.status).toBe(422);
         expect(respuesta.body).toMatchObject({
@@ -487,7 +488,7 @@ describe('servicios (API)', () => {
         ['nueve horas', { horas: 9 }],
         ['horas con decimales', { horas: 1.5 }],
         ['horas en texto', { horas: '2' }],
-        ['una jornada inventada', { jornada: 'madrugada' }],
+        ['una hora de inicio inválida', { horaInicio: 361 }],
         ['un medio de pago inventado', { medioDePago: 'efectivo' }],
         ['una fecha con otro formato', { fecha: '11/06/2030' }],
         ['un cuidador que no es UUID', { cuidadorId: 'marta' }],
@@ -654,11 +655,11 @@ describe('servicios (API)', () => {
       expect(await eventosDe(primero)).toHaveLength(1);
     });
 
-    it('otra franja del mismo cuidador sí se puede', async () => {
+    it('otro horario del mismo cuidador, sin cruzarse, sí se puede', async () => {
       const c = await nuevoCuidador();
-      await crearServicio(c, { jornada: 'manana' });
+      await crearServicio(c, { horaInicio: 360 });
 
-      const respuesta = await solicitar(c, { jornada: 'tarde' });
+      const respuesta = await solicitar(c, { horaInicio: 720 });
 
       expect(respuesta.status).toBe(201);
     });
@@ -750,7 +751,7 @@ describe('servicios (API)', () => {
 
     it('no puede iniciar si dejó de estar verificado después de aceptar', async () => {
       const c = await nuevoCuidador();
-      const id = await crearServicio(c, { fecha: HOY, jornada: 'manana' });
+      const id = await crearServicio(c, { fecha: HOY, horaInicio: 630 });
       await accion('aceptar', id, await c.cookie());
       await bd.query(
         `update directorio.cuidadores set visible = false, estado = 'suspendido' where id = $1`,
@@ -768,7 +769,7 @@ describe('servicios (API)', () => {
 
     it('iniciar dentro de la franja, finalizar, y cada paso publica su evento', async () => {
       const c = await nuevoCuidador();
-      const id = await crearServicio(c, { fecha: HOY, jornada: 'manana' });
+      const id = await crearServicio(c, { fecha: HOY, horaInicio: 630 });
       await accion('aceptar', id, await c.cookie());
 
       const iniciado = await accion('iniciar', id, await c.cookie());
@@ -810,7 +811,7 @@ describe('servicios (API)', () => {
       ['finalizar', 'solicitado'],
     ])('no se puede %s un servicio %s (409)', async (ruta) => {
       const c = await nuevoCuidador();
-      const id = await crearServicio(c, { fecha: HOY, jornada: 'manana' });
+      const id = await crearServicio(c, { fecha: HOY, horaInicio: 630 });
 
       const respuesta = await accion(ruta, id, await c.cookie());
 
@@ -866,7 +867,7 @@ describe('servicios (API)', () => {
 
     it('un servicio en curso o terminado ya no se cancela (409)', async () => {
       const c = await nuevoCuidador();
-      const enCurso = await crearServicio(c, { fecha: HOY, jornada: 'manana' });
+      const enCurso = await crearServicio(c, { fecha: HOY, horaInicio: 630 });
       await accion('aceptar', enCurso, await c.cookie());
       await accion('iniciar', enCurso, await c.cookie());
 
@@ -911,7 +912,7 @@ describe('servicios (API)', () => {
 
     it('una solicitud para hoy expira a los 30 minutos', async () => {
       const c = await nuevoCuidador();
-      const id = await crearServicio(c, { fecha: HOY, jornada: 'tarde' });
+      const id = await crearServicio(c, { fecha: HOY, horaInicio: 720 });
 
       reloj.avanzar(29 * 60_000);
       await expirar(id);
@@ -954,7 +955,7 @@ describe('servicios (API)', () => {
   describe('calificar', () => {
     async function servicioFinalizado() {
       const c = await nuevoCuidador();
-      const id = await crearServicio(c, { fecha: HOY, jornada: 'manana' });
+      const id = await crearServicio(c, { fecha: HOY, horaInicio: 630 });
       await accion('aceptar', id, await c.cookie());
       await accion('iniciar', id, await c.cookie());
       await accion('finalizar', id, await c.cookie());
@@ -1029,7 +1030,7 @@ describe('servicios (API)', () => {
       'un servicio %s todavía no se califica (409)',
       async (estado) => {
         const c = await nuevoCuidador();
-        const id = await crearServicio(c, { fecha: HOY, jornada: 'manana' });
+        const id = await crearServicio(c, { fecha: HOY, horaInicio: 630 });
         if (estado !== 'solicitado')
           await accion('aceptar', id, await c.cookie());
         if (estado === 'en_curso')
@@ -1165,7 +1166,7 @@ describe('servicios (API)', () => {
       it('otro cuidador no puede aceptar, rechazar, iniciar ni finalizar', async () => {
         const c = await nuevoCuidador();
         const intruso = await nuevoCuidador();
-        const id = await crearServicio(c, { fecha: HOY, jornada: 'manana' });
+        const id = await crearServicio(c, { fecha: HOY, horaInicio: 630 });
 
         for (const ruta of ['aceptar', 'rechazar', 'iniciar', 'finalizar']) {
           const respuesta = await accion(ruta, id, await intruso.cookie());
@@ -1255,17 +1256,20 @@ describe('servicios (API)', () => {
             adultoMayorId: nueva.adultoMayorId,
             cuidadorId: c.cuidadorId,
             fecha: MANANA,
-            jornada: 'manana',
+            horaInicio: 360,
             horas: 1,
             medioDePago: 'pasarela',
             ...cambios,
           });
       const ids = [];
-      for (const jornada of ['manana', 'tarde', 'noche']) {
+      for (const horaInicio of [360, 720, 1080]) {
         reloj.avanzar(1000);
         ids.push(
-          ((await pedir({ jornada })).body as { servicio: { id: string } })
-            .servicio.id,
+          (
+            (await pedir({ horaInicio })).body as {
+              servicio: { id: string };
+            }
+          ).servicio.id,
         );
       }
       await accion('cancelar', ids[0]!, nueva.cookie);
@@ -1338,7 +1342,7 @@ describe('servicios (API)', () => {
 
     it('el detalle trae la calificación cuando existe', async () => {
       const c = await nuevoCuidador();
-      const id = await crearServicio(c, { fecha: HOY, jornada: 'manana' });
+      const id = await crearServicio(c, { fecha: HOY, horaInicio: 630 });
       await accion('aceptar', id, await c.cookie());
       await accion('iniciar', id, await c.cookie());
       await accion('finalizar', id, await c.cookie());
@@ -1385,15 +1389,19 @@ describe('servicios (API)', () => {
               adultoMayorId: nueva.adultoMayorId,
               cuidadorId: c.cuidadorId,
               fecha: HOY,
-              jornada: 'manana',
+              horaInicio: 630, // la hora más próxima que todavía no pasó (son las 10:00)
               horas: 2,
               medioDePago: 'pasarela',
             })
         ).body as { servicio: { id: string } }
       ).servicio.id;
       await accion('aceptar', id, await c.cookie());
+      reloj.avanzar(30 * 60_000); // 10:30: ya empezó
 
-      const respuesta = await enTurno(nueva.cookie, nueva.adultoMayorId);
+      const cookie = conSesion(
+        await iniciarSesion(cliente, nueva.persona.correo),
+      );
+      const respuesta = await enTurno(cookie, nueva.adultoMayorId);
 
       expect(respuesta.status).toBe(200);
       expect(respuesta.body).toMatchObject({
@@ -1424,7 +1432,7 @@ describe('servicios (API)', () => {
       const nueva = await nuevaFamilia();
       const c1 = await nuevoCuidador();
       const c2 = await nuevoCuidador();
-      const pedir = (c: Awaited<ReturnType<typeof nuevoCuidador>>, jornada: string) =>
+      const pedir = (c: Awaited<ReturnType<typeof nuevoCuidador>>, horaInicio: number) =>
         cliente
           .post('/api/v1/servicios')
           .set('Cookie', nueva.cookie)
@@ -1433,20 +1441,24 @@ describe('servicios (API)', () => {
             adultoMayorId: nueva.adultoMayorId,
             cuidadorId: c.cuidadorId,
             fecha: HOY,
-            jornada,
+            horaInicio,
             horas: 1,
             medioDePago: 'pasarela',
           });
       const id1 = (
-        (await pedir(c1, 'manana')).body as { servicio: { id: string } }
+        (await pedir(c1, 630)).body as { servicio: { id: string } }
       ).servicio.id;
       const id2 = (
-        (await pedir(c2, 'manana')).body as { servicio: { id: string } }
+        (await pedir(c2, 630)).body as { servicio: { id: string } }
       ).servicio.id;
       await accion('aceptar', id1, await c1.cookie());
       await accion('aceptar', id2, await c2.cookie());
+      reloj.avanzar(30 * 60_000); // 10:30: ya empezó
 
-      const respuesta = await enTurno(nueva.cookie, nueva.adultoMayorId);
+      const cookie = conSesion(
+        await iniciarSesion(cliente, nueva.persona.correo),
+      );
+      const respuesta = await enTurno(cookie, nueva.adultoMayorId);
 
       expect(respuesta.status).toBe(200);
       const { cuidadoresEnTurno } = respuesta.body as {
@@ -1460,7 +1472,7 @@ describe('servicios (API)', () => {
     it('un servicio solicitado (sin aceptar) o de otra franja no cuenta', async () => {
       const nueva = await nuevaFamilia();
       const c = await nuevoCuidador();
-      const pedir = (jornada: string) =>
+      const pedir = (horaInicio: number) =>
         cliente
           .post('/api/v1/servicios')
           .set('Cookie', nueva.cookie)
@@ -1469,15 +1481,15 @@ describe('servicios (API)', () => {
             adultoMayorId: nueva.adultoMayorId,
             cuidadorId: c.cuidadorId,
             fecha: HOY,
-            jornada,
+            horaInicio,
             horas: 1,
             medioDePago: 'pasarela',
           });
-      await pedir('manana'); // solicitado: aún no confirmado
+      await pedir(630); // solicitado: aún no confirmado
       const tarde = (
-        (await pedir('tarde')).body as { servicio: { id: string } }
+        (await pedir(750)).body as { servicio: { id: string } }
       ).servicio.id;
-      await accion('aceptar', tarde, await c.cookie()); // aceptado pero es la tarde, y son las 10:00
+      await accion('aceptar', tarde, await c.cookie()); // aceptado pero su horario (12:30) no es ahora (10:00)
 
       const respuesta = await enTurno(nueva.cookie, nueva.adultoMayorId);
 
@@ -1498,20 +1510,20 @@ describe('servicios (API)', () => {
               adultoMayorId: nueva.adultoMayorId,
               cuidadorId: c.cuidadorId,
               fecha: '2030-06-09',
-              jornada: 'noche',
-              horas: 8,
+              horaInicio: 1080, // 18:00
+              horas: 8, // el máximo: 18:00–02:00 del día siguiente
               medioDePago: 'pasarela',
             })
         ).body as { servicio: { id: string } }
       ).servicio.id;
       await accion('aceptar', id, await c.cookie());
 
-      reloj.fijar('2030-06-10T08:00:00.000Z'); // 03:00 del 10
+      reloj.fijar('2030-06-10T06:00:00.000Z'); // 01:00 del 10
       const propia = await enTurno(
         conSesion(await iniciarSesion(cliente, nueva.persona.correo)),
         nueva.adultoMayorId,
       );
-      reloj.fijar('2030-06-10T11:30:00.000Z'); // 06:30 del 10: la noche ya terminó
+      reloj.fijar('2030-06-10T07:30:00.000Z'); // 02:30 del 10: ya terminó
       const despues = await enTurno(
         conSesion(await iniciarSesion(cliente, nueva.persona.correo)),
         nueva.adultoMayorId,
@@ -1536,18 +1548,22 @@ describe('servicios (API)', () => {
               adultoMayorId: nueva.adultoMayorId,
               cuidadorId: c.cuidadorId,
               fecha: HOY,
-              jornada: 'manana',
+              horaInicio: 630,
               horas: 1,
               medioDePago: 'pasarela',
             })
         ).body as { servicio: { id: string } }
       ).servicio.id;
       await accion('aceptar', id, await c.cookie());
+      reloj.avanzar(30 * 60_000); // 10:30: ya empezó
       await accion('iniciar', id, await c.cookie());
-      const durante = await enTurno(nueva.cookie, nueva.adultoMayorId);
+      const cookie = conSesion(
+        await iniciarSesion(cliente, nueva.persona.correo),
+      );
+      const durante = await enTurno(cookie, nueva.adultoMayorId);
 
       await accion('finalizar', id, await c.cookie());
-      const despues = await enTurno(nueva.cookie, nueva.adultoMayorId);
+      const despues = await enTurno(cookie, nueva.adultoMayorId);
 
       expect(
         (durante.body as { cuidadoresEnTurno: unknown[] }).cuidadoresEnTurno,
@@ -1585,7 +1601,7 @@ describe('servicios (API)', () => {
     const c = await nuevoCuidador();
     const creado = await solicitar(c, {
       fecha: HOY,
-      jornada: 'manana',
+      horaInicio: 630,
       horas: 3,
     });
     const id = (creado.body as { servicio: { id: string } }).servicio.id;

@@ -61,15 +61,11 @@ describe('constantes del dominio y base de datos (reservas)', () => {
     expect(definicion).toContain(`horas <= ${HORAS_MAXIMAS}`);
   });
 
-  it('los estados que ocupan la franja coinciden con el índice único parcial', async () => {
-    const { rows } = await bd.query<{ definicion: string }>(
-      `select indexdef as definicion from pg_indexes
-       where schemaname = 'reservas' and indexname = 'servicios_sin_doble_reserva'`,
-    );
+  it('los estados que ocupan el horario coinciden con la restricción de exclusión', async () => {
+    const definicion = await definicionDelCheck('servicios_sin_doble_reserva');
 
-    expect(literales(rows[0]?.definicion ?? '')).toEqual(
-      [...ESTADOS_ACTIVOS].sort(),
-    );
+    expect(definicion).toContain('EXCLUDE USING gist');
+    expect(literales(definicion)).toEqual([...ESTADOS_ACTIVOS].sort());
   });
 
   it('los horarios de las franjas coinciden con la tabla `reservas.franjas`', async () => {

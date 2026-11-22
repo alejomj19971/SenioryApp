@@ -82,7 +82,7 @@ describe('Servicio.solicitar', () => {
     it('30 minutos si el servicio es para hoy', () => {
       const servicio = servicioSolicitado({
         fecha: HOY_RESERVAS,
-        jornada: 'tarde',
+        horaInicio: 720,
       });
 
       expect(servicio.solicitudExpiraEn).toEqual(
@@ -119,35 +119,35 @@ describe('Servicio.solicitar', () => {
   });
 
   describe('la fecha (H2)', () => {
-    it('hoy está permitido si la franja no terminó', () => {
-      // Son las 10:00: la tarde y la noche de hoy se pueden pedir; la mañana está en curso.
-      for (const jornada of ['manana', 'tarde', 'noche'] as const) {
+    it('hoy está permitido si la hora de inicio todavía no pasó', () => {
+      // Son las 10:00: 11:30 (todavía en la mañana), la tarde y la noche de hoy se pueden pedir.
+      for (const horaInicio of [690, 720, 1080]) {
         expect(() =>
-          servicioSolicitado({ fecha: HOY_RESERVAS, jornada }),
+          servicioSolicitado({ fecha: HOY_RESERVAS, horaInicio }),
         ).not.toThrow();
       }
     });
 
-    it('a las 8 p. m. en Colombia, hoy solo queda la noche (aunque en UTC ya sea mañana)', () => {
+    it('a las 8 p. m. en Colombia, hoy solo quedan horas de la noche (aunque en UTC ya sea mañana)', () => {
       const ochoDeLaNoche = new Date('2026-10-22T01:00:00.000Z');
-      const pedir = (jornada: 'manana' | 'tarde' | 'noche') =>
+      const pedir = (horaInicio: number) =>
         servicioSolicitado({
           fecha: HOY_RESERVAS,
-          jornada,
+          horaInicio,
           ahora: ochoDeLaNoche,
         });
 
-      expect(() => pedir('manana')).toThrow(
+      expect(() => pedir(360)).toThrow(
         expect.objectContaining({
           codigo: 'servicio.franja_terminada',
         }) as Error,
       );
-      expect(() => pedir('tarde')).toThrow(
+      expect(() => pedir(720)).toThrow(
         expect.objectContaining({
           codigo: 'servicio.franja_terminada',
         }) as Error,
       );
-      expect(() => pedir('noche')).not.toThrow();
+      expect(() => pedir(1320)).not.toThrow();
     });
 
     it('«hoy» es el de Colombia: a las 8 p. m. del 21, el 22 es MAÑANA', () => {
@@ -217,15 +217,16 @@ describe('Servicio.solicitar', () => {
       ).not.toThrow();
     });
 
-    it('rechaza una jornada inventada', () => {
-      expect(() =>
-        servicioSolicitado({ jornada: 'madrugada' as 'manana' }),
-      ).toThrow(
-        expect.objectContaining({
-          codigo: 'servicio.jornada_invalida',
-        }) as Error,
-      );
-    });
+    it.each([-1, 1440, 361, 1.5, Number.NaN])(
+      'rechaza una hora de inicio inválida: %s',
+      (horaInicio) => {
+        expect(() => servicioSolicitado({ horaInicio })).toThrow(
+          expect.objectContaining({
+            codigo: 'servicio.hora_invalida',
+          }) as Error,
+        );
+      },
+    );
 
     it('rechaza un medio de pago inventado', () => {
       expect(() =>
@@ -414,8 +415,17 @@ describe('cancelar', () => {
 });
 
 describe('iniciar', () => {
+  // Mismo horario que la vieja franja «tarde» (12:00–18:00), para que las horas literales de las pruebas de
+  // abajo sigan significando lo mismo.
   const servicioAceptado = () =>
-    servicioEn('aceptado', { fecha: HOY_RESERVAS, jornada: 'tarde' });
+    servicioEn('aceptado', {
+      fecha: HOY_RESERVAS,
+      horaInicio: 720,
+      horas: 6,
+      subtotal: 120_000,
+      cargoFamilia: 0,
+      totalFamilia: 120_000,
+    });
 
   it('dentro de la franja, el cuidador inicia', () => {
     const servicio = servicioAceptado();
@@ -468,7 +478,7 @@ describe('iniciar', () => {
 
   it('un servicio sin aceptar no se inicia', () => {
     expect(() =>
-      servicioSolicitado({ fecha: HOY_RESERVAS, jornada: 'manana' }).iniciar(
+      servicioSolicitado({ fecha: HOY_RESERVAS, horaInicio: 630 }).iniciar(
         CUIDADOR_USUARIO_ID,
         AHORA_RESERVAS,
         ZONA,
@@ -539,6 +549,7 @@ describe('historial y versión', () => {
       adultoMayorId: original.adultoMayorId,
       cuidadorId: original.cuidadorId,
       fecha: original.fecha,
+      horaInicio: original.horaInicio,
       jornada: original.jornada,
       horas: original.horas,
       estado: original.estado,
@@ -575,8 +586,20 @@ describe('historial y versión', () => {
 });
 
 describe('estaEnTurno (H4)', () => {
+  // Mismo horario que la vieja franja «mañana» (06:00–12:00).
+  // Se pide «ayer» para el servicio de hoy (mismo truco que ya usa esta suite para la noche que cruza
+  // medianoche): así la solicitud no choca con que su propia hora de inicio ya haya pasado, ni con el plazo
+  // corto de aceptación de «hoy».
   const hoyManana = () =>
-    datosParaSolicitar({ fecha: HOY_RESERVAS, jornada: 'manana' });
+    datosParaSolicitar({
+      fecha: HOY_RESERVAS,
+      horaInicio: 360,
+      horas: 6,
+      subtotal: 120_000,
+      cargoFamilia: 0,
+      totalFamilia: 120_000,
+      hoy: HOY_RESERVAS.sumarDias(-1),
+    });
 
   it('aceptado o en curso, y la franja contiene el momento actual', () => {
     const aceptado = servicioEn('aceptado', hoyManana());
@@ -615,7 +638,7 @@ describe('horasDeAnticipacion', () => {
   it('redondea hacia abajo', () => {
     const servicio = servicioSolicitado({
       fecha: HOY_RESERVAS,
-      jornada: 'tarde',
+      horaInicio: 720,
     });
 
     expect(
@@ -624,9 +647,12 @@ describe('horasDeAnticipacion', () => {
   });
 
   it('nunca es negativa: una franja que ya empezó tiene cero horas', () => {
+    // Se pide «ayer» para una franja de hoy que empieza a las 6 a. m.; a las 10 a. m. (AHORA_RESERVAS) ya
+    // empezó hace rato.
     const servicio = servicioSolicitado({
       fecha: HOY_RESERVAS,
-      jornada: 'manana',
+      horaInicio: 360,
+      hoy: HOY_RESERVAS.sumarDias(-1),
     });
 
     expect(servicio.horasDeAnticipacion(AHORA_RESERVAS, ZONA)).toBe(0);
@@ -690,7 +716,7 @@ describe('el pago del servicio (M7)', () => {
     it('sin el pago aprobado, no inicia', () => {
       const servicio = servicioEn('aceptado', {
         fecha: HOY_RESERVAS,
-        jornada: 'manana',
+        horaInicio: 630,
       });
 
       expect(() => iniciarCon(servicio, true)).toThrow(
@@ -706,7 +732,7 @@ describe('el pago del servicio (M7)', () => {
     it('con el pago aprobado, inicia', () => {
       const servicio = servicioEn('aceptado', {
         fecha: HOY_RESERVAS,
-        jornada: 'manana',
+        horaInicio: 630,
       });
       servicio.registrarPago(AHORA_RESERVAS);
 
@@ -718,7 +744,7 @@ describe('el pago del servicio (M7)', () => {
     it('si no se exige el pago (desarrollo), inicia sin él', () => {
       const servicio = servicioEn('aceptado', {
         fecha: HOY_RESERVAS,
-        jornada: 'manana',
+        horaInicio: 630,
       });
 
       iniciarCon(servicio, false);
@@ -729,7 +755,7 @@ describe('el pago del servicio (M7)', () => {
     it('por omisión no exige el pago', () => {
       const servicio = servicioEn('aceptado', {
         fecha: HOY_RESERVAS,
-        jornada: 'manana',
+        horaInicio: 630,
       });
 
       servicio.iniciar(CUIDADOR_USUARIO_ID, AHORA_RESERVAS, ZONA);

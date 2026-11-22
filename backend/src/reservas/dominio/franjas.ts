@@ -1,8 +1,10 @@
 import type { FechaCivil } from '../../compartido/dominio/fecha-civil.js';
-import type { Jornada } from '../../compartido/dominio/jornada.js';
+import { JORNADAS, type Jornada } from '../../compartido/dominio/jornada.js';
 
 // Los horarios de cada franja (decidido el 2026-10-26): mañana 06:00–12:00, tarde 12:00–18:00 y noche
-// 18:00–06:00, que cruza la medianoche. Una prueba los compara con la tabla `reservas.franjas`.
+// 18:00–06:00, que cruza la medianoche. Una prueba los compara con la tabla `reservas.franjas`. Hoy solo
+// clasifican la hora de inicio de un servicio (para la disponibilidad general del cuidador); el servicio en
+// sí ya no está encerrado en una franja completa (ver `ventanaDeServicio`).
 //
 // Los valores son minutos desde las 00:00 del día de la fecha del servicio; `fin` pasa de 1440 cuando la
 // franja cruza la medianoche (la noche del lunes termina el martes a las 06:00).
@@ -20,12 +22,43 @@ export const HORARIOS_DE_FRANJA: Readonly<Record<Jornada, HorarioDeFranja>> = {
   noche: { inicio: 18 * 60, fin: MINUTOS_POR_DIA + 6 * 60 },
 };
 
-// Cuánto antes de empezar la franja el cuidador puede marcar que inició (llegó un poco antes).
+// Cuánto antes de empezar el servicio el cuidador puede marcar que inició (llegó un poco antes).
 export const MARGEN_PARA_INICIAR_MINUTOS = 30;
+
+// La familia elige la hora de inicio en bloques de 30 minutos: más fácil de tocar que un reloj libre, y evita
+// horas como «3:07 p. m.». Mismo CHECK que `servicios_hora_inicio_valida`.
+export const PASO_DE_MINUTOS = 30;
+export const HORAS_INICIO_VALIDAS: readonly number[] = Array.from(
+  { length: MINUTOS_POR_DIA / PASO_DE_MINUTOS },
+  (_, i) => i * PASO_DE_MINUTOS,
+);
+
+export function esHoraInicioValida(minutos: number): boolean {
+  return (
+    Number.isInteger(minutos) &&
+    minutos >= 0 &&
+    minutos < MINUTOS_POR_DIA &&
+    minutos % PASO_DE_MINUTOS === 0
+  );
+}
+
+// A qué jornada corresponde una hora de inicio: solo para la disponibilidad general del cuidador («trabaja en
+// las mañanas/tardes/noches»), no para acotar el servicio — un servicio puede cruzar de una franja a otra
+// (p. ej. empezar 11:30 y terminar 13:30).
+export function jornadaDe(horaInicio: number): Jornada {
+  for (const jornada of JORNADAS) {
+    const horario = HORARIOS_DE_FRANJA[jornada];
+    if (horaInicio >= horario.inicio && horaInicio < Math.min(horario.fin, MINUTOS_POR_DIA)) {
+      return jornada;
+    }
+  }
+  // La cola de la noche que cruza medianoche (00:00–06:00).
+  return 'noche';
+}
 
 // Minutos transcurridos desde el 1 de enero de 1970, en la hora de pared de la zona. Comparar dos de estos
 // valores es comparar dos momentos del calendario local, sin tropezar con la diferencia contra UTC.
-function minutosLocales(ahora: Date, zona: string): number {
+export function minutosLocales(ahora: Date, zona: string): number {
   const partes = new Intl.DateTimeFormat('en-US', {
     timeZone: zona,
     hourCycle: 'h23',
@@ -49,46 +82,23 @@ function inicioDelDia(fecha: FechaCivil): number {
   );
 }
 
-// La franja de un servicio como un intervalo [inicio, fin) en minutos locales.
-export function ventanaDeFranja(
+// La ventana real de UN servicio como un intervalo [inicio, fin) en minutos locales: su propia hora de
+// inicio y las horas contratadas, sin importar los límites de la franja (puede cruzarlos, o cruzar
+// medianoche).
+export function ventanaDeServicio(
   fecha: FechaCivil,
-  jornada: Jornada,
+  horaInicio: number,
+  horas: number,
 ): HorarioDeFranja {
-  const base = inicioDelDia(fecha);
-  const horario = HORARIOS_DE_FRANJA[jornada];
-  return { inicio: base + horario.inicio, fin: base + horario.fin };
+  const inicio = inicioDelDia(fecha) + horaInicio;
+  return { inicio, fin: inicio + horas * 60 };
 }
 
-// ¿Ya pasó la franja? A las 8 p. m. de Colombia, la tarde de hoy ya terminó pero la noche no.
-export function franjaYaTermino(
-  fecha: FechaCivil,
-  jornada: Jornada,
-  ahora: Date,
-  zona: string,
-): boolean {
-  return minutosLocales(ahora, zona) >= ventanaDeFranja(fecha, jornada).fin;
-}
-
-// ¿Estamos dentro de la franja? Con `margenInicioMinutos` se adelanta el comienzo (para marcar el inicio).
-export function franjaContiene(
-  fecha: FechaCivil,
-  jornada: Jornada,
-  ahora: Date,
-  zona: string,
+// ¿Contiene `ahora` esta ventana? Con `margenInicioMinutos` se adelanta el comienzo (para marcar el inicio).
+export function ventanaContiene(
+  ventana: HorarioDeFranja,
+  momento: number,
   margenInicioMinutos = 0,
 ): boolean {
-  const { inicio, fin } = ventanaDeFranja(fecha, jornada);
-  const momento = minutosLocales(ahora, zona);
-  return momento >= inicio - margenInicioMinutos && momento < fin;
-}
-
-// Minutos que faltan para que empiece la franja (negativo si ya empezó). La política de reembolso (M7) mide
-// con esto cuánta anticipación tuvo una cancelación.
-export function minutosHastaElInicio(
-  fecha: FechaCivil,
-  jornada: Jornada,
-  ahora: Date,
-  zona: string,
-): number {
-  return ventanaDeFranja(fecha, jornada).inicio - minutosLocales(ahora, zona);
+  return momento >= ventana.inicio - margenInicioMinutos && momento < ventana.fin;
 }

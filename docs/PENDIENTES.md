@@ -78,10 +78,10 @@
 | 🔧 | **Exigir el pago aprobado para iniciar:** ya está hecho (`REQUIERE_PAGO_APROBADO`, obligatorio en staging y producción). En desarrollo viene apagado para poder probar sin pagar. |
 | 🔧 | Que el cuidador defina su propia `aceptacionAutomatica`: ya está hecho (`PATCH /cuidadores/yo`, M9). |
 | 🧑 | **Anticipación máxima de 180 días** y **plazos de aceptación** (2 h, o 30 min si es para hoy) están en el dominio como constantes: confirmarlos con el equipo. |
-| 🔧 | Una franja de 6 h admite servicios de hasta 8 h (rango de la base de datos): decidir si las horas deben caber en la franja. |
+| ✅ | ~~Una franja de 6 h admite servicios de hasta 8 h: decidir si las horas deben caber en la franja.~~ Resuelto (2026-11-22): la familia ahora elige la **hora de inicio exacta** (bloques de 30 min), no una franja completa; un servicio puede cruzar de una franja a otra (p. ej. 11:30–13:30). `jornada` queda solo como clasificación para la disponibilidad general del cuidador. |
 | 🧑 | Horas exactas de cada franja (mañana 06–12, tarde 12–18, noche 18–06): decididas el 2026-10-26; confirmar con el negocio. |
 | ⚖️ | Evaluar un seguro de responsabilidad civil y el manejo de quejas entre familias y cuidadores. |
-| 🧑 | **Por revisar (2026-11-19):** la hora exacta la coordinan familia y cuidador por chat, pero la política de cancelación mide la anticipación contra el inicio **fijo** de la franja (06:00/12:00/18:00), no contra esa hora negociada — confirmar con el equipo que esa diferencia es aceptable antes de explicarla a los usuarios. |
+| ✅ | ~~**Por revisar (2026-11-19):** la hora exacta la coordinan familia y cuidador por chat, pero la cancelación mide contra el inicio fijo de la franja, no contra esa hora.~~ Resuelto (2026-11-22): ya no hace falta coordinarla por chat — la familia la elige al contratar, y la cancelación mide la anticipación contra esa hora real (`horasDeAnticipacion` ya no usa el límite fijo de la franja). |
 | ✅ | ~~**Contratar uno o varios cuidadores a la vez.**~~ Resuelto (2026-11-20): carrito en `/app/contratar/carrito` — selección múltiple en la búsqueda, cada cuidador con su propia fecha/franja/horas, total combinado, bolsa como saldo compartido, y envío con reintento individual si uno falla. |
 
 ### M5 — Notificaciones  *(backend construido)*

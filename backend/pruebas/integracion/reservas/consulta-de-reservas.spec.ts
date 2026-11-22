@@ -103,10 +103,16 @@ describe('ConsultaDeReservasServicio', () => {
   });
 
   describe('cuidadorTieneServicioActivo', () => {
-    // Hoy 10:00: la mañana de hoy está en curso.
+    // Hoy 10:00: la mañana de hoy está en curso (06:00–12:00, como la vieja franja completa). Se pide
+    // «ayer» para que la solicitud sea válida (mismo truco que usa el resto de esta suite).
     const hoyManana: Partial<DatosParaSolicitar> = {
       fecha: HOY_RESERVAS,
-      jornada: 'manana',
+      horaInicio: 360,
+      horas: 6,
+      subtotal: 120_000,
+      cargoFamilia: 0,
+      totalFamilia: 120_000,
+      hoy: HOY_RESERVAS.sumarDias(-1),
     };
 
     it('un servicio en curso, sí', async () => {
@@ -134,7 +140,7 @@ describe('ConsultaDeReservasServicio', () => {
     it('uno aceptado de otra franja de hoy, no', async () => {
       const s = await guardar('aceptado', {
         fecha: HOY_RESERVAS,
-        jornada: 'tarde',
+        horaInicio: 720,
       });
 
       expect(
@@ -186,22 +192,26 @@ describe('ConsultaDeReservasServicio', () => {
       ).toBe(false);
     });
 
-    it('la noche de ayer sigue activa de madrugada, hasta las 06:00', async () => {
+    it('la noche de ayer sigue activa de madrugada, hasta que termina (máximo 8 horas: 18:00–02:00)', async () => {
       const ayer = HOY_RESERVAS.sumarDias(-1);
       reloj.fijar('2026-10-20T20:00:00.000Z'); // 15:00 del 20: aún se puede aceptar
       const s = await guardar('aceptado', {
         fecha: ayer,
-        jornada: 'noche',
+        horaInicio: 1080,
+        horas: 8,
+        subtotal: 160_000,
+        cargoFamilia: 0,
+        totalFamilia: 160_000,
         hoy: ayer, // se pidió "hoy" (el 20) para esa noche
         ahora: reloj.ahora(),
       });
 
-      reloj.fijar('2026-10-21T08:00:00.000Z'); // 03:00 del 21
+      reloj.fijar('2026-10-21T06:00:00.000Z'); // 01:00 del 21
       const madrugada = await consulta.cuidadorTieneServicioActivo(
         s.cuidadorId,
         s.adultoMayorId,
       );
-      reloj.fijar('2026-10-21T11:30:00.000Z'); // 06:30 del 21
+      reloj.fijar('2026-10-21T07:30:00.000Z'); // 02:30 del 21
       const despues = await consulta.cuidadorTieneServicioActivo(
         s.cuidadorId,
         s.adultoMayorId,

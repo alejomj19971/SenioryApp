@@ -112,20 +112,26 @@ describe('teleasistencia (API)', () => {
       adultoMayorId: f.adultoMayorId,
       cuidadorId: c.cuidadorId,
       fecha: HOY,
-      jornada: 'manana',
+      horaInicio: 630,
       horas: 2,
       medioDePago: 'pasarela',
     }).set('Idempotency-Key', clave());
     const id = (creado.body as { servicio: { id: string } }).servicio.id;
-    const cookieC = await c.cookie();
-    await post(`/servicios/${id}/aceptar`, cookieC);
-    if (hasta === 'cancelado')
-      await post(`/servicios/${id}/cancelar`, f.cookie);
+    await post(`/servicios/${id}/aceptar`, await c.cookie());
+    // Se pidió 30 min antes de lo más próximo que se podía (son las 10:00); hay que llegar a las 10:30 para
+    // que su propio horario ya haya empezado (antes solo `iniciar` lo permitía, por su margen de 30 min).
+    reloj.avanzar(30 * 60_000);
+    if (hasta === 'cancelado') {
+      const cookieF = conSesion(
+        await iniciarSesion(como(app), f.persona.correo),
+      );
+      await post(`/servicios/${id}/cancelar`, cookieF);
+    }
     if (hasta === 'en_curso' || hasta === 'finalizado') {
-      await post(`/servicios/${id}/iniciar`, cookieC);
+      await post(`/servicios/${id}/iniciar`, await c.cookie());
     }
     if (hasta === 'finalizado')
-      await post(`/servicios/${id}/finalizar`, cookieC);
+      await post(`/servicios/${id}/finalizar`, await c.cookie());
     return id;
   }
 
@@ -317,7 +323,7 @@ describe('teleasistencia (API)', () => {
           adultoMayorId: f.adultoMayorId,
           cuidadorId: c.cuidadorId,
           fecha: HOY,
-          jornada: 'manana',
+          horaInicio: 630,
           horas: 1,
           medioDePago: 'pasarela',
         }).set('Idempotency-Key', clave());
@@ -377,7 +383,10 @@ describe('teleasistencia (API)', () => {
             await post(`/servicios/${id}/iniciar`, await c.cookie());
             await post(`/servicios/${id}/finalizar`, await c.cookie());
           } else {
-            await post(`/servicios/${id}/cancelar`, f.cookie);
+            const cookieF = conSesion(
+              await iniciarSesion(como(app), f.persona.correo),
+            );
+            await post(`/servicios/${id}/cancelar`, cookieF);
           }
 
           expect((await get(ruta, await c.cookie())).status).toBe(404);
@@ -406,7 +415,7 @@ describe('teleasistencia (API)', () => {
           adultoMayorId: f.adultoMayorId,
           cuidadorId: c.cuidadorId,
           fecha: '2030-06-12',
-          jornada: 'manana',
+          horaInicio: 360,
           horas: 1,
           medioDePago: 'pasarela',
         }).set('Idempotency-Key', clave());
@@ -428,8 +437,8 @@ describe('teleasistencia (API)', () => {
       it('aun con servicio activo, el cuidador no cambia el plan: no agrega, desactiva ni fija rangos', async () => {
         const f = await nuevaFamilia(app);
         const c = await nuevoCuidador(app, reloj);
-        await servicio(f, c, 'en_curso');
         const medicamento = await conMedicamento(f);
+        await servicio(f, c, 'en_curso');
         const cookie = await c.cookie();
 
         expect(
@@ -1297,7 +1306,10 @@ describe('teleasistencia (API)', () => {
       const c = await nuevoCuidador(app, reloj);
       await servicio(f, c, 'en_curso');
 
-      const respuesta = await pedir(f);
+      const cookieF = conSesion(
+        await iniciarSesion(como(app), f.persona.correo),
+      );
+      const respuesta = await pedir(f, cookieF);
       await procesarEventos();
 
       const id = (

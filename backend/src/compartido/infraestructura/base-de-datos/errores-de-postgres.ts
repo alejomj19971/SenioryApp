@@ -5,7 +5,12 @@
 // Drizzle envuelve el error original de `pg` en un DrizzleQueryError y lo deja en `cause`; dentro de
 // una transacción puede haber más de una capa. Por eso se recorre la cadena de causas.
 
-export type TipoDeViolacion = 'unica' | 'foranea' | 'check' | 'no_nula';
+export type TipoDeViolacion =
+  | 'unica'
+  | 'foranea'
+  | 'check'
+  | 'no_nula'
+  | 'exclusion';
 
 export interface ViolacionDeRestriccion {
   tipo: TipoDeViolacion;
@@ -19,6 +24,7 @@ const TIPOS: Record<string, TipoDeViolacion> = {
   '23503': 'foranea',
   '23514': 'check',
   '23502': 'no_nula',
+  '23P01': 'exclusion',
 };
 
 const PROFUNDIDAD_MAXIMA = 5;
@@ -50,4 +56,15 @@ export function esViolacionDeUnicidad(
 ): boolean {
   const violacion = violacionDeRestriccion(error);
   return violacion?.tipo === 'unica' && violacion.restriccion === restriccion;
+}
+
+// ¿Es una violación de esta restricción de exclusión (`EXCLUDE`, por ejemplo un solapamiento de horarios)?
+export function esViolacionDeExclusion(
+  error: unknown,
+  restriccion: string,
+): boolean {
+  const violacion = violacionDeRestriccion(error);
+  return (
+    violacion?.tipo === 'exclusion' && violacion.restriccion === restriccion
+  );
 }

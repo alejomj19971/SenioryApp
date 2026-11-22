@@ -10,6 +10,7 @@ export const CHECK = '23514';
 export const FORANEA = '23503';
 export const NO_NULO = '23502';
 export const SOLO_INSERCION = '23001';
+export const EXCLUSION = '23P01';
 
 export type Ejecutor = Pick<pg.Pool, 'query'>;
 
@@ -118,6 +119,7 @@ export const servicioValido = (extra: Record<string, unknown> = {}) => ({
   adulto_mayor_id: nuevoId(),
   cuidador_id: nuevoId(),
   fecha: enUnaSemana(),
+  hora_inicio: 360,
   jornada: 'manana',
   horas: 1,
   estado: 'solicitado',

@@ -9,11 +9,11 @@ import {
   ReglaDeNegocioIncumplida,
 } from '../../../compartido/dominio/errores.js';
 import { FechaCivil } from '../../../compartido/dominio/fecha-civil.js';
-import { esJornada } from '../../../compartido/dominio/jornada.js';
 import type { ConsultaDeDirectorio } from '../../../directorio/aplicacion/puertos/entrada/consulta-de-directorio.js';
 import type { ConsultaDeIdentidad } from '../../../identidad/aplicacion/puertos/entrada/consulta-de-identidad.js';
 import type { ConsultaDePagos } from '../../../pagos/aplicacion/puertos/entrada/consulta-de-pagos.js';
 import type { CotizadorDeServicios } from '../../../pagos/aplicacion/puertos/entrada/cotizador-de-servicios.js';
+import { esHoraInicioValida, jornadaDe } from '../../dominio/franjas.js';
 import type { ServicioId } from '../../dominio/ids.js';
 import { Servicio } from '../../dominio/servicio.js';
 import { medioDePagoDesdeTexto } from '../../dominio/valores-cerrados.js';
@@ -29,7 +29,8 @@ export interface EntradaDeSolicitud {
   cuidadorId: string;
   // "AAAA-MM-DD", el día civil en la zona del negocio.
   fecha: string;
-  jornada: string;
+  // Minutos desde las 00:00 de esa fecha, en bloques de 30.
+  horaInicio: number;
   horas: number;
   medioDePago: string;
 }
@@ -67,10 +68,10 @@ export class SolicitarServicio {
     claveDeIdempotencia: string,
   ): Promise<ResultadoDeSolicitud> {
     const fecha = FechaCivil.desdeTexto(entrada.fecha);
-    if (!esJornada(entrada.jornada)) {
+    if (!esHoraInicioValida(entrada.horaInicio)) {
       throw new ErrorDeValidacion(
-        'La jornada no es válida',
-        'servicio.jornada_invalida',
+        'La hora de inicio no es válida',
+        'servicio.hora_invalida',
       );
     }
     const medioDePago = medioDePagoDesdeTexto(entrada.medioDePago);
@@ -99,7 +100,7 @@ export class SolicitarServicio {
         'cuidador.no_encontrado',
       );
     }
-    if (!cuidador.disponibilidad.includes(entrada.jornada)) {
+    if (!cuidador.disponibilidad.includes(jornadaDe(entrada.horaInicio))) {
       throw new ReglaDeNegocioIncumplida(
         `${cuidador.nombre} no atiende en esa jornada`,
         'servicio.jornada_no_disponible',
@@ -128,7 +129,7 @@ export class SolicitarServicio {
       adultoMayorId: entrada.adultoMayorId,
       cuidadorId: entrada.cuidadorId,
       fecha,
-      jornada: entrada.jornada,
+      horaInicio: entrada.horaInicio,
       horas: entrada.horas,
       medioDePago,
       aceptacionAutomatica: cuidador.aceptacionAutomatica,
@@ -227,7 +228,7 @@ export class SolicitarServicio {
       adultoMayorId: string;
       cuidadorId: string;
       fecha: FechaCivil;
-      jornada: string;
+      horaInicio: number;
       horas: number;
       medioDePago: string;
     },
@@ -236,7 +237,7 @@ export class SolicitarServicio {
       previo.adultoMayorId === solicitud.adultoMayorId &&
       previo.cuidadorId === solicitud.cuidadorId &&
       previo.fecha.igualA(solicitud.fecha) &&
-      previo.jornada === solicitud.jornada &&
+      previo.horaInicio === solicitud.horaInicio &&
       previo.horas === solicitud.horas &&
       previo.medioDePago === solicitud.medioDePago;
     if (!igual) {

@@ -85,6 +85,7 @@ export class VistasDeServicios {
       id: servicio.id,
       estado: servicio.estado,
       fecha: servicio.fecha.aTexto(),
+      horaInicio: servicio.horaInicio,
       jornada: servicio.jornada,
       horas: servicio.horas,
       medioDePago: servicio.medioDePago,

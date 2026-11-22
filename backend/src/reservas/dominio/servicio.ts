@@ -4,13 +4,15 @@ import {
   ReglaDeNegocioIncumplida,
 } from '../../compartido/dominio/errores.js';
 import { FechaCivil } from '../../compartido/dominio/fecha-civil.js';
-import { esJornada, type Jornada } from '../../compartido/dominio/jornada.js';
+import type { Jornada } from '../../compartido/dominio/jornada.js';
 import type { MotivoDeCancelacion } from '../../compartido/eventos/reservas.js';
 import {
-  franjaContiene,
-  franjaYaTermino,
+  esHoraInicioValida,
+  jornadaDe,
   MARGEN_PARA_INICIAR_MINUTOS,
-  minutosHastaElInicio,
+  minutosLocales,
+  ventanaContiene,
+  ventanaDeServicio,
 } from './franjas.js';
 import type { ServicioId } from './ids.js';
 import { transicionar } from './maquina-de-estados.js';
@@ -54,6 +56,10 @@ export interface DatosDeServicio {
   cuidadorId: string;
   // El día civil en la zona del negocio (H2), nunca un instante UTC.
   fecha: FechaCivil;
+  // Minutos desde las 00:00 del día de `fecha`, en bloques de 30 (la familia elige la hora de inicio).
+  horaInicio: number;
+  // Derivada de `horaInicio`: en qué franja general cae, para la disponibilidad del cuidador. Ya no acota el
+  // servicio (puede cruzar de una franja a otra).
   jornada: Jornada;
   horas: number;
   estado: EstadoDeServicio;
@@ -90,7 +96,7 @@ export interface DatosParaSolicitar {
   adultoMayorId: string;
   cuidadorId: string;
   fecha: FechaCivil;
-  jornada: Jornada;
+  horaInicio: number;
   horas: number;
   medioDePago: MedioDePago;
   // Lo que el cuidador tiene activado en su perfil hoy; el servicio guarda una copia.
@@ -143,7 +149,8 @@ export class Servicio {
         adultoMayorId: entrada.adultoMayorId,
         cuidadorId: entrada.cuidadorId,
         fecha: entrada.fecha,
-        jornada: entrada.jornada,
+        horaInicio: entrada.horaInicio,
+        jornada: jornadaDe(entrada.horaInicio),
         horas: entrada.horas,
         estado,
         medioDePago: entrada.medioDePago,
@@ -211,6 +218,9 @@ export class Servicio {
   }
   get fecha(): FechaCivil {
     return this.datos.fecha;
+  }
+  get horaInicio(): number {
+    return this.datos.horaInicio;
   }
   get jornada(): Jornada {
     return this.datos.jornada;
@@ -359,11 +369,16 @@ export class Servicio {
     return true;
   }
 
-  // La tarea programada: la franja ya terminó y nadie marcó que inició (ni la familia canceló). Antes de
+  // La tarea programada: el servicio ya terminó y nadie marcó que inició (ni la familia canceló). Antes de
   // esto, un cuidador que no llegaba ni avisaba dejaba el servicio «aceptado» para siempre.
   marcarNoShow(ahora: Date, zonaHoraria: string): void {
     const estado = transicionar(this.datos.estado, 'marcar_no_show', 'sistema');
-    if (!franjaYaTermino(this.datos.fecha, this.datos.jornada, ahora, zonaHoraria)) {
+    const ventana = ventanaDeServicio(
+      this.datos.fecha,
+      this.datos.horaInicio,
+      this.datos.horas,
+    );
+    if (minutosLocales(ahora, zonaHoraria) < ventana.fin) {
       throw new ConflictoDeEstado(
         'La franja todavía no termina',
         'servicio.franja_vigente',
@@ -384,8 +399,9 @@ export class Servicio {
     this.cancelarCon('pago_fallido', null, ahora);
   }
 
-  // El cuidador marca que empezó. Solo dentro de su franja (con un margen para quien llega un poco antes). Con
-  // `exigirPago`, además, el pago tiene que estar aprobado: nadie presta un servicio que no se ha pagado.
+  // El cuidador marca que empezó. Solo dentro de su propia ventana (con un margen para quien llega un poco
+  // antes), no de toda la franja. Con `exigirPago`, además, el pago tiene que estar aprobado: nadie presta un
+  // servicio que no se ha pagado.
   iniciar(
     cuidadorUsuarioId: string,
     ahora: Date,
@@ -393,12 +409,15 @@ export class Servicio {
     exigirPago = false,
   ): void {
     const estado = transicionar(this.datos.estado, 'iniciar', 'cuidador');
+    const ventana = ventanaDeServicio(
+      this.datos.fecha,
+      this.datos.horaInicio,
+      this.datos.horas,
+    );
     if (
-      !franjaContiene(
-        this.datos.fecha,
-        this.datos.jornada,
-        ahora,
-        zonaHoraria,
+      !ventanaContiene(
+        ventana,
+        minutosLocales(ahora, zonaHoraria),
         MARGEN_PARA_INICIAR_MINUTOS,
       )
     ) {
@@ -423,23 +442,26 @@ export class Servicio {
     this.datos.finalizadoEn = ahora;
   }
 
-  // ¿Hoy ya se puede prestar? Para el «cuidador en turno» (H4): aceptado o en curso, y la franja contiene el
-  // momento actual.
+  // ¿Hoy ya se puede prestar? Para el «cuidador en turno» (H4): aceptado o en curso, y la ventana del
+  // servicio contiene el momento actual.
   estaEnTurno(ahora: Date, zonaHoraria: string): boolean {
     return (
       (this.datos.estado === 'aceptado' || this.datos.estado === 'en_curso') &&
-      franjaContiene(this.datos.fecha, this.datos.jornada, ahora, zonaHoraria)
+      ventanaContiene(
+        ventanaDeServicio(this.datos.fecha, this.datos.horaInicio, this.datos.horas),
+        minutosLocales(ahora, zonaHoraria),
+      )
     );
   }
 
   // Cuántas horas enteras faltaban para empezar (0 si ya empezó): lo que mide la política de reembolso (M7).
   horasDeAnticipacion(ahora: Date, zonaHoraria: string): number {
-    const minutos = minutosHastaElInicio(
+    const ventana = ventanaDeServicio(
       this.datos.fecha,
-      this.datos.jornada,
-      ahora,
-      zonaHoraria,
+      this.datos.horaInicio,
+      this.datos.horas,
     );
+    const minutos = ventana.inicio - minutosLocales(ahora, zonaHoraria);
     return Math.max(0, Math.floor(minutos / 60));
   }
 
@@ -489,10 +511,10 @@ function validarSolicitud(entrada: DatosParaSolicitar): void {
       'servicio.horas_invalidas',
     );
   }
-  if (!esJornada(entrada.jornada)) {
+  if (!esHoraInicioValida(entrada.horaInicio)) {
     throw new ErrorDeValidacion(
-      'La jornada no es válida',
-      'servicio.jornada_invalida',
+      'La hora de inicio no es válida',
+      'servicio.hora_invalida',
     );
   }
   if (!(MEDIOS_DE_PAGO as readonly string[]).includes(entrada.medioDePago)) {
@@ -527,15 +549,11 @@ function validarSolicitud(entrada: DatosParaSolicitar): void {
   }
   if (
     entrada.fecha.igualA(entrada.hoy) &&
-    franjaYaTermino(
-      entrada.fecha,
-      entrada.jornada,
-      entrada.ahora,
-      entrada.zonaHoraria,
-    )
+    ventanaDeServicio(entrada.fecha, entrada.horaInicio, entrada.horas).inicio <=
+      minutosLocales(entrada.ahora, entrada.zonaHoraria)
   ) {
     throw new ReglaDeNegocioIncumplida(
-      'Esa franja de hoy ya terminó',
+      'Esa hora de hoy ya pasó',
       'servicio.franja_terminada',
     );
   }

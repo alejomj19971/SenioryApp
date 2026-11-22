@@ -10,13 +10,13 @@ import {
   Max,
   Min,
 } from 'class-validator';
-import { JORNADAS } from '../../../../compartido/dominio/jornada.js';
 import { LIMITE_MAXIMO } from '../../../dominio/cursor-de-servicios.js';
 import {
   ESTADOS_DE_SERVICIO,
   MEDIOS_DE_PAGO,
 } from '../../../dominio/valores-cerrados.js';
 import { LARGO_MAXIMO_DEL_COMENTARIO } from '../../../dominio/calificacion.js';
+import { HORAS_INICIO_VALIDAS } from '../../../dominio/franjas.js';
 import { HORAS_MAXIMAS, HORAS_MINIMAS } from '../../../dominio/servicio.js';
 
 // Como en los demás DTO, solo se verifica la FORMA: las reglas (fecha pasada, franja ocupada, consentimiento)
@@ -35,10 +35,11 @@ export class SolicitudDeServicioDto {
   })
   fecha!: string;
 
-  @IsIn(JORNADAS, {
-    message: `La jornada debe ser una de: ${JORNADAS.join(', ')}`,
+  @IsInt({ message: 'La hora de inicio no es válida' })
+  @IsIn(HORAS_INICIO_VALIDAS, {
+    message: 'La hora de inicio debe ser en bloques de 30 minutos',
   })
-  jornada!: string;
+  horaInicio!: number;
 
   @IsInt({ message: 'Las horas deben ser un número entero' })
   @Min(HORAS_MINIMAS, {

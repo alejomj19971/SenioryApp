@@ -56,6 +56,7 @@ export function servicioDeFila(fila: typeof servicios.$inferSelect): Servicio {
     adultoMayorId: fila.adultoMayorId,
     cuidadorId: fila.cuidadorId,
     fecha: FechaCivil.desdeTexto(fila.fecha),
+    horaInicio: fila.horaInicio,
     jornada: jornadaDe(fila.jornada),
     horas: fila.horas,
     estado: exigir(fila.estado, ESTADOS_DE_SERVICIO, 'estado'),

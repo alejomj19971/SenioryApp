@@ -6,7 +6,10 @@ import {
 } from '../../../../compartido/dominio/errores.js';
 import type { FechaCivil } from '../../../../compartido/dominio/fecha-civil.js';
 import type { ContextoTransaccional } from '../../../../compartido/infraestructura/base-de-datos/contexto-transaccional.js';
-import { esViolacionDeUnicidad } from '../../../../compartido/infraestructura/base-de-datos/errores-de-postgres.js';
+import {
+  esViolacionDeExclusion,
+  esViolacionDeUnicidad,
+} from '../../../../compartido/infraestructura/base-de-datos/errores-de-postgres.js';
 import type {
   DuenoDeServicios,
   FiltroDeServicios,
@@ -35,6 +38,7 @@ export class RepositorioServiciosDrizzle implements RepositorioServicios {
           adultoMayorId: servicio.adultoMayorId,
           cuidadorId: servicio.cuidadorId,
           fecha: servicio.fecha.aTexto(),
+          horaInicio: servicio.horaInicio,
           jornada: servicio.jornada,
           horas: servicio.horas,
           estado: servicio.estado,
@@ -62,9 +66,9 @@ export class RepositorioServiciosDrizzle implements RepositorioServicios {
         });
       } catch (error) {
         // Tras estos errores la transacción en curso queda abortada: el caso de uso debe dejar que se revierta.
-        if (esViolacionDeUnicidad(error, 'servicios_sin_doble_reserva')) {
+        if (esViolacionDeExclusion(error, 'servicios_sin_doble_reserva')) {
           throw new ConflictoDeEstado(
-            'El cuidador ya tiene un servicio en esa fecha y franja',
+            'El cuidador ya tiene un servicio que se cruza con ese horario',
             'servicio.franja_ocupada',
           );
         }

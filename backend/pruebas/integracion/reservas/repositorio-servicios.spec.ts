@@ -176,12 +176,12 @@ describe('RepositorioServiciosDrizzle', () => {
       ).toEqual([]);
     });
 
-    it('otra franja, otra fecha u otro cuidador sí se pueden', async () => {
+    it('otro horario sin cruzarse, otra fecha u otro cuidador sí se pueden', async () => {
       const cuidadorId = nuevoId();
-      await guardarServicio(repos, { cuidadorId, jornada: 'manana' });
+      await guardarServicio(repos, { cuidadorId, horaInicio: 360 });
 
       await expect(
-        guardarServicio(repos, { cuidadorId, jornada: 'tarde' }),
+        guardarServicio(repos, { cuidadorId, horaInicio: 720 }),
       ).resolves.toBeDefined();
       await expect(
         guardarServicio(repos, {
@@ -190,8 +190,46 @@ describe('RepositorioServiciosDrizzle', () => {
         }),
       ).resolves.toBeDefined();
       await expect(
-        guardarServicio(repos, { jornada: 'manana' }),
+        guardarServicio(repos, { horaInicio: 360 }),
       ).resolves.toBeDefined();
+    });
+
+    it('dos servicios cortos en la MISMA franja, sin cruzarse en el tiempo, sí se pueden', async () => {
+      // El problema real que motivó esta mejora: el cuidador no podía atender dos servicios cortos distintos
+      // en la misma tarde, aunque le sobrara tiempo de sobra.
+      const UNA_HORA = {
+        horas: 1,
+        subtotal: 20_000,
+        cargoFamilia: 0,
+        totalFamilia: 20_000,
+        pagoProfesional: 18_000,
+      };
+      const cuidadorId = nuevoId();
+      await guardarServicio(repos, { cuidadorId, horaInicio: 720, ...UNA_HORA }); // 12:00–13:00
+
+      await expect(
+        guardarServicio(repos, { cuidadorId, horaInicio: 780, ...UNA_HORA }), // 13:00–14:00
+      ).resolves.toBeDefined();
+    });
+
+    it('dos servicios que se cruzan, aunque empiecen en horas de inicio distintas, no se pueden', async () => {
+      const cuidadorId = nuevoId();
+      await guardarServicio(repos, { cuidadorId, horaInicio: 720, horas: 2 }); // 12:00–14:00
+
+      await expect(
+        guardarServicio(repos, {
+          cuidadorId,
+          horaInicio: 780,
+          horas: 1,
+          subtotal: 20_000,
+          cargoFamilia: 0,
+          totalFamilia: 20_000,
+          pagoProfesional: 18_000,
+        }), // 13:00–14:00: se cruza
+      ).rejects.toMatchObject({
+        constructor: ConflictoDeEstado,
+        codigo: 'servicio.franja_ocupada',
+      });
     });
 
     it('cancelar libera la franja', async () => {
@@ -525,10 +563,10 @@ describe('RepositorioServiciosDrizzle', () => {
         adultoMayorId,
         aceptacionAutomatica: true,
       });
-      await guardarServicio(repos, { adultoMayorId, jornada: 'tarde' }); // solicitado
+      await guardarServicio(repos, { adultoMayorId, horaInicio: 720 }); // solicitado
       const cancelado = await guardarServicio(repos, {
         adultoMayorId,
-        jornada: 'noche',
+        horaInicio: 1080,
       });
       const leido = await repos.servicios.buscarPorId(cancelado.id);
       leido?.cancelar(cancelado.familiarId, AHORA_RESERVAS);

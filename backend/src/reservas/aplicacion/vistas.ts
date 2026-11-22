@@ -20,6 +20,8 @@ export interface VistaBasica {
   estado: EstadoDeServicio;
   // "AAAA-MM-DD" en la zona del negocio.
   fecha: string;
+  // Minutos desde las 00:00 de `fecha`, en bloques de 30.
+  horaInicio: number;
   jornada: Jornada;
   horas: number;
   medioDePago: MedioDePago;

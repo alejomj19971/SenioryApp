@@ -1,5 +1,6 @@
 import {
   CHECK,
+  EXCLUSION,
   FORANEA,
   UNICA,
   conectarBd,
@@ -247,14 +248,17 @@ describe('esquema reservas', () => {
       });
     });
 
-    describe('sin doble reserva del mismo turno', () => {
+    describe('sin doble reserva (por solapamiento real de horario)', () => {
+      // 12:00–13:00 (como la vieja franja «tarde», pero ahora de una hora exacta).
       const turno = () => ({
         cuidador_id: nuevoId(),
         fecha: '2026-11-20',
+        hora_inicio: 720,
         jornada: 'tarde',
+        horas: 1,
       });
 
-      it('un cuidador no puede tener dos servicios ACTIVOS en la misma fecha y jornada', async () => {
+      it('un cuidador no puede tener dos servicios ACTIVOS que se crucen en el tiempo', async () => {
         const t = turno();
         await insertar(bd, 'reservas.servicios', servicioValido(t));
 
@@ -262,13 +266,13 @@ describe('esquema reservas', () => {
           insertar(bd, 'reservas.servicios', servicioValido(t)),
         );
         expect(r).toMatchObject({
-          codigo: UNICA,
+          codigo: EXCLUSION,
           restriccion: 'servicios_sin_doble_reserva',
         });
       });
 
       it.each(['solicitado', 'aceptado', 'en_curso'])(
-        'el primer servicio en estado %s bloquea el turno',
+        'el primer servicio en estado %s bloquea el horario',
         async (estado) => {
           const t = turno();
           const marcas =
@@ -294,7 +298,7 @@ describe('esquema reservas', () => {
         },
       );
 
-      it('si el primero se canceló, el turno queda libre para otra familia', async () => {
+      it('si el primero se canceló, el horario queda libre para otra familia', async () => {
         const t = turno();
         await insertar(
           bd,
@@ -310,7 +314,7 @@ describe('esquema reservas', () => {
         await insertar(bd, 'reservas.servicios', servicioValido(t));
       });
 
-      it('un servicio finalizado tampoco bloquea el turno (ya pasó)', async () => {
+      it('un servicio finalizado tampoco bloquea el horario (ya pasó)', async () => {
         const t = turno();
         const ahora = new Date().toISOString();
         await insertar(
@@ -328,13 +332,25 @@ describe('esquema reservas', () => {
         await insertar(bd, 'reservas.servicios', servicioValido(t));
       });
 
-      it('el mismo cuidador en otra jornada, otra fecha, o con otro cuidador, no choca', async () => {
+      it('dos servicios cortos en la MISMA franja, sin cruzarse en el tiempo, sí se pueden', async () => {
+        // El problema real que motivó el cambio: antes, cualquier otro servicio en «tarde» chocaba aunque
+        // sobrara tiempo. Ahora solo choca si de verdad se cruza.
         const t = turno();
         await insertar(bd, 'reservas.servicios', servicioValido(t));
         await insertar(
           bd,
           'reservas.servicios',
-          servicioValido({ ...t, jornada: 'noche' }),
+          servicioValido({ ...t, hora_inicio: t.hora_inicio + t.horas * 60 }),
+        );
+      });
+
+      it('el mismo cuidador en otro horario sin cruzarse, otra fecha, o con otro cuidador, no choca', async () => {
+        const t = turno();
+        await insertar(bd, 'reservas.servicios', servicioValido(t));
+        await insertar(
+          bd,
+          'reservas.servicios',
+          servicioValido({ ...t, hora_inicio: 1080, jornada: 'noche' }),
         );
         await insertar(
           bd,
@@ -361,12 +377,12 @@ describe('esquema reservas', () => {
         expect(aceptadas).toHaveLength(1);
         expect(rechazadas).toHaveLength(1);
         expect((rechazadas[0] as PromiseRejectedResult).reason).toMatchObject({
-          code: UNICA,
+          code: EXCLUSION,
         });
 
         const { rows } = await bd.query(
-          `select count(*)::int as total from reservas.servicios where cuidador_id = $1 and fecha = $2 and jornada = $3`,
-          [t.cuidador_id, t.fecha, t.jornada],
+          `select count(*)::int as total from reservas.servicios where cuidador_id = $1 and fecha = $2 and hora_inicio = $3`,
+          [t.cuidador_id, t.fecha, t.hora_inicio],
         );
         expect(rows[0]?.total).toBe(1);
       });

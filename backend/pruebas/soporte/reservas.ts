@@ -29,7 +29,7 @@ export function datosParaSolicitar(
     adultoMayorId: ADULTO_MAYOR_ID,
     cuidadorId: CUIDADOR_ID,
     fecha: HOY_RESERVAS.sumarDias(1),
-    jornada: 'manana',
+    horaInicio: 360,
     horas: 2,
     medioDePago: 'pasarela',
     aceptacionAutomatica: false,
@@ -60,10 +60,11 @@ export function servicioEn(
   cambios: Partial<DatosParaSolicitar> = {},
   momento: Date = AHORA_RESERVAS,
 ): Servicio {
-  // Para iniciar hay que estar dentro de la franja: por defecto, la mañana de hoy (son las 10:00).
+  // Para iniciar hay que estar dentro de su ventana: por defecto, hoy a las 10:30 (son las 10:00, dentro del
+  // margen de 30 min para marcar que llegó antes).
   const enLaFranja: Partial<DatosParaSolicitar> =
     estado === 'en_curso' || estado === 'finalizado'
-      ? { fecha: HOY_RESERVAS, jornada: 'manana' }
+      ? { fecha: HOY_RESERVAS, horaInicio: 630 }
       : {};
   const servicio = servicioSolicitado({
     aceptacionAutomatica: false,

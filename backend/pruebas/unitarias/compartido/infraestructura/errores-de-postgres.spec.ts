@@ -1,4 +1,5 @@
 import {
+  esViolacionDeExclusion,
   esViolacionDeUnicidad,
   violacionDeRestriccion,
 } from '../../../../src/compartido/infraestructura/base-de-datos/errores-de-postgres.js';
@@ -19,6 +20,7 @@ describe('violacionDeRestriccion', () => {
     ['23503', 'foranea'],
     ['23514', 'check'],
     ['23502', 'no_nula'],
+    ['23P01', 'exclusion'],
   ])('reconoce el código %s como %s', (code, tipo) => {
     expect(violacionDeRestriccion(errorDePg(code, 'una_restriccion'))).toEqual({
       tipo,
@@ -80,5 +82,24 @@ describe('esViolacionDeUnicidad', () => {
     const error = envuelto(errorDePg('23514', 'usuarios_correo_unico'));
 
     expect(esViolacionDeUnicidad(error, 'usuarios_correo_unico')).toBe(false);
+  });
+});
+
+describe('esViolacionDeExclusion', () => {
+  it('es verdadero solo para esa restricción', () => {
+    const error = envuelto(errorDePg('23P01', 'servicios_sin_doble_reserva'));
+
+    expect(
+      esViolacionDeExclusion(error, 'servicios_sin_doble_reserva'),
+    ).toBe(true);
+    expect(esViolacionDeExclusion(error, 'otra_restriccion')).toBe(false);
+  });
+
+  it('una violación de otro tipo, aunque tenga ese nombre, no cuenta', () => {
+    const error = envuelto(errorDePg('23505', 'servicios_sin_doble_reserva'));
+
+    expect(
+      esViolacionDeExclusion(error, 'servicios_sin_doble_reserva'),
+    ).toBe(false);
   });
 });

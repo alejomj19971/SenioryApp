@@ -170,7 +170,7 @@ describe('pagos (API)', () => {
         adultoMayorId: de.adultoMayorId,
         cuidadorId: c.cuidadorId,
         fecha: MANANA,
-        jornada: 'manana',
+        horaInicio: 360,
         horas: 2,
         medioDePago: 'pasarela',
         ...cambios,
@@ -959,7 +959,7 @@ describe('pagos (API)', () => {
       const c = await cuidadorAutomatico();
       const { id, pagoId } = await confirmado(c, {
         fecha: HOY,
-        jornada: 'manana',
+        horaInicio: 630,
       });
 
       const sinPago = await accion('iniciar', id, await c.cookie());
@@ -1136,7 +1136,7 @@ describe('pagos (API)', () => {
 
     it('cancelación tardía (menos de 2 horas): se reparte mitad y mitad entre la familia y el cuidador', async () => {
       const c = await cuidadorAutomatico();
-      const { id, pagoId } = await confirmado(c, { fecha: HOY, jornada: 'manana' });
+      const { id, pagoId } = await confirmado(c, { fecha: HOY, horaInicio: 630 });
       await aprobarPago(pagoId);
       const reembolsar = vi.spyOn(pasarela(), 'reembolsar');
 
@@ -1161,7 +1161,7 @@ describe('pagos (API)', () => {
 
     it('reprocesar una cancelación tardía no paga al cuidador ni reembolsa dos veces', async () => {
       const c = await cuidadorAutomatico();
-      const { id, pagoId } = await confirmado(c, { fecha: HOY, jornada: 'manana' });
+      const { id, pagoId } = await confirmado(c, { fecha: HOY, horaInicio: 630 });
       await aprobarPago(pagoId);
       await accion('cancelar', id, familia.cookie);
       await procesarEventos();
@@ -1186,7 +1186,7 @@ describe('pagos (API)', () => {
     async function terminado(
       c: Cuidador,
     ): Promise<{ id: string; pagoId: string }> {
-      const servicio = await confirmado(c, { fecha: HOY, jornada: 'manana' });
+      const servicio = await confirmado(c, { fecha: HOY, horaInicio: 630 });
       await aprobarPago(servicio.pagoId);
       expect(
         (await accion('iniciar', servicio.id, await c.cookie())).status,
@@ -1826,7 +1826,7 @@ describe('pagos (API)', () => {
       await darSaldo(f, 100_000);
       const { id } = await confirmado(
         c,
-        { medioDePago: 'bolsa', fecha: HOY, jornada: 'manana' },
+        { medioDePago: 'bolsa', fecha: HOY, horaInicio: 630 },
         f,
       );
 
@@ -1888,7 +1888,7 @@ describe('pagos (API)', () => {
       await darSaldo(f, 100_000);
       const { id, pagoId } = await confirmado(
         c,
-        { medioDePago: 'bolsa', fecha: HOY, jornada: 'manana' },
+        { medioDePago: 'bolsa', fecha: HOY, horaInicio: 630 },
         f,
       );
 

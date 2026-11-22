@@ -90,7 +90,7 @@ describe('mensajería (API)', () => {
         adultoMayorId: de.adultoMayorId,
         cuidadorId: a.cuidadorId,
         fecha: MANANA,
-        jornada: 'manana',
+        horaInicio: 360,
         horas: 2,
         medioDePago: 'pasarela',
       });

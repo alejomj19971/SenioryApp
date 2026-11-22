@@ -1014,7 +1014,7 @@ describe('postulación y verificación de cuidadores (API)', () => {
             adultoMayorId: familia.adultoMayorId,
             cuidadorId: perfil.id,
             fecha: MANANA,
-            jornada: 'manana',
+            horaInicio: 360,
             horas: 2,
             medioDePago: 'pasarela',
           });

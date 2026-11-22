@@ -74,7 +74,7 @@ describe('notificaciones (API)', () => {
         adultoMayorId: familia.adultoMayorId,
         cuidadorId: c.cuidadorId,
         fecha: MANANA,
-        jornada: 'manana',
+        horaInicio: 360,
         horas: 2,
         medioDePago: 'pasarela',
         ...cambios,
@@ -163,7 +163,7 @@ describe('notificaciones (API)', () => {
 
     it('el recorrido completo deja 9 avisos: solicitado, confirmado, iniciado y finalizado × 2 partes, y el de pago', async () => {
       const c = await nuevoCuidador(app, reloj);
-      const id = await crearServicio(c, { fecha: HOY, jornada: 'manana' });
+      const id = await crearServicio(c, { fecha: HOY, horaInicio: 630 });
       await accion('aceptar', id, await c.cookie());
       await accion('iniciar', id, await c.cookie());
       await accion('finalizar', id, await c.cookie());
@@ -433,7 +433,7 @@ describe('notificaciones (API)', () => {
     it('pagina con cursor, los más recientes primero', async () => {
       const otra = await nuevaFamilia(app);
       const c = await nuevoCuidador(app, reloj);
-      const pedir = async (jornada: string) => {
+      const pedir = async (horaInicio: number) => {
         reloj.avanzar(1000);
         const respuesta = await como(app)
           .post('/api/v1/servicios')
@@ -443,13 +443,13 @@ describe('notificaciones (API)', () => {
             adultoMayorId: otra.adultoMayorId,
             cuidadorId: c.cuidadorId,
             fecha: MANANA,
-            jornada,
+            horaInicio,
             horas: 1,
             medioDePago: 'pasarela',
           });
         return (respuesta.body as { servicio: { id: string } }).servicio.id;
       };
-      for (const jornada of ['manana', 'tarde', 'noche']) await pedir(jornada);
+      for (const horaInicio of [360, 720, 1080]) await pedir(horaInicio);
       await procesarEventos();
 
       // Las sesiones duran 15 minutos y el reloj se movió segundos: siguen vigentes.
@@ -568,7 +568,7 @@ describe('notificaciones con canales simulados (API)', () => {
             adultoMayorId: familia.adultoMayorId,
             cuidadorId: c.cuidadorId,
             fecha: MANANA,
-            jornada: 'manana',
+            horaInicio: 360,
             horas: 2,
             medioDePago: 'pasarela',
           })

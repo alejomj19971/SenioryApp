@@ -11,7 +11,6 @@ import {
   text,
   time,
   unique,
-  uniqueIndex,
   uuid,
 } from 'drizzle-orm/pg-core';
 import { instante } from '../../../../compartido/infraestructura/base-de-datos/tipos.js';
@@ -50,10 +49,28 @@ export const servicios = esquemaReservas.table(
     cuidadorId: uuid('cuidador_id').notNull(),
     // Día civil en America/Bogota (hallazgo H2): nunca un instante UTC.
     fecha: date('fecha', { mode: 'string' }).notNull(),
+    // Minutos desde las 00:00 de `fecha`, en bloques de 30: la hora exacta que eligió la familia.
+    horaInicio: integer('hora_inicio').notNull(),
+    // Derivada de `horaInicio` (para la disponibilidad general del cuidador): ya no acota el servicio, que
+    // puede cruzar de una franja a otra.
     jornada: text('jornada')
       .notNull()
       .references(() => franjas.jornada),
     horas: smallint('horas').notNull(),
+    // Calculadas por Postgres a partir de fecha + hora_inicio (+ horas): minutos desde el 1 de enero de 1970
+    // en hora de pared, el mismo espacio que ya usa el dominio (`franjas.ts`) para comparar sin tropezar con
+    // UTC. Es lo que de verdad detecta el solapamiento (ver `servicios_sin_doble_reserva` más abajo), no la
+    // franja completa.
+    inicioEnMinutos: integer('inicio_en_minutos')
+      .notNull()
+      .generatedAlwaysAs(
+        sql`(fecha - date '1970-01-01') * 1440 + hora_inicio`,
+      ),
+    finEnMinutos: integer('fin_en_minutos')
+      .notNull()
+      .generatedAlwaysAs(
+        sql`(fecha - date '1970-01-01') * 1440 + hora_inicio + horas * 60`,
+      ),
     estado: text('estado').notNull().default('solicitado'),
     medioDePago: text('medio_de_pago').notNull(),
     // Copia de la preferencia del cuidador al momento de solicitar.
@@ -87,11 +104,11 @@ export const servicios = esquemaReservas.table(
     actualizadoEn: instante('actualizado_en').notNull().defaultNow(),
   },
   (t) => [
-    // Sin doble reserva: un cuidador no puede tener dos servicios activos en la misma
-    // fecha y jornada. Si dos familias reservan a la vez, una recibe 409.
-    uniqueIndex('servicios_sin_doble_reserva')
-      .on(t.cuidadorId, t.fecha, t.jornada)
-      .where(sql`estado in ('solicitado', 'aceptado', 'en_curso')`),
+    // Sin doble reserva: un cuidador no puede tener dos servicios activos que se solapen en el tiempo (no ya
+    // «misma fecha y jornada» — dos servicios cortos sin cruzarse en la misma franja sí se permiten). Es una
+    // restricción EXCLUDE por solapamiento de `[inicio_en_minutos, fin_en_minutos)`, que drizzle-kit no sabe
+    // expresar con su constructor: se agrega a mano en la migración (requiere la extensión `btree_gist`). Si
+    // dos familias reservan a la vez un horario que se cruza, una recibe 409.
     // Un reintento de la misma solicitud no crea dos servicios.
     unique('servicios_idempotencia_unica').on(
       t.familiarId,
@@ -108,6 +125,10 @@ export const servicios = esquemaReservas.table(
       .on(t.solicitudExpiraEn)
       .where(sql`estado = 'solicitado'`),
     check('servicios_horas_validas', sql`horas between 1 and 8`),
+    check(
+      'servicios_hora_inicio_valida',
+      sql`hora_inicio >= 0 and hora_inicio < 1440 and hora_inicio % 30 = 0`,
+    ),
     check(
       'servicios_estado_valido',
       sql`estado in ('solicitado', 'aceptado', 'en_curso', 'finalizado', 'cancelado')`,
