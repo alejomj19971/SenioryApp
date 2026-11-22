@@ -5,7 +5,8 @@ import { Plus, X } from "lucide-react";
 import { MensajeDeCampo } from "@/components/cuenta/campo";
 import { Button } from "@/components/ui/button";
 import { NOMBRE_DEL_DIA } from "@/lib/acciones/validar-postulacion";
-import { etiquetaHoraInicio } from "@/lib/format";
+import { lunesDeLaSemana, sumarDias, type AhoraEnColombia } from "@/lib/fecha-colombia";
+import { etiquetaHoraInicio, formatearDiaCivil } from "@/lib/format";
 import type { RangoLibre } from "@/lib/types";
 
 const PASO_DE_MINUTOS = 30;
@@ -25,12 +26,26 @@ const ordenar = (a: RangoLibre, b: RangoLibre) => a.diaSemana - b.diaSemana || a
 // agregados (con botón de quitar) y un botón para agregar uno nuevo eligiendo «desde» y «hasta». El estado
 // vive aquí y se sincroniza a un campo oculto en JSON, para que el resto del formulario (nativo, con
 // `FormData`) no tenga que cambiar su forma de enviarse.
-export function EditorDeHorario({ nombreDelCampo, valorInicial, error }: { nombreDelCampo: string; valorInicial: RangoLibre[]; error?: string }) {
+export function EditorDeHorario({
+  nombreDelCampo,
+  valorInicial,
+  ahora,
+  error,
+}: {
+  nombreDelCampo: string;
+  valorInicial: RangoLibre[];
+  ahora: AhoraEnColombia;
+  error?: string;
+}) {
   const [rangos, setRangos] = useState<RangoLibre[]>(valorInicial);
   const [diaParaAgregar, setDiaParaAgregar] = useState<number | null>(null);
   const [desde, setDesde] = useState(360);
   const [hasta, setHasta] = useState(1_080);
   const idDeError = useId();
+
+  // La semana actual (lunes a domingo), solo como referencia concreta: el horario se repite cada semana.
+  const lunes = lunesDeLaSemana(ahora.hoy);
+  const fechaDelDia = (dia: number) => sumarDias(lunes, dia - 1);
 
   function empezarAAgregar(dia: number) {
     setDiaParaAgregar(dia);
@@ -51,14 +66,17 @@ export function EditorDeHorario({ nombreDelCampo, valorInicial, error }: { nombr
   return (
     <fieldset className="flex flex-col gap-3" aria-describedby={error !== undefined ? idDeError : undefined}>
       <legend className="text-base font-medium text-foreground">Tu horario semanal</legend>
-      <p className="text-sm text-muted-foreground">Las horas en las que atiendes, día por día. Las familias solo pueden pedirte servicios dentro de estos rangos.</p>
+      <p className="text-sm text-muted-foreground">
+        Las horas en las que atiendes, día por día. Así queda tu semana a partir del {formatearDiaCivil(lunes)}, y se repite igual cada semana. Las familias solo
+        pueden pedirte servicios dentro de estos rangos.
+      </p>
       <input type="hidden" name={nombreDelCampo} value={JSON.stringify(rangos)} />
       <div className="flex flex-col gap-3">
         {DIAS.map((dia) => {
           const delDia = rangos.map((r, indice) => ({ ...r, indice })).filter((r) => r.diaSemana === dia);
           return (
             <div key={dia} className="flex flex-col gap-2 rounded-2xl bg-muted p-3">
-              <span className="text-base font-medium text-foreground">{NOMBRE_DEL_DIA[dia]}</span>
+              <span className="text-base font-medium text-foreground first-letter:uppercase">{formatearDiaCivil(fechaDelDia(dia))}</span>
               {delDia.length === 0 && diaParaAgregar !== dia && <p className="text-sm text-muted-foreground">No atiendes este día.</p>}
               {delDia.length > 0 && (
                 <div className="flex flex-wrap gap-2">

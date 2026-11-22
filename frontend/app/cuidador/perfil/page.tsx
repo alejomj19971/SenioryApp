@@ -8,6 +8,7 @@ import { SubirDocumento } from "@/components/postulacion/subir-documento";
 import { SubirFoto } from "@/components/postulacion/subir-foto";
 import { UbicacionDeCuidador } from "@/components/postulacion/ubicacion-de-cuidador";
 import { DOCUMENTOS_OBLIGATORIOS, NOMBRE_DEL_DOCUMENTO, resumenDeLaPostulacion, tieneLosDocumentos } from "@/lib/etiquetas-de-postulacion";
+import { ahoraEnColombia } from "@/lib/fecha-colombia";
 import { exigirRol } from "@/lib/sesion";
 import { obtenerMiPerfil } from "@/lib/services/postulacion";
 import type { TipoDeDocumento } from "@/lib/types";
@@ -35,7 +36,7 @@ export default async function PerfilDelCuidadorPage() {
           <h1 className="text-2xl font-bold text-foreground">Arma tu perfil</h1>
           <p className="text-base text-muted-foreground">Es lo que verán las familias cuando un revisor apruebe tus documentos. Después los subes.</p>
         </div>
-        <FormularioPerfil perfil={null} />
+        <FormularioPerfil perfil={null} ahora={ahoraEnColombia()} />
       </div>
     );
   }
@@ -104,18 +105,18 @@ export default async function PerfilDelCuidadorPage() {
           ))}
       </section>
 
-      <section aria-labelledby="datos" className="flex flex-col gap-3">
-        <h2 id="datos" className="text-lg font-semibold text-foreground">
-          Tus datos
-        </h2>
-        <FormularioPerfil perfil={perfil} />
-      </section>
-
       <section aria-labelledby="ubicacion" className="flex flex-col gap-3">
         <h2 id="ubicacion" className="text-lg font-semibold text-foreground">
           Tu ubicación en el mapa
         </h2>
         <UbicacionDeCuidador ubicacionGuardada={perfil.latitud !== null && perfil.longitud !== null ? { latitud: perfil.latitud, longitud: perfil.longitud } : null} />
+      </section>
+
+      <section aria-labelledby="datos" className="flex flex-col gap-3">
+        <h2 id="datos" className="text-lg font-semibold text-foreground">
+          Tus datos
+        </h2>
+        <FormularioPerfil perfil={perfil} ahora={ahoraEnColombia()} />
       </section>
     </div>
   );

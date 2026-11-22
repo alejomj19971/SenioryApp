@@ -10,12 +10,13 @@ import { Label } from "@/components/ui/label";
 import { guardarPerfilAccion } from "@/lib/acciones/postulacion";
 import { ESTADO_INICIAL } from "@/lib/acciones/estado";
 import { ESPECIALIDADES, horariosLibresDeTexto, LARGO_MAXIMO_DE_BIO } from "@/lib/acciones/validar-postulacion";
+import type { AhoraEnColombia } from "@/lib/fecha-colombia";
 import type { MiPerfilDeCuidador } from "@/lib/types";
 
 // El perfil del cuidador: lo que las familias verán cuando un revisor lo apruebe. Sirve para armarlo y para corregirlo.
 // Un perfil ya activo no puede cambiar su especialidad ni su título (respaldan un título aprobado): esos campos se
 // muestran sin poderse editar.
-export function FormularioPerfil({ perfil }: { perfil: MiPerfilDeCuidador | null }) {
+export function FormularioPerfil({ perfil, ahora }: { perfil: MiPerfilDeCuidador | null; ahora: AhoraEnColombia }) {
   const [estado, accion, pendiente] = useActionState(guardarPerfilAccion, ESTADO_INICIAL);
   const congelado = perfil?.estado === "activo";
   // Lo escrito (si hubo un error) manda sobre lo guardado.
@@ -104,7 +105,7 @@ export function FormularioPerfil({ perfil }: { perfil: MiPerfilDeCuidador | null
         error={estado.errores?.zona}
       />
 
-      <EditorDeHorario nombreDelCampo="horariosLibres" valorInicial={horariosLibresIniciales} error={errorDeHorario} />
+      <EditorDeHorario nombreDelCampo="horariosLibres" valorInicial={horariosLibresIniciales} ahora={ahora} error={errorDeHorario} />
 
       <div className="flex flex-col gap-2">
         <Label htmlFor="bio">Cuéntales a las familias quién eres</Label>

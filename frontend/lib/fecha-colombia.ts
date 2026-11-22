@@ -75,8 +75,13 @@ function diasDesdeEpoca(fecha: string): number {
 }
 
 // ISO: 1 = lunes … 7 = domingo. El 1 de enero de 1970 (día 0 desde la época) fue jueves (ISO 4).
-function diaDeLaSemana(fecha: string): number {
+export function diaDeLaSemana(fecha: string): number {
   return (((diasDesdeEpoca(fecha) + 3) % 7) + 7) % 7 + 1;
+}
+
+// El lunes de la semana (lunes a domingo) que contiene esta fecha.
+export function lunesDeLaSemana(fecha: string): string {
+  return sumarDias(fecha, 1 - diaDeLaSemana(fecha));
 }
 
 // ¿El horario semanal del cuidador cubre POR COMPLETO la ventana [horaInicio, horaInicio + horas*60) de esa

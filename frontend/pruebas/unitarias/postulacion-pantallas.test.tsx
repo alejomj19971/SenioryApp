@@ -23,6 +23,7 @@ const { TarjetaDeVerificacion, TarjetaDeHojaDeVida } = await import("@/component
 const { ColaDeRevision } = await import("@/components/admin/cola-de-revision");
 
 const UUID = "01a19299-ec3b-7012-b94b-a8cebad258d3";
+const AHORA = { hoy: "2026-11-01", minutos: 10 * 60 };
 const documento = (extra: Partial<DocumentoSubido> = {}): DocumentoSubido => ({
   id: "d1",
   tipo: "cedula",
@@ -206,12 +207,12 @@ describe("BotonDeRevision", () => {
 
 describe("FormularioPerfil", () => {
   it("un perfil nuevo pide todo; uno existente llega con sus datos", () => {
-    const { unmount } = render(<FormularioPerfil perfil={null} />);
+    const { unmount } = render(<FormularioPerfil perfil={null} ahora={AHORA} />);
     expect(screen.getByRole("button", { name: "Guardar mi perfil" })).toBeInTheDocument();
     expect(screen.queryByLabelText(/Aceptar automáticamente/)).not.toBeInTheDocument();
     unmount();
 
-    render(<FormularioPerfil perfil={perfil()} />);
+    render(<FormularioPerfil perfil={perfil()} ahora={AHORA} />);
     expect(screen.getByLabelText("Título o formación")).toHaveValue("Enfermera profesional");
     expect(screen.getByText("6:00 a. m. – 12:00 p. m.")).toBeInTheDocument();
     expect(screen.getAllByText("No atiendes este día.")).toHaveLength(6);
@@ -220,7 +221,7 @@ describe("FormularioPerfil", () => {
   });
 
   it("un perfil activo no deja cambiar la especialidad ni el título", () => {
-    render(<FormularioPerfil perfil={perfil({ estado: "activo" })} />);
+    render(<FormularioPerfil perfil={perfil({ estado: "activo" })} ahora={AHORA} />);
 
     expect(screen.queryByLabelText("Título o formación")).not.toBeInTheDocument();
     expect(screen.queryByLabelText("Tu especialidad")).not.toBeInTheDocument();
@@ -230,7 +231,7 @@ describe("FormularioPerfil", () => {
   it("muestra los errores de cada campo y conserva lo escrito", async () => {
     guardarPerfilAccion.mockResolvedValue({ errores: { zona: "Escribe la zona donde atiendes." }, valores: { titulo: "Lo que escribí", zona: "" } });
     const usuario = userEvent.setup();
-    render(<FormularioPerfil perfil={null} />);
+    render(<FormularioPerfil perfil={null} ahora={AHORA} />);
 
     await usuario.click(screen.getByRole("button", { name: "Guardar mi perfil" }));
 
@@ -242,7 +243,7 @@ describe("FormularioPerfil", () => {
   it("al guardar dice que quedó guardado", async () => {
     guardarPerfilAccion.mockResolvedValue({ listo: true });
     const usuario = userEvent.setup();
-    render(<FormularioPerfil perfil={perfil()} />);
+    render(<FormularioPerfil perfil={perfil()} ahora={AHORA} />);
 
     await usuario.click(screen.getByRole("button", { name: "Guardar cambios" }));
 
