@@ -10,6 +10,7 @@ import {
   UNIDAD_DE_TRABAJO,
   type UnidadDeTrabajo,
 } from '../../src/compartido/aplicacion/puertos/unidad-de-trabajo.js';
+import { CrearAdministrador } from '../../src/identidad/aplicacion/casos-de-uso/crear-administrador.js';
 import {
   EMISOR_DE_TOKENS,
   type EmisorDeTokens,
@@ -48,6 +49,7 @@ import { RelojFalso } from '../soporte/dobles.js';
 import {
   nuevaFamilia,
   nuevoCuidador,
+  TELEFONO_DEL_CUIDADOR,
   type Cuidador,
   type Familia,
 } from '../soporte/escenario.js';
@@ -106,6 +108,7 @@ interface PagoFila {
 describe('pagos (API)', () => {
   let app: NestExpressApplication;
   let familia: Familia;
+  let administrador: { id: string };
 
   beforeAll(async () => {
     app = await crearAppDePrueba({
@@ -117,6 +120,13 @@ describe('pagos (API)', () => {
       ajustar: (constructor) =>
         constructor.overrideProvider(RELOJ).useValue(reloj),
     });
+    administrador = await app
+      .get(CrearAdministrador, { strict: false })
+      .ejecutar({
+        nombre: 'Admin de Pruebas',
+        correo: `admin-${nuevoId()}@prueba.invalid`,
+        contrasena: 'una-contrasena-larga-0123',
+      });
   });
 
   afterAll(async () => {
@@ -253,6 +263,15 @@ describe('pagos (API)', () => {
     const emisor = app.get<EmisorDeTokens>(EMISOR_DE_TOKENS, { strict: false });
     const { token } = await emisor.emitirAcceso(
       { id: de.persona.id as UsuarioId, rol: 'familiar' },
+      reloj.ahora(),
+    );
+    return `seniory_acceso=${token}`;
+  }
+
+  async function cookieDeAdmin(): Promise<string> {
+    const emisor = app.get<EmisorDeTokens>(EMISOR_DE_TOKENS, { strict: false });
+    const { token } = await emisor.emitirAcceso(
+      { id: administrador.id as UsuarioId, rol: 'administrador' },
       reloj.ahora(),
     );
     return `seniory_acceso=${token}`;
@@ -1324,6 +1343,136 @@ describe('pagos (API)', () => {
       expect(fallida).toMatchObject({ interrumpida: true, pagadas: 0 });
       expect(reintento).toMatchObject({ interrumpida: false, pagadas: 1 });
       expect((await liquidacionDe(id)).estado).toBe('pagada');
+    });
+
+    // ─── Dispersor manual: el administrador paga a mano y lo confirma ──────────────────────────
+    describe('cola de pagos del administrador (dispersor manual)', () => {
+      it('exige sesión de administrador en las dos rutas', async () => {
+        const c = await cuidadorAutomatico();
+        const { id } = await terminado(c);
+        const { id: liquidacionId } = await liquidacionDe(id);
+
+        const listaSinSesion = await como(app).get(
+          '/api/v1/liquidaciones/por-pagar',
+        );
+        const listaComoCuidador = await como(app)
+          .get('/api/v1/liquidaciones/por-pagar')
+          .set('Cookie', await c.cookie());
+        const listaComoFamilia = await como(app)
+          .get('/api/v1/liquidaciones/por-pagar')
+          .set('Cookie', familia.cookie);
+        const confirmarComoCuidador = await como(app)
+          .patch(`/api/v1/liquidaciones/${liquidacionId}/confirmar-pago`)
+          .set('Cookie', await c.cookie())
+          .send({ referencia: 'intento ajeno' });
+
+        expect(listaSinSesion.status).toBe(401);
+        expect(listaComoCuidador.status).toBe(403);
+        expect(listaComoFamilia.status).toBe(403);
+        expect(confirmarComoCuidador.status).toBe(403);
+      });
+
+      it('lista las pendientes con a quién contactar, aunque el cuidador ya no esté visible', async () => {
+        const c = await cuidadorAutomatico();
+        const { id } = await terminado(c);
+        const liquidacion = await liquidacionDe(id);
+
+        const lista = await como(app)
+          .get('/api/v1/liquidaciones/por-pagar')
+          .set('Cookie', await cookieDeAdmin());
+
+        expect(lista.status).toBe(200);
+        const encontrada = (
+          lista.body as { liquidaciones: Record<string, unknown>[] }
+        ).liquidaciones.find((l) => l.id === liquidacion.id);
+        expect(encontrada).toMatchObject({
+          cuidadorId: c.cuidadorId,
+          cuidadorNombre: c.nombre,
+          cuidadorTelefono: TELEFONO_DEL_CUIDADOR,
+          servicioId: id,
+          monto: AL_CUIDADOR,
+          estado: 'pendiente',
+        });
+      });
+
+      it('el administrador confirma el pago con una referencia, y queda auditado', async () => {
+        const c = await cuidadorAutomatico();
+        const { id } = await terminado(c);
+        const { id: liquidacionId } = await liquidacionDe(id);
+
+        const confirmacion = await como(app)
+          .patch(`/api/v1/liquidaciones/${liquidacionId}/confirmar-pago`)
+          .set('Cookie', await cookieDeAdmin())
+          .send({ referencia: 'Nequi 20/11, comprobante #123' });
+
+        expect(confirmacion.status).toBe(200);
+        expect(
+          (confirmacion.body as { liquidacion: { estado: string } })
+            .liquidacion.estado,
+        ).toBe('pagada');
+        expect(await liquidacionDe(id)).toMatchObject({
+          estado: 'pagada',
+          referencia_dispersion: 'Nequi 20/11, comprobante #123',
+        });
+
+        const auditoria = await filas<{ actor_id: string; recurso_id: string }>(
+          `select actor_id, recurso_id from compartido.auditoria
+           where accion = 'pagos.confirmar_pago_de_liquidacion' and recurso_id = $1`,
+          [liquidacionId],
+        );
+        expect(auditoria).toEqual([
+          { actor_id: administrador.id, recurso_id: liquidacionId },
+        ]);
+
+        // Ya pagada no sale más en la cola de «por pagar».
+        const lista = await como(app)
+          .get('/api/v1/liquidaciones/por-pagar')
+          .set('Cookie', await cookieDeAdmin());
+        expect(
+          (lista.body as { liquidaciones: { id: string }[] }).liquidaciones.some(
+            (l) => l.id === liquidacionId,
+          ),
+        ).toBe(false);
+      });
+
+      it('rechaza confirmar dos veces la misma liquidación', async () => {
+        const c = await cuidadorAutomatico();
+        const { id } = await terminado(c);
+        const { id: liquidacionId } = await liquidacionDe(id);
+        await como(app)
+          .patch(`/api/v1/liquidaciones/${liquidacionId}/confirmar-pago`)
+          .set('Cookie', await cookieDeAdmin())
+          .send({ referencia: 'primera vez' });
+
+        const segunda = await como(app)
+          .patch(`/api/v1/liquidaciones/${liquidacionId}/confirmar-pago`)
+          .set('Cookie', await cookieDeAdmin())
+          .send({ referencia: 'segunda vez' });
+
+        expect(segunda.status).toBe(409);
+      });
+
+      it('una liquidación que no existe da 404', async () => {
+        const respuesta = await como(app)
+          .patch(`/api/v1/liquidaciones/${nuevoId()}/confirmar-pago`)
+          .set('Cookie', await cookieDeAdmin())
+          .send({ referencia: 'lo que sea' });
+
+        expect(respuesta.status).toBe(404);
+      });
+
+      it('exige una referencia no vacía', async () => {
+        const c = await cuidadorAutomatico();
+        const { id } = await terminado(c);
+        const { id: liquidacionId } = await liquidacionDe(id);
+
+        const respuesta = await como(app)
+          .patch(`/api/v1/liquidaciones/${liquidacionId}/confirmar-pago`)
+          .set('Cookie', await cookieDeAdmin())
+          .send({ referencia: '' });
+
+        expect(respuesta.status).toBe(400);
+      });
     });
   });
 

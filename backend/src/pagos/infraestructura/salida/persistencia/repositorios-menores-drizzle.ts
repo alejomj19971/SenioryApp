@@ -1,4 +1,4 @@
-import { desc, eq } from 'drizzle-orm';
+import { desc, eq, inArray } from 'drizzle-orm';
 import type { ContextoTransaccional } from '../../../../compartido/infraestructura/base-de-datos/contexto-transaccional.js';
 import type {
   AvisoRegistrado,
@@ -6,7 +6,8 @@ import type {
   RepositorioLiquidaciones,
   RepositorioPaquetes,
 } from '../../../aplicacion/puertos/salida/repositorios.js';
-import type { Liquidacion } from '../../../dominio/liquidacion.js';
+import type { EstadoDeLiquidacion, Liquidacion } from '../../../dominio/liquidacion.js';
+import type { LiquidacionId } from '../../../dominio/ids.js';
 import type { PaqueteDeBolsa } from '../../../dominio/paquete-de-bolsa.js';
 import { liquidacionDeFila, paqueteDeFila } from './mapeadores.js';
 import {
@@ -85,6 +86,34 @@ export class RepositorioLiquidacionesDrizzle implements RepositorioLiquidaciones
       .from(liquidaciones)
       .where(eq(liquidaciones.cuidadorId, cuidadorId))
       .orderBy(desc(liquidaciones.creadaEn), desc(liquidaciones.id))
+      .limit(limite);
+    return filas.map(liquidacionDeFila);
+  }
+
+  async buscarPorIdParaActualizar(
+    id: LiquidacionId,
+  ): Promise<Liquidacion | null> {
+    const filas = await this.contexto
+      .conexion()
+      .select()
+      .from(liquidaciones)
+      .where(eq(liquidaciones.id, id))
+      .limit(1)
+      .for('update');
+    const fila = filas[0];
+    return fila === undefined ? null : liquidacionDeFila(fila);
+  }
+
+  async listarPorEstados(
+    estados: readonly EstadoDeLiquidacion[],
+    limite: number,
+  ): Promise<Liquidacion[]> {
+    const filas = await this.contexto
+      .conexion()
+      .select()
+      .from(liquidaciones)
+      .where(inArray(liquidaciones.estado, estados))
+      .orderBy(liquidaciones.creadaEn, liquidaciones.id)
       .limit(limite);
     return filas.map(liquidacionDeFila);
   }

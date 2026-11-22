@@ -47,6 +47,20 @@ export class DispersorSimulado implements DispersorDePagos {
   }
 }
 
+// Un administrador transfiere de verdad por fuera del sistema (Nequi, Daviplata, banco — el que use cada
+// cuidador) y lo confirma con `ConfirmarPagoDeLiquidacion`. Este dispersor no mueve dinero: solo marca la
+// liquidación como «enviada» para que aparezca en la cola de «por pagar» del administrador.
+export class DispersorManual implements DispersorDePagos {
+  readonly habilitado = true;
+
+  dispersar(orden: OrdenDeDispersion): Promise<ResultadoDeDispersion> {
+    return Promise.resolve({
+      estado: 'enviada',
+      referencia: `manual:${orden.liquidacionId}`,
+    });
+  }
+}
+
 // Lo que hay mientras no se elija cómo pagarle al cuidador: no se intenta nada y las liquidaciones quedan
 // pendientes, a la vista, hasta que haya un dispersor real.
 export class DispersorDeshabilitado implements DispersorDePagos {

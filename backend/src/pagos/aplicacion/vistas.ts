@@ -141,3 +141,32 @@ export function vistaDeLiquidacion(
     creadaEn: liquidacion.creadaEn.toISOString(),
   };
 }
+
+// Lo que ve el administrador en la cola de «por pagar»: a diferencia de `VistaDeLiquidacion`, trae a quién
+// contactar (nombre y teléfono del cuidador), aunque ya no esté visible en el directorio.
+export interface VistaDeLiquidacionParaAdmin {
+  id: string;
+  cuidadorId: string;
+  cuidadorNombre: string;
+  cuidadorTelefono: string;
+  servicioId: string;
+  monto: number;
+  estado: string;
+  creadaEn: string;
+}
+
+export function vistaDeLiquidacionParaAdmin(
+  liquidacion: Liquidacion,
+  contacto: { nombre: string; telefono: string },
+): VistaDeLiquidacionParaAdmin {
+  return {
+    id: liquidacion.id,
+    cuidadorId: liquidacion.cuidadorId,
+    cuidadorNombre: contacto.nombre,
+    cuidadorTelefono: contacto.telefono,
+    servicioId: liquidacion.servicioId,
+    monto: liquidacion.monto,
+    estado: liquidacion.estado,
+    creadaEn: liquidacion.creadaEn.toISOString(),
+  };
+}

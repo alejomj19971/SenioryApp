@@ -64,7 +64,14 @@ export const PASARELAS_DE_PAGOS = [
 ] as const;
 export type PasarelaConfigurada = (typeof PASARELAS_DE_PAGOS)[number];
 
-export const DISPERSORES_DE_PAGOS = ['simulado', 'deshabilitado'] as const;
+// «manual»: un administrador transfiere de verdad por fuera del sistema (Nequi, Daviplata, banco) y lo
+// confirma en Seniory (`PATCH /liquidaciones/:id/confirmar-pago`). Admitido en producción: sí mueve dinero
+// real, solo que a mano.
+export const DISPERSORES_DE_PAGOS = [
+  'simulado',
+  'manual',
+  'deshabilitado',
+] as const;
 export type DispersorConfigurado = (typeof DISPERSORES_DE_PAGOS)[number];
 
 const LARGO_MINIMO_SECRETO_BFF = 32;

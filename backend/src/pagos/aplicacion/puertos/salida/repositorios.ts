@@ -1,6 +1,9 @@
 import type { Bolsa, MovimientoDeBolsa } from '../../../dominio/bolsa.js';
-import type { BolsaId, PagoId } from '../../../dominio/ids.js';
-import type { Liquidacion } from '../../../dominio/liquidacion.js';
+import type { BolsaId, LiquidacionId, PagoId } from '../../../dominio/ids.js';
+import type {
+  EstadoDeLiquidacion,
+  Liquidacion,
+} from '../../../dominio/liquidacion.js';
 import type { PaqueteDeBolsa } from '../../../dominio/paquete-de-bolsa.js';
 import type { Pago } from '../../../dominio/pago.js';
 
@@ -67,6 +70,16 @@ export interface RepositorioLiquidaciones {
 
   // Las más recientes primero.
   listarDeCuidador(cuidadorId: string, limite: number): Promise<Liquidacion[]>;
+
+  // Dentro de una unidad de trabajo, bloquea la fila hasta el final de la transacción (la acción del
+  // administrador que confirma un pago).
+  buscarPorIdParaActualizar(id: LiquidacionId): Promise<Liquidacion | null>;
+
+  // Para la cola del administrador: las más antiguas primero (hay que pagarlas en orden).
+  listarPorEstados(
+    estados: readonly EstadoDeLiquidacion[],
+    limite: number,
+  ): Promise<Liquidacion[]>;
 }
 
 export interface AvisoRegistrado {

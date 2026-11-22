@@ -30,6 +30,10 @@ import {
   type ConsultaDeDirectorio,
 } from '../directorio/aplicacion/puertos/entrada/consulta-de-directorio.js';
 import { DirectorioModule } from '../directorio/directorio.module.js';
+import {
+  ConfirmarPagoDeLiquidacion,
+  ListarLiquidacionesPorPagar,
+} from './aplicacion/casos-de-uso/administracion-de-liquidaciones.js';
 import { ComprarBolsa } from './aplicacion/casos-de-uso/comprar-bolsa.js';
 import {
   ConsultarPagos,
@@ -87,6 +91,7 @@ import { PagosController } from './infraestructura/entrada/http/pagos.controller
 import { WebhookController } from './infraestructura/entrada/http/webhook.controller.js';
 import {
   DispersorDeshabilitado,
+  DispersorManual,
   DispersorSimulado,
 } from './infraestructura/salida/dispersion/dispersores.js';
 import { PasarelaDeMercadoPago } from './infraestructura/salida/pasarela/pasarela-mercadopago.js';
@@ -212,10 +217,15 @@ const SONDEO_DE_LIQUIDACIONES = Symbol('SondeoDeLiquidaciones');
     {
       provide: DISPERSOR_DE_PAGOS,
       inject: [CONFIGURACION],
-      useFactory: (configuracion: Configuracion): DispersorDePagos =>
-        configuracion.dispersorDePagos === 'simulado'
-          ? new DispersorSimulado()
-          : new DispersorDeshabilitado(),
+      useFactory: (configuracion: Configuracion): DispersorDePagos => {
+        if (configuracion.dispersorDePagos === 'simulado') {
+          return new DispersorSimulado();
+        }
+        if (configuracion.dispersorDePagos === 'manual') {
+          return new DispersorManual();
+        }
+        return new DispersorDeshabilitado();
+      },
     },
 
     // Servicios de aplicación
@@ -447,6 +457,30 @@ const SONDEO_DE_LIQUIDACIONES = Symbol('SondeoDeLiquidaciones');
         liquidaciones: RepositorioLiquidaciones,
         directorio: ConsultaDeDirectorio,
       ) => new ListarMisLiquidaciones(liquidaciones, directorio),
+    },
+    {
+      provide: ListarLiquidacionesPorPagar,
+      inject: [REPOSITORIO_LIQUIDACIONES, CONSULTA_DE_DIRECTORIO],
+      useFactory: (
+        liquidaciones: RepositorioLiquidaciones,
+        directorio: ConsultaDeDirectorio,
+      ) => new ListarLiquidacionesPorPagar(liquidaciones, directorio),
+    },
+    {
+      provide: ConfirmarPagoDeLiquidacion,
+      inject: [REPOSITORIO_LIQUIDACIONES, UNIDAD_DE_TRABAJO, AUDITORIA, RELOJ],
+      useFactory: (
+        liquidaciones: RepositorioLiquidaciones,
+        unidadDeTrabajo: UnidadDeTrabajo,
+        auditoria: Auditoria,
+        reloj: Reloj,
+      ) =>
+        new ConfirmarPagoDeLiquidacion(
+          liquidaciones,
+          unidadDeTrabajo,
+          auditoria,
+          reloj,
+        ),
     },
     {
       provide: CONSULTA_DE_PAGOS,
