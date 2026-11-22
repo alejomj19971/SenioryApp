@@ -9,6 +9,7 @@ import {
   Post,
   Res,
 } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import type { Response } from 'express';
 import type { UsuarioAutenticado } from '../../../../compartido/aplicacion/puertos/verificador-de-tokens.js';
@@ -29,6 +30,7 @@ import { ActualizarPerfilDto } from './dto-de-perfil.js';
 
 // El perfil de quien tiene la sesión. Cualquier rol autenticado lo usa; el control de acceso es que
 // cada quien solo puede pedir el suyo (el id sale del token, nunca de la ruta).
+@ApiTags('Identidad')
 @Controller('yo')
 export class PerfilController {
   constructor(

@@ -8,6 +8,7 @@ import {
   Post,
   Res,
 } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import type { Response } from 'express';
 import type { UsuarioAutenticado } from '../../../../compartido/aplicacion/puertos/verificador-de-tokens.js';
@@ -36,6 +37,7 @@ const UN_MINUTO_MS = 60_000;
 
 // Los paquetes de la bolsa de horas, su saldo y su compra. El precio de cada paquete sale de la base de datos: el
 // cliente solo dice cuál quiere, nunca cuánto cuesta.
+@ApiTags('Pagos')
 @Controller()
 export class BolsaController {
   constructor(

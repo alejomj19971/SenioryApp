@@ -9,6 +9,7 @@ import {
   Query,
   Res,
 } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 import type { Response } from 'express';
 import type { UsuarioAutenticado } from '../../../../compartido/aplicacion/puertos/verificador-de-tokens.js';
 import {
@@ -37,6 +38,7 @@ import {
 
 // El panel de los revisores. Solo administradores. Cada decisión y cada apertura de un documento privado queda en la
 // auditoría. (Pendiente: segundo factor para administradores, decisión abierta.)
+@ApiTags('Directorio')
 @Controller('verificaciones')
 @Roles('administrador')
 export class VerificacionesController {

@@ -13,6 +13,7 @@ import {
   Sse,
   type MessageEvent,
 } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import type { Response } from 'express';
 import type { Observable } from 'rxjs';
@@ -48,6 +49,7 @@ const UN_MINUTO_MS = 60_000;
 // El chat entre la familia y el cuidador. Solo las dos partes de una conversación la leen o escriben: cualquier otra
 // persona recibe 404, igual que si no existiera. El texto es texto plano: la interfaz lo muestra como texto, nunca
 // como HTML.
+@ApiTags('Mensajería')
 @Controller()
 export class ConversacionesController {
   constructor(

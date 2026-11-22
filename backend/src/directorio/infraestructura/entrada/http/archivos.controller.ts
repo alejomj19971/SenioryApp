@@ -1,6 +1,7 @@
 import { createReadStream } from 'node:fs';
 import { stat } from 'node:fs/promises';
 import { Controller, Get, Inject, Query, Res } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 import type { Response } from 'express';
 import { RecursoNoEncontrado } from '../../../../compartido/dominio/errores.js';
 import { Publico } from '../../../../compartido/http/decoradores.js';
@@ -18,6 +19,7 @@ import { ArchivoFirmadoDto } from './dto-de-directorio.js';
 // vigente. Es pública a propósito: la firma es la credencial, y por eso vence en minutos. Con un almacén
 // real (bucket privado) esta ruta no existe: el bucket entrega sus propias direcciones firmadas.
 // Cualquier falla (firma mala, vencida, archivo ausente) responde igual, «no encontrado», sin pistas.
+@ApiTags('Directorio')
 @Controller('archivos')
 export class ArchivosController {
   constructor(

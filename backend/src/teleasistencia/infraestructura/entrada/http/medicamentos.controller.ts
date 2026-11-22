@@ -11,6 +11,7 @@ import {
   Post,
   Query,
 } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 import type { UsuarioAutenticado } from '../../../../compartido/aplicacion/puertos/verificador-de-tokens.js';
 import {
   Roles,
@@ -40,6 +41,7 @@ const actorDe = (usuario: UsuarioAutenticado) => ({
 
 // El plan de medicamentos y sus tomas. Todo caso de uso empieza consultando la política de acceso: la familia
 // vinculada (con consentimiento) o el cuidador con un servicio activo; cualquier otra persona recibe 404.
+@ApiTags('Teleasistencia')
 @Controller()
 export class MedicamentosController {
   constructor(

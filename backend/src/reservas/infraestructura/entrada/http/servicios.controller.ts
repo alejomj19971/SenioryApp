@@ -12,6 +12,7 @@ import {
   Query,
   Res,
 } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import type { Response } from 'express';
 import type { UsuarioAutenticado } from '../../../../compartido/aplicacion/puertos/verificador-de-tokens.js';
@@ -57,6 +58,7 @@ const UN_MINUTO_MS = 60_000;
 // Los servicios que contrata la familia y atiende el cuidador. Cada acción verifica quién es el actor y su
 // relación con el servicio: uno ajeno responde 404. El monto lo calcula el servidor; el cliente nunca lo envía.
 // La familia y el cuidador ven vistas distintas: cada quien ve solo lo que le corresponde del dinero.
+@ApiTags('Reservas')
 @Controller('servicios')
 export class ServiciosController {
   constructor(

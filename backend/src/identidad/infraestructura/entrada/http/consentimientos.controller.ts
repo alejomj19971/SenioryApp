@@ -7,6 +7,7 @@ import {
   Param,
   ParseUUIDPipe,
 } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 import type { UsuarioAutenticado } from '../../../../compartido/aplicacion/puertos/verificador-de-tokens.js';
 import {
   Roles,
@@ -14,6 +15,7 @@ import {
 } from '../../../../compartido/http/decoradores.js';
 import { RevocarConsentimiento } from '../../../aplicacion/casos-de-uso/revocar-consentimiento.js';
 
+@ApiTags('Identidad')
 @Controller('consentimientos')
 export class ConsentimientosController {
   constructor(

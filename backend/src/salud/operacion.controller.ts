@@ -6,6 +6,7 @@ import {
   Inject,
   NotFoundException,
 } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 import { sql } from 'drizzle-orm';
 import { NoAutenticado } from '../compartido/dominio/errores.js';
 import { Publico } from '../compartido/http/decoradores.js';
@@ -47,6 +48,7 @@ function iguales(a: string, b: string): boolean {
 // encabezado, no con una sesión: un monitor no inicia sesión. Si `SECRETO_DE_OPERACION` no está configurado, la ruta
 // NO EXISTE (404). Solo devuelve conteos: ningún dato de ninguna persona.
 @Publico()
+@ApiTags('Salud')
 @Controller('salud')
 export class OperacionController {
   constructor(

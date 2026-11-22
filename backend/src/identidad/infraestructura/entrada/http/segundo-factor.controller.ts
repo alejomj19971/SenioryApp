@@ -8,6 +8,7 @@ import {
   Inject,
   Post,
 } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import type { UsuarioAutenticado } from '../../../../compartido/aplicacion/puertos/verificador-de-tokens.js';
 import { Roles, UsuarioActual } from '../../../../compartido/http/decoradores.js';
@@ -24,6 +25,7 @@ const UN_MINUTO_MS = 60_000;
 
 // El propio administrador activa, confirma o apaga su segundo factor (TOTP). Solo administradores: es la
 // única cuenta que lo exige (decisión 4 de M1).
+@ApiTags('Identidad')
 @Controller('cuentas/yo/segundo-factor')
 @Roles('administrador')
 export class SegundoFactorController {

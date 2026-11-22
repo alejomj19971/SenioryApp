@@ -1,6 +1,7 @@
 import { createReadStream } from 'node:fs';
 import { stat } from 'node:fs/promises';
 import { Controller, Get, Inject, Query, Res } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 import type { Response } from 'express';
 import { RecursoNoEncontrado } from '../../../../compartido/dominio/errores.js';
 import { Publico } from '../../../../compartido/http/decoradores.js';
@@ -20,6 +21,7 @@ import { ClaveDeFotoDto } from './dto-de-directorio.js';
 // claves bajo «fotos/»: cualquier otra se rechaza, así un error de uso no convierte esta ruta en una forma de leer
 // documentos de verificación. Con un almacén real (bucket) esta ruta no existe: el bucket entrega sus propias
 // direcciones públicas.
+@ApiTags('Directorio')
 @Controller('fotos')
 export class FotosController {
   constructor(

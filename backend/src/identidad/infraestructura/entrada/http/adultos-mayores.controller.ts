@@ -7,6 +7,7 @@ import {
   ParseUUIDPipe,
   Post,
 } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 import type { UsuarioAutenticado } from '../../../../compartido/aplicacion/puertos/verificador-de-tokens.js';
 import {
   Roles,
@@ -26,6 +27,7 @@ import {
 
 // Las personas mayores que un familiar cuida. El id de la ruta siempre se verifica contra los vínculos
 // de quien pregunta: sin vínculo, la respuesta es 404 (no se revela que la persona existe).
+@ApiTags('Identidad')
 @Controller('adultos-mayores')
 export class AdultosMayoresController {
   constructor(

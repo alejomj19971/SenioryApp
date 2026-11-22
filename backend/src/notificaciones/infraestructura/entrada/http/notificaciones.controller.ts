@@ -1,4 +1,5 @@
 import { Controller, Get, Inject, Query } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { IsInt, IsOptional, IsString, Length, Max, Min } from 'class-validator';
 import type { UsuarioAutenticado } from '../../../../compartido/aplicacion/puertos/verificador-de-tokens.js';
@@ -28,6 +29,7 @@ export class ListadoDeNotificacionesDto {
 
 // La campana de la aplicación: los avisos de quien pregunta, los más recientes primero. Cualquier persona con
 // sesión ve SOLO los suyos: el destinatario sale del token, nunca de un parámetro.
+@ApiTags('Notificaciones')
 @Controller('notificaciones')
 export class NotificacionesController {
   constructor(

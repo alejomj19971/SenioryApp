@@ -14,6 +14,7 @@ import {
   Req,
   Res,
 } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import type { Request, Response } from 'express';
 import type { UsuarioAutenticado } from '../../../../compartido/aplicacion/puertos/verificador-de-tokens.js';
@@ -58,6 +59,7 @@ const TIPOS_QUE_SE_ACEPTAN = ['application/pdf', 'image/jpeg', 'image/png'];
 // El propio cuidador: arma su perfil, sube sus documentos y pide la revisión. Va ANTES de `CuidadoresController` en el
 // módulo para que `yo` no se tome por el id de un cuidador. Solo cuentas con rol cuidador, y cada una ve únicamente
 // lo suyo: no hay ningún id de otra persona en estas rutas.
+@ApiTags('Directorio')
 @Controller('cuidadores/yo')
 export class MiPerfilController {
   constructor(

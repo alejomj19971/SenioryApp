@@ -1,4 +1,5 @@
 import { Controller, Get, HttpStatus, Inject, Res } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 import { SkipThrottle } from '@nestjs/throttler';
 import { sql } from 'drizzle-orm';
 import type { Response } from 'express';
@@ -21,6 +22,7 @@ export interface EstadoDePreparacion {
 // consulta cada pocos segundos desde la misma IP. Por eso también deben ser baratas.
 @Publico()
 @SkipThrottle()
+@ApiTags('Salud')
 @Controller('salud')
 export class SaludController {
   constructor(@Inject(BASE_DE_DATOS) private readonly bd: BaseDeDatos) {}

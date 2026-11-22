@@ -8,6 +8,7 @@ import {
   Req,
   type RawBodyRequest,
 } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import type { Request } from 'express';
 import { ErrorDeValidacion } from '../../../../compartido/dominio/errores.js';
@@ -23,6 +24,7 @@ const UN_MINUTO_MS = 60_000;
 // credencial es la FIRMA del aviso, que se verifica sobre el cuerpo exacto (por eso se lee el cuerpo crudo). Sin
 // firma válida responde 401 y no hace nada. Responde 200 a todo lo que sí venía firmado, aunque no lo aplique (aviso
 // repetido, pago desconocido): la pasarela reintenta lo que no se confirma y reintentar no lo arregla.
+@ApiTags('Pagos')
 @Controller('pagos/webhook')
 export class WebhookController {
   constructor(

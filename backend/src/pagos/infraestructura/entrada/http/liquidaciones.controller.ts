@@ -7,6 +7,7 @@ import {
   ParseUUIDPipe,
   Patch,
 } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 import type { UsuarioAutenticado } from '../../../../compartido/aplicacion/puertos/verificador-de-tokens.js';
 import {
   Roles,
@@ -27,6 +28,7 @@ import { ConfirmarPagoDeLiquidacionDto } from './dto-de-pagos.js';
 // Lo que se le debe al cuidador por sus servicios terminados, y lo que ya se le pagó. Un cuidador solo ve las
 // suyas; un administrador ve la cola de todas las que faltan por pagar y las confirma a mano (dispersor
 // manual: transfiere por fuera del sistema y lo confirma aquí).
+@ApiTags('Pagos')
 @Controller('liquidaciones')
 export class LiquidacionesController {
   constructor(

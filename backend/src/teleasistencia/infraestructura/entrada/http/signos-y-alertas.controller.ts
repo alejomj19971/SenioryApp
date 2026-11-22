@@ -14,6 +14,7 @@ import {
   Query,
   Res,
 } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import type { Response } from 'express';
 import type { UsuarioAutenticado } from '../../../../compartido/aplicacion/puertos/verificador-de-tokens.js';
@@ -70,6 +71,7 @@ function rangosDe(cuerpo: RangosDto): RangosDeReferencia {
 }
 
 // Signos vitales, alertas y el resumen del inicio. Todo caso de uso empieza consultando la política de acceso.
+@ApiTags('Teleasistencia')
 @Controller()
 export class SignosYAlertasController {
   constructor(

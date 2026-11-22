@@ -7,6 +7,7 @@ import {
   Query,
   Res,
 } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 import type { Response } from 'express';
 import { ListarCuidadores } from '../../../aplicacion/casos-de-uso/listar-cuidadores.js';
 import type { PaginaDeVistas } from '../../../aplicacion/casos-de-uso/listar-cuidadores.js';
@@ -22,6 +23,7 @@ import { BusquedaDeCuidadoresDto } from './dto-de-directorio.js';
 
 // El directorio de cuidadores. Exige sesión (cualquier rol): el catálogo no es público. Solo muestra a los
 // cuidadores con sus tres controles vigentes; el teléfono nunca sale por aquí.
+@ApiTags('Directorio')
 @Controller('cuidadores')
 export class CuidadoresController {
   constructor(

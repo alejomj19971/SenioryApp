@@ -8,6 +8,7 @@ import {
   ParseUUIDPipe,
   Post,
 } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import type { UsuarioAutenticado } from '../../../../compartido/aplicacion/puertos/verificador-de-tokens.js';
 import {
@@ -22,6 +23,7 @@ import type { PagoId } from '../../../dominio/ids.js';
 const UN_MINUTO_MS = 60_000;
 
 // Los pagos de la familia. Un pago ajeno responde «no encontrado», igual que uno que no existe.
+@ApiTags('Pagos')
 @Controller('pagos')
 export class PagosController {
   constructor(

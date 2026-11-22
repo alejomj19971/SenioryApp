@@ -8,6 +8,7 @@ import {
   Req,
   Res,
 } from '@nestjs/common';
+import { ApiTags } from '@nestjs/swagger';
 import { Throttle } from '@nestjs/throttler';
 import type { Request, Response } from 'express';
 import { NoAutenticado } from '../../../../compartido/dominio/errores.js';
@@ -59,6 +60,7 @@ interface RespuestaDeDesafio {
 
 // Todas son públicas: son la puerta de entrada. Los tokens viajan SOLO en cookies, nunca en el cuerpo.
 // Límites propios por IP (M1 §4.5): más estrictos que el global, porque aquí se prueban contraseñas.
+@ApiTags('Identidad')
 @Controller('auth')
 export class AuthController {
   constructor(
