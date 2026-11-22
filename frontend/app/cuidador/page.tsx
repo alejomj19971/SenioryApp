@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
-import { Banknote, Inbox, MessageCircle, ShieldCheck, UserRound } from "lucide-react";
+import { Banknote, CalendarClock, Inbox, MessageCircle, ShieldCheck, UserRound } from "lucide-react";
 import { TarjetaDeSolicitud } from "@/components/cuidador/tarjeta-de-solicitud";
 import { resumenDeLaPostulacion } from "@/lib/etiquetas-de-postulacion";
 import { exigirRol } from "@/lib/sesion";
@@ -44,6 +44,14 @@ export default async function CuidadorPage() {
         <span>
           <span className="block text-base font-semibold text-foreground">{postulacion.tono === "exito" ? "Tu perfil y tus documentos" : postulacion.titulo}</span>
           <span className="block text-sm text-muted-foreground">{postulacion.tono === "exito" ? "Estás verificado: las familias te ven" : postulacion.explicacion}</span>
+        </span>
+      </Link>
+
+      <Link href="/cuidador/horario" className="flex items-center gap-3 rounded-2xl bg-card p-4 ring-1 ring-border transition-colors hover:ring-primary/40">
+        <CalendarClock className="size-6 shrink-0 text-primary" aria-hidden="true" />
+        <span>
+          <span className="block text-base font-semibold text-foreground">Tu horario</span>
+          <span className="block text-sm text-muted-foreground">Las horas en las que atiendes, día por día</span>
         </span>
       </Link>
 

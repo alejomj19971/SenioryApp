@@ -107,7 +107,11 @@ export function validarPerfil(entrada: EntradaDePerfil, { congelado = false }: {
 
   const anios = FORMATO_DE_ENTERO.test(valores.aniosExperiencia as string) ? Number(valores.aniosExperiencia) : Number.NaN;
   const tarifa = FORMATO_DE_ENTERO.test((valores.tarifaHora as string).replace(/[.\s]/g, "")) ? Number((valores.tarifaHora as string).replace(/[.\s]/g, "")) : Number.NaN;
-  const horariosLibres = horariosLibresDeTexto(entrada.horariosLibres) ?? [];
+  // El horario ahora se edita aparte, en /cuidador/horario (se usa seguido; merece su propio botón). Este
+  // formulario solo lo pide al armar el perfil por primera vez: si no viene (editar un perfil existente), no
+  // se toca ni se exige.
+  const horariosLibresTocado = entrada.horariosLibres !== "";
+  const horariosLibres = horariosLibresTocado ? (horariosLibresDeTexto(entrada.horariosLibres) ?? []) : [];
 
   const errores = soloErrores({
     especialidad: congelado || ESPECIALIDADES.some((e) => e.valor === entrada.especialidad) ? undefined : "Elige tu especialidad.",
@@ -116,7 +120,7 @@ export function validarPerfil(entrada: EntradaDePerfil, { congelado = false }: {
     tarifaHora: Number.isInteger(tarifa) && tarifa >= 1 && tarifa <= TARIFA_MAXIMA ? undefined : "Escribe cuánto cobras por hora, en pesos (solo números).",
     telefono: FORMATO_DE_TELEFONO.test(telefono) ? undefined : "Escribe un celular válido, por ejemplo 300 123 4567.",
     zona: zona === "" ? "Escribe la zona donde atiendes." : cuentaCaracteres(zona) > LARGO_MAXIMO_DE_ZONA ? `Debe tener ${LARGO_MAXIMO_DE_ZONA} caracteres o menos.` : undefined,
-    horariosLibres: horariosLibres.length > 0 ? undefined : "Agrega al menos un rango de horario en el que atiendas.",
+    horariosLibres: !horariosLibresTocado || horariosLibres.length > 0 ? undefined : "Agrega al menos un rango de horario en el que atiendas.",
     bio: bio === "" ? "Cuéntales a las familias quién eres." : cuentaCaracteres(bio) > LARGO_MAXIMO_DE_BIO ? `Debe tener ${LARGO_MAXIMO_DE_BIO} caracteres o menos.` : undefined,
   });
   if (Object.keys(errores).length > 0) return { errores, valores };
@@ -128,7 +132,7 @@ export function validarPerfil(entrada: EntradaDePerfil, { congelado = false }: {
       tarifaHora: tarifa,
       telefono,
       zona,
-      horariosLibres,
+      ...(horariosLibresTocado ? { horariosLibres } : {}),
       bio,
     },
     valores,

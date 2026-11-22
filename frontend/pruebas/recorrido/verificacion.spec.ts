@@ -77,7 +77,7 @@ test("un cuidador se postula, un revisor lo aprueba (y rechaza lo que no se lee)
   await page.getByRole("button", { name: "Guardar mi perfil" }).click();
   await expect(page.getByText("Revisa lo que escribiste")).toBeVisible();
   await expect(page.getByText("Elige tu especialidad.")).toBeVisible();
-  await expect(page.getByText("Elige al menos una jornada.")).toBeVisible();
+  await expect(page.getByText("Agrega al menos un rango de horario en el que atiendas.")).toBeVisible();
 
   await page.getByLabel("Tu especialidad").selectOption("enfermeria");
   await page.getByLabel("Título o formación").fill("Enfermera profesional, U. de A.");

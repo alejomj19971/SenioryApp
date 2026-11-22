@@ -4,6 +4,7 @@ import { Campana } from "@/components/avisos/campana";
 import { Logo } from "@/components/logo";
 import { hayAvisosNuevos as hayAvisosNuevosParaMi } from "@/lib/services/notificaciones";
 import { SalirDeLaCuenta } from "@/components/shell/salir-de-la-cuenta";
+import { BottomNavCuidador } from "@/components/shell/bottom-nav-cuidador";
 
 // El área del cuidador: sus solicitudes y servicios. Pensada para el celular y para usarse con prisa.
 export default async function CuidadorLayout({ children }: LayoutProps<"/cuidador">) {
@@ -20,7 +21,8 @@ export default async function CuidadorLayout({ children }: LayoutProps<"/cuidado
         </div>
       </header>
       <BarraAccesibilidad />
-      <main className="flex-1 pb-10">{children}</main>
+      <main className="flex-1 pb-24">{children}</main>
+      <BottomNavCuidador />
     </div>
   );
 }

@@ -8,15 +8,17 @@ const refresh = vi.fn();
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh }) }));
 
 const guardarPerfilAccion = vi.fn();
+const guardarHorarioAccion = vi.fn();
 const solicitarRevisionAccion = vi.fn();
 const renovarControlAccion = vi.fn();
 const decidirControlAccion = vi.fn();
 const decidirHojaDeVidaAccion = vi.fn();
-vi.mock("@/lib/acciones/postulacion", () => ({ guardarPerfilAccion, solicitarRevisionAccion, renovarControlAccion, decidirControlAccion, decidirHojaDeVidaAccion }));
+vi.mock("@/lib/acciones/postulacion", () => ({ guardarPerfilAccion, guardarHorarioAccion, solicitarRevisionAccion, renovarControlAccion, decidirControlAccion, decidirHojaDeVidaAccion }));
 
 const { SubirDocumento } = await import("@/components/postulacion/subir-documento");
 const { SubirFoto } = await import("@/components/postulacion/subir-foto");
 const { FormularioPerfil } = await import("@/components/postulacion/formulario-perfil");
+const { FormularioDeHorario } = await import("@/components/postulacion/formulario-de-horario");
 const { EstadoDeControles } = await import("@/components/postulacion/estado-de-controles");
 const { BotonDeRevision } = await import("@/components/postulacion/acciones-de-postulacion");
 const { TarjetaDeVerificacion, TarjetaDeHojaDeVida } = await import("@/components/admin/tarjeta-de-verificacion");
@@ -59,7 +61,7 @@ const archivo = (nombre: string, tipo: string, bytes = 100) => new File([new Uin
 
 const fetchSimulado = vi.fn();
 beforeEach(() => {
-  for (const f of [refresh, guardarPerfilAccion, solicitarRevisionAccion, renovarControlAccion, decidirControlAccion, decidirHojaDeVidaAccion, fetchSimulado]) f.mockReset();
+  for (const f of [refresh, guardarPerfilAccion, guardarHorarioAccion, solicitarRevisionAccion, renovarControlAccion, decidirControlAccion, decidirHojaDeVidaAccion, fetchSimulado]) f.mockReset();
   vi.stubGlobal("fetch", fetchSimulado);
 });
 
@@ -206,16 +208,17 @@ describe("BotonDeRevision", () => {
 });
 
 describe("FormularioPerfil", () => {
-  it("un perfil nuevo pide todo; uno existente llega con sus datos", () => {
+  it("un perfil nuevo pide todo, incluido el horario; uno existente llega con sus datos y edita el horario aparte", () => {
     const { unmount } = render(<FormularioPerfil perfil={null} ahora={AHORA} />);
     expect(screen.getByRole("button", { name: "Guardar mi perfil" })).toBeInTheDocument();
     expect(screen.queryByLabelText(/Aceptar automáticamente/)).not.toBeInTheDocument();
+    expect(screen.getByText("Tu horario semanal")).toBeInTheDocument();
     unmount();
 
     render(<FormularioPerfil perfil={perfil()} ahora={AHORA} />);
     expect(screen.getByLabelText("Título o formación")).toHaveValue("Enfermera profesional");
-    expect(screen.getByText("6:00 a. m. – 12:00 p. m.")).toBeInTheDocument();
-    expect(screen.getAllByText("No atiendes este día.")).toHaveLength(6);
+    // Un perfil ya armado edita el horario en su propia pantalla (/cuidador/horario), no aquí.
+    expect(screen.queryByText("Tu horario semanal")).not.toBeInTheDocument();
     expect(screen.getByLabelText(/Aceptar automáticamente/)).not.toBeChecked();
     expect(screen.getByRole("button", { name: "Guardar cambios" })).toBeInTheDocument();
   });
@@ -248,6 +251,31 @@ describe("FormularioPerfil", () => {
     await usuario.click(screen.getByRole("button", { name: "Guardar cambios" }));
 
     expect(await screen.findByText("Cambios guardados.")).toBeInTheDocument();
+  });
+});
+
+describe("FormularioDeHorario", () => {
+  const horariosLibres = [{ diaSemana: 1, horaInicio: 360, horaFin: 720 }];
+
+  it("llega con el horario que ya tenía, y al guardar dice que quedó guardado", async () => {
+    guardarHorarioAccion.mockResolvedValue({ listo: true });
+    const usuario = userEvent.setup();
+    render(<FormularioDeHorario horariosLibres={horariosLibres} ahora={AHORA} />);
+
+    expect(screen.getByText("6:00 a. m. – 12:00 p. m.")).toBeInTheDocument();
+    await usuario.click(screen.getByRole("button", { name: "Guardar horario" }));
+
+    expect(await screen.findByText("Horario guardado.")).toBeInTheDocument();
+  });
+
+  it("sin ningún rango, muestra el error del backend", async () => {
+    guardarHorarioAccion.mockResolvedValue({ errores: { horariosLibres: "Agrega al menos un rango de horario en el que atiendas." }, valores: { horariosLibres: "[]" } });
+    const usuario = userEvent.setup();
+    render(<FormularioDeHorario horariosLibres={horariosLibres} ahora={AHORA} />);
+
+    await usuario.click(screen.getByRole("button", { name: "Guardar horario" }));
+
+    expect(await screen.findByText("Agrega al menos un rango de horario en el que atiendas.")).toBeInTheDocument();
   });
 });
 

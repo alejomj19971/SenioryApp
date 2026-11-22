@@ -105,7 +105,9 @@ export function FormularioPerfil({ perfil, ahora }: { perfil: MiPerfilDeCuidador
         error={estado.errores?.zona}
       />
 
-      <EditorDeHorario nombreDelCampo="horariosLibres" valorInicial={horariosLibresIniciales} ahora={ahora} error={errorDeHorario} />
+      {/* Después de armado, el horario se edita aparte (tiene su propio botón en el panel): es lo que se
+          toca seguido, no tiene sentido pasar por todo este formulario solo para cambiarlo. */}
+      {perfil === null && <EditorDeHorario nombreDelCampo="horariosLibres" valorInicial={horariosLibresIniciales} ahora={ahora} error={errorDeHorario} />}
 
       <div className="flex flex-col gap-2">
         <Label htmlFor="bio">Cuéntales a las familias quién eres</Label>

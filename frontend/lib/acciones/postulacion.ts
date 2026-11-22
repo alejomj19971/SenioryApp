@@ -4,7 +4,7 @@ import { revalidatePath } from "next/cache";
 import { MENSAJE_DEMASIADAS_SOLICITUDES } from "@/lib/acciones/errores-de-servicio";
 import type { EstadoDeFormulario } from "@/lib/acciones/estado";
 import { texto } from "@/lib/acciones/validar-cuenta";
-import { validarPerfil, validarVigencia } from "@/lib/acciones/validar-postulacion";
+import { horariosLibresDeTexto, validarPerfil, validarVigencia } from "@/lib/acciones/validar-postulacion";
 import { ErrorDeApi } from "@/lib/api/error-de-api";
 import { ahoraEnColombia } from "@/lib/fecha-colombia";
 import { esUbicacionValida } from "@/lib/geo";
@@ -59,6 +59,21 @@ export async function guardarPerfilAccion(_previo: EstadoDeFormulario, datos: Fo
       ? await crearMiPerfil(resultadoDeValidar.datos as Required<typeof resultadoDeValidar.datos>)
       : await actualizarMiPerfil({ ...resultadoDeValidar.datos, aceptacionAutomatica: texto(datos, "aceptacionAutomatica") === "on" });
   if (!resultado.ok) return { mensaje: mensajeDeErrorDePostulacion(resultado.error), valores: resultadoDeValidar.valores };
+  revalidatePath("/cuidador", "layout");
+  return { listo: true };
+}
+
+// El horario semanal, aparte del resto del perfil: es lo que el cuidador va a tocar seguido, así que tiene su
+// propia pantalla y su propio botón (en vez de obligarlo a pasar por todo el formulario de "Tus datos").
+export async function guardarHorarioAccion(_previo: EstadoDeFormulario, datos: FormData): Promise<EstadoDeFormulario> {
+  await exigirRol("cuidador");
+  const crudo = texto(datos, "horariosLibres");
+  const horariosLibres = horariosLibresDeTexto(crudo);
+  if (horariosLibres === null || horariosLibres.length === 0) {
+    return { errores: { horariosLibres: "Agrega al menos un rango de horario en el que atiendas." }, valores: { horariosLibres: crudo } };
+  }
+  const resultado = await actualizarMiPerfil({ horariosLibres });
+  if (!resultado.ok) return { mensaje: mensajeDeErrorDePostulacion(resultado.error), valores: { horariosLibres: crudo } };
   revalidatePath("/cuidador", "layout");
   return { listo: true };
 }
