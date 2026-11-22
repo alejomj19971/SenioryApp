@@ -15,6 +15,7 @@ import {
   AHORA_RESERVAS,
   CUIDADOR_ID,
   CUIDADOR_USUARIO_ID,
+  datosParaModificar,
   datosParaSolicitar,
   FAMILIAR_ID,
   HOY_RESERVAS,
@@ -276,6 +277,111 @@ describe('Servicio.solicitar', () => {
         }) as Error,
       );
     });
+  });
+});
+
+describe('modificar', () => {
+  it('cambia fecha, hora, horas, jornada y el desglose; sigue «solicitado»', () => {
+    const servicio = servicioSolicitado();
+    const luego = minutosDespues(AHORA_RESERVAS, 10);
+
+    servicio.modificar(
+      datosParaModificar({
+        fecha: HOY_RESERVAS.sumarDias(2),
+        horaInicio: 720,
+        horas: 3,
+        tarifaHora: 20_000,
+        subtotal: 60_000,
+        cargoFamilia: 4_800,
+        totalFamilia: 64_800,
+        pagoProfesional: 54_000,
+        ahora: luego,
+      }),
+      FAMILIAR_ID,
+    );
+
+    expect(servicio).toMatchObject({
+      estado: 'solicitado',
+      horaInicio: 720,
+      jornada: 'tarde',
+      horas: 3,
+      subtotal: 60_000,
+      cargoFamilia: 4_800,
+      totalFamilia: 64_800,
+      pagoProfesional: 54_000,
+      actualizadoEn: luego,
+      version: 2,
+    });
+    expect(servicio.fecha.aTexto()).toBe(HOY_RESERVAS.sumarDias(2).aTexto());
+  });
+
+  it('reinicia el plazo para que el cuidador responda, como si fuera una solicitud nueva', () => {
+    const servicio = servicioSolicitado();
+    const luego = minutosDespues(AHORA_RESERVAS, 10);
+
+    servicio.modificar(
+      datosParaModificar({ fecha: HOY_RESERVAS, horaInicio: 720, ahora: luego }),
+      FAMILIAR_ID,
+    );
+
+    expect(servicio.solicitudExpiraEn).toEqual(
+      minutosDespues(luego, PLAZO_DE_ACEPTACION_HOY_MINUTOS),
+    );
+  });
+
+  it('deja una fila en el historial con la acción «modificar»', () => {
+    const servicio = servicioSolicitado();
+
+    servicio.modificar(datosParaModificar(), FAMILIAR_ID);
+
+    expect(servicio.transicionesPendientes.at(-1)).toEqual({
+      desde: 'solicitado',
+      hacia: 'solicitado',
+      accion: 'modificar',
+      actorId: FAMILIAR_ID,
+      ocurridoEn: servicio.actualizadoEn,
+    });
+  });
+
+  it('no se puede modificar un servicio ya aceptado', () => {
+    const servicio = servicioEn('aceptado');
+
+    expect(() => servicio.modificar(datosParaModificar(), FAMILIAR_ID)).toThrow(
+      ConflictoDeEstado,
+    );
+  });
+
+  it('rechaza una hora de inicio inválida, igual que al solicitar', () => {
+    const servicio = servicioSolicitado();
+
+    expect(() =>
+      servicio.modificar(
+        datosParaModificar({ horaInicio: 361 }),
+        FAMILIAR_ID,
+      ),
+    ).toThrow(
+      expect.objectContaining({
+        constructor: ErrorDeValidacion,
+        codigo: 'servicio.hora_invalida',
+      }) as Error,
+    );
+    expect(servicio.estado).toBe('solicitado');
+  });
+
+  it('rechaza una fecha pasada, igual que al solicitar', () => {
+    const servicio = servicioSolicitado();
+
+    expect(() =>
+      servicio.modificar(
+        datosParaModificar({ fecha: HOY_RESERVAS.sumarDias(-1) }),
+        FAMILIAR_ID,
+      ),
+    ).toThrow(
+      expect.objectContaining({
+        constructor: ReglaDeNegocioIncumplida,
+        codigo: 'servicio.fecha_pasada',
+      }) as Error,
+    );
   });
 });
 

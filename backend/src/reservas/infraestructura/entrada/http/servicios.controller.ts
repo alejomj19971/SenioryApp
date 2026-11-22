@@ -37,6 +37,7 @@ import {
   ObtenerServicio,
   type Consultante,
 } from '../../../aplicacion/casos-de-uso/consultar-servicios.js';
+import { ModificarServicio } from '../../../aplicacion/casos-de-uso/modificar-servicio.js';
 import { SolicitarServicio } from '../../../aplicacion/casos-de-uso/solicitar-servicio.js';
 import type { RolConAcceso } from '../../../aplicacion/servicios/acceso-a-servicios.js';
 import { VistasDeServicios } from '../../../aplicacion/servicios/vistas-de-servicios.js';
@@ -50,6 +51,7 @@ import type { Servicio } from '../../../dominio/servicio.js';
 import {
   CalificacionDto,
   ListadoDeServiciosDto,
+  ModificacionDeServicioDto,
   SolicitudDeServicioDto,
 } from './dto-de-servicios.js';
 
@@ -63,6 +65,7 @@ const UN_MINUTO_MS = 60_000;
 export class ServiciosController {
   constructor(
     @Inject(SolicitarServicio) private readonly solicitar: SolicitarServicio,
+    @Inject(ModificarServicio) private readonly modificar: ModificarServicio,
     @Inject(AceptarServicio) private readonly aceptar: AceptarServicio,
     @Inject(RechazarServicio) private readonly rechazar: RechazarServicio,
     @Inject(IniciarServicio) private readonly iniciar: IniciarServicio,
@@ -99,6 +102,23 @@ export class ServiciosController {
     );
     respuesta.status(creado ? HttpStatus.CREATED : HttpStatus.OK);
     return { servicio: await this.paraFamilia(servicio) };
+  }
+
+  // Solo mientras el cuidador no ha respondido (E9): una vez aceptado, se cancela y se pide de nuevo.
+  @Roles('familiar')
+  @HttpCode(HttpStatus.OK)
+  @Throttle({ default: { limit: 20, ttl: UN_MINUTO_MS } })
+  @Post(':id/modificar')
+  async modificarServicio(
+    @UsuarioActual() usuario: UsuarioAutenticado,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() cuerpo: ModificacionDeServicioDto,
+  ): Promise<{ servicio: VistaDeServicioParaFamilia }> {
+    return {
+      servicio: await this.paraFamilia(
+        await this.modificar.ejecutar(usuario.id, id, cuerpo),
+      ),
+    };
   }
 
   @Roles('familiar', 'cuidador')

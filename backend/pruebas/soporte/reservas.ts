@@ -2,6 +2,7 @@ import { FechaCivil } from '../../src/compartido/dominio/fecha-civil.js';
 import type { Jornada } from '../../src/compartido/dominio/jornada.js';
 import {
   Servicio,
+  type DatosParaModificar,
   type DatosParaSolicitar,
 } from '../../src/reservas/dominio/servicio.js';
 import type { EstadoDeServicio } from '../../src/reservas/dominio/valores-cerrados.js';
@@ -40,6 +41,26 @@ export function datosParaSolicitar(
     pagoProfesional: 36_000,
     politicaVersion: 1,
     claveDeIdempotencia: `clave-${idDePrueba<'Clave'>()}`,
+    hoy: HOY_RESERVAS,
+    ahora: AHORA_RESERVAS,
+    zonaHoraria: ZONA,
+    ...cambios,
+  };
+}
+
+export function datosParaModificar(
+  cambios: Partial<DatosParaModificar> = {},
+): DatosParaModificar {
+  return {
+    fecha: HOY_RESERVAS.sumarDias(1),
+    horaInicio: 360,
+    horas: 2,
+    tarifaHora: 20_000,
+    subtotal: 40_000,
+    cargoFamilia: 3_200,
+    totalFamilia: 43_200,
+    pagoProfesional: 36_000,
+    politicaVersion: 1,
     hoy: HOY_RESERVAS,
     ahora: AHORA_RESERVAS,
     zonaHoraria: ZONA,

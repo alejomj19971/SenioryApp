@@ -15,7 +15,8 @@ const GRUPOS: { titulo: string; estados: EstadoDeServicio[] }[] = [
   { titulo: "Por responder", estados: ["solicitado"] },
   { titulo: "En curso", estados: ["en_curso"] },
   { titulo: "Próximos", estados: ["aceptado"] },
-  { titulo: "Anteriores", estados: ["finalizado", "cancelado"] },
+  { titulo: "Terminados", estados: ["finalizado"] },
+  { titulo: "Cancelados", estados: ["cancelado"] },
 ];
 
 // El panel del cuidador (F4): sus solicitudes y servicios. Lo que recibe por cada uno; nunca lo que paga la familia.

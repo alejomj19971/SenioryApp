@@ -14,6 +14,7 @@ import type {
 import type {
   Cotizacion,
   CuidadorEnTurno,
+  DatosDeModificacion,
   DatosDeSolicitud,
   EstadoDeServicio,
   Servicio,
@@ -115,6 +116,15 @@ export async function obtenerServicio(id: string): Promise<Servicio | null> {
 
 export async function cancelarServicio(id: string): Promise<ResultadoDeEscritura<Servicio>> {
   const resultado = await escribirEnBackend<RespuestaDeServicioParaFamilia>(`/servicios/${id}/cancelar`, { metodo: "POST" });
+  return mapear(resultado, ({ servicio }) => aServicioDeFamilia(servicio));
+}
+
+// Solo mientras el cuidador no ha respondido (E9): una vez aceptado, se cancela y se pide de nuevo.
+export async function modificarServicio(id: string, datos: DatosDeModificacion): Promise<ResultadoDeEscritura<Servicio>> {
+  const resultado = await escribirEnBackend<RespuestaDeServicioParaFamilia>(`/servicios/${id}/modificar`, {
+    metodo: "POST",
+    cuerpo: datos,
+  });
   return mapear(resultado, ({ servicio }) => aServicioDeFamilia(servicio));
 }
 

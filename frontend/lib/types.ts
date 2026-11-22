@@ -227,6 +227,13 @@ export interface DatosDeSolicitud {
   medioDePago: MedioDePago;
 }
 
+// El cuidador y el medio de pago no se pueden cambiar aquí: eso es contratar a alguien distinto.
+export interface DatosDeModificacion {
+  fecha: string; // AAAA-MM-DD
+  horaInicio: number; // minutos desde las 00:00 de `fecha`, en bloques de 30
+  horas: number;
+}
+
 // Pagos (F7)
 export type EstadoDePago = "pendiente" | "aprobado" | "rechazado" | "expirado" | "reembolsado";
 

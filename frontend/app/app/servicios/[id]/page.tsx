@@ -4,11 +4,12 @@ import { ArrowLeft, CalendarDays, CircleCheck, Clock, Star, UserRound, Wallet } 
 import { BotonEscribir } from "@/components/mensajeria/boton-escribir";
 import { ResumenCosto } from "@/components/contratacion/resumen-costo";
 import { SeccionDePago } from "@/components/pagos/seccion-de-pago";
-import { CalificarServicio, CancelarServicio } from "@/components/servicios/acciones-de-servicio-familia";
+import { CalificarServicio, CancelarServicio, ModificarServicio } from "@/components/servicios/acciones-de-servicio-familia";
 import { EstadoDelServicio } from "@/components/servicios/estado-del-servicio";
 import { etiquetaDeEstadoParaLaFamilia } from "@/lib/etiquetas-de-servicio";
-import { horaEnColombia } from "@/lib/fecha-colombia";
+import { ahoraEnColombia, horaEnColombia } from "@/lib/fecha-colombia";
 import { etiquetaRangoDeHoras, formatearDiaCivil } from "@/lib/format";
+import { obtenerCuidador } from "@/lib/services/cuidadores";
 import { exigirFamiliaLista } from "@/lib/services/paciente";
 import { obtenerPagoDelServicio } from "@/lib/services/pagos";
 import { obtenerServicio } from "@/lib/services/servicios";
@@ -29,6 +30,9 @@ export default async function ServicioPage({ params, searchParams }: PageProps<"
   const etiqueta = etiquetaDeEstadoParaLaFamilia(servicio.estado, servicio.motivoDeCancelacion);
   const porcentaje = servicio.subtotal === 0 ? 0 : Math.round((servicio.cargoDeServicio / servicio.subtotal) * 1000) / 10;
   const puedeCancelar = servicio.estado === "solicitado" || servicio.estado === "aceptado";
+  // Solo mientras el cuidador no ha respondido: ahí se puede cambiar fecha/hora/horas sin cancelar y pedir de nuevo.
+  const cuidadorParaModificar =
+    servicio.estado === "solicitado" && servicio.cuidador !== null ? await obtenerCuidador(servicio.cuidador.id) : null;
 
   return (
     <div className="flex flex-col gap-6 px-4 py-6">
@@ -105,6 +109,23 @@ export default async function ServicioPage({ params, searchParams }: PageProps<"
       )}
 
       {servicio.estado === "finalizado" && servicio.calificacion === null && <CalificarServicio servicioId={servicio.id} />}
+      {cuidadorParaModificar !== null && (
+        <ModificarServicio
+          servicio={{
+            id: servicio.id,
+            fecha: servicio.fecha,
+            horaInicio: servicio.horaInicio,
+            horas: servicio.horas,
+            cuidadorId: cuidadorParaModificar.id,
+            tarifaHora: servicio.tarifaHora,
+            subtotal: servicio.subtotal,
+            cargoDeServicio: servicio.cargoDeServicio,
+            totalFamilia: servicio.totalFamilia,
+          }}
+          disponibilidad={cuidadorParaModificar.disponibilidad}
+          ahora={ahoraEnColombia()}
+        />
+      )}
       {puedeCancelar && <CancelarServicio servicioId={servicio.id} yaSeCobro={servicio.estado === "aceptado"} />}
     </div>
   );

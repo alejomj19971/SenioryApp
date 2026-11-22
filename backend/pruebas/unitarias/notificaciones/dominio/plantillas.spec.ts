@@ -47,6 +47,8 @@ describe('renderizarAviso', () => {
       'servicio_finalizado:familia',
       'servicio_iniciado:cuidador',
       'servicio_iniciado:familia',
+      'servicio_modificado:cuidador',
+      'servicio_modificado:familia',
       'servicio_solicitado:cuidador',
       'servicio_solicitado:familia',
       'verificacion_rechazada:cuidador',
@@ -66,6 +68,19 @@ describe('renderizarAviso', () => {
       titulo: 'Servicio confirmado',
       cuerpo:
         'Tu servicio del martes 11 de junio, en la mañana quedó confirmado.',
+    });
+  });
+
+  it('el cuidador recibe la modificación y la familia una confirmación de que se actualizó', () => {
+    expect(renderizarAviso('servicio_modificado:cuidador', con())).toEqual({
+      titulo: 'Una solicitud cambió',
+      cuerpo:
+        'La familia cambió los detalles de una solicitud: ahora es para el martes 11 de junio, en la mañana, por 2 horas. Respóndela en Seniory antes de que venza el plazo.',
+    });
+    expect(renderizarAviso('servicio_modificado:familia', con())).toEqual({
+      titulo: 'Solicitud actualizada',
+      cuerpo:
+        'Actualizamos tu solicitud para el martes 11 de junio, en la mañana. Te avisaremos cuando el cuidador responda.',
     });
   });
 

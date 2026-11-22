@@ -333,4 +333,40 @@ describe("acciones de servicios", () => {
     expect(await acciones.actuarServicioAccion(UUID, "aceptar")).toEqual({ ok: true });
     expect(escribirEnBackend).toHaveBeenCalledWith(`/servicios/${UUID}/aceptar`, { metodo: "POST" });
   });
+
+  const MODIFICACION = { fecha: "2026-11-10", horaInicio: 720, horas: 3 };
+
+  it.each([
+    ["no-uuid", MODIFICACION, "No encontramos ese servicio"],
+    [UUID, { ...MODIFICACION, horas: 0 }, "entre 1 y 8"],
+    [UUID, { ...MODIFICACION, horaInicio: 361 }, "hora de inicio válida"],
+    [UUID, { ...MODIFICACION, fecha: "2026-02-30" }, "fecha válida"],
+    [UUID, null, "entre 1 y 8"],
+  ])("rechaza una modificación inválida sin ir al backend", async (id, datos, mensaje) => {
+    const resultado = await acciones.modificarServicioAccion(id, datos);
+
+    expect(resultado).toMatchObject({ ok: false });
+    expect(JSON.stringify(resultado)).toContain(mensaje);
+    expect(escribirEnBackend).not.toHaveBeenCalled();
+  });
+
+  it("modifica y revalida las pantallas de ese servicio", async () => {
+    escribirEnBackend.mockResolvedValue({ ok: true, datos: { servicio: vistaBasica({ horaInicio: 720, horas: 3 }) } });
+
+    const resultado = await acciones.modificarServicioAccion(UUID, MODIFICACION);
+
+    expect(resultado).toEqual({ ok: true });
+    expect(escribirEnBackend).toHaveBeenCalledWith(`/servicios/${UUID}/modificar`, { metodo: "POST", cuerpo: MODIFICACION });
+  });
+
+  it("traduce un conflicto de horario del backend a un mensaje claro", async () => {
+    escribirEnBackend.mockResolvedValue({
+      ok: false,
+      error: new ErrorDeApi({ estado: 409, codigo: "servicio.franja_ocupada", mensaje: "ocupada" }),
+    });
+
+    const resultado = await acciones.modificarServicioAccion(UUID, MODIFICACION);
+
+    expect(resultado).toEqual({ ok: false, mensaje: expect.stringContaining("ya tiene un servicio en ese horario") });
+  });
 });

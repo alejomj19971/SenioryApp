@@ -113,6 +113,23 @@ export interface DatosParaSolicitar {
   zonaHoraria: string;
 }
 
+// Lo que cambia al modificar una solicitud todavía no respondida: el horario y el desglose recalculado con
+// él (E10 sigue aplicando: el nuevo desglose queda congelado tal como si fuera una solicitud nueva).
+export interface DatosParaModificar {
+  fecha: FechaCivil;
+  horaInicio: number;
+  horas: number;
+  tarifaHora: number;
+  subtotal: number;
+  cargoFamilia: number;
+  totalFamilia: number;
+  pagoProfesional: number;
+  politicaVersion: number;
+  hoy: FechaCivil;
+  ahora: Date;
+  zonaHoraria: string;
+}
+
 // Un servicio de cuidado: una familia contrata a un cuidador para una fecha y una franja.
 //
 // Todos los cambios pasan por la máquina de estados (`transicionar`) y quedan en `transicionesPendientes`,
@@ -320,6 +337,32 @@ export class Servicio {
     this.datos.solicitudExpiraEn = null;
   }
 
+  // La familia cambia fecha/hora/horas mientras el cuidador todavía no respondió (la máquina de estados ya
+  // exige que esté «solicitado»). Recalcula el plazo para aceptar como si fuera una solicitud nueva: una vez
+  // aceptado ya no se puede (se cancela y se pide de nuevo, con la política de cancelación tardía de M4).
+  modificar(entrada: DatosParaModificar, familiarUsuarioId: string): void {
+    const estado = transicionar(this.datos.estado, 'modificar', 'familiar');
+    validarHorarioYMontos(entrada);
+    const fechaEsHoy = entrada.fecha.igualA(entrada.hoy);
+    const plazoEnMinutos = fechaEsHoy
+      ? PLAZO_DE_ACEPTACION_HOY_MINUTOS
+      : PLAZO_DE_ACEPTACION_MINUTOS;
+    this.mover(estado, 'modificar', familiarUsuarioId, entrada.ahora);
+    this.datos.fecha = entrada.fecha;
+    this.datos.horaInicio = entrada.horaInicio;
+    this.datos.jornada = jornadaDe(entrada.horaInicio);
+    this.datos.horas = entrada.horas;
+    this.datos.tarifaHora = entrada.tarifaHora;
+    this.datos.subtotal = entrada.subtotal;
+    this.datos.cargoFamilia = entrada.cargoFamilia;
+    this.datos.totalFamilia = entrada.totalFamilia;
+    this.datos.pagoProfesional = entrada.pagoProfesional;
+    this.datos.politicaVersion = entrada.politicaVersion;
+    this.datos.solicitudExpiraEn = new Date(
+      entrada.ahora.getTime() + plazoEnMinutos * MS_POR_MINUTO,
+    );
+  }
+
   rechazar(cuidadorUsuarioId: string, ahora: Date): void {
     const estado = transicionar(this.datos.estado, 'rechazar', 'cuidador');
     this.mover(estado, 'rechazar', cuidadorUsuarioId, ahora);
@@ -501,6 +544,38 @@ export class Servicio {
 }
 
 function validarSolicitud(entrada: DatosParaSolicitar): void {
+  if (!(MEDIOS_DE_PAGO as readonly string[]).includes(entrada.medioDePago)) {
+    throw new ErrorDeValidacion(
+      'El medio de pago no es válido',
+      'servicio.medio_de_pago_invalido',
+    );
+  }
+  if (!FORMATO_DE_CLAVE.test(entrada.claveDeIdempotencia)) {
+    throw new ErrorDeValidacion(
+      'La clave de idempotencia debe tener de 8 a 100 caracteres (letras, números y . _ : -)',
+      'servicio.clave_invalida',
+    );
+  }
+  validarHorarioYMontos(entrada);
+}
+
+// Lo que comparten pedir y modificar un servicio: la hora, las horas, el desglose y que el horario sea
+// futuro y dentro de la ventana permitida. Lo único que no comparten es el medio de pago y la clave de
+// idempotencia (esos no se pueden cambiar al modificar).
+function validarHorarioYMontos(entrada: {
+  fecha: FechaCivil;
+  horaInicio: number;
+  horas: number;
+  tarifaHora: number;
+  subtotal: number;
+  cargoFamilia: number;
+  totalFamilia: number;
+  pagoProfesional: number;
+  politicaVersion: number;
+  hoy: FechaCivil;
+  ahora: Date;
+  zonaHoraria: string;
+}): void {
   if (
     !Number.isInteger(entrada.horas) ||
     entrada.horas < HORAS_MINIMAS ||
@@ -515,18 +590,6 @@ function validarSolicitud(entrada: DatosParaSolicitar): void {
     throw new ErrorDeValidacion(
       'La hora de inicio no es válida',
       'servicio.hora_invalida',
-    );
-  }
-  if (!(MEDIOS_DE_PAGO as readonly string[]).includes(entrada.medioDePago)) {
-    throw new ErrorDeValidacion(
-      'El medio de pago no es válido',
-      'servicio.medio_de_pago_invalido',
-    );
-  }
-  if (!FORMATO_DE_CLAVE.test(entrada.claveDeIdempotencia)) {
-    throw new ErrorDeValidacion(
-      'La clave de idempotencia debe tener de 8 a 100 caracteres (letras, números y . _ : -)',
-      'servicio.clave_invalida',
     );
   }
   validarMontos(entrada);
@@ -560,7 +623,15 @@ function validarSolicitud(entrada: DatosParaSolicitar): void {
 }
 
 // Las mismas condiciones del CHECK `servicios_desglose_coherente`: un desglose que no cuadra no se guarda.
-function validarMontos(entrada: DatosParaSolicitar): void {
+function validarMontos(entrada: {
+  horas: number;
+  tarifaHora: number;
+  subtotal: number;
+  cargoFamilia: number;
+  totalFamilia: number;
+  pagoProfesional: number;
+  politicaVersion: number;
+}): void {
   const montos = [
     entrada.tarifaHora,
     entrada.subtotal,

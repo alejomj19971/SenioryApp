@@ -56,6 +56,30 @@ export class SolicitudDeServicioDto {
   medioDePago!: string;
 }
 
+// La familia cambia fecha/hora/horas de una solicitud que el cuidador todavía no respondió. El cuidador y el
+// medio de pago no se pueden cambiar aquí: eso es contratar a alguien distinto, no modificar esta solicitud.
+export class ModificacionDeServicioDto {
+  @Matches(/^\d{4}-\d{2}-\d{2}$/, {
+    message: 'La fecha debe tener el formato AAAA-MM-DD',
+  })
+  fecha!: string;
+
+  @IsInt({ message: 'La hora de inicio no es válida' })
+  @IsIn(HORAS_INICIO_VALIDAS, {
+    message: 'La hora de inicio debe ser en bloques de 30 minutos',
+  })
+  horaInicio!: number;
+
+  @IsInt({ message: 'Las horas deben ser un número entero' })
+  @Min(HORAS_MINIMAS, {
+    message: `Las horas deben estar entre ${HORAS_MINIMAS} y ${HORAS_MAXIMAS}`,
+  })
+  @Max(HORAS_MAXIMAS, {
+    message: `Las horas deben estar entre ${HORAS_MINIMAS} y ${HORAS_MAXIMAS}`,
+  })
+  horas!: number;
+}
+
 export class CalificacionDto {
   @IsInt({ message: 'La calificación debe ser un número entero' })
   @Min(1, { message: 'La calificación debe estar entre 1 y 5' })

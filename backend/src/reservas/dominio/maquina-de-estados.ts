@@ -12,6 +12,7 @@ import type {
 // qué se puede hacer, quién puede hacerlo y a dónde lleva.
 //
 //   (nuevo) ── solicitar ─────────────▶ solicitado   (o aceptado, si el cuidador activó la aceptación automática)
+//   solicitado ── modificar ──▶ solicitado   (la familia cambia fecha/hora/horas mientras el cuidador no ha respondido)
 //   solicitado ── aceptar / rechazar / expirar / cancelar ──▶ aceptado / cancelado / cancelado / cancelado
 //   aceptado ── iniciar ──▶ en_curso        aceptado ── cancelar ──▶ cancelado
 //   aceptado ── cancelar_por_pago ──▶ cancelado   (el sistema, cuando el pago se rechaza o vence)
@@ -30,6 +31,13 @@ interface Regla {
 
 const REGLAS: Readonly<Record<AccionDeServicio, Regla>> = {
   solicitar: { actores: ['familiar'], desde: [null], hacia: 'solicitado' },
+  // La familia cambia fecha/hora/horas mientras el cuidador todavía no respondió. Ya no se puede una vez
+  // aceptado: ahí el cuidador ya se comprometió con ese horario (se cancela y se pide de nuevo).
+  modificar: {
+    actores: ['familiar'],
+    desde: ['solicitado'],
+    hacia: 'solicitado',
+  },
   // Solo el cuidador acepta. La aceptación automática no pasa por aquí: nace en `solicitar`.
   aceptar: { actores: ['cuidador'], desde: ['solicitado'], hacia: 'aceptado' },
   rechazar: {

@@ -89,6 +89,7 @@ const SONDEO_DE_ENTREGAS = Symbol('SondeoDeEntregas');
 // lo guarda para no repetir el trabajo: no se puede cambiar).
 const EVENTOS_CON_AVISO = [
   ['reservas.servicio_solicitado', 'notificaciones.avisar_servicio_solicitado'],
+  ['reservas.servicio_modificado', 'notificaciones.avisar_servicio_modificado'],
   ['reservas.servicio_confirmado', 'notificaciones.avisar_servicio_confirmado'],
   ['reservas.servicio_iniciado', 'notificaciones.avisar_servicio_iniciado'],
   ['reservas.servicio_finalizado', 'notificaciones.avisar_servicio_finalizado'],

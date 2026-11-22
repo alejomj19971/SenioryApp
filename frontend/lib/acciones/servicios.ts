@@ -8,6 +8,7 @@ import {
   cancelarServicio,
   cotizar,
   listarServiciosDeLaFamilia,
+  modificarServicio,
   solicitarServicio,
   type PaginaDeServicios,
   type AccionDelCuidador,
@@ -15,7 +16,7 @@ import {
 import { exigirFamiliaLista } from "@/lib/services/paciente";
 import { HORAS_INICIO_VALIDAS } from "@/lib/fecha-colombia";
 import { ErrorDeApi } from "@/lib/api/error-de-api";
-import type { Cotizacion, DatosDeSolicitud, MedioDePago, Servicio } from "@/lib/types";
+import type { Cotizacion, DatosDeModificacion, DatosDeSolicitud, MedioDePago, Servicio } from "@/lib/types";
 
 // Acciones de servicios (F3+F4). Son endpoints públicos de Next: validan su entrada y dejan que el backend
 // autorice (un servicio ajeno responde 404). El dinero NUNCA viene del navegador: lo calcula el servidor.
@@ -88,6 +89,27 @@ function idValido(id: unknown): id is string {
 export async function cancelarServicioAccion(servicioId: unknown): Promise<ResultadoSimple> {
   if (!idValido(servicioId)) return { ok: false, mensaje: "No encontramos ese servicio." };
   const resultado = await cancelarServicio(servicioId);
+  if (!resultado.ok) return { ok: false, mensaje: mensajeDeErrorDeServicio(resultado.error) };
+  revalidatePath("/app/servicios");
+  revalidatePath(`/app/servicios/${servicioId}`);
+  return { ok: true };
+}
+
+function validarModificacion(datos: unknown): { datos: DatosDeModificacion } | { mensaje: string } {
+  const d = (typeof datos === "object" && datos !== null ? datos : {}) as Record<string, unknown>;
+  if (!esHoras(d.horas)) return { mensaje: MENSAJE_DE_HORAS };
+  if (typeof d.horaInicio !== "number" || !HORAS_INICIO_VALIDAS.includes(d.horaInicio)) return { mensaje: "Elige una hora de inicio válida." };
+  if (!esFechaValida(d.fecha)) return { mensaje: "Elige una fecha válida." };
+  return { datos: { fecha: d.fecha, horaInicio: d.horaInicio, horas: d.horas } };
+}
+
+// Solo mientras el cuidador no ha respondido: la familia cambia fecha/hora/horas sin tener que cancelar y
+// volver a pedir. El monto se recalcula en el servidor, igual que al pedir.
+export async function modificarServicioAccion(servicioId: unknown, datos: unknown): Promise<ResultadoSimple> {
+  if (!idValido(servicioId)) return { ok: false, mensaje: "No encontramos ese servicio." };
+  const validacion = validarModificacion(datos);
+  if ("mensaje" in validacion) return { ok: false, mensaje: validacion.mensaje };
+  const resultado = await modificarServicio(servicioId, validacion.datos);
   if (!resultado.ok) return { ok: false, mensaje: mensajeDeErrorDeServicio(resultado.error) };
   revalidatePath("/app/servicios");
   revalidatePath(`/app/servicios/${servicioId}`);

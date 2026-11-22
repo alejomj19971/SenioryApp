@@ -103,7 +103,7 @@ test("el cuidador puede rechazar una solicitud y la familia lo ve sin cobro", as
   const { contexto, pagina } = await otraPersona(browser, cuidador.cuentaDeAcceso, /\/cuidador$/);
   try {
     await pagina.getByRole("button", { name: "Rechazar" }).click();
-    await expect(pagina.getByRole("heading", { name: /Anteriores/ })).toBeVisible();
+    await expect(pagina.getByRole("heading", { name: /Cancelados/ })).toBeVisible();
   } finally {
     await contexto.close();
   }

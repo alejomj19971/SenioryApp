@@ -61,6 +61,7 @@ import {
 } from './aplicacion/casos-de-uso/consultar-servicios.js';
 import { DetectarNoShows } from './aplicacion/casos-de-uso/detectar-no-shows.js';
 import { ExpirarSolicitudes } from './aplicacion/casos-de-uso/expirar-solicitudes.js';
+import { ModificarServicio } from './aplicacion/casos-de-uso/modificar-servicio.js';
 import { SolicitarServicio } from './aplicacion/casos-de-uso/solicitar-servicio.js';
 import {
   CancelarServicioPorPagoFallido,
@@ -210,6 +211,33 @@ const MANEJADORES_DE_PAGOS = Symbol('ManejadoresDePagos');
           auditoria,
           reloj,
           ids,
+          configuracion.zonaHorariaNegocio,
+        ),
+    },
+    {
+      provide: ModificarServicio,
+      inject: [
+        EjecutorDeAcciones,
+        CONSULTA_DE_DIRECTORIO,
+        COTIZADOR_DE_SERVICIOS,
+        CONSULTA_DE_PAGOS,
+        EventosDeReservas,
+        CONFIGURACION,
+      ],
+      useFactory: (
+        ejecutor: EjecutorDeAcciones,
+        directorio: ConsultaDeDirectorio,
+        cotizador: CotizadorDeServicios,
+        pagos: ConsultaDePagos,
+        eventos: EventosDeReservas,
+        configuracion: Configuracion,
+      ) =>
+        new ModificarServicio(
+          ejecutor,
+          directorio,
+          cotizador,
+          pagos,
+          eventos,
           configuracion.zonaHorariaNegocio,
         ),
     },

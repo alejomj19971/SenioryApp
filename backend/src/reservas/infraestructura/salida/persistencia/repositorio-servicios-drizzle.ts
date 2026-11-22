@@ -89,30 +89,53 @@ export class RepositorioServiciosDrizzle implements RepositorioServicios {
 
   async actualizar(servicio: Servicio): Promise<void> {
     await this.contexto.ejecutar(async () => {
-      const actualizados = await this.contexto
-        .conexion()
-        .update(servicios)
-        .set({
-          estado: servicio.estado,
-          solicitudExpiraEn: servicio.solicitudExpiraEn,
-          pagadoEn: servicio.pagadoEn,
-          aceptadoEn: servicio.aceptadoEn,
-          iniciadoEn: servicio.iniciadoEn,
-          finalizadoEn: servicio.finalizadoEn,
-          canceladoEn: servicio.canceladoEn,
-          canceladoPor: servicio.canceladoPor,
-          motivoCancelacion: servicio.motivoDeCancelacion,
-          version: servicio.version,
-          actualizadoEn: servicio.actualizadoEn,
-        })
-        // Bloqueo optimista: solo si nadie lo cambió desde que se leyó.
-        .where(
-          and(
-            eq(servicios.id, servicio.id),
-            eq(servicios.version, servicio.versionLeida),
-          ),
-        )
-        .returning({ id: servicios.id });
+      let actualizados: { id: string }[];
+      try {
+        actualizados = await this.contexto
+          .conexion()
+          .update(servicios)
+          .set({
+            // Modificar (E9) es la única acción que cambia estos: en el resto quedan igual a como estaban.
+            fecha: servicio.fecha.aTexto(),
+            horaInicio: servicio.horaInicio,
+            jornada: servicio.jornada,
+            horas: servicio.horas,
+            tarifaHora: servicio.tarifaHora,
+            subtotal: servicio.subtotal,
+            cargoFamilia: servicio.cargoFamilia,
+            totalFamilia: servicio.totalFamilia,
+            pagoProfesional: servicio.pagoProfesional,
+            politicaVersion: servicio.politicaVersion,
+            estado: servicio.estado,
+            solicitudExpiraEn: servicio.solicitudExpiraEn,
+            pagadoEn: servicio.pagadoEn,
+            aceptadoEn: servicio.aceptadoEn,
+            iniciadoEn: servicio.iniciadoEn,
+            finalizadoEn: servicio.finalizadoEn,
+            canceladoEn: servicio.canceladoEn,
+            canceladoPor: servicio.canceladoPor,
+            motivoCancelacion: servicio.motivoDeCancelacion,
+            version: servicio.version,
+            actualizadoEn: servicio.actualizadoEn,
+          })
+          // Bloqueo optimista: solo si nadie lo cambió desde que se leyó.
+          .where(
+            and(
+              eq(servicios.id, servicio.id),
+              eq(servicios.version, servicio.versionLeida),
+            ),
+          )
+          .returning({ id: servicios.id });
+      } catch (error) {
+        // Modificar puede mover el servicio a un horario que ahora sí se cruza con otro del mismo cuidador.
+        if (esViolacionDeExclusion(error, 'servicios_sin_doble_reserva')) {
+          throw new ConflictoDeEstado(
+            'El cuidador ya tiene un servicio que se cruza con ese horario',
+            'servicio.franja_ocupada',
+          );
+        }
+        throw error;
+      }
       if (actualizados.length === 0) {
         const existe = await this.contexto
           .conexion()

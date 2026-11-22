@@ -665,6 +665,100 @@ describe('servicios (API)', () => {
     });
   });
 
+  // ─── Modificar ─────────────────────────────────────────────────────────────────────────────
+  describe('modificar un servicio', () => {
+    it('cambia fecha, hora y horas; recalcula el desglose y reinicia el plazo', async () => {
+      const c = await nuevoCuidador();
+      const id = await crearServicio(c);
+
+      const respuesta = await accion('modificar', id, familia.cookie, {
+        fecha: MANANA,
+        horaInicio: 720,
+        horas: 3,
+      });
+
+      expect(respuesta.status).toBe(200);
+      expect(respuesta.body).toMatchObject({
+        servicio: {
+          estado: 'solicitado',
+          horaInicio: 720,
+          jornada: 'tarde',
+          horas: 3,
+          subtotal: 60_000,
+          totalFamilia: 64_800,
+        },
+      });
+      expect(await eventosDe(id)).toEqual([
+        'reservas.servicio_solicitado',
+        'reservas.servicio_modificado',
+      ]);
+    });
+
+    it('un servicio ya aceptado ya no se modifica (409)', async () => {
+      const c = await nuevoCuidador();
+      const id = await crearServicio(c);
+      await accion('aceptar', id, await c.cookie());
+
+      const respuesta = await accion('modificar', id, familia.cookie, {
+        fecha: MANANA,
+        horaInicio: 720,
+        horas: 1,
+      });
+
+      expect(respuesta.status).toBe(409);
+      expect(respuesta.body).toMatchObject({
+        codigo: 'servicio.transicion_invalida',
+      });
+    });
+
+    it('si el nuevo horario se cruza con otro del mismo cuidador, se rechaza (409)', async () => {
+      const c = await nuevoCuidador();
+      await crearServicio(c, { horaInicio: 720 });
+      const id = await crearServicio(c, { horaInicio: 360 });
+
+      const respuesta = await accion('modificar', id, familia.cookie, {
+        fecha: MANANA,
+        horaInicio: 720,
+        horas: 2,
+      });
+
+      expect(respuesta.status).toBe(409);
+      expect(respuesta.body).toMatchObject({
+        codigo: 'servicio.franja_ocupada',
+      });
+    });
+
+    it('si el cuidador no atiende la nueva jornada, se rechaza (422)', async () => {
+      const c = await nuevoCuidador({ disponibilidad: ['manana'] });
+      const id = await crearServicio(c, { horaInicio: 360 });
+
+      const respuesta = await accion('modificar', id, familia.cookie, {
+        fecha: MANANA,
+        horaInicio: 1080,
+        horas: 2,
+      });
+
+      expect(respuesta.status).toBe(422);
+      expect(respuesta.body).toMatchObject({
+        codigo: 'servicio.jornada_no_disponible',
+      });
+    });
+
+    it('otra familia no puede modificar un servicio ajeno (404)', async () => {
+      const c = await nuevoCuidador();
+      const id = await crearServicio(c);
+      const otra = await nuevaFamilia();
+
+      const respuesta = await accion('modificar', id, otra.cookie, {
+        fecha: MANANA,
+        horaInicio: 720,
+        horas: 2,
+      });
+
+      expect(respuesta.status).toBe(404);
+    });
+  });
+
   // ─── Acciones del cuidador ─────────────────────────────────────────────────────────────────
   describe('acciones del cuidador', () => {
     it('aceptar: queda aceptado, sin plazo, y publica «confirmado»', async () => {

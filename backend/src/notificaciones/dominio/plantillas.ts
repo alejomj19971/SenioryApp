@@ -194,6 +194,14 @@ const PLANTILLAS: Record<string, Plantilla> = {
     titulo: 'Solicitud enviada',
     cuerpo: `Enviamos tu solicitud para el ${cuando(p)}. Te avisaremos cuando el cuidador responda.`,
   }),
+  'servicio_modificado:cuidador': (p) => ({
+    titulo: 'Una solicitud cambió',
+    cuerpo: `La familia cambió los detalles de una solicitud: ahora es para el ${cuando(p)}, por ${horas(p)}. Respóndela en Seniory antes de que venza el plazo.`,
+  }),
+  'servicio_modificado:familia': (p) => ({
+    titulo: 'Solicitud actualizada',
+    cuerpo: `Actualizamos tu solicitud para el ${cuando(p)}. Te avisaremos cuando el cuidador responda.`,
+  }),
   'servicio_confirmado:familia': (p) => ({
     titulo: 'Servicio confirmado',
     cuerpo: `Tu servicio del ${cuando(p)} quedó confirmado.`,

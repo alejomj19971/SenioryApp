@@ -16,6 +16,18 @@ export type ServicioSolicitado = EventoDeIntegracion<
   }
 >;
 
+// La familia cambió fecha/hora/horas de una solicitud que el cuidador todavía no respondió. El cuidador
+// debe revisarla de nuevo: el plazo para responder se reinicia (Reservas, `Servicio.modificar`).
+export type ServicioModificado = EventoDeIntegracion<
+  'reservas.servicio_modificado',
+  {
+    servicioId: string;
+    familiarId: string;
+    cuidadorId: string;
+    adultoMayorId: string;
+  }
+>;
+
 // Lo que Pagos necesita para cobrar un servicio confirmado: son los valores con los que se contrató (E10), en pesos
 // enteros. Pagos los recalcula con la política de precios de esa versión y se niega a cobrar si no cuadran.
 // Pagos no puede preguntarle a Reservas (Reservas ya depende de Pagos para cotizar), por eso viajan en el evento.
@@ -102,6 +114,7 @@ export type ServicioCalificado = EventoDeIntegracion<
 
 export type EventoDeReservas =
   | ServicioSolicitado
+  | ServicioModificado
   | ServicioConfirmado
   | ServicioIniciado
   | ServicioFinalizado

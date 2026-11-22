@@ -24,6 +24,7 @@ export function medioDePagoDesdeTexto(texto: string): MedioDePago | null {
 // Lo que se puede hacer con un servicio. Cada una es una arista de la máquina de estados.
 export const ACCIONES_DE_SERVICIO = [
   'solicitar',
+  'modificar',
   'aceptar',
   'rechazar',
   'expirar',
