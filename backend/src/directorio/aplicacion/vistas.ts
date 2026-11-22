@@ -1,5 +1,7 @@
 import type { Jornada } from '../../compartido/dominio/jornada.js';
+import type { RangoLibre } from '../../compartido/dominio/rango-libre.js';
 import type { Cuidador } from '../dominio/cuidador.js';
+import { jornadasDeHorario } from '../dominio/jornadas-de-horario.js';
 import type { Resena } from '../dominio/resena.js';
 import type { Ubicacion } from '../dominio/ubicacion.js';
 import {
@@ -31,7 +33,10 @@ export interface VistaDeCuidador {
   // Pesos colombianos enteros por hora.
   tarifaHora: number;
   zona: string;
+  // Coarse: en qué jornadas atiende alguna vez (para el badge y el filtro de búsqueda).
   disponibilidad: Jornada[];
+  // El horario semanal real, por día: lo que la familia necesita para saber qué horas puede pedir cada día.
+  horariosLibres: RangoLibre[];
   bio: string;
   // Promedio con un decimal; null si todavía no tiene reseñas.
   calificacion: number | null;
@@ -62,7 +67,8 @@ export function vistaDeCuidador(
     aniosExperiencia: cuidador.aniosExperiencia,
     tarifaHora: cuidador.tarifaHora.valor,
     zona: cuidador.zona,
-    disponibilidad: [...cuidador.disponibilidad],
+    disponibilidad: jornadasDeHorario(cuidador.horariosLibres),
+    horariosLibres: [...cuidador.horariosLibres],
     bio: cuidador.bio,
     calificacion: cuidador.calificacion(),
     cantidadResenas: cuidador.cantidadResenas,

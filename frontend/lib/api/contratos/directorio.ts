@@ -24,6 +24,7 @@ export interface CuidadorDelBackend {
   tarifaHora: number;
   zona: string;
   disponibilidad: ("manana" | "tarde" | "noche")[];
+  horariosLibres: { diaSemana: number; horaInicio: number; horaFin: number }[];
   bio: string;
   // Promedio con un decimal; null si todavía no tiene reseñas (no «0 estrellas»).
   calificacion: number | null;

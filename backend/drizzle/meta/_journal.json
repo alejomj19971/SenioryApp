@@ -113,6 +113,13 @@
       "when": 1795357685079,
       "tag": "0015_reservas_hora_de_inicio_exacta",
       "breakpoints": true
+    },
+    {
+      "idx": 16,
+      "version": "7",
+      "when": 1795378827427,
+      "tag": "0016_directorio_horario_semanal",
+      "breakpoints": true
     }
   ]
 }

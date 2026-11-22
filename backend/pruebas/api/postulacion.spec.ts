@@ -52,7 +52,12 @@ const PERFIL = {
   tarifaHora: 20_000,
   telefono: '+573001112233',
   zona: 'Laureles',
-  disponibilidad: ['manana', 'tarde'],
+  // Los 7 días, de 6:00 a 18:00 (mañana + tarde, como la disponibilidad global de antes).
+  horariosLibres: [1, 2, 3, 4, 5, 6, 7].map((diaSemana) => ({
+    diaSemana,
+    horaInicio: 360,
+    horaFin: 1_080,
+  })),
   bio: 'Cuido con paciencia.',
 };
 
@@ -388,8 +393,12 @@ describe('postulación y verificación de cuidadores (API)', () => {
         'cuidador.telefono_invalido',
       ],
       ['una tarifa en cero', { tarifaHora: 0 }, null],
-      ['sin jornadas', { disponibilidad: [] }, null],
-      ['una jornada inventada', { disponibilidad: ['madrugada'] }, null],
+      ['sin ningún rango de horario', { horariosLibres: [] }, null],
+      [
+        'un día de la semana inventado',
+        { horariosLibres: [{ diaSemana: 9, horaInicio: 360, horaFin: 720 }] },
+        null,
+      ],
       ['una especialidad inventada', { especialidad: 'brujeria' }, null],
       ['más de 60 años de experiencia', { aniosExperiencia: 61 }, null],
       [

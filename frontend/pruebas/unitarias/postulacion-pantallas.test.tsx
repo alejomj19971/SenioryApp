@@ -43,7 +43,7 @@ const perfil = (extra: Partial<MiPerfilDeCuidador> = {}): MiPerfilDeCuidador => 
   tarifaHora: 20_000,
   telefono: "+573001234567",
   zona: "Laureles",
-  disponibilidad: ["manana", "tarde"],
+  horariosLibres: [{ diaSemana: 1, horaInicio: 360, horaFin: 720 }],
   bio: "Me gusta cuidar.",
   aceptacionAutomatica: false,
   estado: "borrador",
@@ -213,8 +213,8 @@ describe("FormularioPerfil", () => {
 
     render(<FormularioPerfil perfil={perfil()} />);
     expect(screen.getByLabelText("Título o formación")).toHaveValue("Enfermera profesional");
-    expect(screen.getByLabelText("Mañana")).toBeChecked();
-    expect(screen.getByLabelText("Noche")).not.toBeChecked();
+    expect(screen.getByText("6:00 a. m. – 12:00 p. m.")).toBeInTheDocument();
+    expect(screen.getAllByText("No atiendes este día.")).toHaveLength(6);
     expect(screen.getByLabelText(/Aceptar automáticamente/)).not.toBeChecked();
     expect(screen.getByRole("button", { name: "Guardar cambios" })).toBeInTheDocument();
   });

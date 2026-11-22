@@ -25,6 +25,7 @@ function cuidador(id: string, nombre: string, tarifaHora = 20_000): Cuidador {
     tarifaHora,
     zona: "Laureles",
     disponibilidad: ["manana", "tarde", "noche"],
+    horariosLibres: [1, 2, 3, 4, 5, 6, 7].map((diaSemana) => ({ diaSemana, horaInicio: 0, horaFin: 1_440 })),
     calificacion: null,
     cantidadResenas: 0,
     serviciosCompletados: 0,

@@ -2,7 +2,6 @@ import { Type } from 'class-transformer';
 import {
   ArrayMaxSize,
   ArrayMinSize,
-  ArrayUnique,
   IsBoolean,
   IsIn,
   IsInt,
@@ -16,11 +15,8 @@ import {
   Min,
   MinLength,
   ValidateIf,
+  ValidateNested,
 } from 'class-validator';
-import {
-  JORNADAS,
-  type Jornada,
-} from '../../../../compartido/dominio/jornada.js';
 import {
   ANIOS_MAXIMOS_DE_EXPERIENCIA,
   LARGO_MAXIMO_DE_BIO,
@@ -39,6 +35,27 @@ import {
   type Especialidad,
   type EstadoDeVerificacion,
 } from '../../../dominio/valores-cerrados.js';
+
+const MAXIMO_DE_RANGOS_LIBRES = 50;
+
+// Un bloque de horario libre: solo la FORMA (día ISO 1–7, horas en minutos). Que no se solape con otro del
+// mismo día y que las horas sean múltiplos de 30 lo valida el dominio (`Cuidador.actualizarPerfil`).
+export class RangoLibreDto {
+  @IsInt({ message: 'El día debe ser un número entero de 1 (lunes) a 7 (domingo)' })
+  @Min(1, { message: 'El día debe ser un número entero de 1 (lunes) a 7 (domingo)' })
+  @Max(7, { message: 'El día debe ser un número entero de 1 (lunes) a 7 (domingo)' })
+  diaSemana!: number;
+
+  @IsInt({ message: 'La hora de inicio no es válida' })
+  @Min(0)
+  @Max(1410)
+  horaInicio!: number;
+
+  @IsInt({ message: 'La hora de fin no es válida' })
+  @Min(30)
+  @Max(1440)
+  horaFin!: number;
+}
 
 // Solo la FORMA. Las reglas del perfil (largos, teléfono, tarifa) las valida el dominio. El ValidationPipe rechaza
 // cualquier campo no declarado: ni el nombre (sale de la cuenta), ni el estado, ni la visibilidad, ni el usuario se
@@ -71,14 +88,11 @@ export class PerfilDeCuidadorDto {
   @MaxLength(LARGO_MAXIMO_DE_ZONA * 2)
   zona!: string;
 
-  @IsIn(JORNADAS, {
-    each: true,
-    message: 'Las jornadas válidas son mañana, tarde y noche',
-  })
-  @ArrayMinSize(1, { message: 'Elige al menos una jornada' })
-  @ArrayMaxSize(JORNADAS.length)
-  @ArrayUnique()
-  disponibilidad!: Jornada[];
+  @ValidateNested({ each: true })
+  @Type(() => RangoLibreDto)
+  @ArrayMinSize(1, { message: 'Agrega al menos un rango de horario libre' })
+  @ArrayMaxSize(MAXIMO_DE_RANGOS_LIBRES)
+  horariosLibres!: RangoLibreDto[];
 
   @IsString({ message: 'La presentación debe ser un texto' })
   @MaxLength(LARGO_MAXIMO_DE_BIO * 2)
@@ -121,11 +135,11 @@ export class CambiosDePerfilDto {
   zona?: string;
 
   @IsOptional()
-  @IsIn(JORNADAS, { each: true })
-  @ArrayMinSize(1)
-  @ArrayMaxSize(JORNADAS.length)
-  @ArrayUnique()
-  disponibilidad?: Jornada[];
+  @ValidateNested({ each: true })
+  @Type(() => RangoLibreDto)
+  @ArrayMinSize(1, { message: 'Agrega al menos un rango de horario libre' })
+  @ArrayMaxSize(MAXIMO_DE_RANGOS_LIBRES)
+  horariosLibres?: RangoLibreDto[];
 
   @IsOptional()
   @IsString()

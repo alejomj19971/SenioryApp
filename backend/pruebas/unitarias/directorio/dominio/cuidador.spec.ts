@@ -1,5 +1,6 @@
 import fc from 'fast-check';
 import { FechaCivil } from '../../../../src/compartido/dominio/fecha-civil.js';
+import type { RangoLibre } from '../../../../src/compartido/dominio/rango-libre.js';
 import { Cuidador } from '../../../../src/directorio/dominio/cuidador.js';
 import {
   CONTROLES_DE_VERIFICACION,
@@ -12,6 +13,10 @@ import {
   verificacionDePrueba,
 } from '../../../soporte/directorio.js';
 
+// Todos los días, de 6:00 a 18:00 (equivalente a mañana + tarde en el modelo anterior).
+const todosLosDias = (horaInicio: number, horaFin: number): RangoLibre[] =>
+  [1, 2, 3, 4, 5, 6, 7].map((diaSemana) => ({ diaSemana, horaInicio, horaFin }));
+
 const datosValidos = () => ({
   id: idDePrueba<'Cuidador'>(),
   usuarioId: null,
@@ -22,7 +27,7 @@ const datosValidos = () => ({
   tarifaHora: 20_000,
   telefono: '+573168393514',
   zona: 'Laureles, Medellín',
-  disponibilidad: ['manana', 'tarde'] as ('manana' | 'tarde' | 'noche')[],
+  horariosLibres: todosLosDias(360, 1_080),
   bio: 'Cuido con paciencia y cariño.',
   ahora: AHORA,
 });
@@ -44,15 +49,29 @@ describe('Cuidador', () => {
       expect(cuidador.tarifaHora.valor).toBe(20_000);
     });
 
-    it('limpia los espacios del nombre y deja la disponibilidad en el orden del día', () => {
+    it('limpia los espacios del nombre', () => {
       const cuidador = Cuidador.registrar({
         ...datosValidos(),
         nombre: '  Marta   Elena\tRestrepo ',
-        disponibilidad: ['noche', 'manana', 'noche'],
       });
 
       expect(cuidador.nombre).toBe('Marta Elena Restrepo');
-      expect(cuidador.disponibilidad).toEqual(['manana', 'noche']);
+    });
+
+    it('fusiona los rangos del horario que se solapan o se tocan en el mismo día, y ordena por día y hora', () => {
+      const cuidador = Cuidador.registrar({
+        ...datosValidos(),
+        horariosLibres: [
+          { diaSemana: 2, horaInicio: 600, horaFin: 660 },
+          { diaSemana: 1, horaInicio: 720, horaFin: 1_080 },
+          { diaSemana: 1, horaInicio: 360, horaFin: 720 },
+        ],
+      });
+
+      expect(cuidador.horariosLibres).toEqual([
+        { diaSemana: 1, horaInicio: 360, horaFin: 1_080 },
+        { diaSemana: 2, horaInicio: 600, horaFin: 660 },
+      ]);
     });
 
     it.each([
@@ -95,10 +114,21 @@ describe('Cuidador', () => {
         { bio: 'x'.repeat(1001) },
         'cuidador.bio_muy_larga',
       ],
+      ['ningún rango de horario', { horariosLibres: [] }, 'cuidador.sin_horario'],
       [
-        'ninguna jornada',
-        { disponibilidad: [] },
-        'cuidador.sin_disponibilidad',
+        'un día fuera de 1 a 7',
+        { horariosLibres: [{ diaSemana: 8, horaInicio: 360, horaFin: 720 }] },
+        'cuidador.horario_invalido',
+      ],
+      [
+        'una hora que no es múltiplo de 30',
+        { horariosLibres: [{ diaSemana: 1, horaInicio: 361, horaFin: 720 }] },
+        'cuidador.horario_invalido',
+      ],
+      [
+        'un rango con la hora de fin antes que la de inicio',
+        { horariosLibres: [{ diaSemana: 1, horaInicio: 720, horaFin: 360 }] },
+        'cuidador.horario_invalido',
       ],
     ])('rechaza %s', (_caso, cambios, codigo) => {
       expect(() =>

@@ -1,11 +1,14 @@
 import { and, asc, desc, eq, inArray, lte, sql, type SQL } from 'drizzle-orm';
 import type { PgColumn } from 'drizzle-orm/pg-core';
+import { v7 as uuidv7 } from 'uuid';
 import {
   ConflictoDeEstado,
   ErrorDeValidacion,
   RecursoNoEncontrado,
 } from '../../../../compartido/dominio/errores.js';
 import type { ContextoTransaccional } from '../../../../compartido/infraestructura/base-de-datos/contexto-transaccional.js';
+import { HORARIOS_DE_FRANJA } from '../../../../compartido/dominio/jornada.js';
+import type { RangoLibre } from '../../../../compartido/dominio/rango-libre.js';
 import { esViolacionDeUnicidad } from '../../../../compartido/infraestructura/base-de-datos/errores-de-postgres.js';
 import type {
   FilaDeVerificacion,
@@ -29,8 +32,16 @@ import {
   type EstadoDeVerificacion,
 } from '../../../dominio/valores-cerrados.js';
 import type { Verificacion } from '../../../dominio/verificacion.js';
-import { cuidadores, verificaciones } from './directorio.esquema.js';
-import { cuidadorDeFila, verificacionDeFila } from './mapeadores.js';
+import {
+  cuidadores,
+  horariosLibres,
+  verificaciones,
+} from './directorio.esquema.js';
+import {
+  cuidadorDeFila,
+  rangoLibreDeFila,
+  verificacionDeFila,
+} from './mapeadores.js';
 
 // La calificación con la que se ordena: el promedio con un decimal, y 0 si todavía no tiene reseñas. Es
 // la MISMA cuenta que `Cuidador.calificacion()`, así el cursor (que guarda este valor) coincide.
@@ -73,7 +84,6 @@ export class RepositorioCuidadoresDrizzle implements RepositorioCuidadores {
           zonaBusqueda: normalizarParaBuscar(cuidador.zona),
           latitud: cuidador.ubicacion?.latitud ?? null,
           longitud: cuidador.ubicacion?.longitud ?? null,
-          disponibilidad: [...cuidador.disponibilidad],
           bio: cuidador.bio,
           aceptacionAutomatica: cuidador.aceptacionAutomatica,
           estado: cuidador.estado,
@@ -100,6 +110,15 @@ export class RepositorioCuidadoresDrizzle implements RepositorioCuidadores {
             })),
           );
         }
+        await bd.insert(horariosLibres).values(
+          cuidador.horariosLibres.map((rango) => ({
+            id: uuidv7(),
+            cuidadorId: cuidador.id,
+            diaSemana: rango.diaSemana,
+            horaInicio: rango.horaInicio,
+            horaFin: rango.horaFin,
+          })),
+        );
         if (cuidador.visible) {
           await bd
             .update(cuidadores)
@@ -139,7 +158,6 @@ export class RepositorioCuidadoresDrizzle implements RepositorioCuidadores {
           zonaBusqueda: normalizarParaBuscar(cuidador.zona),
           latitud: cuidador.ubicacion?.latitud ?? null,
           longitud: cuidador.ubicacion?.longitud ?? null,
-          disponibilidad: [...cuidador.disponibilidad],
           bio: cuidador.bio,
           estado: cuidador.estado,
           aceptacionAutomatica: cuidador.aceptacionAutomatica,
@@ -168,6 +186,19 @@ export class RepositorioCuidadoresDrizzle implements RepositorioCuidadores {
             and(eq(cuidadores.id, cuidador.id), eq(cuidadores.visible, false)),
           );
       }
+      // Reemplazo completo del horario: más simple que calcular un diff contra lo que había.
+      await bd
+        .delete(horariosLibres)
+        .where(eq(horariosLibres.cuidadorId, cuidador.id));
+      await bd.insert(horariosLibres).values(
+        cuidador.horariosLibres.map((rango) => ({
+          id: uuidv7(),
+          cuidadorId: cuidador.id,
+          diaSemana: rango.diaSemana,
+          horaInicio: rango.horaInicio,
+          horaFin: rango.horaFin,
+        })),
+      );
     });
   }
 
@@ -269,8 +300,16 @@ export class RepositorioCuidadoresDrizzle implements RepositorioCuidadores {
       .limit(1);
     const fila = filas[0];
     if (fila === undefined) return null;
-    const porCuidador = await this.verificacionesDe([fila.id as CuidadorId]);
-    return cuidadorDeFila(fila, porCuidador.get(fila.id as CuidadorId) ?? []);
+    const id = fila.id as CuidadorId;
+    const [porCuidador, horarioPorCuidador] = await Promise.all([
+      this.verificacionesDe([id]),
+      this.horariosLibresDe([id]),
+    ]);
+    return cuidadorDeFila(
+      fila,
+      porCuidador.get(id) ?? [],
+      horarioPorCuidador.get(id) ?? [],
+    );
   }
 
   buscarPorIdParaActualizar(id: CuidadorId): Promise<Cuidador | null> {
@@ -291,8 +330,15 @@ export class RepositorioCuidadoresDrizzle implements RepositorioCuidadores {
     const filas = await (bloquear ? consulta.for('no key update') : consulta);
     const fila = filas[0];
     if (fila === undefined) return null;
-    const porCuidador = await this.verificacionesDe([id]);
-    return cuidadorDeFila(fila, porCuidador.get(id) ?? []);
+    const [porCuidador, horarioPorCuidador] = await Promise.all([
+      this.verificacionesDe([id]),
+      this.horariosLibresDe([id]),
+    ]);
+    return cuidadorDeFila(
+      fila,
+      porCuidador.get(id) ?? [],
+      horarioPorCuidador.get(id) ?? [],
+    );
   }
 
   async listarVisibles(
@@ -313,9 +359,19 @@ export class RepositorioCuidadoresDrizzle implements RepositorioCuidadores {
       condiciones.push(contiene(cuidadores.zonaBusqueda, filtros.zona));
     }
     if (filtros.jornada !== undefined) {
-      condiciones.push(
-        sql`${cuidadores.disponibilidad} @> array[${filtros.jornada}]::text[]`,
-      );
+      // ¿Atiende alguna vez en esa jornada, en cualquier día de la semana? La noche cruza la medianoche
+      // (18:00–06:00 del día siguiente): un rango que empieza antes de esa cola también cuenta.
+      const horario = HORARIOS_DE_FRANJA[filtros.jornada];
+      const finPrincipal = Math.min(horario.fin, 1440);
+      const colaNocturna = horario.fin > 1440 ? horario.fin - 1440 : 0;
+      condiciones.push(sql`exists (
+        select 1 from directorio.horarios_libres hl
+        where hl.cuidador_id = ${cuidadores.id}
+          and (
+            (hl.hora_inicio < ${finPrincipal} and ${horario.inicio} < hl.hora_fin)
+            or (${colaNocturna} > 0 and hl.hora_inicio < ${colaNocturna})
+          )
+      )`);
     }
     if (filtros.tarifaMaxima !== undefined) {
       condiciones.push(lte(cuidadores.tarifaHora, filtros.tarifaMaxima));
@@ -373,11 +429,17 @@ export class RepositorioCuidadoresDrizzle implements RepositorioCuidadores {
 
     const hayMas = filas.length > limite;
     const delaPagina = hayMas ? filas.slice(0, limite) : filas;
-    const porCuidador = await this.verificacionesDe(
-      delaPagina.map((fila) => fila.id as CuidadorId),
-    );
+    const idsDeLaPagina = delaPagina.map((fila) => fila.id as CuidadorId);
+    const [porCuidador, horarioPorCuidador] = await Promise.all([
+      this.verificacionesDe(idsDeLaPagina),
+      this.horariosLibresDe(idsDeLaPagina),
+    ]);
     const lista = delaPagina.map((fila) =>
-      cuidadorDeFila(fila, porCuidador.get(fila.id as CuidadorId) ?? []),
+      cuidadorDeFila(
+        fila,
+        porCuidador.get(fila.id as CuidadorId) ?? [],
+        horarioPorCuidador.get(fila.id as CuidadorId) ?? [],
+      ),
     );
     const ultimo = lista.at(-1);
     return {
@@ -472,6 +534,26 @@ export class RepositorioCuidadoresDrizzle implements RepositorioCuidadores {
       const cuidadorId = fila.cuidadorId as CuidadorId;
       const lista = porCuidador.get(cuidadorId) ?? [];
       lista.push(verificacionDeFila(fila));
+      porCuidador.set(cuidadorId, lista);
+    }
+    return porCuidador;
+  }
+
+  private async horariosLibresDe(
+    ids: readonly CuidadorId[],
+  ): Promise<Map<CuidadorId, RangoLibre[]>> {
+    const porCuidador = new Map<CuidadorId, RangoLibre[]>();
+    if (ids.length === 0) return porCuidador;
+    const filas = await this.contexto
+      .conexion()
+      .select()
+      .from(horariosLibres)
+      .where(inArray(horariosLibres.cuidadorId, [...ids]))
+      .orderBy(asc(horariosLibres.diaSemana), asc(horariosLibres.horaInicio));
+    for (const fila of filas) {
+      const cuidadorId = fila.cuidadorId as CuidadorId;
+      const lista = porCuidador.get(cuidadorId) ?? [];
+      lista.push(rangoLibreDeFila(fila));
       porCuidador.set(cuidadorId, lista);
     }
     return porCuidador;

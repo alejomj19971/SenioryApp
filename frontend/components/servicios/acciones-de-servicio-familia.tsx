@@ -13,7 +13,7 @@ import { calificarServicioAccion, cancelarServicioAccion, modificarServicioAccio
 import { horasPedibles, sumarDias, type AhoraEnColombia } from "@/lib/fecha-colombia";
 import { useCotizacion } from "@/lib/hooks/use-cotizacion";
 import { cn } from "@/lib/utils";
-import type { Cotizacion, Jornada } from "@/lib/types";
+import type { Cotizacion, RangoLibre } from "@/lib/types";
 
 // Cancelar la solicitud (mientras esté solicitada o aceptada). Pide confirmación: no se puede deshacer.
 export function CancelarServicio({ servicioId, yaSeCobro }: { servicioId: string; yaSeCobro: boolean }) {
@@ -74,11 +74,11 @@ interface ServicioAModificar {
 // pedir una nueva. El cuidador y el medio de pago no se pueden cambiar aquí.
 export function ModificarServicio({
   servicio,
-  disponibilidad,
+  horariosLibres,
   ahora,
 }: {
   servicio: ServicioAModificar;
-  disponibilidad: Jornada[];
+  horariosLibres: RangoLibre[];
   ahora: AhoraEnColombia;
 }) {
   const router = useRouter();
@@ -94,7 +94,10 @@ export function ModificarServicio({
   const [horas, setHoras] = useState(servicio.horas);
 
   const fecha = fechaSeleccion === "hoy" ? ahora.hoy : fechaSeleccion === "manana" ? manana : fechaPersonalizada;
-  const horasDisponibles = useMemo(() => horasPedibles(fecha, disponibilidad, ahora), [fecha, disponibilidad, ahora]);
+  const horasDisponibles = useMemo(
+    () => horasPedibles(fecha, horariosLibres, ahora, horas),
+    [fecha, horariosLibres, ahora, horas],
+  );
   const horaElegida = horaInicio !== null && horasDisponibles.includes(horaInicio) ? horaInicio : (horasDisponibles[0] ?? null);
 
   const cargoPorcentaje = servicio.subtotal === 0 ? 0 : Math.round((servicio.cargoDeServicio / servicio.subtotal) * 1000) / 10;

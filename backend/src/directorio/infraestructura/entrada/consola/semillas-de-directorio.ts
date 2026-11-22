@@ -1,6 +1,7 @@
 import { v5 as uuidv5 } from 'uuid';
 import type { FechaCivil } from '../../../../compartido/dominio/fecha-civil.js';
-import type { Jornada } from '../../../../compartido/dominio/jornada.js';
+import { HORARIOS_DE_FRANJA, type Jornada } from '../../../../compartido/dominio/jornada.js';
+import type { RangoLibre } from '../../../../compartido/dominio/rango-libre.js';
 import type { EntradaDeCuidadorImportado } from '../../../aplicacion/casos-de-uso/importar-cuidador.js';
 import type { Especialidad } from '../../../dominio/valores-cerrados.js';
 import {
@@ -8,6 +9,29 @@ import {
   importarEntradas,
   type CasoImportarCuidador,
 } from './comando-importar-cuidadores.js';
+
+// Expande unas jornadas a un horario que se repite los 7 días de la semana (para los datos de prueba: no hace
+// falta inventar un horario distinto cada día). La noche cruza la medianoche: queda partida en dos rangos, uno
+// hasta las 24:00 y otro desde las 00:00 del día siguiente (mismo criterio que `directorio/dominio/cuidador.ts`).
+function todosLosDias(...jornadas: Jornada[]): RangoLibre[] {
+  const rangos: RangoLibre[] = [];
+  for (let dia = 1; dia <= 7; dia++) {
+    for (const jornada of jornadas) {
+      const horario = HORARIOS_DE_FRANJA[jornada];
+      if (horario.fin > 1_440) {
+        rangos.push({ diaSemana: dia, horaInicio: horario.inicio, horaFin: 1_440 });
+        rangos.push({
+          diaSemana: dia === 7 ? 1 : dia + 1,
+          horaInicio: 0,
+          horaFin: horario.fin - 1_440,
+        });
+      } else {
+        rangos.push({ diaSemana: dia, horaInicio: horario.inicio, horaFin: horario.fin });
+      }
+    }
+  }
+  return rangos;
+}
 
 // Cuidadores de DESARROLLO: para trabajar en local, en las pruebas y en staging. Nunca llegan a producción:
 // el comando se niega a correr allí. Los correos usan el dominio reservado `.invalid` (no recibe correo) y los
@@ -31,7 +55,7 @@ interface Muestra {
   aniosExperiencia: number;
   tarifaHora: number;
   zona: string;
-  disponibilidad: Jornada[];
+  horariosLibres: RangoLibre[];
   bio: string;
 }
 
@@ -44,7 +68,7 @@ const MUESTRAS: Muestra[] = [
     aniosExperiencia: 12,
     tarifaHora: 32000,
     zona: 'Laureles',
-    disponibilidad: ['manana', 'tarde'],
+    horariosLibres: todosLosDias('manana', 'tarde'),
     bio: 'Enfermera con experiencia en cuidado de personas con movilidad reducida y manejo de medicación.',
   },
   {
@@ -55,7 +79,7 @@ const MUESTRAS: Muestra[] = [
     aniosExperiencia: 8,
     tarifaHora: 22000,
     zona: 'El Poblado',
-    disponibilidad: ['manana', 'tarde', 'noche'],
+    horariosLibres: todosLosDias('manana', 'tarde', 'noche'),
     bio: 'Acompañamiento en la rutina diaria: aseo, alimentación y movilización segura.',
   },
   {
@@ -66,7 +90,7 @@ const MUESTRAS: Muestra[] = [
     aniosExperiencia: 5,
     tarifaHora: 18000,
     zona: 'Envigado',
-    disponibilidad: ['tarde'],
+    horariosLibres: todosLosDias('tarde'),
     bio: 'Compañía, conversación y paseos cortos; apoyo en las actividades del día.',
   },
   {
@@ -77,7 +101,7 @@ const MUESTRAS: Muestra[] = [
     aniosExperiencia: 10,
     tarifaHora: 38000,
     zona: 'Laureles',
-    disponibilidad: ['manana'],
+    horariosLibres: todosLosDias('manana'),
     bio: 'Ejercicios de movilidad y prevención de caídas en casa, según indicación del médico tratante.',
   },
   {
@@ -88,7 +112,7 @@ const MUESTRAS: Muestra[] = [
     aniosExperiencia: 15,
     tarifaHora: 35000,
     zona: 'Sabaneta',
-    disponibilidad: ['noche'],
+    horariosLibres: todosLosDias('noche'),
     bio: 'Cuidado nocturno de personas que requieren vigilancia y administración de medicamentos.',
   },
   {
@@ -99,7 +123,7 @@ const MUESTRAS: Muestra[] = [
     aniosExperiencia: 3,
     tarifaHora: 20000,
     zona: 'Belén',
-    disponibilidad: ['manana', 'tarde'],
+    horariosLibres: todosLosDias('manana', 'tarde'),
     bio: 'Apoyo en el cuidado personal y en el seguimiento de la alimentación.',
   },
   {
@@ -110,7 +134,7 @@ const MUESTRAS: Muestra[] = [
     aniosExperiencia: 4,
     tarifaHora: 16000,
     zona: 'El Poblado',
-    disponibilidad: ['tarde', 'noche'],
+    horariosLibres: todosLosDias('tarde', 'noche'),
     bio: 'Acompañamiento en casa y en citas médicas, con trato paciente y puntual.',
   },
   {
@@ -121,7 +145,7 @@ const MUESTRAS: Muestra[] = [
     aniosExperiencia: 7,
     tarifaHora: 36000,
     zona: 'Envigado',
-    disponibilidad: ['manana', 'tarde'],
+    horariosLibres: todosLosDias('manana', 'tarde'),
     bio: 'Rehabilitación después de cirugías y acompañamiento en la recuperación de la marcha.',
   },
   {
@@ -132,7 +156,7 @@ const MUESTRAS: Muestra[] = [
     aniosExperiencia: 6,
     tarifaHora: 21000,
     zona: 'Belén',
-    disponibilidad: ['noche'],
+    horariosLibres: todosLosDias('noche'),
     bio: 'Turnos nocturnos: vigilancia, cambios de posición y apoyo al descanso.',
   },
 ];

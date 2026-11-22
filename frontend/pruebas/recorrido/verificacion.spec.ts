@@ -85,8 +85,11 @@ test("un cuidador se postula, un revisor lo aprueba (y rechaza lo que no se lee)
   await page.getByLabel("Tarifa por hora ($)").fill("22000");
   await page.getByLabel("Tu celular").fill(`300 ${randomInt(100, 999)} ${randomInt(1000, 9999)}`);
   await page.getByLabel("Zona donde atiendes").fill("Laureles, Medellín");
-  await page.getByLabel("Mañana").check();
-  await page.getByLabel("Tarde").check();
+  const lunes = page.getByText("Lunes", { exact: true }).locator("..");
+  await lunes.getByRole("button", { name: "Agregar horario" }).click();
+  await lunes.getByLabel("Desde").selectOption("360");
+  await lunes.getByLabel("Hasta").selectOption("1080");
+  await lunes.getByRole("button", { name: "Agregar" }).click();
   await page.getByLabel("Cuéntales a las familias quién eres").fill("Cuido adultos mayores con paciencia y cariño.");
   await page.getByRole("button", { name: "Guardar mi perfil" }).click();
 

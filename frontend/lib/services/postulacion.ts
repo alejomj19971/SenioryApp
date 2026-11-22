@@ -36,7 +36,7 @@ function aMiPerfil(p: MiPerfilDelBackend): MiPerfilDeCuidador {
     tarifaHora: p.tarifaHora,
     telefono: p.telefono,
     zona: p.zona,
-    disponibilidad: p.disponibilidad,
+    horariosLibres: p.horariosLibres,
     bio: p.bio,
     aceptacionAutomatica: p.aceptacionAutomatica,
     estado: p.estado,

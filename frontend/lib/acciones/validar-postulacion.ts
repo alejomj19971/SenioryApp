@@ -1,5 +1,5 @@
 import { normalizarTelefono, soloErrores } from "@/lib/acciones/validar-cuenta";
-import type { Especialidad, Jornada } from "@/lib/types";
+import type { Especialidad, RangoLibre } from "@/lib/types";
 
 // Validaciones del perfil del cuidador (F9). Replican las reglas del dominio de Directorio para responder rápido; el
 // backend tiene siempre la última palabra. Sin `server-only`: las usan las acciones, el formulario y las pruebas.
@@ -16,14 +16,20 @@ export const ESPECIALIDADES: { valor: Especialidad; etiqueta: string }[] = [
   { valor: "fisioterapia", etiqueta: "Fisioterapia" },
   { valor: "acompanamiento", etiqueta: "Acompañamiento" },
 ];
-export const JORNADAS: { valor: Jornada; etiqueta: string }[] = [
-  { valor: "manana", etiqueta: "Mañana" },
-  { valor: "tarde", etiqueta: "Tarde" },
-  { valor: "noche", etiqueta: "Noche" },
-];
+export const NOMBRE_DEL_DIA: Record<number, string> = {
+  1: "Lunes",
+  2: "Martes",
+  3: "Miércoles",
+  4: "Jueves",
+  5: "Viernes",
+  6: "Sábado",
+  7: "Domingo",
+};
 
 const FORMATO_DE_TELEFONO = /^\+[1-9]\d{7,14}$/;
 const FORMATO_DE_ENTERO = /^\d{1,9}$/;
+const PASO_DE_MINUTOS = 30;
+const MINUTOS_POR_DIA = 1_440;
 
 export interface DatosDePerfil {
   especialidad: Especialidad;
@@ -32,7 +38,7 @@ export interface DatosDePerfil {
   tarifaHora: number;
   telefono: string;
   zona: string;
-  disponibilidad: Jornada[];
+  horariosLibres: RangoLibre[];
   bio: string;
 }
 
@@ -43,8 +49,38 @@ export interface EntradaDePerfil {
   tarifaHora: string;
   telefono: string;
   zona: string;
-  disponibilidad: string[];
+  // JSON de un RangoLibre[] (lo arma `EditorDeHorario` en un campo oculto).
+  horariosLibres: string;
   bio: string;
+}
+
+function esRangoLibreValido(valor: unknown): valor is RangoLibre {
+  if (typeof valor !== "object" || valor === null) return false;
+  const r = valor as RangoLibre;
+  return (
+    Number.isInteger(r.diaSemana) &&
+    r.diaSemana >= 1 &&
+    r.diaSemana <= 7 &&
+    Number.isInteger(r.horaInicio) &&
+    r.horaInicio >= 0 &&
+    r.horaInicio % PASO_DE_MINUTOS === 0 &&
+    Number.isInteger(r.horaFin) &&
+    r.horaFin % PASO_DE_MINUTOS === 0 &&
+    r.horaFin <= MINUTOS_POR_DIA &&
+    r.horaInicio < r.horaFin
+  );
+}
+
+// Null si el texto no es un JSON de rangos de horario válidos (cualquier manipulación del campo oculto).
+export function horariosLibresDeTexto(texto: string): RangoLibre[] | null {
+  let crudo: unknown;
+  try {
+    crudo = JSON.parse(texto);
+  } catch {
+    return null;
+  }
+  if (!Array.isArray(crudo) || !crudo.every(esRangoLibreValido)) return null;
+  return crudo;
 }
 
 export type ResultadoDeValidacion<T> = { datos: T; valores: Record<string, string> } | { errores: Record<string, string>; valores: Record<string, string> };
@@ -66,12 +102,12 @@ export function validarPerfil(entrada: EntradaDePerfil, { congelado = false }: {
     telefono: entrada.telefono.trim(),
     zona,
     bio,
-    disponibilidad: entrada.disponibilidad.join(","),
+    horariosLibres: entrada.horariosLibres,
   };
 
   const anios = FORMATO_DE_ENTERO.test(valores.aniosExperiencia as string) ? Number(valores.aniosExperiencia) : Number.NaN;
   const tarifa = FORMATO_DE_ENTERO.test((valores.tarifaHora as string).replace(/[.\s]/g, "")) ? Number((valores.tarifaHora as string).replace(/[.\s]/g, "")) : Number.NaN;
-  const jornadas = JORNADAS.map((j) => j.valor).filter((valor) => entrada.disponibilidad.includes(valor));
+  const horariosLibres = horariosLibresDeTexto(entrada.horariosLibres) ?? [];
 
   const errores = soloErrores({
     especialidad: congelado || ESPECIALIDADES.some((e) => e.valor === entrada.especialidad) ? undefined : "Elige tu especialidad.",
@@ -80,7 +116,7 @@ export function validarPerfil(entrada: EntradaDePerfil, { congelado = false }: {
     tarifaHora: Number.isInteger(tarifa) && tarifa >= 1 && tarifa <= TARIFA_MAXIMA ? undefined : "Escribe cuánto cobras por hora, en pesos (solo números).",
     telefono: FORMATO_DE_TELEFONO.test(telefono) ? undefined : "Escribe un celular válido, por ejemplo 300 123 4567.",
     zona: zona === "" ? "Escribe la zona donde atiendes." : cuentaCaracteres(zona) > LARGO_MAXIMO_DE_ZONA ? `Debe tener ${LARGO_MAXIMO_DE_ZONA} caracteres o menos.` : undefined,
-    disponibilidad: jornadas.length > 0 ? undefined : "Elige al menos una jornada.",
+    horariosLibres: horariosLibres.length > 0 ? undefined : "Agrega al menos un rango de horario en el que atiendas.",
     bio: bio === "" ? "Cuéntales a las familias quién eres." : cuentaCaracteres(bio) > LARGO_MAXIMO_DE_BIO ? `Debe tener ${LARGO_MAXIMO_DE_BIO} caracteres o menos.` : undefined,
   });
   if (Object.keys(errores).length > 0) return { errores, valores };
@@ -92,7 +128,7 @@ export function validarPerfil(entrada: EntradaDePerfil, { congelado = false }: {
       tarifaHora: tarifa,
       telefono,
       zona,
-      disponibilidad: jornadas,
+      horariosLibres,
       bio,
     },
     valores,

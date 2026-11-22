@@ -13,7 +13,7 @@ import type { ConsultaDeDirectorio } from '../../../directorio/aplicacion/puerto
 import type { ConsultaDeIdentidad } from '../../../identidad/aplicacion/puertos/entrada/consulta-de-identidad.js';
 import type { ConsultaDePagos } from '../../../pagos/aplicacion/puertos/entrada/consulta-de-pagos.js';
 import type { CotizadorDeServicios } from '../../../pagos/aplicacion/puertos/entrada/cotizador-de-servicios.js';
-import { esHoraInicioValida, jornadaDe } from '../../dominio/franjas.js';
+import { esHoraInicioValida, estaLibreEn } from '../../dominio/franjas.js';
 import type { ServicioId } from '../../dominio/ids.js';
 import { Servicio } from '../../dominio/servicio.js';
 import { medioDePagoDesdeTexto } from '../../dominio/valores-cerrados.js';
@@ -100,10 +100,17 @@ export class SolicitarServicio {
         'cuidador.no_encontrado',
       );
     }
-    if (!cuidador.disponibilidad.includes(jornadaDe(entrada.horaInicio))) {
+    if (
+      !estaLibreEn(
+        cuidador.horariosLibres,
+        fecha,
+        entrada.horaInicio,
+        entrada.horas,
+      )
+    ) {
       throw new ReglaDeNegocioIncumplida(
-        `${cuidador.nombre} no atiende en esa jornada`,
-        'servicio.jornada_no_disponible',
+        `${cuidador.nombre} no atiende en ese horario`,
+        'servicio.horario_no_disponible',
       );
     }
     const cotizacion = await this.cotizador.cotizar(

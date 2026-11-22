@@ -1,4 +1,5 @@
 import type { FechaCivil } from '../../compartido/dominio/fecha-civil.js';
+import type { RangoLibre } from '../../compartido/dominio/rango-libre.js';
 import type { Cuidador } from '../dominio/cuidador.js';
 import type { Documento } from '../dominio/documento.js';
 import {
@@ -44,7 +45,7 @@ export interface VistaDeMiPerfil {
   // El pin que fijó en el mapa; null si todavía no lo hace.
   latitud: number | null;
   longitud: number | null;
-  disponibilidad: string[];
+  horariosLibres: RangoLibre[];
   bio: string;
   aceptacionAutomatica: boolean;
   estado: string;
@@ -108,7 +109,7 @@ export function vistaDeMiPerfil(
     zona: cuidador.zona,
     latitud: cuidador.ubicacion?.latitud ?? null,
     longitud: cuidador.ubicacion?.longitud ?? null,
-    disponibilidad: [...cuidador.disponibilidad],
+    horariosLibres: [...cuidador.horariosLibres],
     bio: cuidador.bio,
     aceptacionAutomatica: cuidador.aceptacionAutomatica,
     estado: cuidador.estado,

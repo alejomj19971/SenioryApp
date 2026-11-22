@@ -28,6 +28,8 @@ describe("la fecha de Colombia (H2: nunca un instante UTC)", () => {
 
   describe("horas de inicio (las mismas reglas del backend)", () => {
     const aLas = (hora: number, minuto = 0) => ({ hoy: "2026-11-01", minutos: hora * 60 + minuto });
+    // Mañana y tarde fusionadas (360–1080), los 7 días: el mismo horario, sin importar el día de la semana.
+    const MANANA_Y_TARDE = [1, 2, 3, 4, 5, 6, 7].map((diaSemana) => ({ diaSemana, horaInicio: 360, horaFin: 1_080 }));
 
     it("jornadaDe clasifica la hora de inicio (solo para la disponibilidad general del cuidador)", () => {
       expect(jornadaDe(0)).toBe("noche");
@@ -55,17 +57,23 @@ describe("la fecha de Colombia (H2: nunca un instante UTC)", () => {
       expect(horaYaPaso("2026-10-31", 1320, aLas(0))).toBe(true);
     });
 
-    it("solo ofrece horas de las jornadas que el cuidador atiende y que no han pasado", () => {
-      const horas = horasPedibles("2026-11-01", ["manana", "tarde"], aLas(14));
+    it("solo ofrece horas del horario del cuidador que no han pasado", () => {
+      const horas = horasPedibles("2026-11-01", MANANA_Y_TARDE, aLas(14), 1);
       expect(horas.every((h) => h > 840)).toBe(true); // nada antes de (ni en) las 2 p. m., que es ahora
-      expect(horas.every((h) => h < 1080)).toBe(true); // nada de la noche: no está en la disponibilidad
+      expect(horas.every((h) => h < 1080)).toBe(true); // nada de la noche: no está en el horario
       expect(horas).toContain(870); // las 2:30 p. m. (la próxima media hora) sí se puede
       expect(horas).not.toContain(840); // las 2 p. m., que es ahora mismo, ya se considera pasada
       expect(horas).not.toContain(360); // las 6 a. m. ya pasó
     });
 
     it("sin ninguna hora disponible ese día, no ofrece nada", () => {
-      expect(horasPedibles("2026-11-01", ["manana", "tarde"], aLas(19))).toEqual([]);
+      expect(horasPedibles("2026-11-01", MANANA_Y_TARDE, aLas(19), 1)).toEqual([]);
+    });
+
+    it("una duración que no cabe en el rango libre no se ofrece, aunque el inicio sí esté dentro", () => {
+      // Mañana y tarde van de 360 a 1080: a las 1050 (5:30 p. m.) solo caben 30 minutos, no una hora.
+      expect(horasPedibles("2026-11-01", MANANA_Y_TARDE, aLas(0), 1)).not.toContain(1_050);
+      expect(horasPedibles("2026-11-01", MANANA_Y_TARDE, aLas(0), 1)).toContain(1_020);
     });
   });
 

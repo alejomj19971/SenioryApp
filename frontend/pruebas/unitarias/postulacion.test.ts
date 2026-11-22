@@ -32,6 +32,9 @@ const rutaDeSubida = await import("@/app/api/cuidador/documentos/[tipo]/route");
 
 const UUID = "01a19299-ec3b-7012-b94b-a8cebad258d3";
 
+const RANGO_VALIDO = [{ diaSemana: 2, horaInicio: 720, horaFin: 1_080 }];
+const HORARIO_VALIDO_JSON = JSON.stringify(RANGO_VALIDO);
+
 const entrada = (extra: Partial<EntradaDePerfil> = {}): EntradaDePerfil => ({
   especialidad: "enfermeria",
   titulo: "  Enfermera profesional ",
@@ -39,24 +42,24 @@ const entrada = (extra: Partial<EntradaDePerfil> = {}): EntradaDePerfil => ({
   tarifaHora: "20.000",
   telefono: "300 123 4567",
   zona: " Laureles ",
-  disponibilidad: ["tarde", "manana"],
+  horariosLibres: HORARIO_VALIDO_JSON,
   bio: " Me gusta cuidar. ",
   ...extra,
 });
 
 describe("validarPerfil", () => {
-  it("acepta un perfil válido, limpia los textos, normaliza el celular y la tarifa, y ordena las jornadas", () => {
+  it("acepta un perfil válido, limpia los textos, normaliza el celular y la tarifa", () => {
     const resultado = validarPerfil(entrada());
 
     expect(resultado).toMatchObject({
-      datos: { especialidad: "enfermeria", titulo: "Enfermera profesional", aniosExperiencia: 5, tarifaHora: 20_000, telefono: "+573001234567", zona: "Laureles", disponibilidad: ["manana", "tarde"], bio: "Me gusta cuidar." },
+      datos: { especialidad: "enfermeria", titulo: "Enfermera profesional", aniosExperiencia: 5, tarifaHora: 20_000, telefono: "+573001234567", zona: "Laureles", horariosLibres: RANGO_VALIDO, bio: "Me gusta cuidar." },
     });
   });
 
   it("pide lo que falta, cada cosa en su campo", () => {
-    const resultado = validarPerfil(entrada({ especialidad: "", titulo: " ", aniosExperiencia: "", tarifaHora: "0", telefono: "123", zona: "", disponibilidad: [], bio: "" }));
+    const resultado = validarPerfil(entrada({ especialidad: "", titulo: " ", aniosExperiencia: "", tarifaHora: "0", telefono: "123", zona: "", horariosLibres: "[]", bio: "" }));
 
-    expect(Object.keys((resultado as { errores: object }).errores).sort()).toEqual(["aniosExperiencia", "bio", "disponibilidad", "especialidad", "tarifaHora", "telefono", "titulo", "zona"]);
+    expect(Object.keys((resultado as { errores: object }).errores).sort()).toEqual(["aniosExperiencia", "bio", "especialidad", "horariosLibres", "tarifaHora", "telefono", "titulo", "zona"]);
   });
 
   it.each([["61"], ["-1"], ["cinco"], ["2.5"]])("rechaza %s años de experiencia", (anios) => {
@@ -71,14 +74,19 @@ describe("validarPerfil", () => {
     expect(validarPerfil(entrada({ bio: "x".repeat(1001) }))).toHaveProperty("errores.bio");
   });
 
-  it("ignora una jornada que no existe", () => {
-    expect(validarPerfil(entrada({ disponibilidad: ["madrugada"] }))).toHaveProperty("errores.disponibilidad");
+  it.each([
+    ["un JSON roto", "{ no es json"],
+    ["un día fuera de 1 a 7", JSON.stringify([{ diaSemana: 9, horaInicio: 360, horaFin: 720 }])],
+    ["una hora que no es múltiplo de 30", JSON.stringify([{ diaSemana: 1, horaInicio: 361, horaFin: 720 }])],
+    ["sin ningún rango", "[]"],
+  ])("rechaza un horario inválido: %s", (_caso, horariosLibres) => {
+    expect(validarPerfil(entrada({ horariosLibres }))).toHaveProperty("errores.horariosLibres");
   });
 
   it("conserva lo escrito para no hacer repetir", () => {
     const resultado = validarPerfil(entrada({ zona: "" }));
 
-    expect((resultado as { valores: Record<string, string> }).valores).toMatchObject({ titulo: "Enfermera profesional", tarifaHora: "20.000", disponibilidad: "tarde,manana" });
+    expect((resultado as { valores: Record<string, string> }).valores).toMatchObject({ titulo: "Enfermera profesional", tarifaHora: "20.000", horariosLibres: HORARIO_VALIDO_JSON });
   });
 
   it("un perfil activo no envía especialidad ni título (están congelados)", () => {
@@ -131,7 +139,7 @@ function formulario(campos: Record<string, string | string[]>): FormData {
   for (const [nombre, valor] of Object.entries(campos)) for (const v of Array.isArray(valor) ? valor : [valor]) datos.append(nombre, v);
   return datos;
 }
-const camposDePerfil = { especialidad: "enfermeria", titulo: "Enfermera", aniosExperiencia: "5", tarifaHora: "20000", telefono: "3001234567", zona: "Laureles", disponibilidad: ["tarde"], bio: "Hola" };
+const camposDePerfil = { especialidad: "enfermeria", titulo: "Enfermera", aniosExperiencia: "5", tarifaHora: "20000", telefono: "3001234567", zona: "Laureles", horariosLibres: HORARIO_VALIDO_JSON, bio: "Hola" };
 
 beforeEach(() => {
   for (const f of [exigirRol, obtenerMiPerfil, crearMiPerfil, actualizarMiPerfil, solicitarRevision, renovarControl, subirDocumento, decidirControl, decidirHojaDeVida]) f.mockReset();
@@ -145,7 +153,7 @@ describe("guardarPerfilAccion", () => {
     const estado = await acciones.guardarPerfilAccion({}, formulario({ ...camposDePerfil, aceptacionAutomatica: "on" }));
 
     expect(estado).toEqual({ listo: true });
-    expect(crearMiPerfil).toHaveBeenCalledWith(expect.objectContaining({ especialidad: "enfermeria", telefono: "+573001234567", tarifaHora: 20_000, disponibilidad: ["tarde"] }));
+    expect(crearMiPerfil).toHaveBeenCalledWith(expect.objectContaining({ especialidad: "enfermeria", telefono: "+573001234567", tarifaHora: 20_000, horariosLibres: RANGO_VALIDO }));
     expect(crearMiPerfil.mock.calls[0]?.[0]).not.toHaveProperty("aceptacionAutomatica");
     expect(actualizarMiPerfil).not.toHaveBeenCalled();
   });

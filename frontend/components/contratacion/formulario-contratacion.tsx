@@ -41,7 +41,10 @@ export function FormularioContratacion({ cuidador, ahora, cotizacionInicial, sal
   const [usarBolsa, setUsarBolsa] = useState(false);
 
   const fecha = fechaSeleccion === "hoy" ? ahora.hoy : fechaSeleccion === "manana" ? manana : fechaPersonalizada;
-  const horasDisponibles = useMemo(() => horasPedibles(fecha, cuidador.disponibilidad, ahora), [fecha, cuidador.disponibilidad, ahora]);
+  const horasDisponibles = useMemo(
+    () => horasPedibles(fecha, cuidador.horariosLibres, ahora, horas),
+    [fecha, cuidador.horariosLibres, ahora, horas],
+  );
   // Si la hora elegida ya no se puede pedir (cambió el día), se usa la primera que sí.
   const horaElegida = horaInicio !== null && horasDisponibles.includes(horaInicio) ? horaInicio : (horasDisponibles[0] ?? null);
 

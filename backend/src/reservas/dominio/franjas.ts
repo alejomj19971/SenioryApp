@@ -1,8 +1,14 @@
 import type { FechaCivil } from '../../compartido/dominio/fecha-civil.js';
-import { JORNADAS, type Jornada } from '../../compartido/dominio/jornada.js';
+import {
+  HORARIOS_DE_FRANJA,
+  JORNADAS,
+  type Jornada,
+} from '../../compartido/dominio/jornada.js';
+import type { RangoLibre } from '../../compartido/dominio/rango-libre.js';
 
-// Los horarios de cada franja (decidido el 2026-10-26): mañana 06:00–12:00, tarde 12:00–18:00 y noche
-// 18:00–06:00, que cruza la medianoche. Una prueba los compara con la tabla `reservas.franjas`. Hoy solo
+export { HORARIOS_DE_FRANJA };
+
+// Una prueba compara `HORARIOS_DE_FRANJA` (dominio compartido) con la tabla `reservas.franjas`. Hoy solo
 // clasifican la hora de inicio de un servicio (para la disponibilidad general del cuidador); el servicio en
 // sí ya no está encerrado en una franja completa (ver `ventanaDeServicio`).
 //
@@ -15,12 +21,6 @@ export interface HorarioDeFranja {
 
 const MINUTOS_POR_DIA = 1_440;
 const MS_POR_DIA = 86_400_000;
-
-export const HORARIOS_DE_FRANJA: Readonly<Record<Jornada, HorarioDeFranja>> = {
-  manana: { inicio: 6 * 60, fin: 12 * 60 },
-  tarde: { inicio: 12 * 60, fin: 18 * 60 },
-  noche: { inicio: 18 * 60, fin: MINUTOS_POR_DIA + 6 * 60 },
-};
 
 // Cuánto antes de empezar el servicio el cuidador puede marcar que inició (llegó un poco antes).
 export const MARGEN_PARA_INICIAR_MINUTOS = 30;
@@ -75,7 +75,7 @@ export function minutosLocales(ahora: Date, zona: string): number {
   return dias * MINUTOS_POR_DIA + valor('hour') * 60 + valor('minute');
 }
 
-function inicioDelDia(fecha: FechaCivil): number {
+export function inicioDelDia(fecha: FechaCivil): number {
   return (
     (Date.UTC(fecha.anio, fecha.mes - 1, fecha.dia) / MS_POR_DIA) *
     MINUTOS_POR_DIA
@@ -101,4 +101,45 @@ export function ventanaContiene(
   margenInicioMinutos = 0,
 ): boolean {
   return momento >= ventana.inicio - margenInicioMinutos && momento < ventana.fin;
+}
+
+// ¿El horario semanal del cuidador cubre POR COMPLETO la ventana de este servicio? Un servicio dura como
+// máximo 8 horas y empieza como mucho a las 23:30, así que su ventana nunca se sale del día siguiente al de
+// `fecha`: alcanza con mirar los rangos de esos dos días de la semana. Los rangos de cada día se convierten a
+// minutos locales absolutos (el mismo espacio que ya usa `ventanaDeServicio`) y se fusionan los que queden
+// contiguos o solapados: así un rango que termina a medianoche y el que sigue al otro día (o dos rangos del
+// mismo día que se tocan, como mañana 06–12 y tarde 12–18) cuentan como uno solo, sin ninguna cuenta especial.
+export function estaLibreEn(
+  horariosLibres: readonly RangoLibre[],
+  fecha: FechaCivil,
+  horaInicio: number,
+  horas: number,
+): boolean {
+  const ventana = ventanaDeServicio(fecha, horaInicio, horas);
+  const manana = fecha.sumarDias(1);
+  const ventanasLibres = horariosLibres
+    .filter(
+      (rango) =>
+        rango.diaSemana === fecha.diaDeLaSemana() ||
+        rango.diaSemana === manana.diaDeLaSemana(),
+    )
+    .map((rango) => {
+      const base = inicioDelDia(
+        rango.diaSemana === fecha.diaDeLaSemana() ? fecha : manana,
+      );
+      return { inicio: base + rango.horaInicio, fin: base + rango.horaFin };
+    })
+    .sort((a, b) => a.inicio - b.inicio);
+  const fusionadas: HorarioDeFranja[] = [];
+  for (const libre of ventanasLibres) {
+    const anterior = fusionadas.at(-1);
+    if (anterior !== undefined && libre.inicio <= anterior.fin) {
+      anterior.fin = Math.max(anterior.fin, libre.fin);
+    } else {
+      fusionadas.push({ ...libre });
+    }
+  }
+  return fusionadas.some(
+    (libre) => libre.inicio <= ventana.inicio && ventana.fin <= libre.fin,
+  );
 }

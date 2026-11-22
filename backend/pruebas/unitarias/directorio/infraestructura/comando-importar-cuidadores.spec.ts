@@ -19,7 +19,7 @@ function cuidadorCrudo(cambios: Record<string, unknown> = {}) {
     aniosExperiencia: 6,
     tarifaHora: 25000,
     zona: 'Laureles',
-    disponibilidad: ['manana', 'tarde'],
+    horariosLibres: [{ diaSemana: 1, horaInicio: 360, horaFin: 1_080 }],
     bio: 'Cuido con paciencia.',
     controles: [
       { control: 'antecedentes', vigenteHasta: '2027-03-31' },
@@ -51,7 +51,7 @@ describe('leerArchivoDeImportacion', () => {
         aniosExperiencia: 6,
         tarifaHora: 25000,
         zona: 'Laureles',
-        disponibilidad: ['manana', 'tarde'],
+        horariosLibres: [{ diaSemana: 1, horaInicio: 360, horaFin: 1_080 }],
         bio: 'Cuido con paciencia.',
         controles: [
           { control: 'antecedentes', vigenteHasta: '2027-03-31' },
@@ -138,11 +138,15 @@ describe('leerArchivoDeImportacion', () => {
       { especialidad: 'brujeria' },
       /especialidad/i,
     ],
-    ['una jornada desconocida', { disponibilidad: ['madrugada'] }, /jornada/i],
     [
-      'una disponibilidad que no es lista',
-      { disponibilidad: 'tarde' },
-      /«disponibilidad» debe ser una lista/,
+      'un día de la semana que no es número',
+      { horariosLibres: [{ diaSemana: 'lunes', horaInicio: 360, horaFin: 720 }] },
+      /«diaSemana» debe ser un número/,
+    ],
+    [
+      'un horariosLibres que no es lista',
+      { horariosLibres: 'tarde' },
+      /«horariosLibres» debe ser una lista/,
     ],
     [
       'un control desconocido',

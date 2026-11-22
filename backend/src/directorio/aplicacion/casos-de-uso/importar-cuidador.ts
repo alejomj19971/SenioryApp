@@ -8,7 +8,7 @@ import {
   ServicioNoDisponible,
 } from '../../../compartido/dominio/errores.js';
 import { FechaCivil } from '../../../compartido/dominio/fecha-civil.js';
-import type { Jornada } from '../../../compartido/dominio/jornada.js';
+import type { RangoLibre } from '../../../compartido/dominio/rango-libre.js';
 import type { CuentasDeCuidadores } from '../../../identidad/aplicacion/puertos/entrada/cuentas-de-cuidadores.js';
 import { Cuidador } from '../../dominio/cuidador.js';
 import type { CuidadorId } from '../../dominio/ids.js';
@@ -47,7 +47,7 @@ export interface EntradaDeCuidadorImportado {
   aniosExperiencia: number;
   tarifaHora: number;
   zona: string;
-  disponibilidad: readonly Jornada[];
+  horariosLibres: readonly RangoLibre[];
   bio: string;
   fotoUrl?: string | null;
   controles: readonly ControlRevisado[];
@@ -107,7 +107,7 @@ export class ImportarCuidador {
         tarifaHora: entrada.tarifaHora,
         telefono: entrada.telefono,
         zona: entrada.zona,
-        disponibilidad: entrada.disponibilidad,
+        horariosLibres: entrada.horariosLibres,
         bio: entrada.bio,
         ahora,
       });

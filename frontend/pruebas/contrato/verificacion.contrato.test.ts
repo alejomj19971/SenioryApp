@@ -22,7 +22,7 @@ const disponible = (await backendDisponible()) && hayAdministradorDePrueba;
 const BFF = process.env.SENIORY_BFF_SECRETO ?? "";
 const PDF = Buffer.from("%PDF-1.4\n1 0 obj<</Type/Catalog>>endobj\ntrailer<</Root 1 0 R>>\n%%EOF\n");
 
-const CAMPOS_DEL_PERFIL = ["aceptacionAutomatica", "aniosExperiencia", "bio", "controles", "disponibilidad", "documentos", "especialidad", "estado", "id", "latitud", "longitud", "nombre", "tarifaHora", "telefono", "titulo", "visible", "zona"];
+const CAMPOS_DEL_PERFIL = ["aceptacionAutomatica", "aniosExperiencia", "bio", "controles", "documentos", "especialidad", "estado", "horariosLibres", "id", "latitud", "longitud", "nombre", "tarifaHora", "telefono", "titulo", "visible", "zona"];
 const CAMPOS_DEL_DOCUMENTO = ["estado", "id", "nombre", "subidoEn", "tamanoBytes", "tipo"];
 const CAMPOS_DEL_CONTROL = ["control", "estado", "motivoDeRechazo", "puedeRenovar", "vigenteHasta"];
 
@@ -79,7 +79,7 @@ describe.skipIf(!disponible)("contrato de la postulación y verificación con el
   it("crear el perfil: nace en borrador, oculto y con los tres controles sin solicitar", async () => {
     const respuesta = await comoCuidador("/cuidadores/yo", {
       metodo: "POST",
-      cuerpo: { especialidad: "enfermeria", titulo: "Enfermera", aniosExperiencia: 4, tarifaHora: 18_000, telefono: `+57300${randomInt(1_000_000, 9_999_999)}`, zona: "Belén", disponibilidad: ["manana", "tarde"], bio: "Me gusta cuidar." },
+      cuerpo: { especialidad: "enfermeria", titulo: "Enfermera", aniosExperiencia: 4, tarifaHora: 18_000, telefono: `+57300${randomInt(1_000_000, 9_999_999)}`, zona: "Belén", horariosLibres: [{ diaSemana: 1, horaInicio: 360, horaFin: 1_080 }], bio: "Me gusta cuidar." },
     });
 
     expect(respuesta.status).toBe(201);
@@ -92,7 +92,7 @@ describe.skipIf(!disponible)("contrato de la postulación y verificación con el
     expect(Object.keys(perfil.controles[0] as object).sort()).toEqual(CAMPOS_DEL_CONTROL);
     cuidadorId = perfil.id;
     // Un perfil por cuenta
-    expect((await comoCuidador("/cuidadores/yo", { metodo: "POST", cuerpo: { especialidad: "enfermeria", titulo: "x", aniosExperiencia: 1, tarifaHora: 1000, telefono: "+573001234567", zona: "x", disponibilidad: ["tarde"], bio: "x" } })).status).toBe(409);
+    expect((await comoCuidador("/cuidadores/yo", { metodo: "POST", cuerpo: { especialidad: "enfermeria", titulo: "x", aniosExperiencia: 1, tarifaHora: 1000, telefono: "+573001234567", zona: "x", horariosLibres: [{ diaSemana: 1, horaInicio: 720, horaFin: 1_080 }], bio: "x" } })).status).toBe(409);
   });
 
   it("corregir el perfil cambia solo lo enviado, y no deja enviar el nombre, el estado ni la visibilidad", async () => {

@@ -44,6 +44,7 @@ function aResumen(cuidador: CuidadorDelBackend): CuidadorResumen {
     tarifaHora: cuidador.tarifaHora,
     zona: cuidador.zona,
     disponibilidad: cuidador.disponibilidad,
+    horariosLibres: cuidador.horariosLibres,
     calificacion: cuidador.calificacion,
     cantidadResenas: cuidador.cantidadResenas,
     serviciosCompletados: cuidador.serviciosCompletados,

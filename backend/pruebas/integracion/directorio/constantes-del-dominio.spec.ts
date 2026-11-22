@@ -1,4 +1,3 @@
-import { JORNADAS } from '../../../src/compartido/dominio/jornada.js';
 import {
   CONTROLES_DE_VERIFICACION,
   ESPECIALIDADES,
@@ -46,11 +45,6 @@ describe('constantes del dominio y CHECK de la base de datos (directorio)', () =
       'estados de cuidador',
       'cuidadores_estado_valido',
       ESTADOS_DE_CUIDADOR as readonly string[],
-    ],
-    [
-      'jornadas',
-      'cuidadores_disponibilidad_valida',
-      JORNADAS as readonly string[],
     ],
     [
       'controles de verificación',

@@ -39,7 +39,7 @@ function montar(
               nombre: 'Marta',
               tarifaHora: opciones.tarifaHora ?? 20_000,
               zona: 'Laureles',
-              disponibilidad: ['manana', 'tarde'],
+              horariosLibres: [{ diaSemana: 1, horaInicio: 0, horaFin: 1_440 }],
               aceptacionAutomatica: false,
             },
       );

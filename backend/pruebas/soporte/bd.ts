@@ -108,7 +108,6 @@ export const cuidadorValido = (extra: Record<string, unknown> = {}) => ({
   telefono: '+573001234567',
   zona: 'Laureles, Medellín',
   zona_busqueda: 'laureles, medellin',
-  disponibilidad: ['manana', 'tarde'],
   bio: 'Cuido con paciencia y cariño.',
   ...extra,
 });

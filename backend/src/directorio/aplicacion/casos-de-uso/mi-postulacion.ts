@@ -12,7 +12,7 @@ import {
   ServicioNoDisponible,
 } from '../../../compartido/dominio/errores.js';
 import { FechaCivil } from '../../../compartido/dominio/fecha-civil.js';
-import type { Jornada } from '../../../compartido/dominio/jornada.js';
+import type { RangoLibre } from '../../../compartido/dominio/rango-libre.js';
 import type { ConsultaDeIdentidad } from '../../../identidad/aplicacion/puertos/entrada/consulta-de-identidad.js';
 import { Cuidador, type CambiosDePerfil } from '../../dominio/cuidador.js';
 import {
@@ -51,7 +51,7 @@ export interface EntradaDePerfil {
   tarifaHora: number;
   telefono: string;
   zona: string;
-  disponibilidad: readonly Jornada[];
+  horariosLibres: readonly RangoLibre[];
   bio: string;
 }
 

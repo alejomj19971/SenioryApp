@@ -1,12 +1,12 @@
-import type { Jornada } from '../../../../compartido/dominio/jornada.js';
+import type { RangoLibre } from '../../../../compartido/dominio/rango-libre.js';
 
 export interface CuidadorParaContratar {
   id: string;
   nombre: string;
   tarifaHora: number;
   zona: string;
-  // En qué jornadas atiende: Reservas rechaza una jornada que no está aquí.
-  disponibilidad: Jornada[];
+  // Su horario semanal: Reservas rechaza un horario que no quepa en ninguno de estos rangos.
+  horariosLibres: RangoLibre[];
   // Si confirma los servicios solo (true) o espera su respuesta (false).
   aceptacionAutomatica: boolean;
 }

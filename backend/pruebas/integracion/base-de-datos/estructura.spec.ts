@@ -22,7 +22,7 @@ describe('estructura de la base de datos', () => {
   const consultar = async <T extends object>(texto: string): Promise<T[]> =>
     (await bd.query<T>(texto, [ESQUEMAS])).rows;
 
-  it('tiene exactamente los 8 esquemas de módulo y 40 tablas', async () => {
+  it('tiene exactamente los 8 esquemas de módulo y 41 tablas', async () => {
     const filas = await consultar<{ esquema: string; tablas: string }>(
       `select table_schema as esquema, count(*)::text as tablas
          from information_schema.tables
@@ -34,7 +34,7 @@ describe('estructura de la base de datos', () => {
       Object.fromEntries(filas.map((f) => [f.esquema, Number(f.tablas)])),
     ).toEqual({
       compartido: 3,
-      directorio: 4,
+      directorio: 5,
       identidad: 10,
       mensajeria: 2,
       notificaciones: 3,

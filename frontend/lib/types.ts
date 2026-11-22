@@ -6,6 +6,14 @@ export type Especialidad =
 
 export type Jornada = "manana" | "tarde" | "noche";
 
+// Un bloque de horario libre de un cuidador, dentro de un mismo día de la semana (ISO: 1 = lunes … 7 =
+// domingo), en minutos desde las 00:00 (bloques de 30). Reemplaza la antigua disponibilidad por jornada.
+export interface RangoLibre {
+  diaSemana: number;
+  horaInicio: number;
+  horaFin: number;
+}
+
 // Los tres controles que hacen visible a un cuidador (E7): para quien se muestra siempre están los tres.
 export interface Verificacion {
   antecedentes: boolean; // Policía, Procuraduría, Contraloría
@@ -32,7 +40,10 @@ export interface CuidadorResumen {
   aniosExperiencia: number;
   tarifaHora: number; // COP, lo que cobra el cuidador
   zona: string; // barrio/comuna de Medellín o municipio del Valle de Aburrá
+  // Coarse: en qué jornadas atiende alguna vez (para el badge y el filtro de búsqueda).
   disponibilidad: Jornada[];
+  // El horario semanal real, por día: lo que decide qué horas se le pueden pedir cada fecha.
+  horariosLibres: RangoLibre[];
   calificacion: number | null; // promedio con un decimal; null si todavía no tiene reseñas
   cantidadResenas: number;
   serviciosCompletados: number;
@@ -314,7 +325,7 @@ export interface MiPerfilDeCuidador {
   tarifaHora: number;
   telefono: string;
   zona: string;
-  disponibilidad: Jornada[];
+  horariosLibres: RangoLibre[];
   bio: string;
   aceptacionAutomatica: boolean;
   estado: string;

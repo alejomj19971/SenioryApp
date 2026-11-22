@@ -2,7 +2,6 @@ import { readFile } from 'node:fs/promises';
 import { basename, dirname, resolve } from 'node:path';
 import { ConflictoDeEstado } from '../../../../compartido/dominio/errores.js';
 import { idDesdeTexto } from '../../../../compartido/dominio/id.js';
-import { esJornada } from '../../../../compartido/dominio/jornada.js';
 import type { ConsultaDeIdentidad } from '../../../../identidad/aplicacion/puertos/entrada/consulta-de-identidad.js';
 import type {
   EntradaDeCuidadorImportado,
@@ -27,7 +26,7 @@ export class ErrorDeArchivo extends Error {
 //   "cuidadores": [{
 //     "nombre": "…", "correo": "…", "telefono": "+57…", "especialidad": "enfermeria",
 //     "titulo": "…", "aniosExperiencia": 5, "tarifaHora": 25000, "zona": "…",
-//     "disponibilidad": ["manana", "tarde"], "bio": "…",
+//     "horariosLibres": [{ "diaSemana": 1, "horaInicio": 360, "horaFin": 720 }], "bio": "…",
 //     "controles": [
 //       { "control": "antecedentes", "vigenteHasta": "2027-03-31" },
 //       { "control": "titulos", "vigenteHasta": null },
@@ -114,11 +113,13 @@ export async function leerArchivoDeImportacion(
       aniosExperiencia: numero(datos, 'aniosExperiencia', donde),
       tarifaHora: numero(datos, 'tarifaHora', donde),
       zona: texto(datos, 'zona', donde),
-      disponibilidad: lista(datos, 'disponibilidad', donde).map((jornada) => {
-        if (typeof jornada !== 'string' || !esJornada(jornada)) {
-          throw new ErrorDeArchivo(`${donde}: jornada no válida`);
-        }
-        return jornada;
+      horariosLibres: lista(datos, 'horariosLibres', donde).map((rango) => {
+        const r = objeto(rango, `${donde}: un rango de horario`);
+        return {
+          diaSemana: numero(r, 'diaSemana', donde),
+          horaInicio: numero(r, 'horaInicio', donde),
+          horaFin: numero(r, 'horaFin', donde),
+        };
       }),
       bio: texto(datos, 'bio', donde),
       controles: lista(datos, 'controles', donde).map((control) => {

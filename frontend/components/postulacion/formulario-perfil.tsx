@@ -4,11 +4,12 @@ import { useActionState } from "react";
 import { CircleCheck } from "lucide-react";
 import { Campo, Lista, MensajeDeCampo } from "@/components/cuenta/campo";
 import { ResumenDelFormulario } from "@/components/cuenta/resumen-del-formulario";
+import { EditorDeHorario } from "@/components/postulacion/editor-de-horario";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { guardarPerfilAccion } from "@/lib/acciones/postulacion";
 import { ESTADO_INICIAL } from "@/lib/acciones/estado";
-import { ESPECIALIDADES, JORNADAS, LARGO_MAXIMO_DE_BIO } from "@/lib/acciones/validar-postulacion";
+import { ESPECIALIDADES, horariosLibresDeTexto, LARGO_MAXIMO_DE_BIO } from "@/lib/acciones/validar-postulacion";
 import type { MiPerfilDeCuidador } from "@/lib/types";
 
 // El perfil del cuidador: lo que las familias verán cuando un revisor lo apruebe. Sirve para armarlo y para corregirlo.
@@ -19,8 +20,8 @@ export function FormularioPerfil({ perfil }: { perfil: MiPerfilDeCuidador | null
   const congelado = perfil?.estado === "activo";
   // Lo escrito (si hubo un error) manda sobre lo guardado.
   const valor = (campo: string, guardado: string) => estado.valores?.[campo] ?? guardado;
-  const jornadasElegidas = estado.valores?.disponibilidad !== undefined ? estado.valores.disponibilidad.split(",") : (perfil?.disponibilidad ?? []);
-  const errorDeJornadas = estado.errores?.disponibilidad;
+  const horariosLibresIniciales = estado.valores?.horariosLibres !== undefined ? (horariosLibresDeTexto(estado.valores.horariosLibres) ?? []) : (perfil?.horariosLibres ?? []);
+  const errorDeHorario = estado.errores?.horariosLibres;
 
   return (
     <form action={accion} className="flex flex-col gap-5" noValidate>
@@ -103,18 +104,7 @@ export function FormularioPerfil({ perfil }: { perfil: MiPerfilDeCuidador | null
         error={estado.errores?.zona}
       />
 
-      <fieldset className="flex flex-col gap-2" aria-describedby={errorDeJornadas !== undefined ? "disponibilidad-error" : undefined}>
-        <legend className="text-base font-medium text-foreground">¿En qué jornadas atiendes?</legend>
-        <div className="flex flex-wrap gap-3">
-          {JORNADAS.map((jornada) => (
-            <label key={jornada.valor} className="flex min-h-12 items-center gap-2 rounded-lg border border-input bg-card px-4 text-base">
-              <input type="checkbox" name="disponibilidad" value={jornada.valor} defaultChecked={jornadasElegidas.includes(jornada.valor)} className="size-5 accent-primary" />
-              {jornada.etiqueta}
-            </label>
-          ))}
-        </div>
-        {errorDeJornadas !== undefined && <MensajeDeCampo id="disponibilidad-error">{errorDeJornadas}</MensajeDeCampo>}
-      </fieldset>
+      <EditorDeHorario nombreDelCampo="horariosLibres" valorInicial={horariosLibresIniciales} error={errorDeHorario} />
 
       <div className="flex flex-col gap-2">
         <Label htmlFor="bio">Cuéntales a las familias quién eres</Label>

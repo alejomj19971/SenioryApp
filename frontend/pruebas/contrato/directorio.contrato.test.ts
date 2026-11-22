@@ -18,6 +18,7 @@ const CAMPOS_DEL_CUIDADOR = [
   "distanciaKm",
   "especialidad",
   "fotoUrl",
+  "horariosLibres",
   "id",
   "nombre",
   "serviciosCompletados",

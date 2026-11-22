@@ -1,4 +1,4 @@
-import type { Jornada } from "@/lib/types";
+import type { Jornada, RangoLibre } from "@/lib/types";
 
 // La fecha de un servicio es un DÍA CIVIL DE COLOMBIA, nunca un instante UTC (H2): a las 8 p. m. en Medellín ya es
 // «mañana» en UTC, y el prototipo ofrecía «hoy» con la fecha equivocada. Sin `server-only`: lo usan la página (para
@@ -67,10 +67,48 @@ export function horaYaPaso(fecha: string, horaInicio: number, ahora: AhoraEnColo
   return ahora.minutos >= horaInicio;
 }
 
-// Las horas de inicio (cada 30 min) que todavía se pueden pedir ese día, entre las que atiende el cuidador
-// (por su jornada general) y que no hayan pasado ya si la fecha es hoy.
-export function horasPedibles(fecha: string, disponibilidad: readonly Jornada[], ahora: AhoraEnColombia): number[] {
-  return HORAS_INICIO_VALIDAS.filter((horaInicio) => disponibilidad.includes(jornadaDe(horaInicio)) && !horaYaPaso(fecha, horaInicio, ahora));
+const MS_POR_DIA = 86_400_000;
+
+function diasDesdeEpoca(fecha: string): number {
+  const [anio, mes, dia] = fecha.split("-").map(Number) as [number, number, number];
+  return Date.UTC(anio, mes - 1, dia) / MS_POR_DIA;
+}
+
+// ISO: 1 = lunes … 7 = domingo. El 1 de enero de 1970 (día 0 desde la época) fue jueves (ISO 4).
+function diaDeLaSemana(fecha: string): number {
+  return (((diasDesdeEpoca(fecha) + 3) % 7) + 7) % 7 + 1;
+}
+
+// ¿El horario semanal del cuidador cubre POR COMPLETO la ventana [horaInicio, horaInicio + horas*60) de esa
+// fecha? Mismo cálculo que el backend (`reservas/dominio/franjas.ts`, `estaLibreEn`): los rangos de hoy y de
+// mañana se convierten a minutos absolutos y se fusionan los que queden contiguos o solapados, para que un
+// rango que cruza la medianoche (o dos rangos del mismo día que se tocan, como mañana y tarde) cuenten como
+// uno solo.
+function estaLibreEn(horariosLibres: readonly RangoLibre[], fecha: string, horaInicio: number, horas: number): boolean {
+  const inicioServicio = diasDesdeEpoca(fecha) * MINUTOS_POR_DIA + horaInicio;
+  const finServicio = inicioServicio + horas * 60;
+  const diaHoy = diaDeLaSemana(fecha);
+  const diaManana = diaDeLaSemana(sumarDias(fecha, 1));
+  const ventanas = horariosLibres
+    .filter((r) => r.diaSemana === diaHoy || r.diaSemana === diaManana)
+    .map((r) => {
+      const base = (diasDesdeEpoca(fecha) + (r.diaSemana === diaHoy ? 0 : 1)) * MINUTOS_POR_DIA;
+      return { inicio: base + r.horaInicio, fin: base + r.horaFin };
+    })
+    .sort((a, b) => a.inicio - b.inicio);
+  const fusionadas: { inicio: number; fin: number }[] = [];
+  for (const ventana of ventanas) {
+    const anterior = fusionadas.at(-1);
+    if (anterior !== undefined && ventana.inicio <= anterior.fin) anterior.fin = Math.max(anterior.fin, ventana.fin);
+    else fusionadas.push({ ...ventana });
+  }
+  return fusionadas.some((libre) => libre.inicio <= inicioServicio && finServicio <= libre.fin);
+}
+
+// Las horas de inicio (cada 30 min) que todavía se pueden pedir ese día para esa duración, entre las que
+// caben por completo en el horario semanal del cuidador y que no hayan pasado ya si la fecha es hoy.
+export function horasPedibles(fecha: string, horariosLibres: readonly RangoLibre[], ahora: AhoraEnColombia, horas: number): number[] {
+  return HORAS_INICIO_VALIDAS.filter((horaInicio) => estaLibreEn(horariosLibres, fecha, horaInicio, horas) && !horaYaPaso(fecha, horaInicio, ahora));
 }
 
 const ZONA_PARA_MOSTRAR = ZONA_DEL_NEGOCIO;

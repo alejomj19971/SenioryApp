@@ -24,6 +24,7 @@ const cuidador = (n: number, extra: Partial<CuidadorResumen> = {}): CuidadorResu
   tarifaHora: 20_000,
   zona: "Laureles",
   disponibilidad: ["tarde"],
+  horariosLibres: [],
   calificacion: 4.5,
   cantidadResenas: 2,
   serviciosCompletados: 1,

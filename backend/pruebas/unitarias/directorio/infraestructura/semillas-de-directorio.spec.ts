@@ -1,5 +1,6 @@
 import { FechaCivil } from '../../../../src/compartido/dominio/fecha-civil.js';
 import { Cuidador } from '../../../../src/directorio/dominio/cuidador.js';
+import { jornadasDeHorario } from '../../../../src/directorio/dominio/jornadas-de-horario.js';
 import { CONTROLES_DE_VERIFICACION } from '../../../../src/directorio/dominio/valores-cerrados.js';
 import {
   ErrorDeArchivo,
@@ -59,7 +60,9 @@ describe('semillas de Directorio', () => {
 
   it('cubre todas las especialidades y jornadas, para poder probar los filtros', () => {
     expect(new Set(muestras.map((m) => m.especialidad)).size).toBe(4);
-    expect(new Set(muestras.flatMap((m) => m.disponibilidad)).size).toBe(3);
+    expect(
+      new Set(muestras.flatMap((m) => jornadasDeHorario(m.horariosLibres))).size,
+    ).toBe(3);
   });
 
   it('se niega a correr en producción', async () => {

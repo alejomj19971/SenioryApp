@@ -17,7 +17,7 @@ import {
 import { crearAppDePrueba } from '../soporte/app.js';
 import { conectarBd, nuevoId } from '../soporte/bd.js';
 import { RelojFalso } from '../soporte/dobles.js';
-import { REVISOR_DE_PRUEBA } from '../soporte/directorio.js';
+import { horarioDeJornadas, REVISOR_DE_PRUEBA } from '../soporte/directorio.js';
 
 // M2 §6 (API): el directorio que ve una familia. Lo que más importa: nadie ve a un cuidador sin sus tres
 // controles, el teléfono nunca sale, y los archivos solo se entregan con una dirección firmada y vigente.
@@ -42,7 +42,7 @@ function entrada(
     aniosExperiencia: 6,
     tarifaHora: 25_000,
     zona,
-    disponibilidad: ['manana', 'tarde'],
+    horariosLibres: horarioDeJornadas('manana', 'tarde'),
     bio: 'Cuido con paciencia.',
     controles: [
       { control: 'antecedentes', vigenteHasta: '2031-01-01' },
@@ -165,6 +165,12 @@ describe('directorio de cuidadores (API)', () => {
             tarifaHora: 25_000,
             zona,
             disponibilidad: ['manana', 'tarde'],
+            // Mañana (360–720) y tarde (720–1080) quedan contiguas: el dominio las fusiona en un solo rango.
+            horariosLibres: [1, 2, 3, 4, 5, 6, 7].map((diaSemana) => ({
+              diaSemana,
+              horaInicio: 360,
+              horaFin: 1_080,
+            })),
             bio: 'Cuido con paciencia.',
             distanciaKm: null,
             calificacion: null,
@@ -201,7 +207,7 @@ describe('directorio de cuidadores (API)', () => {
       const esperado = await importar(
         entrada(zona, {
           especialidad: 'fisioterapia',
-          disponibilidad: ['noche'],
+          horariosLibres: horarioDeJornadas('noche'),
           tarifaHora: 30_000,
         }),
       );
@@ -209,7 +215,7 @@ describe('directorio de cuidadores (API)', () => {
       await importar(
         entrada(zona, {
           especialidad: 'fisioterapia',
-          disponibilidad: ['noche'],
+          horariosLibres: horarioDeJornadas('noche'),
           tarifaHora: 60_000,
         }),
       );
@@ -372,8 +378,8 @@ describe('directorio de cuidadores (API)', () => {
       const id = nuevoId();
       await bd.query(
         `insert into directorio.cuidadores
-           (id, nombre, nombre_busqueda, especialidad, titulo, anios_experiencia, tarifa_hora, telefono, zona, zona_busqueda, disponibilidad, bio, estado, visible)
-         values ($1, 'Sin Verificar', 'sin verificar', 'auxiliar', 'Auxiliar', 2, 15000, '+573001112233', 'Zona', 'zona', '{manana}', '', 'borrador', false)`,
+           (id, nombre, nombre_busqueda, especialidad, titulo, anios_experiencia, tarifa_hora, telefono, zona, zona_busqueda, bio, estado, visible)
+         values ($1, 'Sin Verificar', 'sin verificar', 'auxiliar', 'Auxiliar', 2, 15000, '+573001112233', 'Zona', 'zona', '', 'borrador', false)`,
         [id],
       );
 

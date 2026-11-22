@@ -58,7 +58,7 @@ describe('RepositorioCuidadoresDrizzle', () => {
       expect(leido?.nombre).toBe(guardado.nombre);
       expect(leido?.telefono).toBe(guardado.telefono);
       expect(leido?.tarifaHora.valor).toBe(guardado.tarifaHora.valor);
-      expect(leido?.disponibilidad).toEqual(guardado.disponibilidad);
+      expect(leido?.horariosLibres).toEqual(guardado.horariosLibres);
       expect(leido?.visible).toBe(true);
       expect(leido?.estado).toBe('activo');
       expect(leido?.verificaciones).toHaveLength(3);
@@ -169,25 +169,25 @@ describe('RepositorioCuidadoresDrizzle', () => {
       const esperado = await guardarCuidador(repos, {
         zona,
         especialidad: 'enfermeria',
-        disponibilidad: ['noche'],
+        jornadas: ['noche'],
         tarifaHora: 20_000,
       });
       await guardarCuidador(repos, {
         zona,
         especialidad: 'enfermeria',
-        disponibilidad: ['manana'],
+        jornadas: ['manana'],
         tarifaHora: 20_000,
       });
       await guardarCuidador(repos, {
         zona,
         especialidad: 'enfermeria',
-        disponibilidad: ['noche'],
+        jornadas: ['noche'],
         tarifaHora: 40_000,
       });
       await guardarCuidador(repos, {
         zona,
         especialidad: 'auxiliar',
-        disponibilidad: ['noche'],
+        jornadas: ['noche'],
         tarifaHora: 20_000,
       });
 
@@ -465,6 +465,10 @@ describe('RepositorioCuidadoresDrizzle', () => {
       const fantasma = await guardarCuidador(repos, { zona: zonaUnica() });
       await repos.pool.query(
         'delete from directorio.verificaciones where cuidador_id = $1',
+        [fantasma.id],
+      );
+      await repos.pool.query(
+        'delete from directorio.horarios_libres where cuidador_id = $1',
         [fantasma.id],
       );
       await repos.pool.query(

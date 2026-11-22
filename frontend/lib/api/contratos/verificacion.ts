@@ -30,7 +30,7 @@ export interface MiPerfilDelBackend {
   tarifaHora: number;
   telefono: string;
   zona: string;
-  disponibilidad: ("manana" | "tarde" | "noche")[];
+  horariosLibres: { diaSemana: number; horaInicio: number; horaFin: number }[];
   bio: string;
   aceptacionAutomatica: boolean;
   estado: string;

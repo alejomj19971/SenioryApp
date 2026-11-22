@@ -195,7 +195,10 @@ function ItemDelCarrito({ cuidador, ahora, cotizacionInicial, resultado, onQuita
   const [horas, setHoras] = useState(1);
 
   const fecha = fechaSeleccion === "hoy" ? ahora.hoy : fechaSeleccion === "manana" ? manana : fechaPersonalizada;
-  const horasDisponibles = useMemo(() => horasPedibles(fecha, cuidador.disponibilidad, ahora), [fecha, cuidador.disponibilidad, ahora]);
+  const horasDisponibles = useMemo(
+    () => horasPedibles(fecha, cuidador.horariosLibres, ahora, horas),
+    [fecha, cuidador.horariosLibres, ahora, horas],
+  );
   const horaElegida = horaInicio !== null && horasDisponibles.includes(horaInicio) ? horaInicio : (horasDisponibles[0] ?? null);
 
   const { cotizacion, cotizando, errorDeCotizacion, reintentar } = useCotizacion(cuidador.id, horas, cotizacionInicial);

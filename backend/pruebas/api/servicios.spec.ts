@@ -23,7 +23,7 @@ import {
 } from '../soporte/api.js';
 import { crearAppDePrueba } from '../soporte/app.js';
 import { conectarBd, nuevoId } from '../soporte/bd.js';
-import { REVISOR_DE_PRUEBA } from '../soporte/directorio.js';
+import { horarioDeJornadas, REVISOR_DE_PRUEBA } from '../soporte/directorio.js';
 import { RelojFalso } from '../soporte/dobles.js';
 import { expirarSolicitudesDe } from '../soporte/expiracion.js';
 
@@ -135,7 +135,7 @@ describe('servicios (API)', () => {
           aniosExperiencia: 6,
           tarifaHora: 20_000,
           zona: `Zona${marca}`,
-          disponibilidad: ['manana', 'tarde', 'noche'],
+          horariosLibres: horarioDeJornadas('manana', 'tarde', 'noche'),
           bio: 'Cuido con paciencia.',
           controles: [
             { control: 'antecedentes', vigenteHasta: '2031-01-01' },
@@ -412,13 +412,13 @@ describe('servicios (API)', () => {
       });
 
       it('rechaza una jornada que el cuidador no atiende con 422', async () => {
-        const c = await nuevoCuidador({ disponibilidad: ['manana'] });
+        const c = await nuevoCuidador({ horariosLibres: horarioDeJornadas('manana') });
 
         const respuesta = await solicitar(c, { horaInicio: 1080 });
 
         expect(respuesta.status).toBe(422);
         expect(respuesta.body).toMatchObject({
-          codigo: 'servicio.jornada_no_disponible',
+          codigo: 'servicio.horario_no_disponible',
         });
       });
 
@@ -729,7 +729,7 @@ describe('servicios (API)', () => {
     });
 
     it('si el cuidador no atiende la nueva jornada, se rechaza (422)', async () => {
-      const c = await nuevoCuidador({ disponibilidad: ['manana'] });
+      const c = await nuevoCuidador({ horariosLibres: horarioDeJornadas('manana') });
       const id = await crearServicio(c, { horaInicio: 360 });
 
       const respuesta = await accion('modificar', id, familia.cookie, {
@@ -740,7 +740,7 @@ describe('servicios (API)', () => {
 
       expect(respuesta.status).toBe(422);
       expect(respuesta.body).toMatchObject({
-        codigo: 'servicio.jornada_no_disponible',
+        codigo: 'servicio.horario_no_disponible',
       });
     });
 

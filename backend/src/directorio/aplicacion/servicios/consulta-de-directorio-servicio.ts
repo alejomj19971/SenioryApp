@@ -32,7 +32,7 @@ export class ConsultaDeDirectorioServicio implements ConsultaDeDirectorio {
       nombre: cuidador.nombre,
       tarifaHora: cuidador.tarifaHora.valor,
       zona: cuidador.zona,
-      disponibilidad: [...cuidador.disponibilidad],
+      horariosLibres: [...cuidador.horariosLibres],
       aceptacionAutomatica: cuidador.aceptacionAutomatica,
     };
   }

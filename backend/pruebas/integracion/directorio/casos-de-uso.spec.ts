@@ -29,7 +29,7 @@ import { como, registrarFamiliar } from '../../soporte/api.js';
 import { crearAppDePrueba } from '../../soporte/app.js';
 import { conectarBd, nuevoId } from '../../soporte/bd.js';
 import { RelojFalso } from '../../soporte/dobles.js';
-import { REVISOR_DE_PRUEBA } from '../../soporte/directorio.js';
+import { horarioDeJornadas, REVISOR_DE_PRUEBA } from '../../soporte/directorio.js';
 
 // Los casos de uso de Directorio con la aplicación completa y Postgres real: la importación de cuidadores, la
 // revisión diaria de vigencias, la reseña que nace de un evento de Reservas y lo que se ofrece a otros módulos.
@@ -61,7 +61,7 @@ function entrada(
     aniosExperiencia: 6,
     tarifaHora: 25_000,
     zona: `Zona${marca}`,
-    disponibilidad: ['manana', 'tarde'],
+    horariosLibres: horarioDeJornadas('manana', 'tarde'),
     bio: 'Cuido con paciencia.',
     controles: [
       { control: 'antecedentes', vigenteHasta: hoy().sumarDias(365).aTexto() },
@@ -592,7 +592,12 @@ describe('casos de uso de Directorio', () => {
         nombre: datos.nombre,
         tarifaHora: 27_000,
         zona: datos.zona,
-        disponibilidad: ['manana', 'tarde'],
+        // Mañana (360–720) y tarde (720–1080) quedan contiguas: el dominio las fusiona en un solo rango.
+        horariosLibres: [1, 2, 3, 4, 5, 6, 7].map((diaSemana) => ({
+          diaSemana,
+          horaInicio: 360,
+          horaFin: 1_080,
+        })),
         aceptacionAutomatica: false,
       });
     });

@@ -47,7 +47,7 @@ export async function guardarPerfilAccion(_previo: EstadoDeFormulario, datos: Fo
       tarifaHora: texto(datos, "tarifaHora"),
       telefono: texto(datos, "telefono"),
       zona: texto(datos, "zona"),
-      disponibilidad: datos.getAll("disponibilidad").filter((v): v is string => typeof v === "string"),
+      horariosLibres: texto(datos, "horariosLibres"),
       bio: texto(datos, "bio"),
     },
     { congelado: existente?.estado === "activo" },

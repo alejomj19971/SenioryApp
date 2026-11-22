@@ -14,7 +14,7 @@ import {
 import { crearAppDePrueba } from '../soporte/app.js';
 import { conectarBd, nuevoId } from '../soporte/bd.js';
 import { RelojFalso } from '../soporte/dobles.js';
-import { REVISOR_DE_PRUEBA } from '../soporte/directorio.js';
+import { horarioDeJornadas, REVISOR_DE_PRUEBA } from '../soporte/directorio.js';
 
 // M3 §6 (API): cotizar un servicio. Lo que más importa: la tarifa y las comisiones las pone el servidor, y
 // la familia nunca ve lo que se le paga al profesional.
@@ -35,7 +35,7 @@ function entrada(tarifaHora: number): EntradaDeCuidadorImportado {
     aniosExperiencia: 6,
     tarifaHora,
     zona: `Zona${marca}`,
-    disponibilidad: ['manana'],
+    horariosLibres: horarioDeJornadas('manana'),
     bio: 'Cuido con paciencia.',
     controles: [
       { control: 'antecedentes', vigenteHasta: '2031-01-01' },

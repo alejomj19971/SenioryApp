@@ -154,16 +154,6 @@ describe('esquema directorio', () => {
         { anios_experiencia: 61 },
         'cuidadores_experiencia_valida',
       ],
-      [
-        'disponibilidad vacía',
-        { disponibilidad: [] },
-        'cuidadores_disponibilidad_valida',
-      ],
-      [
-        'jornada inexistente',
-        { disponibilidad: ['manana', 'madrugada'] },
-        'cuidadores_disponibilidad_valida',
-      ],
       ['estado desconocido', { estado: 'dormido' }, 'cuidadores_estado_valido'],
       [
         'bio de más de 1000 caracteres',
@@ -237,6 +227,66 @@ describe('esquema directorio', () => {
 
     it('permite varios cuidadores sin cuenta (usuario_id nulo)', async () => {
       await insertar(bd, 'directorio.cuidadores', cuidadorValido());
+      await insertar(bd, 'directorio.cuidadores', cuidadorValido());
+    });
+  });
+
+  describe('horarios_libres', () => {
+    const rangoValido = async (cuidadorId: string, extra: Record<string, unknown> = {}) =>
+      insertar(bd, 'directorio.horarios_libres', {
+        id: nuevoId(),
+        cuidador_id: cuidadorId,
+        dia_semana: 1,
+        hora_inicio: 360,
+        hora_fin: 720,
+        ...extra,
+      });
+
+    it('acepta un rango válido', async () => {
+      const cuidador = cuidadorValido();
+      await insertar(bd, 'directorio.cuidadores', cuidador);
+
+      await rangoValido(cuidador.id);
+    });
+
+    it.each([
+      ['día 0', { dia_semana: 0 }, 'horarios_libres_dia_valido'],
+      ['día 8', { dia_semana: 8 }, 'horarios_libres_dia_valido'],
+      [
+        'hora de inicio negativa',
+        { hora_inicio: -30 },
+        'horarios_libres_rango_valido',
+      ],
+      [
+        'hora de fin más allá de medianoche',
+        { hora_fin: 1470 },
+        'horarios_libres_rango_valido',
+      ],
+      [
+        'fin antes que inicio',
+        { hora_inicio: 720, hora_fin: 360 },
+        'horarios_libres_rango_valido',
+      ],
+      [
+        'hora de inicio que no es múltiplo de 30',
+        { hora_inicio: 361 },
+        'horarios_libres_rango_valido',
+      ],
+      [
+        'hora de fin que no es múltiplo de 30',
+        { hora_fin: 721 },
+        'horarios_libres_rango_valido',
+      ],
+    ])('rechaza: %s', async (_nombre, extra, restriccion) => {
+      const cuidador = cuidadorValido();
+      await insertar(bd, 'directorio.cuidadores', cuidador);
+
+      const r = await rechazo(() => rangoValido(cuidador.id, extra));
+
+      expect(r).toMatchObject({ codigo: CHECK, restriccion });
+    });
+
+    it('un cuidador sin horario no es rechazado (la regla de negocio, no la base, exige al menos uno)', async () => {
       await insertar(bd, 'directorio.cuidadores', cuidadorValido());
     });
   });

@@ -76,6 +76,11 @@ export class FechaCivil {
     return this.diasDesdeEpoca() === otra.diasDesdeEpoca();
   }
 
+  // ISO: 1 = lunes … 7 = domingo. El 1 de enero de 1970 (día 0 desde la época) fue jueves (ISO 4).
+  diaDeLaSemana(): number {
+    return (((this.diasDesdeEpoca() + 3) % 7) + 7) % 7 + 1;
+  }
+
   // Admite días negativos. Los cambios de mes, de año y los bisiestos los resuelve el calendario UTC,
   // que no tiene horario de verano: sumar días nunca se corre por una hora.
   sumarDias(dias: number): FechaCivil {

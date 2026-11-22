@@ -4,7 +4,10 @@ import {
   ErrorDeValidacion,
 } from '../../compartido/dominio/errores.js';
 import type { FechaCivil } from '../../compartido/dominio/fecha-civil.js';
-import { JORNADAS, type Jornada } from '../../compartido/dominio/jornada.js';
+import {
+  esRangoLibreValido,
+  type RangoLibre,
+} from '../../compartido/dominio/rango-libre.js';
 import type { CuidadorId } from './ids.js';
 import { distanciaKm, validarUbicacion, type Ubicacion } from './ubicacion.js';
 import {
@@ -38,7 +41,8 @@ export interface DatosDeCuidador {
   // Nunca sale del módulo en listados (hallazgo H1): solo lo ve la familia con un servicio activo.
   telefono: string;
   zona: string;
-  disponibilidad: readonly Jornada[];
+  // El horario semanal que el propio cuidador declara libre; ya normalizado (sin rangos solapados).
+  horariosLibres: readonly RangoLibre[];
   bio: string;
   // Dónde atiende, para que la familia busque por cercanía (M2). Null hasta que el propio cuidador fija un
   // pin en el mapa: nunca se deriva de `zona` (ese texto no es una dirección geocodificable confiable).
@@ -67,7 +71,7 @@ export interface DatosParaRegistrarCuidador {
   tarifaHora: number;
   telefono: string;
   zona: string;
-  disponibilidad: readonly Jornada[];
+  horariosLibres: readonly RangoLibre[];
   bio: string;
   ahora: Date;
 }
@@ -82,7 +86,7 @@ export interface CambiosDePerfil {
   tarifaHora?: number;
   telefono?: string;
   zona?: string;
-  disponibilidad?: readonly Jornada[];
+  horariosLibres?: readonly RangoLibre[];
   bio?: string;
   aceptacionAutomatica?: boolean;
   // Las dos juntas o ninguna: fijan el pin del mapa (M2). No se puede mover solo una coordenada del par.
@@ -103,7 +107,7 @@ export class Cuidador {
 
   // Un cuidador nuevo entra en borrador y oculto: se vuelve visible cuando se aprueban sus controles.
   static registrar(datos: DatosParaRegistrarCuidador): Cuidador {
-    const { nombre, titulo, zona, telefono, bio, disponibilidad, tarifaHora } =
+    const { nombre, titulo, zona, telefono, bio, horariosLibres, tarifaHora } =
       validarPerfil(datos);
     return new Cuidador({
       id: datos.id,
@@ -116,7 +120,7 @@ export class Cuidador {
       tarifaHora,
       telefono,
       zona,
-      disponibilidad,
+      horariosLibres,
       bio,
       ubicacion: null,
       aceptacionAutomatica: false,
@@ -167,8 +171,8 @@ export class Cuidador {
   get zona(): string {
     return this.datos.zona;
   }
-  get disponibilidad(): readonly Jornada[] {
-    return this.datos.disponibilidad;
+  get horariosLibres(): readonly RangoLibre[] {
+    return this.datos.horariosLibres;
   }
   get bio(): string {
     return this.datos.bio;
@@ -286,7 +290,7 @@ export class Cuidador {
       tarifaHora: cambios.tarifaHora ?? this.datos.tarifaHora.valor,
       telefono: cambios.telefono ?? this.datos.telefono,
       bio: cambios.bio ?? this.datos.bio,
-      disponibilidad: cambios.disponibilidad ?? this.datos.disponibilidad,
+      horariosLibres: cambios.horariosLibres ?? this.datos.horariosLibres,
     });
     this.datos.especialidad = cambios.especialidad ?? this.datos.especialidad;
     this.datos.titulo = validado.titulo;
@@ -295,7 +299,7 @@ export class Cuidador {
     this.datos.tarifaHora = validado.tarifaHora;
     this.datos.telefono = validado.telefono;
     this.datos.bio = validado.bio;
-    this.datos.disponibilidad = validado.disponibilidad;
+    this.datos.horariosLibres = validado.horariosLibres;
     if (cambios.aceptacionAutomatica !== undefined) {
       this.datos.aceptacionAutomatica = cambios.aceptacionAutomatica;
     }
@@ -401,7 +405,7 @@ interface PerfilParaValidar {
   tarifaHora: number;
   telefono: string;
   bio: string;
-  disponibilidad: readonly Jornada[];
+  horariosLibres: readonly RangoLibre[];
 }
 
 // Las reglas del perfil, las mismas al registrarlo y al editarlo. Devuelve los valores ya limpios.
@@ -440,15 +444,7 @@ function validarPerfil(datos: PerfilParaValidar) {
       'cuidador.bio_muy_larga',
     );
   }
-  const disponibilidad = JORNADAS.filter((jornada) =>
-    datos.disponibilidad.includes(jornada),
-  );
-  if (disponibilidad.length === 0) {
-    throw new ErrorDeValidacion(
-      'El cuidador debe estar disponible en al menos una jornada',
-      'cuidador.sin_disponibilidad',
-    );
-  }
+  const horariosLibres = normalizarHorariosLibres(datos.horariosLibres);
   return {
     nombre,
     titulo,
@@ -457,8 +453,49 @@ function validarPerfil(datos: PerfilParaValidar) {
     tarifaHora,
     telefono,
     bio,
-    disponibilidad,
+    horariosLibres,
   };
+}
+
+// Valida cada rango (día ISO 1–7, horas múltiplo de 30 con la de inicio antes que la de fin) y fusiona los
+// que se solapan o se tocan dentro de un mismo día (agregar 6–10 y 10–14 el mismo día queda como un solo
+// 6–14). Exige al menos un rango en total: sin ninguno, nadie podría contratar a este cuidador.
+function normalizarHorariosLibres(
+  rangos: readonly RangoLibre[],
+): RangoLibre[] {
+  for (const rango of rangos) {
+    if (!esRangoLibreValido(rango)) {
+      throw new ErrorDeValidacion(
+        'El horario tiene un rango inválido: el día debe ser 1 a 7 y las horas, múltiplos de 30 con la de inicio antes que la de fin',
+        'cuidador.horario_invalido',
+      );
+    }
+  }
+  const normalizados: RangoLibre[] = [];
+  for (let dia = 1; dia <= 7; dia++) {
+    const delDia = rangos
+      .filter((rango) => rango.diaSemana === dia)
+      .sort((a, b) => a.horaInicio - b.horaInicio);
+    for (const rango of delDia) {
+      const anterior = normalizados.at(-1);
+      if (
+        anterior !== undefined &&
+        anterior.diaSemana === dia &&
+        rango.horaInicio <= anterior.horaFin
+      ) {
+        anterior.horaFin = Math.max(anterior.horaFin, rango.horaFin);
+      } else {
+        normalizados.push({ ...rango });
+      }
+    }
+  }
+  if (normalizados.length === 0) {
+    throw new ErrorDeValidacion(
+      'El cuidador debe tener al menos un rango de horario libre',
+      'cuidador.sin_horario',
+    );
+  }
+  return normalizados;
 }
 
 function texto(valor: string, campo: string, maximo: number): string {

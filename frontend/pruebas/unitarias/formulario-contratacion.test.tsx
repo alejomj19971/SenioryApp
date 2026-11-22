@@ -23,6 +23,7 @@ const cuidador: Cuidador = {
   tarifaHora: 20_000,
   zona: "Laureles",
   disponibilidad: ["manana", "tarde", "noche"],
+  horariosLibres: [1, 2, 3, 4, 5, 6, 7].map((diaSemana) => ({ diaSemana, horaInicio: 0, horaFin: 1_440 })),
   calificacion: null,
   cantidadResenas: 0,
   serviciosCompletados: 0,
@@ -161,7 +162,8 @@ describe("FormularioContratacion", () => {
   });
 
   it("si el cuidador solo atiende de mañana y ya pasó, no hay horas hoy y el botón queda desactivado", () => {
-    mostrar({ cuidador: { ...cuidador, disponibilidad: ["manana"] }, ahora: { hoy: "2026-11-01", minutos: 15 * 60 } });
+    const soloManana = [1, 2, 3, 4, 5, 6, 7].map((diaSemana) => ({ diaSemana, horaInicio: 360, horaFin: 720 }));
+    mostrar({ cuidador: { ...cuidador, horariosLibres: soloManana }, ahora: { hoy: "2026-11-01", minutos: 15 * 60 } });
 
     expect(screen.getByText(/ya no quedan horas con este cuidador/)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Enviar solicitud" })).toBeDisabled();

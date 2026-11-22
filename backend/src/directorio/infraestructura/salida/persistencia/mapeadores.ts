@@ -1,10 +1,7 @@
 import { Dinero } from '../../../../compartido/dominio/dinero.js';
 import { FechaCivil } from '../../../../compartido/dominio/fecha-civil.js';
 import type { Id } from '../../../../compartido/dominio/id.js';
-import {
-  esJornada,
-  type Jornada,
-} from '../../../../compartido/dominio/jornada.js';
+import type { RangoLibre } from '../../../../compartido/dominio/rango-libre.js';
 import { Cuidador } from '../../../dominio/cuidador.js';
 import { Resena } from '../../../dominio/resena.js';
 import {
@@ -16,6 +13,7 @@ import {
 import { Verificacion } from '../../../dominio/verificacion.js';
 import type {
   cuidadores,
+  horariosLibres,
   resenas,
   verificaciones,
 } from './directorio.esquema.js';
@@ -60,9 +58,20 @@ export function verificacionDeFila(
   });
 }
 
+export function rangoLibreDeFila(
+  fila: typeof horariosLibres.$inferSelect,
+): RangoLibre {
+  return {
+    diaSemana: fila.diaSemana,
+    horaInicio: fila.horaInicio,
+    horaFin: fila.horaFin,
+  };
+}
+
 export function cuidadorDeFila(
   fila: typeof cuidadores.$inferSelect,
   verificacionesDelCuidador: readonly Verificacion[],
+  horariosLibresDelCuidador: readonly RangoLibre[],
 ): Cuidador {
   return Cuidador.reconstruir({
     id: id(fila.id),
@@ -79,14 +88,7 @@ export function cuidadorDeFila(
       fila.latitud === null || fila.longitud === null
         ? null
         : { latitud: fila.latitud, longitud: fila.longitud },
-    disponibilidad: fila.disponibilidad.map((jornada): Jornada => {
-      if (!esJornada(jornada)) {
-        throw new Error(
-          `Valor inesperado en la base de datos: jornada = "${jornada}"`,
-        );
-      }
-      return jornada;
-    }),
+    horariosLibres: horariosLibresDelCuidador,
     bio: fila.bio,
     aceptacionAutomatica: fila.aceptacionAutomatica,
     estado: exigir(fila.estado, ESTADOS_DE_CUIDADOR, 'estado'),

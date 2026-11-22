@@ -8,7 +8,7 @@ import {
 import type { UsuarioId } from '../../src/identidad/dominio/ids.js';
 import { como, conSesion, registrarFamiliar, type Persona } from './api.js';
 import { conectarBd, nuevoId } from './bd.js';
-import { REVISOR_DE_PRUEBA } from './directorio.js';
+import { horarioDeJornadas, REVISOR_DE_PRUEBA } from './directorio.js';
 import type { RelojFalso } from './dobles.js';
 
 // Personas listas para las pruebas de API que recorren varios módulos: una familia con su persona mayor y su
@@ -95,7 +95,7 @@ export async function nuevoCuidador(
         aniosExperiencia: 6,
         tarifaHora: 20_000,
         zona: `Zona${marca}`,
-        disponibilidad: ['manana', 'tarde', 'noche'],
+        horariosLibres: horarioDeJornadas('manana', 'tarde', 'noche'),
         bio: 'Cuido con paciencia.',
         controles: [
           { control: 'antecedentes', vigenteHasta: '2031-01-01' },

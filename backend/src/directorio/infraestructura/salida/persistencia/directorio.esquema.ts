@@ -45,7 +45,6 @@ export const cuidadores = esquemaDirectorio.table(
     // un pin en el mapa; las dos columnas se llenan o se quedan vacías juntas (nunca una sola).
     latitud: doublePrecision('latitud'),
     longitud: doublePrecision('longitud'),
-    disponibilidad: text('disponibilidad').array().notNull(),
     bio: text('bio').notNull(),
     // Solo el propio cuidador activa la aceptación automática.
     aceptacionAutomatica: boolean('aceptacion_automatica')
@@ -73,10 +72,6 @@ export const cuidadores = esquemaDirectorio.table(
     check(
       'cuidadores_experiencia_valida',
       sql`anios_experiencia between 0 and 60`,
-    ),
-    check(
-      'cuidadores_disponibilidad_valida',
-      sql`disponibilidad <@ array['manana', 'tarde', 'noche']::text[] and cardinality(disponibilidad) > 0`,
     ),
     check(
       'cuidadores_estado_valido',
@@ -112,7 +107,6 @@ export const cuidadores = esquemaDirectorio.table(
     index('cuidadores_busqueda_idx')
       .on(t.especialidad, t.tarifaHora)
       .where(sql`visible`),
-    index('cuidadores_disponibilidad_idx').using('gin', t.disponibilidad),
     index('cuidadores_nombre_trgm_idx').using(
       'gin',
       t.nombreBusqueda.op('gin_trgm_ops'),
@@ -120,6 +114,37 @@ export const cuidadores = esquemaDirectorio.table(
     index('cuidadores_zona_trgm_idx').using(
       'gin',
       t.zonaBusqueda.op('gin_trgm_ops'),
+    ),
+  ],
+);
+
+// El horario semanal que el propio cuidador declara libre (reemplaza la antigua `disponibilidad` por
+// jornada): varias filas por cuidador y día, sin cruce de medianoche dentro de una fila (un turno que sigue
+// después de las 00:00 se parte en dos filas, una por día). `reservas` lo usa a través del puerto de entrada
+// de Directorio para saber si un horario pedido cabe en alguno de estos rangos (`estaLibreEn`,
+// `reservas/dominio/franjas.ts`).
+export const horariosLibres = esquemaDirectorio.table(
+  'horarios_libres',
+  {
+    id: uuid('id').primaryKey(),
+    cuidadorId: uuid('cuidador_id')
+      .notNull()
+      .references(() => cuidadores.id),
+    // ISO: 1 = lunes … 7 = domingo.
+    diaSemana: smallint('dia_semana').notNull(),
+    horaInicio: integer('hora_inicio').notNull(),
+    horaFin: integer('hora_fin').notNull(),
+  },
+  (t) => [
+    index('horarios_libres_cuidador_idx').on(t.cuidadorId, t.diaSemana),
+    check(
+      'horarios_libres_dia_valido',
+      sql`dia_semana between 1 and 7`,
+    ),
+    check(
+      'horarios_libres_rango_valido',
+      sql`hora_inicio >= 0 and hora_fin <= 1440 and hora_inicio < hora_fin
+        and hora_inicio % 30 = 0 and hora_fin % 30 = 0`,
     ),
   ],
 );

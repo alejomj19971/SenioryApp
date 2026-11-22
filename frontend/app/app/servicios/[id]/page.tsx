@@ -122,7 +122,7 @@ export default async function ServicioPage({ params, searchParams }: PageProps<"
             cargoDeServicio: servicio.cargoDeServicio,
             totalFamilia: servicio.totalFamilia,
           }}
-          disponibilidad={cuidadorParaModificar.disponibilidad}
+          horariosLibres={cuidadorParaModificar.horariosLibres}
           ahora={ahoraEnColombia()}
         />
       )}

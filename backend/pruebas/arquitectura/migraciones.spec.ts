@@ -11,6 +11,9 @@ const DATOS_DE_REFERENCIA_PERMITIDOS: Record<string, string> = {
     'La política de comisiones v1 (8 % familia, 10 % profesional): sin ella no se puede cotizar.',
   '"reservas"."franjas"':
     'Las tres jornadas y sus horarios (mañana, tarde y noche): sin ellas no se puede reservar.',
+  '"directorio"."horarios_libres"':
+    'Migración 0016: backfill del horario semanal de cada cuidador YA existente, a partir de su propia ' +
+    'disponibilidad por jornada (nunca un valor literal ni un cuidador de ejemplo).',
 };
 
 function migraciones(): { nombre: string; sql: string }[] {
@@ -54,7 +57,22 @@ describe('las migraciones no traen datos de prueba', () => {
       const texto = sinComentarios(sql).toLowerCase();
       expect(texto, nombre).not.toMatch(/@\w+\.(invalid|test|example)/);
       expect(texto, nombre).not.toMatch(/\binsert\s+into\s+"?identidad"?\./);
-      expect(texto, nombre).not.toMatch(/\binsert\s+into\s+"?directorio"?\./);
+      // `directorio` admite UNA excepción: una sentencia INSERT ... SELECT que reestructura datos YA
+      // existentes de la propia persona (un backfill, como el horario semanal que reemplazó la
+      // disponibilidad por jornada, migración 0016). Nunca inserta un valor literal ni trae datos de otro
+      // lado: solo puede mover lo que ya estaba guardado para ese mismo cuidador. Un INSERT con valores
+      // literales (una cuenta o un cuidador de ejemplo) sigue prohibido.
+      for (const sentencia of sinComentarios(sql)
+        .toLowerCase()
+        .split('--> statement-breakpoint')) {
+        if (!/\binsert\s+into\s+"?directorio"?\./.test(sentencia)) continue;
+        const esBackfillDesdeLaMismaTabla =
+          /\bselect\b/.test(sentencia) &&
+          /\bfrom\s+"?directorio"?\./.test(sentencia);
+        expect(esBackfillDesdeLaMismaTabla, `${nombre}: ${sentencia}`).toBe(
+          true,
+        );
+      }
     }
   });
 
