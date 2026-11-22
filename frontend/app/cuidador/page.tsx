@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { Banknote, CalendarClock, Inbox, MessageCircle, ShieldCheck, UserRound } from "lucide-react";
+import { GrupoResumido } from "@/components/cuidador/grupo-resumido";
 import { TarjetaDeSolicitud } from "@/components/cuidador/tarjeta-de-solicitud";
 import { resumenDeLaPostulacion } from "@/lib/etiquetas-de-postulacion";
 import { exigirRol } from "@/lib/sesion";
@@ -11,12 +12,17 @@ import type { EstadoDeServicio, ServicioDelCuidador } from "@/lib/types";
 
 export const metadata: Metadata = { title: "Tu panel de cuidador" };
 
-const GRUPOS: { titulo: string; estados: EstadoDeServicio[] }[] = [
-  { titulo: "Por responder", estados: ["solicitado"] },
-  { titulo: "En curso", estados: ["en_curso"] },
-  { titulo: "Próximos", estados: ["aceptado"] },
-  { titulo: "Terminados", estados: ["finalizado"] },
-  { titulo: "Cancelados", estados: ["cancelado"] },
+// Lo que siempre necesita que el cuidador haga algo se ve completo: responder una solicitud nueva, o lo ya
+// aceptado que viene en camino. Lo demás (en curso, terminado, cancelado) ya no pide nada de él, así que se
+// resume en `GrupoResumido` — se expande con un toque, pero no tapa lo que sí importa ahora.
+const SIEMPRE_VISIBLES: { titulo: string; estado: EstadoDeServicio }[] = [
+  { titulo: "Por responder", estado: "solicitado" },
+  { titulo: "Próximos", estado: "aceptado" },
+];
+const RESUMIDOS: { titulo: string; estado: EstadoDeServicio; variante: "warning" | "success" | "info" | "secondary" }[] = [
+  { titulo: "En curso", estado: "en_curso", variante: "info" },
+  { titulo: "Terminados", estado: "finalizado", variante: "secondary" },
+  { titulo: "Cancelados", estado: "cancelado", variante: "secondary" },
 ];
 
 // El panel del cuidador (F4): sus solicitudes y servicios. Lo que recibe por cada uno; nunca lo que paga la familia.
@@ -27,7 +33,7 @@ export default async function CuidadorPage() {
   if (miPerfil === null) redirect("/cuidador/perfil");
   const postulacion = resumenDeLaPostulacion(miPerfil);
   const pagina = await listarServiciosDelCuidador();
-  const por = (estados: EstadoDeServicio[]): ServicioDelCuidador[] => pagina.servicios.filter((servicio) => estados.includes(servicio.estado));
+  const por = (estado: EstadoDeServicio): ServicioDelCuidador[] => pagina.servicios.filter((servicio) => servicio.estado === estado);
 
   return (
     <div className="flex flex-col gap-6 px-4 py-6">
@@ -79,8 +85,8 @@ export default async function CuidadorPage() {
         </div>
       )}
 
-      {GRUPOS.map(({ titulo, estados }) => {
-        const servicios = por(estados);
+      {SIEMPRE_VISIBLES.map(({ titulo, estado }) => {
+        const servicios = por(estado);
         if (servicios.length === 0) return null;
         return (
           <section key={titulo} aria-label={titulo} className="flex flex-col gap-3">
@@ -93,6 +99,10 @@ export default async function CuidadorPage() {
           </section>
         );
       })}
+
+      {RESUMIDOS.map(({ titulo, estado, variante }) => (
+        <GrupoResumido key={titulo} titulo={titulo} estadoRepresentativo={estado} variante={variante} servicios={por(estado)} />
+      ))}
 
       {pagina.siguiente !== null && (
         <p className="text-sm text-muted-foreground">Mostrando los más recientes. Los anteriores llegan con el historial completo.</p>
