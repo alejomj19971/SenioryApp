@@ -11,11 +11,11 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { solicitarServicioAccion } from "@/lib/acciones/servicios";
-import { franjasPedibles, sumarDias, type AhoraEnColombia } from "@/lib/fecha-colombia";
+import { horasPedibles, sumarDias, type AhoraEnColombia } from "@/lib/fecha-colombia";
 import { useCotizacion } from "@/lib/hooks/use-cotizacion";
 import { formatearCOP } from "@/lib/format";
 import { cn } from "@/lib/utils";
-import type { Cotizacion, Cuidador, Jornada } from "@/lib/types";
+import type { Cotizacion, Cuidador } from "@/lib/types";
 
 interface FormularioContratacionProps {
   cuidador: Cuidador;
@@ -36,14 +36,14 @@ export function FormularioContratacion({ cuidador, ahora, cotizacionInicial, sal
   const manana = sumarDias(ahora.hoy, 1);
   const [fechaSeleccion, setFechaSeleccion] = useState<FechaSeleccion>("hoy");
   const [fechaPersonalizada, setFechaPersonalizada] = useState(manana);
-  const [jornada, setJornada] = useState<Jornada | null>(null);
+  const [horaInicio, setHoraInicio] = useState<number | null>(null);
   const [horas, setHoras] = useState(1);
   const [usarBolsa, setUsarBolsa] = useState(false);
 
   const fecha = fechaSeleccion === "hoy" ? ahora.hoy : fechaSeleccion === "manana" ? manana : fechaPersonalizada;
-  const jornadasPedibles = useMemo(() => franjasPedibles(fecha, cuidador.disponibilidad, ahora), [fecha, cuidador.disponibilidad, ahora]);
-  // Si la franja elegida ya no se puede pedir (cambió el día), se usa la primera que sí.
-  const jornadaElegida = jornada !== null && jornadasPedibles.includes(jornada) ? jornada : (jornadasPedibles[0] ?? null);
+  const horasDisponibles = useMemo(() => horasPedibles(fecha, cuidador.disponibilidad, ahora), [fecha, cuidador.disponibilidad, ahora]);
+  // Si la hora elegida ya no se puede pedir (cambió el día), se usa la primera que sí.
+  const horaElegida = horaInicio !== null && horasDisponibles.includes(horaInicio) ? horaInicio : (horasDisponibles[0] ?? null);
 
   // ── La cotización del servidor ────────────────────────────────────────────────────────────────────────────────
   const { cotizacion, cotizando, errorDeCotizacion, reintentar } = useCotizacion(cuidador.id, horas, cotizacionInicial);
@@ -63,11 +63,11 @@ export function FormularioContratacion({ cuidador, ahora, cotizacionInicial, sal
   }
 
   const [mensajeDeError, setMensajeDeError] = useState<string | null>(null);
-  const puedeEnviar = jornadaElegida !== null && cotizacion !== null && !cotizando && !enviando;
+  const puedeEnviar = horaElegida !== null && cotizacion !== null && !cotizando && !enviando;
 
   function confirmar() {
-    if (jornadaElegida === null || cotizacion === null) return;
-    const datos = { cuidadorId: cuidador.id, fecha, jornada: jornadaElegida, horas, medioDePago: pagaConBolsa ? "bolsa" : "pasarela" } as const;
+    if (horaElegida === null || cotizacion === null) return;
+    const datos = { cuidadorId: cuidador.id, fecha, horaInicio: horaElegida, horas, medioDePago: pagaConBolsa ? "bolsa" : "pasarela" } as const;
     empezarEnvio(async () => {
       const resultado = await solicitarServicioAccion(datos, claveDe(JSON.stringify(datos)));
       if (!resultado.ok) {
@@ -87,9 +87,9 @@ export function FormularioContratacion({ cuidador, ahora, cotizacionInicial, sal
         fechaPersonalizada={fechaPersonalizada}
         onFechaPersonalizadaChange={setFechaPersonalizada}
         fechaMinima={ahora.hoy}
-        jornadasPedibles={jornadasPedibles}
-        jornada={jornadaElegida}
-        onJornadaChange={setJornada}
+        horasPedibles={horasDisponibles}
+        horaInicio={horaElegida}
+        onHoraInicioChange={setHoraInicio}
         horas={horas}
         onHorasChange={setHoras}
       />

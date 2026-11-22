@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import { ErrorDeApi } from "@/lib/api/error-de-api";
 import { mensajeDeErrorDeServicio } from "@/lib/acciones/errores-de-servicio";
-import { ahoraEnColombia, franjaYaTermino, franjasPedibles, horaEnColombia, sumarDias } from "@/lib/fecha-colombia";
+import { ahoraEnColombia, horaEnColombia, horaYaPaso, horasPedibles, jornadaDe, sumarDias } from "@/lib/fecha-colombia";
 import { etiquetaDeEstadoParaElCuidador, etiquetaDeEstadoParaLaFamilia } from "@/lib/etiquetas-de-servicio";
 import { formatearDiaCivil } from "@/lib/format";
 
@@ -26,33 +26,46 @@ describe("la fecha de Colombia (H2: nunca un instante UTC)", () => {
     expect(sumarDias("2026-03-01", -1)).toBe("2026-02-28");
   });
 
-  describe("franjas que ya terminaron (las mismas reglas del backend)", () => {
+  describe("horas de inicio (las mismas reglas del backend)", () => {
     const aLas = (hora: number, minuto = 0) => ({ hoy: "2026-11-01", minutos: hora * 60 + minuto });
 
-    it("a las 8 p. m. la tarde de hoy terminó, pero la noche no", () => {
-      expect(franjaYaTermino("2026-11-01", "manana", aLas(20))).toBe(true);
-      expect(franjaYaTermino("2026-11-01", "tarde", aLas(20))).toBe(true);
-      expect(franjaYaTermino("2026-11-01", "noche", aLas(20))).toBe(false);
+    it("jornadaDe clasifica la hora de inicio (solo para la disponibilidad general del cuidador)", () => {
+      expect(jornadaDe(0)).toBe("noche");
+      expect(jornadaDe(359)).toBe("noche");
+      expect(jornadaDe(360)).toBe("manana");
+      expect(jornadaDe(719)).toBe("manana");
+      expect(jornadaDe(720)).toBe("tarde");
+      expect(jornadaDe(1079)).toBe("tarde");
+      expect(jornadaDe(1080)).toBe("noche");
     });
 
-    it("el límite es exacto: la mañana termina a las 12:00 en punto", () => {
-      expect(franjaYaTermino("2026-11-01", "manana", aLas(11, 59))).toBe(false);
-      expect(franjaYaTermino("2026-11-01", "manana", aLas(12))).toBe(true);
+    it("a las 8 p. m., las horas de la mañana y la tarde ya pasaron; una de la noche más tarde, no", () => {
+      expect(horaYaPaso("2026-11-01", 360, aLas(20))).toBe(true); // 6:00 a. m.
+      expect(horaYaPaso("2026-11-01", 720, aLas(20))).toBe(true); // 12:00 p. m.
+      expect(horaYaPaso("2026-11-01", 1320, aLas(20))).toBe(false); // 10:00 p. m.
     });
 
-    it("la noche de hoy dura hasta las 6 a. m. de mañana: a las 11:59 p. m. todavía no termina", () => {
-      expect(franjaYaTermino("2026-11-01", "noche", aLas(23, 59))).toBe(false);
+    it("el límite es exacto: a las 6:00 en punto esa hora ya pasó; un minuto antes, no", () => {
+      expect(horaYaPaso("2026-11-01", 360, aLas(5, 59))).toBe(false);
+      expect(horaYaPaso("2026-11-01", 360, aLas(6, 0))).toBe(true);
     });
 
-    it("un día futuro nunca terminó y uno pasado siempre", () => {
-      expect(franjaYaTermino("2026-11-02", "manana", aLas(23))).toBe(false);
-      expect(franjaYaTermino("2026-10-31", "noche", aLas(0))).toBe(true);
+    it("un día futuro nunca pasó y uno pasado siempre", () => {
+      expect(horaYaPaso("2026-11-02", 360, aLas(23))).toBe(false);
+      expect(horaYaPaso("2026-10-31", 1320, aLas(0))).toBe(true);
     });
 
-    it("solo se ofrecen las franjas que el cuidador atiende y que no terminaron", () => {
-      expect(franjasPedibles("2026-11-01", ["manana", "tarde", "noche"], aLas(14))).toEqual(["tarde", "noche"]);
-      expect(franjasPedibles("2026-11-01", ["manana", "tarde"], aLas(19))).toEqual([]);
-      expect(franjasPedibles("2026-11-02", ["manana", "noche"], aLas(19))).toEqual(["manana", "noche"]);
+    it("solo ofrece horas de las jornadas que el cuidador atiende y que no han pasado", () => {
+      const horas = horasPedibles("2026-11-01", ["manana", "tarde"], aLas(14));
+      expect(horas.every((h) => h > 840)).toBe(true); // nada antes de (ni en) las 2 p. m., que es ahora
+      expect(horas.every((h) => h < 1080)).toBe(true); // nada de la noche: no está en la disponibilidad
+      expect(horas).toContain(870); // las 2:30 p. m. (la próxima media hora) sí se puede
+      expect(horas).not.toContain(840); // las 2 p. m., que es ahora mismo, ya se considera pasada
+      expect(horas).not.toContain(360); // las 6 a. m. ya pasó
+    });
+
+    it("sin ninguna hora disponible ese día, no ofrece nada", () => {
+      expect(horasPedibles("2026-11-01", ["manana", "tarde"], aLas(19))).toEqual([]);
     });
   });
 
@@ -118,6 +131,7 @@ const vistaBasica = (extra: object = {}) => ({
   id: UUID,
   estado: "solicitado",
   fecha: "2026-11-10",
+  horaInicio: 720,
   jornada: "tarde",
   horas: 2,
   medioDePago: "pasarela",
@@ -181,12 +195,12 @@ describe("servicios: la vista de la familia y la del cuidador", () => {
   it("solicitar manda la Idempotency-Key, la persona y los datos, y NINGÚN monto", async () => {
     escribirEnBackend.mockResolvedValue({ ok: true, datos: { servicio: vistaBasica({ subtotal: 1, cargoDeServicio: 0, totalFamilia: 1 }) } });
 
-    await servicios.solicitarServicio("a1", { cuidadorId: UUID, fecha: "2026-11-10", jornada: "tarde", horas: 2, medioDePago: "bolsa" }, "clave-1234");
+    await servicios.solicitarServicio("a1", { cuidadorId: UUID, fecha: "2026-11-10", horaInicio: 720, horas: 2, medioDePago: "bolsa" }, "clave-1234");
 
     expect(escribirEnBackend).toHaveBeenCalledWith("/servicios", {
       metodo: "POST",
       claveDeIdempotencia: "clave-1234",
-      cuerpo: { adultoMayorId: "a1", cuidadorId: UUID, fecha: "2026-11-10", jornada: "tarde", horas: 2, medioDePago: "bolsa" },
+      cuerpo: { adultoMayorId: "a1", cuidadorId: UUID, fecha: "2026-11-10", horaInicio: 720, horas: 2, medioDePago: "bolsa" },
     });
   });
 
@@ -194,7 +208,7 @@ describe("servicios: la vista de la familia y la del cuidador", () => {
     const falla = { ok: false, error: new ErrorDeApi({ estado: 409, codigo: "servicio.franja_ocupada", mensaje: "ocupada" }) };
     escribirEnBackend.mockResolvedValue(falla);
 
-    expect(await servicios.solicitarServicio("a1", { cuidadorId: UUID, fecha: "2026-11-10", jornada: "tarde", horas: 1, medioDePago: "pasarela" }, "clave-1234")).toEqual(falla);
+    expect(await servicios.solicitarServicio("a1", { cuidadorId: UUID, fecha: "2026-11-10", horaInicio: 720, horas: 1, medioDePago: "pasarela" }, "clave-1234")).toEqual(falla);
   });
 
   it("los cuidadores en turno traen el teléfono SOLO por aquí, y un arreglo vacío si no hay ninguno", async () => {
@@ -243,7 +257,7 @@ vi.mock("next/cache", () => ({ revalidatePath: vi.fn() }));
 
 const acciones = await import("@/lib/acciones/servicios");
 
-const SOLICITUD = { cuidadorId: UUID, fecha: "2026-11-10", jornada: "tarde", horas: 2, medioDePago: "pasarela" };
+const SOLICITUD = { cuidadorId: UUID, fecha: "2026-11-10", horaInicio: 720, horas: 2, medioDePago: "pasarela" };
 
 describe("acciones de servicios", () => {
   beforeEach(() => {
@@ -256,7 +270,7 @@ describe("acciones de servicios", () => {
     [{ ...SOLICITUD, horas: 0 }, "entre 1 y 8"],
     [{ ...SOLICITUD, horas: 9 }, "entre 1 y 8"],
     [{ ...SOLICITUD, horas: 1.5 }, "entre 1 y 8"],
-    [{ ...SOLICITUD, jornada: "madrugada" }, "Elige una franja"],
+    [{ ...SOLICITUD, horaInicio: 361 }, "hora de inicio válida"],
     [{ ...SOLICITUD, fecha: "2026-02-30" }, "fecha válida"],
     [{ ...SOLICITUD, fecha: "mañana" }, "fecha válida"],
     [{ ...SOLICITUD, medioDePago: "efectivo" }, "cómo vas a pagar"],

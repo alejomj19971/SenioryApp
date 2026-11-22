@@ -3,7 +3,7 @@ import { AccionesDelServicio } from "@/components/cuidador/acciones-del-servicio
 import { EstadoDelServicio } from "@/components/servicios/estado-del-servicio";
 import { horaEnColombia } from "@/lib/fecha-colombia";
 import { etiquetaDeEstadoParaElCuidador } from "@/lib/etiquetas-de-servicio";
-import { etiquetaJornada, formatearCOP, formatearDiaCivil } from "@/lib/format";
+import { etiquetaRangoDeHoras, formatearCOP, formatearDiaCivil } from "@/lib/format";
 import type { ServicioDelCuidador } from "@/lib/types";
 
 // Un servicio visto por el cuidador: lo que RECIBE (nunca lo que paga la familia) y qué puede hacer ahora.
@@ -25,7 +25,7 @@ export function TarjetaDeSolicitud({ servicio }: { servicio: ServicioDelCuidador
         </span>
         <span className="flex items-center gap-2">
           <Clock className="size-4 shrink-0" aria-hidden="true" />
-          {etiquetaJornada(servicio.jornada)} · {servicio.horas} {servicio.horas === 1 ? "hora" : "horas"}
+          {etiquetaRangoDeHoras(servicio.horaInicio, servicio.horas)}
         </span>
       </div>
       <p className="text-lg font-bold text-foreground">

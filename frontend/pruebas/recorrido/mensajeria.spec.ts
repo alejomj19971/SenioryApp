@@ -31,7 +31,7 @@ async function pedirServicio(page: Page, cuidadorId: string): Promise<string> {
   await page.goto(`/app/contratar/${cuidadorId}`);
   await page.getByRole("group", { name: "Elegir fecha" }).getByRole("button", { name: "Elegir fecha" }).click();
   await page.getByLabel("Fecha personalizada").fill(sumarDias(ahoraEnColombia().hoy, 60 + dia++));
-  await page.getByRole("group", { name: "Elegir franja horaria" }).getByRole("button", { name: "Tarde" }).click();
+  await page.getByRole("group", { name: "Elegir hora" }).getByRole("button", { name: "12:00 p. m." }).click();
   await page.getByRole("button", { name: "Aumentar número de horas" }).click();
   await page.getByRole("button", { name: "Enviar solicitud" }).click();
   await expect(page).toHaveURL(/\/app\/servicios\/[0-9a-f-]{36}\?nuevo=1$/);

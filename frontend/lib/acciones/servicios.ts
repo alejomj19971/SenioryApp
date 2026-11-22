@@ -13,14 +13,14 @@ import {
   type AccionDelCuidador,
 } from "@/lib/services/servicios";
 import { exigirFamiliaLista } from "@/lib/services/paciente";
+import { HORAS_INICIO_VALIDAS } from "@/lib/fecha-colombia";
 import { ErrorDeApi } from "@/lib/api/error-de-api";
-import type { Cotizacion, DatosDeSolicitud, Jornada, MedioDePago, Servicio } from "@/lib/types";
+import type { Cotizacion, DatosDeSolicitud, MedioDePago, Servicio } from "@/lib/types";
 
 // Acciones de servicios (F3+F4). Son endpoints públicos de Next: validan su entrada y dejan que el backend
 // autorice (un servicio ajeno responde 404). El dinero NUNCA viene del navegador: lo calcula el servidor.
 
 const FORMATO_DE_UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-const JORNADAS: readonly Jornada[] = ["manana", "tarde", "noche"];
 const MEDIOS: readonly MedioDePago[] = ["pasarela", "bolsa"];
 const ACCIONES_DEL_CUIDADOR: readonly AccionDelCuidador[] = ["aceptar", "rechazar", "iniciar", "finalizar", "cancelar-cuidador"];
 const HORAS_MINIMAS = 1;
@@ -54,11 +54,11 @@ function validarSolicitud(datos: unknown): { datos: DatosDeSolicitud } | { mensa
   const d = (typeof datos === "object" && datos !== null ? datos : {}) as Record<string, unknown>;
   if (typeof d.cuidadorId !== "string" || !FORMATO_DE_UUID.test(d.cuidadorId)) return { mensaje: "Elige un cuidador para contratar." };
   if (!esHoras(d.horas)) return { mensaje: MENSAJE_DE_HORAS };
-  if (typeof d.jornada !== "string" || !JORNADAS.includes(d.jornada as Jornada)) return { mensaje: "Elige una franja: mañana, tarde o noche." };
+  if (typeof d.horaInicio !== "number" || !HORAS_INICIO_VALIDAS.includes(d.horaInicio)) return { mensaje: "Elige una hora de inicio válida." };
   if (!esFechaValida(d.fecha)) return { mensaje: "Elige una fecha válida." };
   if (typeof d.medioDePago !== "string" || !MEDIOS.includes(d.medioDePago as MedioDePago)) return { mensaje: "Elige cómo vas a pagar." };
   return {
-    datos: { cuidadorId: d.cuidadorId, fecha: d.fecha, jornada: d.jornada as Jornada, horas: d.horas, medioDePago: d.medioDePago as MedioDePago },
+    datos: { cuidadorId: d.cuidadorId, fecha: d.fecha, horaInicio: d.horaInicio, horas: d.horas, medioDePago: d.medioDePago as MedioDePago },
   };
 }
 

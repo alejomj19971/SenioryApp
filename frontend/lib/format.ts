@@ -76,6 +76,23 @@ export function etiquetaJornada(jornada: Jornada): string {
   return etiquetasJornada[jornada];
 }
 
+// Minutos desde las 00:00 (lo que manda el backend como `horaInicio`) como «6:00 a. m.»: sin zona horaria de
+// por medio, es la misma hora sin importar dónde corra el código.
+export function etiquetaHoraInicio(minutos: number): string {
+  const horas24 = Math.floor(minutos / 60) % 24;
+  const resto = minutos % 60;
+  const horas12 = horas24 % 12 === 0 ? 12 : horas24 % 12;
+  const sufijo = horas24 < 12 ? "a. m." : "p. m.";
+  return `${horas12}:${String(resto).padStart(2, "0")} ${sufijo}`;
+}
+
+// «6:00 a. m. – 8:00 a. m.»: la ventana real de un servicio, cruce de medianoche incluido (el «fin» se
+// calcula módulo 24 h, sin decir de qué día es — para eso ya está la fecha del servicio).
+export function etiquetaRangoDeHoras(horaInicio: number, horas: number): string {
+  const fin = (horaInicio + horas * 60) % 1_440;
+  return `${etiquetaHoraInicio(horaInicio)} – ${etiquetaHoraInicio(fin)}`;
+}
+
 // La distancia que manda el backend cuando la familia buscó por cercanía. Bajo el kilómetro se ve en metros,
 // redondeados a la decena (no tiene sentido fingir precisión de metro a metro con GPS de celular).
 export function formatearDistanciaKm(km: number): string {

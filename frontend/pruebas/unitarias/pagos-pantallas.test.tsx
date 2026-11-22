@@ -16,6 +16,7 @@ const servicio = (extra: Partial<Servicio> = {}): Servicio => ({
   id: "s1",
   estado: "aceptado",
   fecha: "2026-11-10",
+  horaInicio: 720,
   jornada: "tarde",
   horas: 2,
   medioDePago: "pasarela",

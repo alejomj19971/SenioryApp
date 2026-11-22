@@ -8,7 +8,7 @@ import { CalificarServicio, CancelarServicio } from "@/components/servicios/acci
 import { EstadoDelServicio } from "@/components/servicios/estado-del-servicio";
 import { etiquetaDeEstadoParaLaFamilia } from "@/lib/etiquetas-de-servicio";
 import { horaEnColombia } from "@/lib/fecha-colombia";
-import { etiquetaJornada, formatearDiaCivil } from "@/lib/format";
+import { etiquetaRangoDeHoras, formatearDiaCivil } from "@/lib/format";
 import { exigirFamiliaLista } from "@/lib/services/paciente";
 import { obtenerPagoDelServicio } from "@/lib/services/pagos";
 import { obtenerServicio } from "@/lib/services/servicios";
@@ -77,7 +77,7 @@ export default async function ServicioPage({ params, searchParams }: PageProps<"
         </p>
         <p className="flex items-center gap-2">
           <Clock className="size-5 shrink-0 text-primary" aria-hidden="true" />
-          {etiquetaJornada(servicio.jornada)} · {servicio.horas} {servicio.horas === 1 ? "hora" : "horas"}
+          {etiquetaRangoDeHoras(servicio.horaInicio, servicio.horas)}
         </p>
         <p className="flex items-center gap-2">
           <Wallet className="size-5 shrink-0 text-primary" aria-hidden="true" />

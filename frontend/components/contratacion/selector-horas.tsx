@@ -2,8 +2,8 @@
 
 import { Minus, Plus } from "lucide-react";
 import { Chip } from "@/components/chip";
-import type { Jornada } from "@/lib/types";
-import { etiquetaJornada } from "@/lib/format";
+import { jornadaDe } from "@/lib/fecha-colombia";
+import { etiquetaHoraInicio, etiquetaJornada } from "@/lib/format";
 
 export type FechaSeleccion = "hoy" | "manana" | "elegir";
 
@@ -13,10 +13,11 @@ interface SelectorHorasProps {
   fechaPersonalizada: string;
   onFechaPersonalizadaChange: (valor: string) => void;
   fechaMinima: string;
-  // Las franjas que se pueden pedir ese día: las que atiende el cuidador y que todavía no terminaron.
-  jornadasPedibles: Jornada[];
-  jornada: Jornada | null;
-  onJornadaChange: (valor: Jornada) => void;
+  // Las horas de inicio (cada 30 min) que se pueden pedir ese día: las que atiende el cuidador y que todavía
+  // no pasaron.
+  horasPedibles: number[];
+  horaInicio: number | null;
+  onHoraInicioChange: (valor: number) => void;
   horas: number;
   onHorasChange: (valor: number) => void;
 }
@@ -30,9 +31,9 @@ export function SelectorHoras({
   fechaPersonalizada,
   onFechaPersonalizadaChange,
   fechaMinima,
-  jornadasPedibles,
-  jornada,
-  onJornadaChange,
+  horasPedibles,
+  horaInicio,
+  onHoraInicioChange,
   horas,
   onHorasChange,
 }: SelectorHorasProps) {
@@ -64,18 +65,23 @@ export function SelectorHoras({
       </div>
 
       <div className="flex flex-col gap-2">
-        <span className="text-base font-semibold text-foreground">Franja horaria</span>
-        {jornadasPedibles.length > 0 ? (
-          <div role="group" aria-label="Elegir franja horaria" className="flex flex-wrap gap-2">
-            {jornadasPedibles.map((valor) => (
-              <Chip key={valor} activo={jornada === valor} onClick={() => onJornadaChange(valor)}>
-                {etiquetaJornada(valor)}
+        <div className="flex items-center justify-between">
+          <span className="text-base font-semibold text-foreground">Hora de inicio</span>
+          {horaInicio !== null && (
+            <span className="text-sm text-muted-foreground">{etiquetaJornada(jornadaDe(horaInicio))}</span>
+          )}
+        </div>
+        {horasPedibles.length > 0 ? (
+          <div role="group" aria-label="Elegir hora" className="flex flex-wrap gap-2">
+            {horasPedibles.map((valor) => (
+              <Chip key={valor} activo={horaInicio === valor} onClick={() => onHoraInicioChange(valor)}>
+                {etiquetaHoraInicio(valor)}
               </Chip>
             ))}
           </div>
         ) : (
           <p role="status" className="text-base text-muted-foreground">
-            Para ese día ya no quedan franjas con este cuidador. Elige otro día.
+            Para ese día ya no quedan horas con este cuidador. Elige otro día.
           </p>
         )}
       </div>

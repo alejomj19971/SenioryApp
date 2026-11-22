@@ -64,7 +64,7 @@ test("recorrido principal de una familia", async ({ page, context }) => {
   // Un día al azar bien adelante: así correr el recorrido dos veces seguidas no choca con la solicitud anterior.
   await page.getByRole("group", { name: "Elegir fecha" }).getByRole("button", { name: "Elegir fecha" }).click();
   await page.getByLabel("Fecha personalizada").fill(sumarDias(ahoraEnColombia().hoy, 20 + Math.floor(Math.random() * 150)));
-  await page.getByRole("group", { name: "Elegir franja horaria" }).getByRole("button").first().click();
+  await page.getByRole("group", { name: "Elegir hora" }).getByRole("button").first().click();
   await page.getByRole("button", { name: "Enviar solicitud" }).click();
 
   // La solicitud queda esperando al cuidador (no «contratación confirmada»: él decide), con el mismo total

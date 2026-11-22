@@ -48,7 +48,7 @@ async function pedir2Horas(page: Page, cuidadorId: string, medio: "pasarela" | "
   await page.goto(`/app/contratar/${cuidadorId}`);
   await page.getByRole("group", { name: "Elegir fecha" }).getByRole("button", { name: "Elegir fecha" }).click();
   await page.getByLabel("Fecha personalizada").fill(sumarDias(ahoraEnColombia().hoy, 60 + dia++));
-  await page.getByRole("group", { name: "Elegir franja horaria" }).getByRole("button", { name: "Tarde" }).click();
+  await page.getByRole("group", { name: "Elegir hora" }).getByRole("button", { name: "12:00 p. m." }).click();
   await page.getByRole("button", { name: "Aumentar número de horas" }).click();
   await expect(page.getByText(/43\.200/).first()).toBeVisible();
   if (medio === "bolsa") await page.getByRole("switch", { name: /Pagar con mi bolsa/ }).click();

@@ -107,7 +107,7 @@ describe("FormularioContratacion", () => {
     await waitFor(() => expect(screen.queryByText("No pudimos calcular el precio")).not.toBeInTheDocument());
   });
 
-  it("envía la solicitud con la fecha de Colombia, la franja, las horas y el medio, y va al servicio creado", async () => {
+  it("envía la solicitud con la fecha de Colombia, la hora, las horas y el medio, y va al servicio creado", async () => {
     solicitarServicioAccion.mockResolvedValue({ ok: true, servicioId: "servicio-1" });
     mostrar();
 
@@ -115,8 +115,8 @@ describe("FormularioContratacion", () => {
 
     await waitFor(() => expect(push).toHaveBeenCalledWith("/app/servicios/servicio-1?nuevo=1"));
     const [datos, clave] = solicitarServicioAccion.mock.calls[0] as [Record<string, unknown>, string];
-    // Son las 9 a. m. en Colombia: hoy, y la primera franja que sigue vigente es la mañana.
-    expect(datos).toEqual({ cuidadorId: UUID, fecha: "2026-11-01", jornada: "manana", horas: 1, medioDePago: "pasarela" });
+    // Son las 9 a. m. en Colombia: hoy, y la primera hora que todavía no pasó es las 9:30 a. m.
+    expect(datos).toEqual({ cuidadorId: UUID, fecha: "2026-11-01", horaInicio: 570, horas: 1, medioDePago: "pasarela" });
     expect(clave.length).toBeGreaterThanOrEqual(8);
     // Nada de dinero viaja del navegador.
     expect(JSON.stringify(datos)).not.toMatch(/total|subtotal|cargo|monto/i);
@@ -152,18 +152,18 @@ describe("FormularioContratacion", () => {
     expect(push).not.toHaveBeenCalled();
   });
 
-  it("a las 8 p. m. de hoy solo queda la noche; sin franjas, lo dice y no deja enviar", async () => {
+  it("a las 8 p. m. de hoy solo quedan horas de la noche; antes de esa hora no aparecen", () => {
     mostrar({ ahora: { hoy: "2026-11-01", minutos: 20 * 60 } });
-    const franjas = screen.getByRole("group", { name: "Elegir franja horaria" });
-    expect(franjas).toHaveTextContent("Noche");
-    expect(franjas).not.toHaveTextContent("Mañana");
-    expect(franjas).not.toHaveTextContent("Tarde");
+    const horas = screen.getByRole("group", { name: "Elegir hora" });
+    expect(horas).toHaveTextContent("8:30 p. m.");
+    expect(horas).not.toHaveTextContent("6:00 a. m.");
+    expect(horas).not.toHaveTextContent("12:00 p. m.");
   });
 
-  it("si el cuidador solo atiende de mañana y ya pasó, no hay franjas hoy y el botón queda desactivado", () => {
+  it("si el cuidador solo atiende de mañana y ya pasó, no hay horas hoy y el botón queda desactivado", () => {
     mostrar({ cuidador: { ...cuidador, disponibilidad: ["manana"] }, ahora: { hoy: "2026-11-01", minutos: 15 * 60 } });
 
-    expect(screen.getByText(/ya no quedan franjas con este cuidador/)).toBeInTheDocument();
+    expect(screen.getByText(/ya no quedan horas con este cuidador/)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Enviar solicitud" })).toBeDisabled();
   });
 

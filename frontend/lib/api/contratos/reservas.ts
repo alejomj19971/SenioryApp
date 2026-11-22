@@ -10,6 +10,7 @@ export interface VistaBasicaDelBackend {
   estado: EstadoDeServicioDelBackend;
   // «AAAA-MM-DD» en Colombia.
   fecha: string;
+  horaInicio: number;
   jornada: "manana" | "tarde" | "noche";
   horas: number;
   medioDePago: "pasarela" | "bolsa";

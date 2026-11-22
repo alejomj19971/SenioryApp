@@ -180,6 +180,7 @@ export interface ServicioBase {
   id: string;
   estado: EstadoDeServicio;
   fecha: string; // AAAA-MM-DD, día civil de Colombia
+  horaInicio: number; // minutos desde las 00:00 de `fecha`, en bloques de 30
   jornada: Jornada;
   horas: number;
   medioDePago: MedioDePago;
@@ -221,7 +222,7 @@ export interface Cotizacion {
 export interface DatosDeSolicitud {
   cuidadorId: string;
   fecha: string; // AAAA-MM-DD
-  jornada: Jornada;
+  horaInicio: number; // minutos desde las 00:00 de `fecha`, en bloques de 30
   horas: number;
   medioDePago: MedioDePago;
 }

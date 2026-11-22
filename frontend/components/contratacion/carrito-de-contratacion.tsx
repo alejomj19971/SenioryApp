@@ -12,10 +12,10 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { solicitarServicioAccion } from "@/lib/acciones/servicios";
-import { franjasPedibles, sumarDias, type AhoraEnColombia } from "@/lib/fecha-colombia";
+import { horasPedibles, sumarDias, type AhoraEnColombia } from "@/lib/fecha-colombia";
 import { useCotizacion } from "@/lib/hooks/use-cotizacion";
 import { formatearCOP } from "@/lib/format";
-import type { Cotizacion, Cuidador, DatosDeSolicitud, Jornada } from "@/lib/types";
+import type { Cotizacion, Cuidador, DatosDeSolicitud } from "@/lib/types";
 
 interface CarritoDeContratacionProps {
   cuidadores: Cuidador[];
@@ -191,18 +191,18 @@ function ItemDelCarrito({ cuidador, ahora, cotizacionInicial, resultado, onQuita
   const manana = sumarDias(ahora.hoy, 1);
   const [fechaSeleccion, setFechaSeleccion] = useState<FechaSeleccion>("hoy");
   const [fechaPersonalizada, setFechaPersonalizada] = useState(manana);
-  const [jornada, setJornada] = useState<Jornada | null>(null);
+  const [horaInicio, setHoraInicio] = useState<number | null>(null);
   const [horas, setHoras] = useState(1);
 
   const fecha = fechaSeleccion === "hoy" ? ahora.hoy : fechaSeleccion === "manana" ? manana : fechaPersonalizada;
-  const jornadasPedibles = useMemo(() => franjasPedibles(fecha, cuidador.disponibilidad, ahora), [fecha, cuidador.disponibilidad, ahora]);
-  const jornadaElegida = jornada !== null && jornadasPedibles.includes(jornada) ? jornada : (jornadasPedibles[0] ?? null);
+  const horasDisponibles = useMemo(() => horasPedibles(fecha, cuidador.disponibilidad, ahora), [fecha, cuidador.disponibilidad, ahora]);
+  const horaElegida = horaInicio !== null && horasDisponibles.includes(horaInicio) ? horaInicio : (horasDisponibles[0] ?? null);
 
   const { cotizacion, cotizando, errorDeCotizacion, reintentar } = useCotizacion(cuidador.id, horas, cotizacionInicial);
 
   const yaSeEnvio = resultado.fase === "ok" || resultado.fase === "enviando";
   const total = cotizacion?.totalFamilia ?? 0;
-  const datos = jornadaElegida !== null && cotizacion !== null && !yaSeEnvio ? { cuidadorId: cuidador.id, fecha, jornada: jornadaElegida, horas } : null;
+  const datos = horaElegida !== null && cotizacion !== null && !yaSeEnvio ? { cuidadorId: cuidador.id, fecha, horaInicio: horaElegida, horas } : null;
   // El padre necesita el total y los datos de ESTE cuidador para sumar el carrito y armar el envío; se lo
   // avisa después de renderizar (nunca durante el render de otro componente).
   useEffect(() => {
@@ -250,9 +250,9 @@ function ItemDelCarrito({ cuidador, ahora, cotizacionInicial, resultado, onQuita
             fechaPersonalizada={fechaPersonalizada}
             onFechaPersonalizadaChange={setFechaPersonalizada}
             fechaMinima={ahora.hoy}
-            jornadasPedibles={jornadasPedibles}
-            jornada={jornadaElegida}
-            onJornadaChange={setJornada}
+            horasPedibles={horasDisponibles}
+            horaInicio={horaElegida}
+            onHoraInicioChange={setHoraInicio}
             horas={horas}
             onHorasChange={setHoras}
           />

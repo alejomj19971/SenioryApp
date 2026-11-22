@@ -2,7 +2,7 @@ import Link from "next/link";
 import { CalendarDays, ChevronRight, Clock } from "lucide-react";
 import { EstadoDelServicio } from "@/components/servicios/estado-del-servicio";
 import { etiquetaDeEstadoParaLaFamilia } from "@/lib/etiquetas-de-servicio";
-import { etiquetaJornada, formatearCOP, formatearDiaCivil } from "@/lib/format";
+import { etiquetaRangoDeHoras, formatearCOP, formatearDiaCivil } from "@/lib/format";
 import type { Servicio } from "@/lib/types";
 
 export function TarjetaDeServicio({ servicio }: { servicio: Servicio }) {
@@ -23,7 +23,7 @@ export function TarjetaDeServicio({ servicio }: { servicio: Servicio }) {
         </span>
         <span className="flex items-center gap-2">
           <Clock className="size-4 shrink-0" aria-hidden="true" />
-          {etiquetaJornada(servicio.jornada)} · {servicio.horas} {servicio.horas === 1 ? "hora" : "horas"}
+          {etiquetaRangoDeHoras(servicio.horaInicio, servicio.horas)}
         </span>
       </div>
       <div className="flex items-center justify-between">

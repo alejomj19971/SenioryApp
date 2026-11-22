@@ -38,7 +38,9 @@ async function otraPersona(browser: Browser, cuenta: CuentaDePrueba, destino: Re
 async function pedirServicio(page: Page, cuidadorId: string, { horas = 2 }: { horas?: number } = {}) {
   await page.goto(`/app/contratar/${cuidadorId}`);
   await page.getByRole("group", { name: "Elegir fecha" }).getByRole("button", { name: "Mañana" }).click();
-  await page.getByRole("group", { name: "Elegir franja horaria" }).getByRole("button", { name: "Tarde" }).click();
+  // Fecha "mañana" (el día siguiente): cualquier hora de la tarde está siempre disponible sin importar la
+  // hora real en que corra la prueba.
+  await page.getByRole("group", { name: "Elegir hora" }).getByRole("button", { name: "12:00 p. m." }).click();
   for (let i = 1; i < horas; i++) await page.getByRole("button", { name: "Aumentar número de horas" }).click();
   await expect(page.getByText(/43\.200/)).toBeVisible();
   await page.getByRole("button", { name: "Enviar solicitud" }).click();
@@ -148,11 +150,11 @@ test("contratar a varios cuidadores juntos desde el carrito", async ({ page, con
 
   const tarjetaMaria = page.getByRole("region", { name: maria.nombre });
   await tarjetaMaria.getByRole("group", { name: "Elegir fecha" }).getByRole("button", { name: "Mañana" }).click();
-  await tarjetaMaria.getByRole("group", { name: "Elegir franja horaria" }).getByRole("button", { name: "Tarde" }).click();
+  await tarjetaMaria.getByRole("group", { name: "Elegir hora" }).getByRole("button", { name: "12:00 p. m." }).click();
 
   const tarjetaCarlos = page.getByRole("region", { name: carlos.nombre });
   await tarjetaCarlos.getByRole("group", { name: "Elegir fecha" }).getByRole("button", { name: "Mañana" }).click();
-  await tarjetaCarlos.getByRole("group", { name: "Elegir franja horaria" }).getByRole("button", { name: "Tarde" }).click();
+  await tarjetaCarlos.getByRole("group", { name: "Elegir hora" }).getByRole("button", { name: "12:00 p. m." }).click();
 
   // Total combinado: 20.000×1,08 + 25.000×1,08 = 21.600 + 27.000 = 48.600
   await expect(page.getByText(/48\.600/)).toBeVisible();

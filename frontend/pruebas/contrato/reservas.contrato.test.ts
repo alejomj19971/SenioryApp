@@ -20,7 +20,7 @@ import {
 const disponible = (await backendDisponible()) && hayAdministradorDePrueba;
 
 const CAMPOS_BASE = [
-  "aceptadoEn", "adultoMayor", "calificacion", "canceladoEn", "cuidador", "estado", "fecha", "finalizadoEn", "horas", "id",
+  "aceptadoEn", "adultoMayor", "calificacion", "canceladoEn", "cuidador", "estado", "fecha", "finalizadoEn", "horaInicio", "horas", "id",
   "iniciadoEn", "jornada", "medioDePago", "motivoDeCancelacion", "solicitadoEn", "solicitudExpiraEn", "tarifaHora",
 ];
 const CAMPOS_PARA_LA_FAMILIA = [...CAMPOS_BASE, "cargoDeServicio", "politicaVersion", "subtotal", "totalFamilia"].sort();
@@ -64,7 +64,7 @@ describe.skipIf(!disponible)("contrato de Reservas con el backend local", () => 
         Cookie: f.cookie,
         ...(clave === null ? {} : { "Idempotency-Key": clave }),
       },
-      body: JSON.stringify({ adultoMayorId: f.adultoMayorId, cuidadorId: cuidador.cuidadorId, jornada: "tarde", horas: 2, medioDePago: "pasarela", ...cuerpo }),
+      body: JSON.stringify({ adultoMayorId: f.adultoMayorId, cuidadorId: cuidador.cuidadorId, horaInicio: 720, horas: 2, medioDePago: "pasarela", ...cuerpo }),
     });
   }
 
@@ -95,7 +95,7 @@ describe.skipIf(!disponible)("contrato de Reservas con el backend local", () => 
     expect(primera.status).toBe(201);
     const { servicio } = (await primera.json()) as { servicio: Record<string, unknown> };
     expect(Object.keys(servicio).sort()).toEqual(CAMPOS_PARA_LA_FAMILIA);
-    expect(servicio).toMatchObject({ estado: "solicitado", fecha, jornada: "tarde", horas: 2, medioDePago: "pasarela", subtotal: 40_000, cargoDeServicio: 3_200, totalFamilia: 43_200 });
+    expect(servicio).toMatchObject({ estado: "solicitado", fecha, horaInicio: 720, jornada: "tarde", horas: 2, medioDePago: "pasarela", subtotal: 40_000, cargoDeServicio: 3_200, totalFamilia: 43_200 });
     expect(JSON.stringify(servicio)).not.toMatch(/pagoProfesional|telefono|correo/);
 
     const repetida = await solicitarConClave(familia, { fecha }, clave);

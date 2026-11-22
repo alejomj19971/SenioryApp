@@ -32,6 +32,7 @@ function aBase(v: VistaBasicaDelBackend & { tarifaHora: number }): ServicioBase 
     id: v.id,
     estado: v.estado,
     fecha: v.fecha,
+    horaInicio: v.horaInicio,
     jornada: v.jornada,
     horas: v.horas,
     medioDePago: v.medioDePago,
