@@ -57,17 +57,23 @@ beforeEach(() => {
 
 describe("ListaMedicamentos", () => {
   it("sin tomas hoy, lo dice y lleva a agregar un medicamento", () => {
-    render(<ListaMedicamentos tomas={[]} />);
+    render(<ListaMedicamentos tomas={[]} rutaDeAdministracion="/app/teleasistencia/medicamentos" />);
 
     expect(screen.getByText("Todavía no hay medicamentos para hoy.")).toBeInTheDocument();
     expect(screen.getByRole("link", { name: "Agregar un medicamento" })).toHaveAttribute("href", "/app/teleasistencia/medicamentos");
+  });
+
+  it("sin ruta de administración (el cuidador), no ofrece agregar un medicamento", () => {
+    render(<ListaMedicamentos tomas={[]} rutaDeAdministracion={null} />);
+
+    expect(screen.queryByRole("link", { name: "Agregar un medicamento" })).not.toBeInTheDocument();
   });
 
   it("marca una toma: responde de inmediato (mientras el servidor guarda) y manda el cambio con los ids reales", async () => {
     // El servidor «tarda»: la pantalla ya muestra la toma como tomada sin esperarlo (optimista).
     let terminar: (valor: { ok: true }) => void = () => undefined;
     marcarTomaAccion.mockImplementation(() => new Promise((resolver) => (terminar = resolver)));
-    render(<ListaMedicamentos tomas={[toma({ hora: "08:00" }), toma({ tomaId: "t2", hora: "20:00" })]} />);
+    render(<ListaMedicamentos tomas={[toma({ hora: "08:00" }), toma({ tomaId: "t2", hora: "20:00" })]} rutaDeAdministracion="/app/teleasistencia/medicamentos" />);
     expect(screen.getByText("0 de 2 tomadas hoy")).toBeInTheDocument();
 
     await userEvent.click(screen.getByRole("button", { name: /Marcar Losartán de las 20:00 como tomado/ }));
@@ -80,7 +86,7 @@ describe("ListaMedicamentos", () => {
 
   it("si el servidor no acepta el cambio (otra pantalla ya lo cambió), vuelve a como estaba, lo dice y se actualiza", async () => {
     marcarTomaAccion.mockResolvedValue({ ok: false, mensaje: "Esa toma ya cambió en otra pantalla." });
-    render(<ListaMedicamentos tomas={[toma()]} />);
+    render(<ListaMedicamentos tomas={[toma()]} rutaDeAdministracion="/app/teleasistencia/medicamentos" />);
 
     await userEvent.click(screen.getByRole("button", { name: /Marcar Losartán/ }));
 
@@ -91,7 +97,7 @@ describe("ListaMedicamentos", () => {
 
   it("deshacer una toma marcada manda «pendiente»", async () => {
     marcarTomaAccion.mockResolvedValue({ ok: true });
-    render(<ListaMedicamentos tomas={[toma({ estado: "tomada" })]} />);
+    render(<ListaMedicamentos tomas={[toma({ estado: "tomada" })]} rutaDeAdministracion="/app/teleasistencia/medicamentos" />);
 
     await userEvent.click(screen.getByRole("button", { name: /Deshacer: Losartán/ }));
 
@@ -100,7 +106,7 @@ describe("ListaMedicamentos", () => {
 
   it("una toma omitida se dice omitida y se puede registrar como tomada", async () => {
     marcarTomaAccion.mockResolvedValue({ ok: true });
-    render(<ListaMedicamentos tomas={[toma({ estado: "omitida", hora: "08:00" })]} />);
+    render(<ListaMedicamentos tomas={[toma({ estado: "omitida", hora: "08:00" })]} rutaDeAdministracion="/app/teleasistencia/medicamentos" />);
 
     expect(screen.getByText(/Omitida/)).toBeInTheDocument();
     await userEvent.click(screen.getByRole("button", { name: /Marcar Losartán/ }));
@@ -108,13 +114,13 @@ describe("ListaMedicamentos", () => {
   });
 
   it("una toma pendiente cuya hora ya llegó se avisa como «hora del medicamento»", async () => {
-    render(<ListaMedicamentos tomas={[toma({ hora: "00:00" })]} />);
+    render(<ListaMedicamentos tomas={[toma({ hora: "00:00" })]} rutaDeAdministracion="/app/teleasistencia/medicamentos" />);
 
     expect(await screen.findByText("¡Hora del medicamento!")).toBeInTheDocument();
   });
 
   it("una toma futura no dispara la alarma", async () => {
-    render(<ListaMedicamentos tomas={[toma({ hora: "23:59" })]} />);
+    render(<ListaMedicamentos tomas={[toma({ hora: "23:59" })]} rutaDeAdministracion="/app/teleasistencia/medicamentos" />);
 
     await new Promise((resolver) => setTimeout(resolver, 50));
     expect(screen.queryByText("¡Hora del medicamento!")).not.toBeInTheDocument();
@@ -122,7 +128,7 @@ describe("ListaMedicamentos", () => {
 });
 
 describe("BotonAlerta (pedir ayuda, H7)", () => {
-  const abrir = () => render(<BotonAlerta nombreDeLaPersona="Doña Carmen" />);
+  const abrir = () => render(<BotonAlerta nombreDeLaPersona="Doña Carmen" accion={enviarAlertaAccion} />);
 
   it("el botón no promete una «línea de emergencia»: avisa a la familia y al cuidador y ofrece llamar al 123", () => {
     abrir();

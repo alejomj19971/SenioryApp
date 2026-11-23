@@ -16,7 +16,9 @@ const minutosDe = (hora: string) => Number(hora.slice(0, 2)) * 60 + Number(hora.
 // Las tomas de hoy (F6). El estado de cada una es el del backend; al marcar, la pantalla responde de inmediato
 // (optimista) y, si el servidor no lo acepta (otra pantalla ya la cambió, el día no corresponde), vuelve a como estaba
 // y lo dice. «Hora» siempre es la de Colombia.
-export function ListaMedicamentos({ tomas }: { tomas: TomaDelDia[] }) {
+// `rutaDeAdministracion`: a dónde lleva "Agregar"/"Administrar medicamentos" — agregar o desactivar un medicamento es
+// solo de la familia (el backend nunca se lo autoriza al cuidador), así que en `null` esos enlaces no aparecen.
+export function ListaMedicamentos({ tomas, rutaDeAdministracion }: { tomas: TomaDelDia[]; rutaDeAdministracion: string | null }) {
   const enrutador = useRouter();
   const [enCurso, empezar] = useTransition();
   const [error, setError] = useState<string | null>(null);
@@ -61,9 +63,11 @@ export function ListaMedicamentos({ tomas }: { tomas: TomaDelDia[] }) {
     return (
       <div className="flex flex-col items-start gap-3 rounded-2xl bg-muted p-4">
         <p className="text-base text-foreground">Todavía no hay medicamentos para hoy.</p>
-        <Link href="/app/teleasistencia/medicamentos" className="inline-flex min-h-12 items-center font-medium text-primary underline underline-offset-4">
-          Agregar un medicamento
-        </Link>
+        {rutaDeAdministracion !== null && (
+          <Link href={rutaDeAdministracion} className="inline-flex min-h-12 items-center font-medium text-primary underline underline-offset-4">
+            Agregar un medicamento
+          </Link>
+        )}
       </div>
     );
   }
@@ -148,9 +152,11 @@ export function ListaMedicamentos({ tomas }: { tomas: TomaDelDia[] }) {
         })}
       </ul>
 
-      <Link href="/app/teleasistencia/medicamentos" className="inline-flex min-h-12 w-fit items-center font-medium text-primary underline underline-offset-4">
-        Administrar medicamentos
-      </Link>
+      {rutaDeAdministracion !== null && (
+        <Link href={rutaDeAdministracion} className="inline-flex min-h-12 w-fit items-center font-medium text-primary underline underline-offset-4">
+          Administrar medicamentos
+        </Link>
+      )}
     </div>
   );
 }

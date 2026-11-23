@@ -1,12 +1,12 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AlertTriangle, CheckCircle2, Phone, Siren } from "lucide-react";
 import { Aviso } from "@/components/ui/aviso";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { enviarAlertaAccion } from "@/lib/acciones/teleasistencia";
+import type { ResultadoDeAlerta } from "@/lib/acciones/teleasistencia";
 import type { AlertaEnviada } from "@/lib/types";
 
 const SEGUNDOS_CUENTA_REGRESIVA = 5;
@@ -27,7 +27,9 @@ function aTexto(nombres: string[]): string {
 // Pedir ayuda (H7). La cuenta regresiva de 5 s evita avisos por un toque sin querer. La alerta se envía de verdad y la
 // pantalla dice A QUIÉN se avisó (lo que responde el backend): Seniory avisa a la familia y al cuidador en turno, NO a
 // una «línea de emergencia», y siempre ofrece llamar al 123.
-export function BotonAlerta({ nombreDeLaPersona }: { nombreDeLaPersona: string }) {
+// La familia y el cuidador la usan igual; lo único que cambia es a qué persona avisa, así que `accion` ya viene
+// con ese id atado (con `.bind`) desde la pantalla que la usa.
+export function BotonAlerta({ nombreDeLaPersona, accion }: { nombreDeLaPersona: string; accion: (origen: "boton" | "voz", clave: string | null) => Promise<ResultadoDeAlerta> }) {
   const enrutador = useRouter();
   const parametros = useSearchParams();
   const [estado, setEstado] = useState<Estado>({ fase: "inactivo" });
@@ -49,16 +51,16 @@ export function BotonAlerta({ nombreDeLaPersona }: { nombreDeLaPersona: string }
     setEstado({ fase: "cuenta-regresiva" });
   }
 
-  async function enviar() {
+  const enviar = useCallback(async () => {
     setEstado({ fase: "enviando" });
-    const resultado = await enviarAlertaAccion(origen.current, clave.current);
+    const resultado = await accion(origen.current, clave.current);
     if (resultado.ok) {
       clave.current = null;
       setEstado({ fase: "enviada", alerta: resultado.alerta });
     } else {
       setEstado({ fase: "fallo", mensaje: resultado.mensaje });
     }
-  }
+  }, [accion]);
 
   function cancelar() {
     detener();
@@ -89,7 +91,7 @@ export function BotonAlerta({ nombreDeLaPersona }: { nombreDeLaPersona: string }
       });
     }, 1000);
     return detener;
-  }, [estado.fase]);
+  }, [estado.fase, enviar]);
 
   return (
     <>

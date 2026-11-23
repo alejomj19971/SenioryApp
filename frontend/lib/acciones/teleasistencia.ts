@@ -7,7 +7,15 @@ import { mensajeDeErrorDeServicio } from "@/lib/acciones/errores-de-servicio";
 import type { EstadoDeFormulario } from "@/lib/acciones/estado";
 import { texto } from "@/lib/acciones/validar-cuenta";
 import { validarLectura, validarMedicamento } from "@/lib/acciones/validar-teleasistencia";
-import { cambiarToma, desactivarMedicamento, enviarAlerta, registrarLectura, registrarMedicamento } from "@/lib/services/teleasistencia";
+import {
+  cambiarToma,
+  desactivarMedicamento,
+  enviarAlerta,
+  enviarAlertaDelCuidador,
+  registrarLectura,
+  registrarLecturaDelCuidador,
+  registrarMedicamento,
+} from "@/lib/services/teleasistencia";
 import type { AlertaEnviada } from "@/lib/types";
 
 // Acciones de teleasistencia (F6). Son endpoints públicos de Next: validan su entrada y el backend autoriza (una
@@ -19,6 +27,11 @@ function revalidarTeleasistencia() {
   revalidatePath("/app");
   revalidatePath("/app/teleasistencia");
   revalidatePath("/app/teleasistencia/medicamentos");
+}
+
+function revalidarTeleasistenciaDelCuidador(adultoMayorId: string) {
+  revalidatePath("/cuidador");
+  revalidatePath(`/cuidador/teleasistencia/${adultoMayorId}`);
 }
 
 export type ResultadoSimple = { ok: true } | { ok: false; mensaje: string };
@@ -86,6 +99,36 @@ export async function enviarAlertaAccion(origen: unknown, clave: unknown): Promi
   const resultado = await enviarAlerta(origen, clave);
   if (!resultado.ok) return { ok: false, mensaje: mensajeDeErrorDeTeleasistencia(resultado.error) };
   revalidarTeleasistencia();
+  return { ok: true, alerta: resultado.datos };
+}
+
+// ── Para el cuidador: las mismas acciones, pero con el id de la persona (viene «atado» con `.bind`, no de un
+// formulario — el cuidador no tiene una persona propia en la sesión) y revalidando su propia pantalla. ─────────────
+export async function registrarLecturaDelCuidadorAccion(adultoMayorId: unknown, _previo: EstadoDeFormulario, datos: FormData): Promise<EstadoDeFormulario> {
+  if (typeof adultoMayorId !== "string" || !FORMATO_DE_UUID.test(adultoMayorId)) return { mensaje: "No encontramos a esa persona." };
+  const validacion = validarLectura({
+    presionSistolica: texto(datos, "presionSistolica"),
+    presionDiastolica: texto(datos, "presionDiastolica"),
+    frecuenciaCardiaca: texto(datos, "frecuenciaCardiaca"),
+    glucosa: texto(datos, "glucosa"),
+  });
+  if ("errores" in validacion) return { errores: validacion.errores, valores: validacion.valores };
+
+  const resultado = await registrarLecturaDelCuidador(adultoMayorId, validacion.datos);
+  if (!resultado.ok) return estadoDeError(resultado.error, validacion.valores);
+  revalidarTeleasistenciaDelCuidador(adultoMayorId);
+  return { listo: true };
+}
+
+export async function enviarAlertaDelCuidadorAccion(adultoMayorId: unknown, origen: unknown, clave: unknown): Promise<ResultadoDeAlerta> {
+  if (typeof adultoMayorId !== "string" || !FORMATO_DE_UUID.test(adultoMayorId)) return { ok: false, mensaje: "No encontramos a esa persona." };
+  if (origen !== "boton" && origen !== "voz") return { ok: false, mensaje: "No pudimos enviar la alerta." };
+  if (typeof clave !== "string" || clave.length < 8 || clave.length > 100) {
+    return { ok: false, mensaje: "No pudimos enviar la alerta. Recarga la página e inténtalo de nuevo." };
+  }
+  const resultado = await enviarAlertaDelCuidador(adultoMayorId, origen, clave);
+  if (!resultado.ok) return { ok: false, mensaje: mensajeDeErrorDeTeleasistencia(resultado.error) };
+  revalidarTeleasistenciaDelCuidador(adultoMayorId);
   return { ok: true, alerta: resultado.datos };
 }
 

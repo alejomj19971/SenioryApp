@@ -201,7 +201,8 @@ export async function crearCuidadorVerificado({
       tarifaHora,
       telefono: `+57300${String(randomInt(1_000_000, 9_999_999))}`,
       zona,
-      disponibilidad: ["manana", "tarde", "noche"],
+      // Libre todo el día, todos los días: a las pruebas no les importa la disponibilidad, solo que exista.
+      horariosLibres: [1, 2, 3, 4, 5, 6, 7].map((diaSemana) => ({ diaSemana, horaInicio: 0, horaFin: 1_440 })),
       bio: "Cuidadora creada por las pruebas automáticas.",
     },
   });

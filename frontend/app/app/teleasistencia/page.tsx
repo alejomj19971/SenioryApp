@@ -6,6 +6,7 @@ import { GraficaSignos } from "@/components/teleasistencia/grafica-signos";
 import { RegistrarLectura } from "@/components/teleasistencia/formulario-lectura";
 import { ListaMedicamentos } from "@/components/teleasistencia/lista-medicamentos";
 import { RefrescoPeriodico } from "@/components/teleasistencia/refresco-periodico";
+import { enviarAlertaAccion, registrarLecturaAccion } from "@/lib/acciones/teleasistencia";
 import { formatearFechaHora } from "@/lib/format";
 import { obtenerAdultoMayor, obtenerCuidadoresEnTurno } from "@/lib/services/paciente";
 import { listarLecturas, listarMedicamentosDeHoy, obtenerResumen } from "@/lib/services/teleasistencia";
@@ -54,14 +55,14 @@ export default async function TeleasistenciaPage() {
       ))}
 
       <Suspense fallback={<div className="min-h-24 w-full animate-pulse rounded-2xl bg-muted" />}>
-        <BotonAlerta nombreDeLaPersona={adultoMayor.nombre} />
+        <BotonAlerta nombreDeLaPersona={adultoMayor.nombre} accion={enviarAlertaAccion} />
       </Suspense>
 
       <div className="h-px bg-border" aria-hidden="true" />
 
       <section className="flex flex-col gap-3">
         <h2 className="text-lg font-semibold text-foreground">Medicamentos de hoy</h2>
-        <ListaMedicamentos tomas={medicamentos.tomas} />
+        <ListaMedicamentos tomas={medicamentos.tomas} rutaDeAdministracion="/app/teleasistencia/medicamentos" />
       </section>
 
       <section className="flex flex-col gap-3">
@@ -70,7 +71,7 @@ export default async function TeleasistenciaPage() {
           Signos vitales
         </h2>
         <GraficaSignos lecturas={lecturas} />
-        <RegistrarLectura />
+        <RegistrarLectura accion={registrarLecturaAccion} />
       </section>
     </div>
   );

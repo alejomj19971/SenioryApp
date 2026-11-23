@@ -7,11 +7,11 @@ import { ResumenDelFormulario } from "@/components/cuenta/resumen-del-formulario
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { MensajeDeCampo } from "@/components/cuenta/campo";
-import { registrarLecturaAccion } from "@/lib/acciones/teleasistencia";
 import { ESTADO_INICIAL } from "@/lib/acciones/estado";
+import type { EstadoDeFormulario } from "@/lib/acciones/estado";
 
-function Formulario({ alTerminar }: { alTerminar: () => void }) {
-  const [estado, accion, pendiente] = useActionState(registrarLecturaAccion, ESTADO_INICIAL);
+function Formulario({ alTerminar, accionDeGuardado }: { alTerminar: () => void; accionDeGuardado: (previo: EstadoDeFormulario, datos: FormData) => Promise<EstadoDeFormulario> }) {
+  const [estado, accion, pendiente] = useActionState(accionDeGuardado, ESTADO_INICIAL);
   useEffect(() => {
     if (estado.listo === true) alTerminar();
   }, [estado.listo, alTerminar]);
@@ -64,8 +64,10 @@ function Formulario({ alTerminar }: { alTerminar: () => void }) {
   );
 }
 
-// «Registrar signos»: una lectura con las medidas que se tomaron (todas opcionales, la presión completa).
-export function RegistrarLectura() {
+// «Registrar signos»: una lectura con las medidas que se tomaron (todas opcionales, la presión completa). La
+// familia y el cuidador la usan igual; `accion` es `registrarLecturaAccion` o, para el cuidador, la versión con
+// el id de la persona ya atado (`.bind`).
+export function RegistrarLectura({ accion }: { accion: (previo: EstadoDeFormulario, datos: FormData) => Promise<EstadoDeFormulario> }) {
   const [abierto, setAbierto] = useState(false);
   return (
     <Dialog open={abierto} onOpenChange={setAbierto}>
@@ -78,7 +80,7 @@ export function RegistrarLectura() {
           <DialogTitle>Registrar signos vitales</DialogTitle>
           <DialogDescription>Escribe lo que acabas de medir.</DialogDescription>
         </DialogHeader>
-        <Formulario alTerminar={() => setAbierto(false)} />
+        <Formulario alTerminar={() => setAbierto(false)} accionDeGuardado={accion} />
       </DialogContent>
     </Dialog>
   );

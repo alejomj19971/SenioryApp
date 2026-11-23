@@ -25,6 +25,10 @@ import type {
 // Teleasistencia (M6) sobre la API: medicamentos y sus tomas, signos vitales y alertas de la persona que la familia
 // cuida. La persona sale de la SESIÓN (nunca de la URL ni de un formulario); el backend pregunta en CADA consulta si
 // esa familia puede ver esos datos (vinculada y con autorización), y una negativa es un 404 igual al de «no existe».
+//
+// El cuidador también puede verlos y registrar, pero solo mientras tiene un servicio activo con esa persona (en
+// curso, o aceptado y dentro de su franja): ahí SÍ hace falta el id en la URL (no tiene una "persona propia" en la
+// sesión), así que son funciones aparte («…DelCuidador») en vez de ramificar las de arriba.
 
 const ruta = (personaId: string, resto: string) => `/adultos-mayores/${personaId}/${resto}`;
 
@@ -146,6 +150,48 @@ export async function registrarLectura(datos: DatosDeLectura): Promise<Resultado
 export async function enviarAlerta(origen: "boton" | "voz", clave: string): Promise<ResultadoDeEscritura<AlertaEnviada>> {
   const { persona } = await exigirFamiliaLista();
   const resultado = await escribirEnBackend<RespuestaDeAlerta>(ruta(persona.id, "alertas"), {
+    metodo: "POST",
+    claveDeIdempotencia: clave,
+    cuerpo: { origen },
+  });
+  return resultado.ok
+    ? { ok: true, datos: { id: resultado.datos.alerta.id, generadaEn: resultado.datos.alerta.generadaEn, avisadosA: resultado.datos.alerta.avisadosA } }
+    : resultado;
+}
+
+// ── Para el cuidador (ver el comentario de arriba) ────────────────────────────────────────────────────────────────
+export async function obtenerResumenDelCuidador(adultoMayorId: string): Promise<ResumenDeTeleasistencia> {
+  const { resumen } = await leerDelBackend<RespuestaDeResumen>(ruta(adultoMayorId, "resumen"));
+  return {
+    fecha: resumen.fecha,
+    tomas: resumen.tomasDeHoy,
+    proximaToma: resumen.proximaToma === null ? null : { nombre: resumen.proximaToma.nombre, hora: resumen.proximaToma.horaProgramada },
+    ultimaLectura: resumen.ultimaLectura === null ? null : { fecha: resumen.ultimaLectura.tomadaEn, fueraDeRango: resumen.ultimaLectura.fueraDeRango },
+    alertasSinAtender: resumen.alertasSinAtender,
+  };
+}
+
+export async function listarMedicamentosDeHoyDelCuidador(adultoMayorId: string): Promise<MedicamentosDelDia> {
+  const { fecha, medicamentos } = await leerDelBackend<RespuestaDeMedicamentos>(ruta(adultoMayorId, "medicamentos"));
+  return {
+    fecha,
+    medicamentos: medicamentos.map((m) => ({ id: m.id, nombre: m.nombre, dosis: m.dosis, indicaciones: m.indicaciones ?? "", horarios: m.horarios })),
+    tomas: medicamentos.flatMap(aTomas).sort((a, b) => a.hora.localeCompare(b.hora) || a.nombre.localeCompare(b.nombre, "es")),
+  };
+}
+
+export async function listarLecturasDelCuidador(adultoMayorId: string, dias = 14): Promise<LecturaSignos[]> {
+  const { lecturas } = await leerDelBackend<RespuestaDeLecturas>(ruta(adultoMayorId, "signos-vitales"), { consulta: { dias: String(dias) } });
+  return lecturas.map(aLectura).sort((a, b) => a.fecha.localeCompare(b.fecha));
+}
+
+export async function registrarLecturaDelCuidador(adultoMayorId: string, datos: DatosDeLectura): Promise<ResultadoDeEscritura<LecturaSignos>> {
+  const resultado = await escribirEnBackend<RespuestaDeLectura>(ruta(adultoMayorId, "signos-vitales"), { metodo: "POST", cuerpo: datos });
+  return resultado.ok ? { ok: true, datos: aLectura(resultado.datos.lectura) } : resultado;
+}
+
+export async function enviarAlertaDelCuidador(adultoMayorId: string, origen: "boton" | "voz", clave: string): Promise<ResultadoDeEscritura<AlertaEnviada>> {
+  const resultado = await escribirEnBackend<RespuestaDeAlerta>(ruta(adultoMayorId, "alertas"), {
     metodo: "POST",
     claveDeIdempotencia: clave,
     cuerpo: { origen },

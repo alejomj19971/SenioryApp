@@ -205,10 +205,8 @@ export function Chat({ conversacion, inicial, anteriores: primerosAnteriores, ba
       {puedeEscribir ? (
         <form
           onSubmit={alEnviar}
-          className={cn(
-            "fixed inset-x-0 z-20 mx-auto flex w-full max-w-md flex-col gap-1 border-t border-border bg-background/95 p-3 backdrop-blur",
-            base === "/app" ? "bottom-16" : "bottom-0",
-          )}
+          // Encima de la barra de navegación inferior (la misma altura en /app y en /cuidador), nunca debajo.
+          className="fixed inset-x-0 bottom-16 z-20 mx-auto flex w-full max-w-md flex-col gap-1 border-t border-border bg-background/95 p-3 backdrop-blur"
         >
           <div className="flex items-center gap-2">
             <label htmlFor="mensaje" className="sr-only">

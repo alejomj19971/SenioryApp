@@ -64,7 +64,8 @@ test("la familia y el cuidador conversan; los mensajes llegan en vivo y sin repe
   // El cuidador ve la conversación y contesta
   const { contexto, pagina: delCuidador } = await otraPersona(browser, cuidador.cuentaDeAcceso, /\/cuidador$/);
   try {
-    await delCuidador.getByRole("link", { name: /Mensajes/ }).click();
+    // La barra de navegación inferior también tiene un enlace "Mensajes": se distingue por ser el nombre exacto.
+    await delCuidador.getByRole("link", { name: "Mensajes", exact: true }).click();
     await delCuidador.getByRole("link", { name: /Andrea/ }).click();
     await expect(delCuidador).toHaveURL(/\/cuidador\/mensajes\/[0-9a-f-]{36}$/);
     await expect(delCuidador.getByText("Hola, mi mamá toma sus pastillas a las 8.")).toBeVisible();
