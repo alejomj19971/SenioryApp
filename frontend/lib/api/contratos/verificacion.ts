@@ -65,3 +65,36 @@ export interface RespuestaDeHojasPendientes {
 export interface RespuestaDeDecision {
   verificacion: { estado: string; cuidadorVisible: boolean };
 }
+
+// `GET /verificaciones/cuidadores/:id` (solo administradores): el expediente de un cuidador. Sin teléfono. Cada
+// apertura queda en la auditoría del backend.
+export interface ControlParaRevisorDelBackend {
+  control: "antecedentes" | "titulos" | "psicotecnica";
+  estado: "sin_solicitar" | "pendiente" | "aprobada" | "rechazada" | "vencida";
+  // Null mientras el cuidador no haya pedido ese control.
+  verificacionId: string | null;
+  solicitadaEn: string | null;
+  revisadoEn: string | null;
+  motivoDeRechazo: string | null;
+  vigenteHasta: string | null;
+}
+export interface RespuestaDeExpediente {
+  cuidador: {
+    id: string;
+    nombre: string;
+    fotoUrl: string | null;
+    especialidad: MiPerfilDelBackend["especialidad"];
+    titulo: string;
+    aniosExperiencia: number;
+    zona: string;
+    estado: "borrador" | "en_revision" | "activo" | "suspendido";
+    visible: boolean;
+    calificacion: number | null;
+    cantidadResenas: number;
+    serviciosCompletados: number;
+    registradoEn: string;
+  };
+  controles: ControlParaRevisorDelBackend[];
+  // Los más recientes primero; incluye los que una subida nueva ya reemplazó.
+  documentos: DocumentoDelBackend[];
+}

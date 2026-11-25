@@ -20,16 +20,22 @@ import {
   AbrirDocumentoParaRevisor,
   ListarHojasDeVidaPendientes,
   ListarVerificaciones,
+  ObtenerCuidadorParaRevisor,
   RevisarHojaDeVida,
   RevisarVerificacion,
   type DecisionDelRevisor,
   type HojaDeVidaPendiente,
 } from '../../../aplicacion/casos-de-uso/revision.js';
 import type {
+  VistaDeCuidadorParaRevisor,
   VistaDeDocumento,
   VistaDeVerificacionParaRevisor,
 } from '../../../aplicacion/vistas-de-postulacion.js';
-import type { DocumentoId, VerificacionId } from '../../../dominio/ids.js';
+import type {
+  CuidadorId,
+  DocumentoId,
+  VerificacionId,
+} from '../../../dominio/ids.js';
 import {
   ListadoDeVerificacionesDto,
   RevisionDeDocumentoDto,
@@ -51,6 +57,8 @@ export class VerificacionesController {
     @Inject(ListarHojasDeVidaPendientes)
     private readonly hojas: ListarHojasDeVidaPendientes,
     @Inject(RevisarHojaDeVida) private readonly revisarHoja: RevisarHojaDeVida,
+    @Inject(ObtenerCuidadorParaRevisor)
+    private readonly expediente: ObtenerCuidadorParaRevisor,
   ) {}
 
   @Get()
@@ -64,6 +72,15 @@ export class VerificacionesController {
   @Get('hojas-de-vida')
   async hojasPendientes(): Promise<{ hojasDeVida: HojaDeVidaPendiente[] }> {
     return { hojasDeVida: await this.hojas.ejecutar() };
+  }
+
+  // El expediente de un cuidador: sus tres controles y todos sus documentos. Antes que `:id`.
+  @Get('cuidadores/:id')
+  async expedienteDelCuidador(
+    @UsuarioActual() revisor: UsuarioAutenticado,
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<VistaDeCuidadorParaRevisor> {
+    return this.expediente.ejecutar(revisor, id as CuidadorId);
   }
 
   // Redirige a una dirección firmada que vence en dos minutos.

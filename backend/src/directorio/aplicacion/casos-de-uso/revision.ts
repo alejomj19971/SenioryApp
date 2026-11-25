@@ -11,7 +11,11 @@ import {
 import { FechaCivil } from '../../../compartido/dominio/fecha-civil.js';
 import type { Cuidador } from '../../dominio/cuidador.js';
 import type { Documento } from '../../dominio/documento.js';
-import type { DocumentoId, VerificacionId } from '../../dominio/ids.js';
+import type {
+  CuidadorId,
+  DocumentoId,
+  VerificacionId,
+} from '../../dominio/ids.js';
 import {
   CONTROLES_DE_VERIFICACION,
   DOCUMENTO_DE_CADA_CONTROL,
@@ -23,7 +27,9 @@ import type { RepositorioCuidadores } from '../puertos/salida/repositorio-cuidad
 import type { RepositorioDocumentos } from '../puertos/salida/repositorio-documentos.js';
 import type { EventosDeDirectorio } from '../servicios/eventos-de-directorio.js';
 import {
+  vistaDeControlParaRevisor,
   vistaDeDocumento,
+  type VistaDeCuidadorParaRevisor,
   type VistaDeDocumento,
   type VistaDeVerificacionParaRevisor,
 } from '../vistas-de-postulacion.js';
@@ -380,5 +386,64 @@ export class ListarHojasDeVidaPendientes {
       });
     }
     return lista;
+  }
+}
+
+// La ficha de UN cuidador para el revisor: sus tres controles y todos sus documentos. Es de lectura, pero el revisor está
+// mirando el expediente de una persona: queda en la auditoría quién lo abrió (igual que abrir un documento).
+export class ObtenerCuidadorParaRevisor {
+  constructor(
+    private readonly cuidadores: RepositorioCuidadores,
+    private readonly documentos: RepositorioDocumentos,
+    private readonly auditoria: Auditoria,
+    private readonly reloj: Reloj,
+    private readonly zonaHorariaNegocio: string,
+  ) {}
+
+  async ejecutar(
+    revisor: UsuarioAutenticado,
+    cuidadorId: CuidadorId,
+  ): Promise<VistaDeCuidadorParaRevisor> {
+    const cuidador = await this.cuidadores.buscarPorId(cuidadorId);
+    if (cuidador === null) {
+      throw new RecursoNoEncontrado(
+        'No encontramos a ese cuidador',
+        'cuidador.no_encontrado',
+      );
+    }
+    const hoy = FechaCivil.hoy(this.reloj, this.zonaHorariaNegocio);
+    const documentos = await this.documentos.listarDeCuidador(cuidador.id);
+    await this.auditoria.registrar({
+      actorId: revisor.id,
+      accion: 'directorio.ver_expediente',
+      recursoTipo: 'cuidador',
+      recursoId: cuidador.id,
+      resultado: 'permitido',
+    });
+    return {
+      cuidador: {
+        id: cuidador.id,
+        nombre: cuidador.nombre,
+        fotoUrl: cuidador.fotoUrl,
+        especialidad: cuidador.especialidad,
+        titulo: cuidador.titulo,
+        aniosExperiencia: cuidador.aniosExperiencia,
+        zona: cuidador.zona,
+        estado: cuidador.estado,
+        visible: cuidador.esVisible(hoy),
+        calificacion: cuidador.calificacion(),
+        cantidadResenas: cuidador.cantidadResenas,
+        serviciosCompletados: cuidador.serviciosCompletados,
+        registradoEn: cuidador.creadoEn.toISOString(),
+      },
+      controles: CONTROLES_DE_VERIFICACION.map((control) =>
+        vistaDeControlParaRevisor(
+          control,
+          cuidador.verificaciones.find((v) => v.control === control),
+          hoy,
+        ),
+      ),
+      documentos: documentos.map(vistaDeDocumento),
+    };
   }
 }

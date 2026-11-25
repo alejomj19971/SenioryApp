@@ -140,3 +140,69 @@ export interface VistaDeVerificacionParaRevisor {
   // Lo que el revisor debe mirar: el documento de este control y la cédula. Se abren con su dirección firmada.
   documentos: VistaDeDocumento[];
 }
+
+// Un control de un cuidador visto por el revisor: en qué estado está, quién lo decidió y hasta cuándo vale. Trae el id
+// de la verificación (null si el cuidador aún no la pidió) para poder decidir sobre ella.
+export interface VistaDeControlParaRevisor {
+  control: ControlDeVerificacion;
+  estado: EstadoDeVerificacion | 'sin_solicitar';
+  verificacionId: string | null;
+  solicitadaEn: string | null;
+  revisadoEn: string | null;
+  motivoDeRechazo: string | null;
+  vigenteHasta: string | null;
+}
+
+// Todo lo que un revisor necesita de UN cuidador: quién es, cómo van sus tres controles y todos los documentos que
+// subió (se abren uno a uno con su dirección firmada, y cada apertura queda en la auditoría). Sin teléfono.
+export interface VistaDeCuidadorParaRevisor {
+  cuidador: {
+    id: string;
+    nombre: string;
+    fotoUrl: string | null;
+    especialidad: string;
+    titulo: string;
+    aniosExperiencia: number;
+    zona: string;
+    estado: string;
+    // ¿Se está mostrando hoy a las familias?
+    visible: boolean;
+    calificacion: number | null;
+    cantidadResenas: number;
+    serviciosCompletados: number;
+    registradoEn: string;
+  };
+  controles: VistaDeControlParaRevisor[];
+  // Los más recientes primero; incluye los que ya fueron reemplazados por una subida nueva.
+  documentos: VistaDeDocumento[];
+}
+
+export function vistaDeControlParaRevisor(
+  control: ControlDeVerificacion,
+  verificacion: Verificacion | undefined,
+  hoy: FechaCivil,
+): VistaDeControlParaRevisor {
+  if (verificacion === undefined) {
+    return {
+      control,
+      estado: 'sin_solicitar',
+      verificacionId: null,
+      solicitadaEn: null,
+      revisadoEn: null,
+      motivoDeRechazo: null,
+      vigenteHasta: null,
+    };
+  }
+  const vencida =
+    verificacion.estado === 'vencida' ||
+    (verificacion.estado === 'aprobada' && !verificacion.estaVigente(hoy));
+  return {
+    control,
+    estado: vencida ? 'vencida' : verificacion.estado,
+    verificacionId: verificacion.id,
+    solicitadaEn: verificacion.creadoEn.toISOString(),
+    revisadoEn: verificacion.revisadoEn?.toISOString() ?? null,
+    motivoDeRechazo: verificacion.motivoDeRechazo,
+    vigenteHasta: verificacion.vigenteHasta?.aTexto() ?? null,
+  };
+}

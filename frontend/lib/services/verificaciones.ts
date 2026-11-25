@@ -1,9 +1,10 @@
 import "server-only";
 import { escribirEnBackend, leerDelBackend, type ResultadoDeEscritura } from "@/lib/api/cliente-servidor";
-import type { RespuestaDeCola, RespuestaDeDecision, RespuestaDeDocumento, RespuestaDeHojasPendientes } from "@/lib/api/contratos/verificacion";
+import type { RespuestaDeCola, RespuestaDeDecision, RespuestaDeDocumento, RespuestaDeExpediente, RespuestaDeHojasPendientes } from "@/lib/api/contratos/verificacion";
 import { aDocumento } from "@/lib/services/postulacion";
 import { descargarArchivoDelBackend, type ResultadoDeArchivo } from "@/lib/services/archivos";
-import type { HojaDeVidaPorRevisar, VerificacionParaRevisor } from "@/lib/types";
+import { notFound } from "next/navigation";
+import type { ControlDeVerificacion, DocumentoSubido, EstadoDeControl, HojaDeVidaPorRevisar, VerificacionParaRevisor } from "@/lib/types";
 
 // El panel de los revisores (M9), solo administradores: la cola de verificaciones, los documentos privados y la hoja de
 // vida que verán las familias. Cada decisión y cada apertura de un documento queda en la auditoría del backend.
@@ -45,4 +46,34 @@ export function decidirHojaDeVida(documentoId: string, decision: "aprobar" | "re
 export function abrirDocumentoDeRevision(documentoId: string): Promise<ResultadoDeArchivo> {
   if (!FORMATO_DE_UUID.test(documentoId)) return Promise.resolve({ tipo: "sin_archivo" });
   return descargarArchivoDelBackend(`/verificaciones/documentos/${documentoId}`, ["application/pdf", "image/jpeg", "image/png"]);
+}
+
+// El expediente de UN cuidador (M9): sus tres controles y todos los documentos que subió, para entrar desde el listado del
+// panel. Sin teléfono. Cada apertura queda en la auditoría del backend; los archivos se abren aparte, uno a uno.
+export interface ControlDelExpediente {
+  control: ControlDeVerificacion;
+  estado: EstadoDeControl;
+  verificacionId: string | null;
+  solicitadaEn: string | null;
+  revisadoEn: string | null;
+  motivoDeRechazo: string | null;
+  vigenteHasta: string | null;
+}
+
+export interface ExpedienteDeCuidador {
+  cuidador: Omit<RespuestaDeExpediente["cuidador"], "fotoUrl"> & { foto: string };
+  controles: ControlDelExpediente[];
+  documentos: DocumentoSubido[];
+}
+
+export async function obtenerExpediente(id: string): Promise<ExpedienteDeCuidador> {
+  // Un identificador que no es de un cuidador ni se le pregunta al backend.
+  if (!FORMATO_DE_UUID.test(id)) notFound();
+  const { cuidador, controles, documentos } = await leerDelBackend<RespuestaDeExpediente>(`/verificaciones/cuidadores/${id}`);
+  const { fotoUrl, ...resto } = cuidador;
+  return {
+    cuidador: { ...resto, foto: fotoUrl !== null ? `/api/cuidadores/${cuidador.id}/foto` : "" },
+    controles,
+    documentos: documentos.map(aDocumento),
+  };
 }

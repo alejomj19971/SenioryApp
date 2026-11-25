@@ -50,6 +50,7 @@ import {
   AbrirDocumentoParaRevisor,
   ListarHojasDeVidaPendientes,
   ListarVerificaciones,
+  ObtenerCuidadorParaRevisor,
   RevisarHojaDeVida,
   RevisarVerificacion,
 } from './aplicacion/casos-de-uso/revision.js';
@@ -542,6 +543,30 @@ const SONDEO_DE_VIGENCIAS = Symbol('SondeoDeVigencias');
           documentos,
           unidadDeTrabajo,
           eventos,
+          auditoria,
+          reloj,
+          configuracion.zonaHorariaNegocio,
+        ),
+    },
+    {
+      provide: ObtenerCuidadorParaRevisor,
+      inject: [
+        REPOSITORIO_CUIDADORES,
+        REPOSITORIO_DOCUMENTOS,
+        AUDITORIA,
+        RELOJ,
+        CONFIGURACION,
+      ],
+      useFactory: (
+        cuidadores: RepositorioCuidadores,
+        documentos: RepositorioDocumentos,
+        auditoria: Auditoria,
+        reloj: Reloj,
+        configuracion: Configuracion,
+      ) =>
+        new ObtenerCuidadorParaRevisor(
+          cuidadores,
+          documentos,
           auditoria,
           reloj,
           configuracion.zonaHorariaNegocio,

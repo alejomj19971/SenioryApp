@@ -32,6 +32,14 @@ describe("ListadoDeCuidadores", () => {
     expect(within(tarjeta).getByText(/Enfermería · Manrique/)).toBeInTheDocument();
   });
 
+  it("al tocar un cuidador se entra a su expediente: sus verificaciones y documentos", () => {
+    render(<ListadoDeCuidadores cuidadores={[cuidador({})]} hayMas={false} busqueda="" estado={undefined} />);
+
+    const enlace = within(screen.getByRole("listitem", { name: "Marta Gómez" })).getByRole("link");
+    expect(enlace).toHaveAttribute("href", "/admin/cuidadores/0198aaaa-0000-7000-8000-000000000001");
+    expect(within(enlace).getByText("Ver verificación y documentos")).toBeInTheDocument();
+  });
+
   it("distingue cada estado, y al activo que no se ve lo marca aparte", () => {
     render(
       <ListadoDeCuidadores

@@ -131,6 +131,7 @@ export async function decidirControlAccion(verificacionId: string, _previo: Esta
   // La cola, y también el listado de inicio: aprobar o rechazar cambia el estado y la visibilidad del cuidador.
   revalidatePath("/admin/revision");
   revalidatePath("/admin");
+  revalidatePath("/admin/cuidadores/[id]", "page");
   return { listo: true };
 }
 
@@ -140,5 +141,6 @@ export async function decidirHojaDeVidaAccion(documentoId: string, decision: "ap
   const resultado = await decidirHojaDeVida(documentoId, decision);
   if (!resultado.ok) return { mensaje: mensajeDeErrorDePostulacion(resultado.error) };
   revalidatePath("/admin/revision");
+  revalidatePath("/admin/cuidadores/[id]", "page");
   return { listo: true };
 }

@@ -92,7 +92,11 @@ export function ListadoDeCuidadores({ cuidadores, hayMas, busqueda, estado }: Li
           {cuidadores.map((cuidador) => {
             const etiqueta = estadoVisible(cuidador);
             return (
-              <li key={cuidador.id} aria-label={cuidador.nombre} className="flex gap-3 rounded-2xl bg-card p-4 ring-1 ring-border">
+              <li key={cuidador.id} aria-label={cuidador.nombre}>
+                <Link
+                  href={`/admin/cuidadores/${cuidador.id}`}
+                  className="flex h-full gap-3 rounded-2xl bg-card p-4 ring-1 ring-border transition-colors hover:ring-primary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                >
                 <AvatarCuidador nombre={cuidador.nombre} foto={cuidador.foto} size="lg" />
                 <div className="flex min-w-0 flex-1 flex-col gap-1">
                   <p className="text-base font-semibold text-foreground">{cuidador.nombre}</p>
@@ -111,10 +115,14 @@ export function ListadoDeCuidadores({ cuidadores, hayMas, busqueda, estado }: Li
                       <span className="text-sm text-muted-foreground">Sin reseñas</span>
                     )}
                   </div>
-                  <p className="text-xs text-muted-foreground">
-                    {cuidador.serviciosCompletados} {cuidador.serviciosCompletados === 1 ? "servicio completado" : "servicios completados"}
-                  </p>
+                  <div className="flex flex-wrap items-center justify-between gap-2">
+                    <p className="text-xs text-muted-foreground">
+                      {cuidador.serviciosCompletados} {cuidador.serviciosCompletados === 1 ? "servicio completado" : "servicios completados"}
+                    </p>
+                    <span className="text-xs font-medium text-primary">Ver verificación y documentos</span>
+                  </div>
                 </div>
+                </Link>
               </li>
             );
           })}
