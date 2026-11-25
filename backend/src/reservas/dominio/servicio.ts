@@ -442,6 +442,18 @@ export class Servicio {
     this.cancelarCon('pago_fallido', null, ahora);
   }
 
+  // Un administrador suspendió al cuidador: el servicio que aún no empezaba (solicitado o aceptado) se cancela. Pagos
+  // devuelve todo el dinero: no es una cancelación de la familia, así que nunca es «tardía».
+  cancelarPorSuspension(ahora: Date): void {
+    const estado = transicionar(
+      this.datos.estado,
+      'cancelar_por_suspension',
+      'sistema',
+    );
+    this.mover(estado, 'cancelar_por_suspension', null, ahora);
+    this.cancelarCon('cuidador_suspendido', null, ahora);
+  }
+
   // El cuidador marca que empezó. Solo dentro de su propia ventana (con un margen para quien llega un poco
   // antes), no de toda la franja. Con `exigirPago`, además, el pago tiene que estar aprobado: nadie presta un
   // servicio que no se ha pagado.

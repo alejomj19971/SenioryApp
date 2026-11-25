@@ -367,6 +367,19 @@ export class Cuidador {
     this.tocar(ahora);
   }
 
+  // Un administrador lo devuelve al directorio tras una suspensión. Vuelve a «activo»; que se muestre o no lo decide
+  // `recalcularVisibilidad` (necesita sus tres controles vigentes hoy).
+  reactivar(ahora: Date): void {
+    if (this.datos.estado !== 'suspendido') {
+      throw new ConflictoDeEstado(
+        `Un cuidador ${this.datos.estado} no está suspendido`,
+        'cuidador.no_suspendido',
+      );
+    }
+    this.datos.estado = 'activo';
+    this.tocar(ahora);
+  }
+
   // Suma una reseña a la calificación. Con los contadores juntos el promedio nunca se desfasa.
   registrarResena(calificacion: number, ahora: Date): void {
     if (

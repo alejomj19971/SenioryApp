@@ -9,7 +9,7 @@ Los cuidadores que las familias buscan, cómo llegan a serlo (postulación y ver
 - **Reseñas:** nacen del evento `reservas.servicio_calificado` (cuando Reservas exista); el promedio se recalcula con cada una.
 - **Carga de cuidadores reales:** `npm run cuidadores:importar` (cuidadores que el equipo ya verificó fuera del sistema).
 - **Postulación (M9):** el cuidador crea su cuenta (`POST /auth/registro-cuidador`), arma su perfil (`POST/GET/PATCH /cuidadores/yo`), sube sus documentos (`PUT /cuidadores/yo/documentos/:tipo`) y pide la revisión (`POST /cuidadores/yo/revision`). Si un control se rechaza o vence, lo vuelve a pedir (`POST /cuidadores/yo/verificaciones/:control/renovacion`).
-- **Panel de revisores (M9, solo administradores):** `GET /verificaciones?estado=` (la cola), `GET /verificaciones/documentos/:id` (abre un documento privado con dirección firmada), `PATCH /verificaciones/:id` (aprobar con su vigencia, o rechazar con motivo), `GET /verificaciones/hojas-de-vida` y `PATCH /verificaciones/documentos/:id` (la hoja de vida que verán las familias).
+- **Panel de revisores (M9, solo administradores):** `GET /verificaciones?estado=` (la cola), `GET /verificaciones/documentos/:id` (abre un documento privado con dirección firmada), `POST /verificaciones/cuidadores/:id/suspension` y `/reactivacion` (retirar a un cuidador activo del directorio —cancela sus servicios pendientes con reembolso total— o devolverlo; solo suspende a uno activo, y al reactivar solo se muestra si tiene sus tres controles vigentes), `GET /verificaciones/cuidadores/:id` (su expediente: controles y documentos), `PATCH /verificaciones/:id` (aprobar con su vigencia, o rechazar con motivo), `GET /verificaciones/hojas-de-vida` y `PATCH /verificaciones/documentos/:id` (la hoja de vida que verán las familias).
 - **Revisión de vigencias:** `SondeoDeVigencias` oculta sola, cada `INTERVALO_REVISION_DE_VIGENCIAS_MS`, a quien se le venció un control; `npm run cuidadores:revisar-vigencias` la fuerza a mano.
 
 ## Reglas que conviene saber
@@ -53,7 +53,8 @@ Contratos en [`compartido/eventos/directorio.ts`](../compartido/eventos/director
 | Evento                              | Dirección | Datos                                                                  | Quién reacciona                            |
 | ----------------------------------- | --------- | ---------------------------------------------------------------------- | ------------------------------------------ |
 | `directorio.cuidador_visible`       | Publica   | `cuidadorId`                                                           | —                                          |
-| `directorio.cuidador_oculto`        | Publica   | `cuidadorId`                                                           | Reservas revisa sus servicios futuros (M4) |
+| `directorio.cuidador_oculto`        | Publica   | `cuidadorId`                                                           | Solo avisa que dejó de mostrarse (control vencido o suspensión) |
+| `directorio.cuidador_suspendido`    | Publica   | `cuidadorId`                                                           | Reservas cancela sus servicios solicitados y aceptados; Pagos devuelve el dinero (M4, M7) |
 | `directorio.cuidador_verificado`    | Publica   | `cuidadorId`                                                           | Notificaciones le avisa al cuidador        |
 | `directorio.verificacion_rechazada` | Publica   | `cuidadorId`, `control` (sin el motivo)                                | Notificaciones le avisa al cuidador        |
 | `reservas.servicio_calificado`      | Consume   | `servicioId`, `cuidadorId`, `familiarId`, `calificacion`, `comentario` | Manejador `directorio.registrar_resena`    |

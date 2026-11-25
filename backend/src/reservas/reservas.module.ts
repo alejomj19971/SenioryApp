@@ -59,6 +59,7 @@ import {
   ObtenerCuidadorEnTurno,
   ObtenerServicio,
 } from './aplicacion/casos-de-uso/consultar-servicios.js';
+import { CancelarServiciosDeCuidadorSuspendido } from './aplicacion/manejadores/cancelar-servicios-de-cuidador-suspendido.js';
 import { DetectarNoShows } from './aplicacion/casos-de-uso/detectar-no-shows.js';
 import { ObtenerEstadisticasDeServicios } from './aplicacion/casos-de-uso/estadisticas-de-servicios.js';
 import { ExpirarSolicitudes } from './aplicacion/casos-de-uso/expirar-solicitudes.js';
@@ -481,6 +482,7 @@ const MANEJADORES_DE_PAGOS = Symbol('ManejadoresDePagos');
       ) => [
         new RegistrarPagoDelServicio(servicios, reloj),
         new CancelarServicioPorPagoFallido(servicios, eventos, reloj),
+        new CancelarServiciosDeCuidadorSuspendido(servicios, eventos, reloj),
       ],
     },
 
@@ -515,7 +517,9 @@ export class ReservasModule implements OnModuleInit {
     private readonly registro: RegistroDeManejadores,
     @Inject(MANEJADORES_DE_PAGOS)
     private readonly manejadoresDePagos: (
-      RegistrarPagoDelServicio | CancelarServicioPorPagoFallido
+      | RegistrarPagoDelServicio
+      | CancelarServicioPorPagoFallido
+      | CancelarServiciosDeCuidadorSuspendido
     )[],
   ) {}
 

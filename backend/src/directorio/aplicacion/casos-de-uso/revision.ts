@@ -3,6 +3,7 @@ import type { Reloj } from '../../../compartido/aplicacion/puertos/reloj.js';
 import type { UnidadDeTrabajo } from '../../../compartido/aplicacion/puertos/unidad-de-trabajo.js';
 import type { UsuarioAutenticado } from '../../../compartido/aplicacion/puertos/verificador-de-tokens.js';
 import {
+  ConflictoDeEstado,
   ErrorDeValidacion,
   RecursoNoEncontrado,
   ReglaDeNegocioIncumplida,
@@ -445,5 +446,119 @@ export class ObtenerCuidadorParaRevisor {
       ),
       documentos: documentos.map(vistaDeDocumento),
     };
+  }
+}
+
+// Un administrador retira a un cuidador del directorio: queda «suspendido» y deja de mostrarse de inmediato. Es una
+// decisión, así que además del aviso de que se ocultó (`cuidador_oculto`) se publica `cuidador_suspendido`: Reservas
+// cancela sus servicios que aún no empezaron y Pagos devuelve el dinero. Solo se suspende a quien está activo.
+// Todo en una transacción con el cuidador bloqueado.
+export class SuspenderCuidador {
+  constructor(
+    private readonly cuidadores: RepositorioCuidadores,
+    private readonly unidadDeTrabajo: UnidadDeTrabajo,
+    private readonly eventos: EventosDeDirectorio,
+    private readonly auditoria: Auditoria,
+    private readonly reloj: Reloj,
+  ) {}
+
+  async ejecutar(
+    revisor: UsuarioAutenticado,
+    cuidadorId: CuidadorId,
+  ): Promise<{ estado: string; visible: boolean }> {
+    const resultado = await this.unidadDeTrabajo.ejecutar(async () => {
+      const cuidador =
+        await this.cuidadores.buscarPorIdParaActualizar(cuidadorId);
+      if (cuidador === null) {
+        throw new RecursoNoEncontrado(
+          'No encontramos a ese cuidador',
+          'cuidador.no_encontrado',
+        );
+      }
+      if (cuidador.estado !== 'activo') {
+        throw new ConflictoDeEstado(
+          cuidador.estado === 'suspendido'
+            ? 'Ese cuidador ya está suspendido'
+            : 'Solo se puede suspender a un cuidador activo',
+          'cuidador.no_suspendible',
+        );
+      }
+      const ahora = this.reloj.ahora();
+      const estabaVisible = cuidador.visible;
+      cuidador.suspender(ahora);
+      await this.cuidadores.actualizar(cuidador);
+      await this.eventos.publicar(
+        'directorio.cuidador_suspendido',
+        { cuidadorId: cuidador.id },
+        ahora,
+      );
+      if (estabaVisible) {
+        await this.eventos.publicar(
+          'directorio.cuidador_oculto',
+          { cuidadorId: cuidador.id },
+          ahora,
+        );
+      }
+      return { estado: cuidador.estado, visible: cuidador.visible };
+    });
+    await this.auditoria.registrar({
+      actorId: revisor.id,
+      accion: 'directorio.suspender_cuidador',
+      recursoTipo: 'cuidador',
+      recursoId: cuidadorId,
+      resultado: 'permitido',
+    });
+    return resultado;
+  }
+}
+
+// El administrador devuelve al directorio a un cuidador suspendido. Vuelve a «activo»; solo se muestra si tiene sus tres
+// controles vigentes hoy (si se le venció alguno mientras estuvo suspendido, sigue oculto hasta renovarlo). Los servicios
+// que se cancelaron al suspenderlo NO se restablecen: la familia tendrá que pedirlos de nuevo.
+export class ReactivarCuidador {
+  constructor(
+    private readonly cuidadores: RepositorioCuidadores,
+    private readonly unidadDeTrabajo: UnidadDeTrabajo,
+    private readonly eventos: EventosDeDirectorio,
+    private readonly auditoria: Auditoria,
+    private readonly reloj: Reloj,
+    private readonly zonaHorariaNegocio: string,
+  ) {}
+
+  async ejecutar(
+    revisor: UsuarioAutenticado,
+    cuidadorId: CuidadorId,
+  ): Promise<{ estado: string; visible: boolean }> {
+    const hoy = FechaCivil.hoy(this.reloj, this.zonaHorariaNegocio);
+    const resultado = await this.unidadDeTrabajo.ejecutar(async () => {
+      const cuidador =
+        await this.cuidadores.buscarPorIdParaActualizar(cuidadorId);
+      if (cuidador === null) {
+        throw new RecursoNoEncontrado(
+          'No encontramos a ese cuidador',
+          'cuidador.no_encontrado',
+        );
+      }
+      const ahora = this.reloj.ahora();
+      cuidador.reactivar(ahora);
+      const cambio = cuidador.recalcularVisibilidad(hoy, ahora);
+      await this.cuidadores.actualizar(cuidador);
+      if (cambio === 'visible') {
+        await this.eventos.publicar(
+          'directorio.cuidador_visible',
+          { cuidadorId: cuidador.id },
+          ahora,
+        );
+      }
+      return { estado: cuidador.estado, visible: cuidador.visible };
+    });
+    await this.auditoria.registrar({
+      actorId: revisor.id,
+      accion: 'directorio.reactivar_cuidador',
+      recursoTipo: 'cuidador',
+      recursoId: cuidadorId,
+      resultado: 'permitido',
+    });
+    return resultado;
   }
 }

@@ -18,6 +18,7 @@ import type {
 //   aceptado ── cancelar_por_pago ──▶ cancelado   (el sistema, cuando el pago se rechaza o vence)
 //   aceptado ── cancelar_cuidador ──▶ cancelado   (el cuidador ya no puede prestarlo)
 //   aceptado ── marcar_no_show ──▶ cancelado   (el sistema, cuando la franja termina sin que nadie inicie)
+//   solicitado / aceptado ── cancelar_por_suspension ──▶ cancelado   (el sistema, cuando suspenden al cuidador)
 //   en_curso ── finalizar ──▶ finalizado
 //
 // `finalizado` y `cancelado` son finales: ya no admiten ninguna acción.
@@ -77,6 +78,13 @@ const REGLAS: Readonly<Record<AccionDeServicio, Regla>> = {
   cancelar_por_pago: {
     actores: ['sistema'],
     desde: ['aceptado'],
+    hacia: 'cancelado',
+  },
+  // Un administrador suspendió al cuidador: lo que aún no empezó (solicitado o aceptado) no se va a prestar. Uno ya en
+  // curso se deja terminar: no se interrumpe a una persona que ya está siendo atendida.
+  cancelar_por_suspension: {
+    actores: ['sistema'],
+    desde: ['solicitado', 'aceptado'],
     hacia: 'cancelado',
   },
 };

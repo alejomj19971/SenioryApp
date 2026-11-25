@@ -73,6 +73,13 @@ export interface RepositorioServicios {
     limite: number,
   ): Promise<ServicioId[]>;
 
+  // Los servicios de este cuidador que aún no empezaron (solicitado o aceptado), para cancelarlos si lo suspenden. Los
+  // «en curso» no entran: se dejan terminar.
+  listarPendientesDeCuidador(
+    cuidadorId: string,
+    limite: number,
+  ): Promise<ServicioId[]>;
+
   // ¿Hay un servicio vivo (solicitado, aceptado o en curso) entre esta familia y este cuidador?
   existeActivoEntre(familiarId: string, cuidadorId: string): Promise<boolean>;
 

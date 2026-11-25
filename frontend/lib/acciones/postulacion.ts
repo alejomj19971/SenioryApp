@@ -10,7 +10,7 @@ import { ahoraEnColombia } from "@/lib/fecha-colombia";
 import { esUbicacionValida } from "@/lib/geo";
 import { exigirRol } from "@/lib/sesion";
 import { actualizarMiPerfil, crearMiPerfil, obtenerMiPerfil, renovarControl, solicitarRevision } from "@/lib/services/postulacion";
-import { decidirControl, decidirHojaDeVida } from "@/lib/services/verificaciones";
+import { decidirControl, decidirHojaDeVida, reactivarCuidador, suspenderCuidador } from "@/lib/services/verificaciones";
 import type { ControlDeVerificacion } from "@/lib/types";
 
 // Acciones de la postulación del cuidador y del panel de revisores (F9). Son endpoints públicos de Next: validan su
@@ -142,5 +142,32 @@ export async function decidirHojaDeVidaAccion(documentoId: string, decision: "ap
   if (!resultado.ok) return { mensaje: mensajeDeErrorDePostulacion(resultado.error) };
   revalidatePath("/admin/revision");
   revalidatePath("/admin/cuidadores/[id]", "page");
+  return { listo: true };
+}
+
+// Lo que cambia al suspender o reactivar: el listado y el expediente del cuidador, y la cola (su estado cambia).
+function refrescarPanelDeCuidadores(): void {
+  revalidatePath("/admin");
+  revalidatePath("/admin/revision");
+  revalidatePath("/admin/cuidadores/[id]", "page");
+}
+
+// Retira al cuidador del directorio. El backend cancela sus servicios que aún no empezaron y devuelve el dinero.
+export async function suspenderCuidadorAccion(cuidadorId: string): Promise<EstadoDeFormulario> {
+  await exigirRol("administrador");
+  if (!FORMATO_DE_UUID.test(cuidadorId)) return { mensaje: "No encontramos a ese cuidador." };
+  const resultado = await suspenderCuidador(cuidadorId);
+  if (!resultado.ok) return { mensaje: mensajeDeErrorDePostulacion(resultado.error) };
+  refrescarPanelDeCuidadores();
+  return { listo: true };
+}
+
+// Lo devuelve al directorio (se muestra si tiene sus tres controles vigentes).
+export async function reactivarCuidadorAccion(cuidadorId: string): Promise<EstadoDeFormulario> {
+  await exigirRol("administrador");
+  if (!FORMATO_DE_UUID.test(cuidadorId)) return { mensaje: "No encontramos a ese cuidador." };
+  const resultado = await reactivarCuidador(cuidadorId);
+  if (!resultado.ok) return { mensaje: mensajeDeErrorDePostulacion(resultado.error) };
+  refrescarPanelDeCuidadores();
   return { listo: true };
 }

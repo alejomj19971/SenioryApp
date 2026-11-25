@@ -15,6 +15,14 @@ export type CuidadorOculto = EventoDeIntegracion<
   { cuidadorId: string }
 >;
 
+// Un administrador suspendió a un cuidador. Reservas cancela sus servicios que aún no empezaron (solicitado o aceptado) y
+// Pagos devuelve el dinero. Va junto a `cuidador_oculto`, que solo dice que dejó de mostrarse: esto es una decisión, y
+// otras causas de ocultarlo (un control vencido) NO cancelan servicios.
+export type CuidadorSuspendido = EventoDeIntegracion<
+  'directorio.cuidador_suspendido',
+  { cuidadorId: string }
+>;
+
 // Un revisor aprobó los tres controles de un cuidador que se postuló: ya es parte del directorio. Notificaciones se
 // lo avisa a él.
 export type CuidadorVerificado = EventoDeIntegracion<
@@ -30,4 +38,8 @@ export type VerificacionRechazada = EventoDeIntegracion<
 >;
 
 export type EventoDeDirectorio =
-  CuidadorVisible | CuidadorOculto | CuidadorVerificado | VerificacionRechazada;
+  | CuidadorVisible
+  | CuidadorOculto
+  | CuidadorSuspendido
+  | CuidadorVerificado
+  | VerificacionRechazada;

@@ -4,7 +4,9 @@ import type { ExpedienteDeCuidador } from "@/lib/services/verificaciones";
 import type { DocumentoSubido } from "@/lib/types";
 
 vi.mock("next/navigation", () => ({ useRouter: () => ({ refresh: vi.fn() }) }));
-vi.mock("@/lib/acciones/postulacion", () => ({ decidirControlAccion: vi.fn(), decidirHojaDeVidaAccion: vi.fn() }));
+const suspenderCuidadorAccion = vi.fn();
+const reactivarCuidadorAccion = vi.fn();
+vi.mock("@/lib/acciones/postulacion", () => ({ decidirControlAccion: vi.fn(), decidirHojaDeVidaAccion: vi.fn(), suspenderCuidadorAccion, reactivarCuidadorAccion }));
 
 const { ExpedienteDelCuidador } = await import("@/components/admin/expediente-del-cuidador");
 

@@ -1,5 +1,6 @@
 import { FileText, Star } from "lucide-react";
 import { TarjetaDeHojaDeVida, TarjetaDeVerificacion } from "@/components/admin/tarjeta-de-verificacion";
+import { VisibilidadDelCuidador } from "@/components/admin/visibilidad-del-cuidador";
 import { AvatarCuidador } from "@/components/avatar-cuidador";
 import { Badge } from "@/components/ui/badge";
 import { ESTADO_DEL_CONTROL, NOMBRE_DEL_CONTROL, NOMBRE_DEL_DOCUMENTO } from "@/lib/etiquetas-de-postulacion";
@@ -144,6 +145,8 @@ export function ExpedienteDelCuidador({ expediente }: { expediente: ExpedienteDe
           </span>
         </div>
       </section>
+
+      <VisibilidadDelCuidador cuidadorId={cuidador.id} nombre={cuidador.nombre} estado={cuidador.estado} />
 
       <section aria-labelledby="controles" className="flex flex-col gap-3">
         <h2 id="controles" className="text-lg font-semibold text-foreground">

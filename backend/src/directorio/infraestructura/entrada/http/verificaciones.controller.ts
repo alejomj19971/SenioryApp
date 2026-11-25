@@ -2,10 +2,13 @@ import {
   Body,
   Controller,
   Get,
+  HttpCode,
+  HttpStatus,
   Inject,
   Param,
   ParseUUIDPipe,
   Patch,
+  Post,
   Query,
   Res,
 } from '@nestjs/common';
@@ -21,8 +24,10 @@ import {
   ListarHojasDeVidaPendientes,
   ListarVerificaciones,
   ObtenerCuidadorParaRevisor,
+  ReactivarCuidador,
   RevisarHojaDeVida,
   RevisarVerificacion,
+  SuspenderCuidador,
   type DecisionDelRevisor,
   type HojaDeVidaPendiente,
 } from '../../../aplicacion/casos-de-uso/revision.js';
@@ -59,6 +64,8 @@ export class VerificacionesController {
     @Inject(RevisarHojaDeVida) private readonly revisarHoja: RevisarHojaDeVida,
     @Inject(ObtenerCuidadorParaRevisor)
     private readonly expediente: ObtenerCuidadorParaRevisor,
+    @Inject(SuspenderCuidador) private readonly suspender: SuspenderCuidador,
+    @Inject(ReactivarCuidador) private readonly reactivar: ReactivarCuidador,
   ) {}
 
   @Get()
@@ -81,6 +88,26 @@ export class VerificacionesController {
     @Param('id', ParseUUIDPipe) id: string,
   ): Promise<VistaDeCuidadorParaRevisor> {
     return this.expediente.ejecutar(revisor, id as CuidadorId);
+  }
+
+  // Retira al cuidador del directorio y cancela sus servicios que aún no empezaron (con reembolso total). Solo a uno activo.
+  @Post('cuidadores/:id/suspension')
+  @HttpCode(HttpStatus.OK)
+  async suspenderCuidador(
+    @UsuarioActual() revisor: UsuarioAutenticado,
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<{ cuidador: { estado: string; visible: boolean } }> {
+    return { cuidador: await this.suspender.ejecutar(revisor, id as CuidadorId) };
+  }
+
+  // Lo devuelve al directorio; se muestra si tiene sus tres controles vigentes. Los servicios cancelados no se restablecen.
+  @Post('cuidadores/:id/reactivacion')
+  @HttpCode(HttpStatus.OK)
+  async reactivarCuidador(
+    @UsuarioActual() revisor: UsuarioAutenticado,
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<{ cuidador: { estado: string; visible: boolean } }> {
+    return { cuidador: await this.reactivar.ejecutar(revisor, id as CuidadorId) };
   }
 
   // Redirige a una dirección firmada que vence en dos minutos.

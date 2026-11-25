@@ -125,6 +125,12 @@ function cancelado(rol: 'familia' | 'cuidador'): Plantilla {
           cuerpo: `El servicio del ${momento} se canceló: el cuidador avisó que no puede atenderte. Si ya se había cobrado, el dinero vuelve. Elige a otra persona en Seniory.`,
         };
       }
+      if (motivo === 'cuidador_suspendido') {
+        return {
+          titulo: 'Tu servicio se canceló',
+          cuerpo: `El servicio del ${momento} se canceló: el cuidador ya no está disponible en Seniory. Si ya se había cobrado, te devolvemos todo el dinero. Elige a otra persona en Seniory.`,
+        };
+      }
       if (motivo === 'no_show') {
         return {
           titulo: 'El cuidador no se presentó',
@@ -164,6 +170,12 @@ function cancelado(rol: 'familia' | 'cuidador'): Plantilla {
       return {
         titulo: 'Cancelaste un servicio',
         cuerpo: `Cancelaste el servicio del ${momento}. Le avisamos a la familia.`,
+      };
+    }
+    if (motivo === 'cuidador_suspendido') {
+      return {
+        titulo: 'Se canceló un servicio',
+        cuerpo: `El servicio del ${momento} se canceló porque tu cuenta está suspendida. Le avisamos a la familia.`,
       };
     }
     if (motivo === 'no_show') {

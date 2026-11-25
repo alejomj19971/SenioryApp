@@ -330,6 +330,25 @@ export class RepositorioServiciosDrizzle implements RepositorioServicios {
     return filas.map((fila) => fila.id as ServicioId);
   }
 
+  async listarPendientesDeCuidador(
+    cuidadorId: string,
+    limite: number,
+  ): Promise<ServicioId[]> {
+    const filas = await this.contexto
+      .conexion()
+      .select({ id: servicios.id })
+      .from(servicios)
+      .where(
+        and(
+          eq(servicios.cuidadorId, cuidadorId),
+          inArray(servicios.estado, ['solicitado', 'aceptado']),
+        ),
+      )
+      .orderBy(servicios.fecha)
+      .limit(limite);
+    return filas.map((fila) => fila.id as ServicioId);
+  }
+
   async existeActivoEntre(
     familiarId: string,
     cuidadorId: string,

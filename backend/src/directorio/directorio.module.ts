@@ -51,8 +51,10 @@ import {
   ListarHojasDeVidaPendientes,
   ListarVerificaciones,
   ObtenerCuidadorParaRevisor,
+  ReactivarCuidador,
   RevisarHojaDeVida,
   RevisarVerificacion,
+  SuspenderCuidador,
 } from './aplicacion/casos-de-uso/revision.js';
 import { ListarCuidadoresParaAdministrador } from './aplicacion/casos-de-uso/listar-cuidadores-para-administrador.js';
 import { ObtenerEstadisticasDeCuidadores } from './aplicacion/casos-de-uso/estadisticas-de-cuidadores.js';
@@ -541,6 +543,57 @@ const SONDEO_DE_VIGENCIAS = Symbol('SondeoDeVigencias');
         new RevisarVerificacion(
           cuidadores,
           documentos,
+          unidadDeTrabajo,
+          eventos,
+          auditoria,
+          reloj,
+          configuracion.zonaHorariaNegocio,
+        ),
+    },
+    {
+      provide: SuspenderCuidador,
+      inject: [
+        REPOSITORIO_CUIDADORES,
+        UNIDAD_DE_TRABAJO,
+        EventosDeDirectorio,
+        AUDITORIA,
+        RELOJ,
+      ],
+      useFactory: (
+        cuidadores: RepositorioCuidadores,
+        unidadDeTrabajo: UnidadDeTrabajo,
+        eventos: EventosDeDirectorio,
+        auditoria: Auditoria,
+        reloj: Reloj,
+      ) =>
+        new SuspenderCuidador(
+          cuidadores,
+          unidadDeTrabajo,
+          eventos,
+          auditoria,
+          reloj,
+        ),
+    },
+    {
+      provide: ReactivarCuidador,
+      inject: [
+        REPOSITORIO_CUIDADORES,
+        UNIDAD_DE_TRABAJO,
+        EventosDeDirectorio,
+        AUDITORIA,
+        RELOJ,
+        CONFIGURACION,
+      ],
+      useFactory: (
+        cuidadores: RepositorioCuidadores,
+        unidadDeTrabajo: UnidadDeTrabajo,
+        eventos: EventosDeDirectorio,
+        auditoria: Auditoria,
+        reloj: Reloj,
+        configuracion: Configuracion,
+      ) =>
+        new ReactivarCuidador(
+          cuidadores,
           unidadDeTrabajo,
           eventos,
           auditoria,

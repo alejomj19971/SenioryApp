@@ -77,3 +77,18 @@ export async function obtenerExpediente(id: string): Promise<ExpedienteDeCuidado
     documentos: documentos.map(aDocumento),
   };
 }
+
+// Retira del directorio a un cuidador activo (M9): deja de mostrarse y sus servicios que aún no empezaron se cancelan con
+// reembolso total. Solo administradores; queda en la auditoría del backend.
+export function suspenderCuidador(id: string): Promise<ResultadoDeEscritura<{ estado: string; visible: boolean }>> {
+  return escribirEnBackend<{ cuidador: { estado: string; visible: boolean } }>(`/verificaciones/cuidadores/${id}/suspension`, { metodo: "POST" }).then((r) =>
+    r.ok ? { ok: true as const, datos: r.datos.cuidador } : r,
+  );
+}
+
+// Lo devuelve al directorio: se muestra si tiene sus tres controles vigentes. Los servicios cancelados no se restablecen.
+export function reactivarCuidador(id: string): Promise<ResultadoDeEscritura<{ estado: string; visible: boolean }>> {
+  return escribirEnBackend<{ cuidador: { estado: string; visible: boolean } }>(`/verificaciones/cuidadores/${id}/reactivacion`, { metodo: "POST" }).then((r) =>
+    r.ok ? { ok: true as const, datos: r.datos.cuidador } : r,
+  );
+}
