@@ -48,6 +48,15 @@ describe("BuscadorDeCuidadores", () => {
     expect(replace).toHaveBeenCalledWith("/admin?busqueda=ma", { scroll: false });
   });
 
+  it("conserva el análisis abierto al buscar", () => {
+    render(<BuscadorDeCuidadores busqueda="" estado={undefined} analisis />);
+
+    escribir("ana");
+    pasar(300);
+
+    expect(replace).toHaveBeenCalledWith("/admin?busqueda=ana&analisis=1", { scroll: false });
+  });
+
   it("conserva el filtro de estado al buscar", () => {
     render(<BuscadorDeCuidadores busqueda="" estado="en_revision" />);
 

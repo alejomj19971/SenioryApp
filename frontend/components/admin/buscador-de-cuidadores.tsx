@@ -10,6 +10,8 @@ import { direccionDelListado } from "@/lib/direccion-del-listado";
 const ESPERA_MS = 300;
 
 interface BuscadorDeCuidadoresProps {
+  // Si el análisis está abierto: se conserva al buscar.
+  analisis?: boolean;
   // Lo que se está buscando ahora (viene de la dirección); el filtro de estado se conserva al buscar.
   busqueda: string;
   estado: EstadoDeCuidadorEnElPanel | undefined;
@@ -18,7 +20,7 @@ interface BuscadorDeCuidadoresProps {
 // El buscador del listado: busca mientras se escribe, sin recargar la página ni perder el cursor. Cambia la dirección
 // (`?busqueda=…`) con `replace`, así que no llena el historial y el resultado se puede copiar. Enter busca al instante, y sin
 // JavaScript sigue funcionando como un formulario normal.
-export function BuscadorDeCuidadores({ busqueda, estado }: BuscadorDeCuidadoresProps) {
+export function BuscadorDeCuidadores({ busqueda, estado, analisis = false }: BuscadorDeCuidadoresProps) {
   const router = useRouter();
   const [texto, setTexto] = useState(busqueda);
   const [buscando, iniciar] = useTransition();
@@ -38,9 +40,9 @@ export function BuscadorDeCuidadores({ busqueda, estado }: BuscadorDeCuidadoresP
   const buscar = useCallback(
     (valor: string) => {
       setEnviado(valor);
-      iniciar(() => router.replace(direccionDelListado(valor, estado), { scroll: false }));
+      iniciar(() => router.replace(direccionDelListado(valor, estado, analisis), { scroll: false }));
     },
-    [estado, router],
+    [estado, analisis, router],
   );
 
   useEffect(() => {
@@ -63,6 +65,7 @@ export function BuscadorDeCuidadores({ busqueda, estado }: BuscadorDeCuidadoresP
       }}
     >
       {estado !== undefined && <input type="hidden" name="estado" value={estado} />}
+      {analisis && <input type="hidden" name="analisis" value="1" />}
       <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
       <input
         type="search"

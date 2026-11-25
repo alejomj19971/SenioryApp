@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { ColaDeRevision } from "@/components/admin/cola-de-revision";
-import { PestanasDelPanel } from "@/components/admin/pestanas-del-panel";
 import { buttonVariants } from "@/components/ui/button";
 import { agruparPorCuidador } from "@/lib/agrupar-revision";
 import { exigirRol } from "@/lib/sesion";
@@ -35,13 +34,12 @@ export default async function RevisionPage({ searchParams }: PageProps<"/admin/r
         <p className="text-base text-muted-foreground">Hola, {perfil.usuario.nombre.split(" ")[0]}. Cada decisión y cada documento que abres queda registrado.</p>
       </div>
 
-      <PestanasDelPanel activa="verificaciones" />
-
       <nav aria-label="Estado de las verificaciones" className="flex flex-wrap gap-2">
         {ESTADOS_DE_LA_COLA.map((e) => (
           <Link
             key={e}
             href={e === "pendiente" ? "/admin/revision" : `/admin/revision?estado=${e}`}
+            scroll={false}
             aria-current={e === estado ? "page" : undefined}
             className={buttonVariants({ variant: e === estado ? "default" : "outline" })}
           >

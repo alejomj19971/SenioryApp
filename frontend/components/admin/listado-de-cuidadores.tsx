@@ -39,22 +39,24 @@ interface ListadoDeCuidadoresProps {
   hayMas: boolean;
   busqueda: string;
   estado: EstadoDeCuidadorEnElPanel | undefined;
+  // Si el análisis está abierto: se conserva al buscar y al filtrar.
+  analisis?: boolean;
 }
 
 // Todos los cuidadores con su estado y su calificación, para reconocerlos de un vistazo. La búsqueda va mientras se escribe
 // y deja la dirección compartible (`/admin?busqueda=…&estado=…`); sin JavaScript sigue siendo un formulario normal.
-export function ListadoDeCuidadores({ cuidadores, hayMas, busqueda, estado }: ListadoDeCuidadoresProps) {
+export function ListadoDeCuidadores({ cuidadores, hayMas, busqueda, estado, analisis = false }: ListadoDeCuidadoresProps) {
   const hayFiltro = busqueda !== "" || estado !== undefined;
   return (
     <div className="flex flex-col gap-4">
-      <BuscadorDeCuidadores busqueda={busqueda} estado={estado} />
+      <BuscadorDeCuidadores busqueda={busqueda} estado={estado} analisis={analisis} />
 
       <nav aria-label="Filtrar cuidadores por estado" className="flex flex-wrap gap-2">
-        <Link href={direccionDelListado(busqueda, undefined)} aria-current={estado === undefined ? "page" : undefined} className={buttonVariants({ variant: estado === undefined ? "default" : "outline" })}>
+        <Link href={direccionDelListado(busqueda, undefined, analisis)} scroll={false} aria-current={estado === undefined ? "page" : undefined} className={buttonVariants({ variant: estado === undefined ? "default" : "outline" })}>
           Todos
         </Link>
         {ESTADOS_DE_CUIDADOR_EN_EL_PANEL.map((e) => (
-          <Link key={e} href={direccionDelListado(busqueda, e)} aria-current={e === estado ? "page" : undefined} className={buttonVariants({ variant: e === estado ? "default" : "outline" })}>
+          <Link key={e} href={direccionDelListado(busqueda, e, analisis)} scroll={false} aria-current={e === estado ? "page" : undefined} className={buttonVariants({ variant: e === estado ? "default" : "outline" })}>
             {NOMBRE_DEL_ESTADO[e]}
           </Link>
         ))}
@@ -65,7 +67,7 @@ export function ListadoDeCuidadores({ cuidadores, hayMas, busqueda, estado }: Li
           <SearchX className="size-6 text-muted-foreground" aria-hidden="true" />
           <p className="text-base font-medium text-foreground">{hayFiltro ? "Ningún cuidador coincide con tu búsqueda" : "Todavía no hay cuidadores registrados"}</p>
           {hayFiltro && (
-            <Link href="/admin" className={buttonVariants({ variant: "outline" })}>
+            <Link href={direccionDelListado("", undefined, analisis)} scroll={false} className={buttonVariants({ variant: "outline" })}>
               Quitar filtros
             </Link>
           )}

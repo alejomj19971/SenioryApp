@@ -5,7 +5,6 @@ import type { CuidadorDelPanel } from "@/lib/services/cuidadores-del-panel";
 vi.mock("next/navigation", () => ({ useRouter: () => ({ replace: vi.fn() }) }));
 
 const { ListadoDeCuidadores } = await import("@/components/admin/listado-de-cuidadores");
-const { PestanasDelPanel } = await import("@/components/admin/pestanas-del-panel");
 
 function cuidador(cambios: Partial<CuidadorDelPanel>): CuidadorDelPanel {
   return {
@@ -94,15 +93,11 @@ describe("ListadoDeCuidadores", () => {
 
     expect(screen.getByText(/escribe en el buscador para afinar/i)).toBeInTheDocument();
   });
-});
 
-describe("PestanasDelPanel", () => {
-  it("marca la pestaña activa y lleva a cada sección", () => {
-    render(<PestanasDelPanel activa="cuidadores" />);
+  it("conserva el análisis abierto al filtrar, y los filtros no saltan al inicio de la página", () => {
+    render(<ListadoDeCuidadores cuidadores={[cuidador({})]} hayMas={false} busqueda="" estado={undefined} analisis />);
 
-    expect(screen.getByRole("link", { name: "Cuidadores" })).toHaveAttribute("aria-current", "page");
-    expect(screen.getByRole("link", { name: "Cuidadores" })).toHaveAttribute("href", "/admin");
-    expect(screen.getByRole("link", { name: "Verificaciones" })).not.toHaveAttribute("aria-current");
-    expect(screen.getByRole("link", { name: "Verificaciones" })).toHaveAttribute("href", "/admin/revision");
+    expect(screen.getByRole("link", { name: "En revisión" })).toHaveAttribute("href", "/admin?estado=en_revision&analisis=1");
+    expect(screen.getByRole("link", { name: "Todos" })).toHaveAttribute("href", "/admin?analisis=1");
   });
 });
