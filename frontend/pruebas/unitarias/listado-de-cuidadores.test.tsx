@@ -1,8 +1,11 @@
 import { render, screen, within } from "@testing-library/react";
-import { describe, expect, it } from "vitest";
-import { ListadoDeCuidadores } from "@/components/admin/listado-de-cuidadores";
-import { PestanasDelPanel } from "@/components/admin/pestanas-del-panel";
+import { describe, expect, it, vi } from "vitest";
 import type { CuidadorDelPanel } from "@/lib/services/cuidadores-del-panel";
+
+vi.mock("next/navigation", () => ({ useRouter: () => ({ replace: vi.fn() }) }));
+
+const { ListadoDeCuidadores } = await import("@/components/admin/listado-de-cuidadores");
+const { PestanasDelPanel } = await import("@/components/admin/pestanas-del-panel");
 
 function cuidador(cambios: Partial<CuidadorDelPanel>): CuidadorDelPanel {
   return {

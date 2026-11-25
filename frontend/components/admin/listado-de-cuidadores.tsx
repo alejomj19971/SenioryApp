@@ -1,8 +1,10 @@
 import Link from "next/link";
-import { Search, SearchX, Star } from "lucide-react";
+import { SearchX, Star } from "lucide-react";
+import { BuscadorDeCuidadores } from "@/components/admin/buscador-de-cuidadores";
 import { AvatarCuidador } from "@/components/avatar-cuidador";
 import { buttonVariants } from "@/components/ui/button";
 import { ESTADOS_DE_CUIDADOR_EN_EL_PANEL, type EstadoDeCuidadorEnElPanel } from "@/lib/estados-de-cuidador";
+import { direccionDelListado } from "@/lib/direccion-del-listado";
 import { etiquetaEspecialidad } from "@/lib/format";
 import type { CuidadorDelPanel } from "@/lib/services/cuidadores-del-panel";
 import { cn } from "@/lib/utils";
@@ -31,13 +33,6 @@ function estadoVisible(cuidador: CuidadorDelPanel): { texto: string; clases: str
   }
 }
 
-function direccionDelFiltro(busqueda: string, estado: EstadoDeCuidadorEnElPanel | undefined): string {
-  const parametros = new URLSearchParams();
-  if (busqueda !== "") parametros.set("busqueda", busqueda);
-  if (estado !== undefined) parametros.set("estado", estado);
-  const texto = parametros.toString();
-  return texto === "" ? "/admin" : `/admin?${texto}`;
-}
 
 interface ListadoDeCuidadoresProps {
   cuidadores: CuidadorDelPanel[];
@@ -46,32 +41,20 @@ interface ListadoDeCuidadoresProps {
   estado: EstadoDeCuidadorEnElPanel | undefined;
 }
 
-// Todos los cuidadores con su estado y su calificación, para reconocerlos de un vistazo. La búsqueda es un formulario
-// GET: funciona sin JavaScript y deja la dirección compartible (`/admin?busqueda=…&estado=…`).
+// Todos los cuidadores con su estado y su calificación, para reconocerlos de un vistazo. La búsqueda va mientras se escribe
+// y deja la dirección compartible (`/admin?busqueda=…&estado=…`); sin JavaScript sigue siendo un formulario normal.
 export function ListadoDeCuidadores({ cuidadores, hayMas, busqueda, estado }: ListadoDeCuidadoresProps) {
   const hayFiltro = busqueda !== "" || estado !== undefined;
   return (
     <div className="flex flex-col gap-4">
-      <form action="/admin" method="get" role="search" className="relative">
-        {estado !== undefined && <input type="hidden" name="estado" value={estado} />}
-        <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" aria-hidden="true" />
-        <input
-          type="search"
-          name="busqueda"
-          defaultValue={busqueda}
-          maxLength={200}
-          placeholder="Buscar cuidador por nombre o zona…"
-          aria-label="Buscar cuidador por nombre o zona"
-          className="h-12 w-full rounded-lg border border-input bg-card pl-9 pr-3 text-base text-foreground outline-none focus-visible:border-ring focus-visible:ring-3 focus-visible:ring-ring/50"
-        />
-      </form>
+      <BuscadorDeCuidadores busqueda={busqueda} estado={estado} />
 
       <nav aria-label="Filtrar cuidadores por estado" className="flex flex-wrap gap-2">
-        <Link href={direccionDelFiltro(busqueda, undefined)} aria-current={estado === undefined ? "page" : undefined} className={buttonVariants({ variant: estado === undefined ? "default" : "outline" })}>
+        <Link href={direccionDelListado(busqueda, undefined)} aria-current={estado === undefined ? "page" : undefined} className={buttonVariants({ variant: estado === undefined ? "default" : "outline" })}>
           Todos
         </Link>
         {ESTADOS_DE_CUIDADOR_EN_EL_PANEL.map((e) => (
-          <Link key={e} href={direccionDelFiltro(busqueda, e)} aria-current={e === estado ? "page" : undefined} className={buttonVariants({ variant: e === estado ? "default" : "outline" })}>
+          <Link key={e} href={direccionDelListado(busqueda, e)} aria-current={e === estado ? "page" : undefined} className={buttonVariants({ variant: e === estado ? "default" : "outline" })}>
             {NOMBRE_DEL_ESTADO[e]}
           </Link>
         ))}
