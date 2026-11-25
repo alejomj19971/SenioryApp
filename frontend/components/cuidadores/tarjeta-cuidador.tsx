@@ -25,7 +25,7 @@ export function TarjetaCuidador({ cuidador, seleccionado, onAlternarSeleccion }:
         aria-pressed={seleccionado}
         aria-label={seleccionado ? `Quitar a ${cuidador.nombre} de la selección` : `Seleccionar a ${cuidador.nombre} para contratar junto con otros`}
         className={cn(
-          "absolute top-3 left-3 z-10 flex size-7 items-center justify-center rounded-full ring-2 ring-background transition-colors",
+          "absolute top-3 right-3 z-10 flex size-7 items-center justify-center rounded-full ring-2 ring-background transition-colors",
           seleccionado ? "bg-primary text-primary-foreground" : "bg-card text-transparent ring-border hover:text-muted-foreground",
         )}
       >
@@ -34,16 +34,17 @@ export function TarjetaCuidador({ cuidador, seleccionado, onAlternarSeleccion }:
       <Link href={`/app/cuidadores/${cuidador.id}`} className="flex flex-1 gap-3">
         <AvatarCuidador nombre={cuidador.nombre} foto={cuidador.foto} size="lg" />
         <div className="flex flex-1 flex-col gap-1">
-          <div className="flex items-start justify-between gap-2">
-            <p className="text-base font-semibold text-foreground">{cuidador.nombre}</p>
+          {/* pr-8: deja libre la esquina superior derecha, donde está la casilla de selección */}
+          <p className="pr-8 text-base font-semibold text-foreground">{cuidador.nombre}</p>
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
+            <p className="text-sm text-muted-foreground">
+              {etiquetaEspecialidad(cuidador.especialidad)}
+            </p>
             <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-primary px-2 py-0.5 text-xs font-semibold text-primary-foreground">
               <ShieldCheck className="size-3.5" aria-hidden="true" />
               Verificado
             </span>
           </div>
-          <p className="text-sm text-muted-foreground">
-            {etiquetaEspecialidad(cuidador.especialidad)}
-          </p>
           <div className="flex items-center gap-1 text-sm text-muted-foreground">
             <MapPin className="size-3.5 shrink-0" aria-hidden="true" />
             {cuidador.zona}
