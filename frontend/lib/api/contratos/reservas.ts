@@ -85,3 +85,15 @@ export interface RespuestaDeCotizacion {
     politicaVersion: number;
   };
 }
+
+// `GET /servicios/estadisticas` (solo administradores): solo conteos, ningún dato de ninguna persona.
+export interface RespuestaDeEstadisticasDeServicios {
+  estadisticas: {
+    total: number;
+    porEstado: Record<"solicitado" | "aceptado" | "en_curso" | "finalizado" | "cancelado", number>;
+    solicitadosUltimos7Dias: number;
+    solicitadosUltimos30Dias: number;
+    // Suma de las horas de los servicios ya finalizados.
+    horasAtendidas: number;
+  };
+}

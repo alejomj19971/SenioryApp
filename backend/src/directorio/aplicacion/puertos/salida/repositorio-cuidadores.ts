@@ -7,6 +7,7 @@ import type {
 import type { CuidadorId, VerificacionId } from '../../../dominio/ids.js';
 import type {
   Especialidad,
+  EstadoDeCuidador,
   EstadoDeVerificacion,
 } from '../../../dominio/valores-cerrados.js';
 import type { Verificacion } from '../../../dominio/verificacion.js';
@@ -22,6 +23,45 @@ export interface FiltrosDisponibles {
   zonas: string[];
   // La tarifa por hora más alta entre los visibles; null si no hay ninguno.
   tarifaMaxima: number | null;
+}
+
+// Conteos para el panel del administrador: ningún dato de ninguna persona.
+export interface EstadisticasDeCuidadores {
+  total: number;
+  porEstado: Record<EstadoDeCuidador, number>;
+  // Los que hoy aparecen en el directorio (activos con los tres controles vigentes).
+  visibles: number;
+  // De los visibles, cuántos hay por especialidad.
+  visiblesPorEspecialidad: Record<Especialidad, number>;
+  // Verificaciones que esperan decisión de un revisor.
+  verificacionesPendientes: number;
+  // Promedio de todas las reseñas; null si todavía no hay ninguna.
+  calificacionPromedio: number | null;
+  totalDeResenas: number;
+  serviciosCompletados: number;
+}
+
+// Un cuidador en el listado del administrador: de cualquier estado, y solo lo que hace falta para reconocerlo de un
+// vistazo (nunca el teléfono ni los documentos).
+export interface FilaDeCuidadorParaAdministrador {
+  id: CuidadorId;
+  nombre: string;
+  fotoUrl: string | null;
+  especialidad: Especialidad;
+  zona: string;
+  estado: EstadoDeCuidador;
+  // Si hoy aparece en el directorio de las familias.
+  visible: boolean;
+  // Promedio con un decimal; null si todavía no tiene reseñas.
+  calificacion: number | null;
+  cantidadResenas: number;
+  serviciosCompletados: number;
+}
+
+export interface FiltroParaAdministrador {
+  // Texto ya normalizado (minúsculas, sin tildes): se busca en el nombre y en la zona.
+  busqueda?: string;
+  estado?: EstadoDeCuidador;
 }
 
 // Una verificación de la cola de los revisores, con quién la pidió (solo lo que el revisor necesita ver).
@@ -74,6 +114,16 @@ export interface RepositorioCuidadores {
   ): Promise<PaginaDeCuidadores>;
 
   obtenerFiltrosDisponibles(): Promise<FiltrosDisponibles>;
+
+  // El listado del administrador: cualquier estado, por nombre. Se pide con un registro de más para saber si hay más
+  // que los mostrados.
+  listarParaAdministracion(
+    filtro: FiltroParaAdministrador,
+    limite: number,
+  ): Promise<FilaDeCuidadorParaAdministrador[]>;
+
+  // Los conteos del panel del administrador, calculados en la base (no se traen los cuidadores).
+  obtenerEstadisticas(): Promise<EstadisticasDeCuidadores>;
 
   // Los que hoy figuran como visibles pero ya no tienen los tres controles aprobados y vigentes (se les
   // venció uno). La revisión diaria los oculta.

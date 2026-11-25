@@ -60,6 +60,7 @@ import {
   ObtenerServicio,
 } from './aplicacion/casos-de-uso/consultar-servicios.js';
 import { DetectarNoShows } from './aplicacion/casos-de-uso/detectar-no-shows.js';
+import { ObtenerEstadisticasDeServicios } from './aplicacion/casos-de-uso/estadisticas-de-servicios.js';
 import { ExpirarSolicitudes } from './aplicacion/casos-de-uso/expirar-solicitudes.js';
 import { ModificarServicio } from './aplicacion/casos-de-uso/modificar-servicio.js';
 import { SolicitarServicio } from './aplicacion/casos-de-uso/solicitar-servicio.js';
@@ -350,6 +351,12 @@ const MANEJADORES_DE_PAGOS = Symbol('ManejadoresDePagos');
         new ObtenerServicio(acceso, vistas),
     },
     {
+      provide: ObtenerEstadisticasDeServicios,
+      inject: [REPOSITORIO_SERVICIOS, RELOJ],
+      useFactory: (servicios: RepositorioServicios, reloj: Reloj) =>
+        new ObtenerEstadisticasDeServicios(servicios, reloj),
+    },
+    {
       provide: ListarMisServicios,
       inject: [
         REPOSITORIO_SERVICIOS,
@@ -460,10 +467,7 @@ const MANEJADORES_DE_PAGOS = Symbol('ManejadoresDePagos');
       provide: SondeoDeNoShows,
       inject: [DetectarNoShows, CONFIGURACION],
       useFactory: (detectar: DetectarNoShows, configuracion: Configuracion) =>
-        new SondeoDeNoShows(
-          detectar,
-          configuracion.intervaloDeteccionNoShowMs,
-        ),
+        new SondeoDeNoShows(detectar, configuracion.intervaloDeteccionNoShowMs),
     },
 
     // Reacciona a los eventos de Pagos

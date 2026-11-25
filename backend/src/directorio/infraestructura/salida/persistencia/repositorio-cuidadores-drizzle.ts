@@ -11,7 +11,10 @@ import { HORARIOS_DE_FRANJA } from '../../../../compartido/dominio/jornada.js';
 import type { RangoLibre } from '../../../../compartido/dominio/rango-libre.js';
 import { esViolacionDeUnicidad } from '../../../../compartido/infraestructura/base-de-datos/errores-de-postgres.js';
 import type {
+  EstadisticasDeCuidadores,
+  FilaDeCuidadorParaAdministrador,
   FilaDeVerificacion,
+  FiltroParaAdministrador,
   FiltrosDisponibles,
   PaginaDeCuidadores,
   RepositorioCuidadores,
@@ -29,6 +32,9 @@ import type { Ubicacion } from '../../../dominio/ubicacion.js';
 import {
   CONTROLES_DE_VERIFICACION,
   ESPECIALIDADES,
+  ESTADOS_DE_CUIDADOR,
+  type Especialidad,
+  type EstadoDeCuidador,
   type EstadoDeVerificacion,
 } from '../../../dominio/valores-cerrados.js';
 import type { Verificacion } from '../../../dominio/verificacion.js';
@@ -479,6 +485,122 @@ export class RepositorioCuidadoresDrizzle implements RepositorioCuidadores {
     return {
       zonas: zonas.map((fila) => fila.zona),
       tarifaMaxima: tarifa?.maxima ?? null,
+    };
+  }
+
+  async listarParaAdministracion(
+    filtro: FiltroParaAdministrador,
+    limite: number,
+  ): Promise<FilaDeCuidadorParaAdministrador[]> {
+    const condiciones: (SQL | undefined)[] = [];
+    if (filtro.busqueda !== undefined) {
+      condiciones.push(
+        sql`(${contiene(cuidadores.nombreBusqueda, filtro.busqueda)} or ${contiene(cuidadores.zonaBusqueda, filtro.busqueda)})`,
+      );
+    }
+    if (filtro.estado !== undefined) {
+      condiciones.push(eq(cuidadores.estado, filtro.estado));
+    }
+    const filas = await this.contexto
+      .conexion()
+      .select({
+        id: cuidadores.id,
+        nombre: cuidadores.nombre,
+        fotoUrl: cuidadores.fotoUrl,
+        especialidad: cuidadores.especialidad,
+        zona: cuidadores.zona,
+        estado: cuidadores.estado,
+        visible: cuidadores.visible,
+        suma: cuidadores.sumaCalificaciones,
+        cantidadResenas: cuidadores.cantidadResenas,
+        serviciosCompletados: cuidadores.serviciosCompletados,
+      })
+      .from(cuidadores)
+      .where(and(...condiciones))
+      .orderBy(asc(cuidadores.nombreBusqueda), asc(cuidadores.id))
+      .limit(limite);
+    const resultado: FilaDeCuidadorParaAdministrador[] = [];
+    for (const fila of filas) {
+      const especialidad = ESPECIALIDADES.find((e) => e === fila.especialidad);
+      const estado = ESTADOS_DE_CUIDADOR.find((e) => e === fila.estado);
+      // Un valor fuera de lo permitido no debería existir (hay CHECK en la base): se omite en vez de inventarlo.
+      if (especialidad === undefined || estado === undefined) continue;
+      resultado.push({
+        id: fila.id as CuidadorId,
+        nombre: fila.nombre,
+        fotoUrl: fila.fotoUrl,
+        especialidad,
+        zona: fila.zona,
+        estado,
+        visible: fila.visible,
+        calificacion:
+          fila.cantidadResenas === 0
+            ? null
+            : Math.round((fila.suma / fila.cantidadResenas) * 10) / 10,
+        cantidadResenas: fila.cantidadResenas,
+        serviciosCompletados: fila.serviciosCompletados,
+      });
+    }
+    return resultado;
+  }
+
+  async obtenerEstadisticas(): Promise<EstadisticasDeCuidadores> {
+    const bd = this.contexto.conexion();
+    const filas = await bd
+      .select({
+        estado: cuidadores.estado,
+        especialidad: cuidadores.especialidad,
+        visible: cuidadores.visible,
+        cantidad: sql<number>`count(*)::int`,
+        resenas: sql<number>`coalesce(sum(${cuidadores.cantidadResenas}), 0)::int`,
+        suma: sql<number>`coalesce(sum(${cuidadores.sumaCalificaciones}), 0)::int`,
+        servicios: sql<number>`coalesce(sum(${cuidadores.serviciosCompletados}), 0)::int`,
+      })
+      .from(cuidadores)
+      .groupBy(cuidadores.estado, cuidadores.especialidad, cuidadores.visible);
+    const [pendientes] = await bd
+      .select({ cantidad: sql<number>`count(*)::int` })
+      .from(verificaciones)
+      .where(eq(verificaciones.estado, 'pendiente'));
+
+    const porEstado = Object.fromEntries(
+      ESTADOS_DE_CUIDADOR.map((e) => [e, 0]),
+    ) as Record<EstadoDeCuidador, number>;
+    const visiblesPorEspecialidad = Object.fromEntries(
+      ESPECIALIDADES.map((e) => [e, 0]),
+    ) as Record<Especialidad, number>;
+    let total = 0;
+    let visibles = 0;
+    let totalDeResenas = 0;
+    let sumaDeCalificaciones = 0;
+    let serviciosCompletados = 0;
+    for (const fila of filas) {
+      total += fila.cantidad;
+      totalDeResenas += fila.resenas;
+      sumaDeCalificaciones += fila.suma;
+      serviciosCompletados += fila.servicios;
+      const estado = ESTADOS_DE_CUIDADOR.find((e) => e === fila.estado);
+      if (estado !== undefined) porEstado[estado] += fila.cantidad;
+      const especialidad = ESPECIALIDADES.find((e) => e === fila.especialidad);
+      if (fila.visible) {
+        visibles += fila.cantidad;
+        if (especialidad !== undefined) {
+          visiblesPorEspecialidad[especialidad] += fila.cantidad;
+        }
+      }
+    }
+    return {
+      total,
+      porEstado,
+      visibles,
+      visiblesPorEspecialidad,
+      verificacionesPendientes: pendientes?.cantidad ?? 0,
+      calificacionPromedio:
+        totalDeResenas === 0
+          ? null
+          : Math.round((sumaDeCalificaciones / totalDeResenas) * 10) / 10,
+      totalDeResenas,
+      serviciosCompletados,
     };
   }
 

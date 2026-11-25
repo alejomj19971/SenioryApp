@@ -12,6 +12,7 @@ import {
 } from '../../../../compartido/infraestructura/base-de-datos/errores-de-postgres.js';
 import type {
   DuenoDeServicios,
+  EstadisticasDeServicios,
   FiltroDeServicios,
   PaginaDeServicios,
   RepositorioServicios,
@@ -22,12 +23,58 @@ import type {
   Servicio,
   TransicionDeServicio,
 } from '../../../dominio/servicio.js';
-import { ESTADOS_ACTIVOS } from '../../../dominio/valores-cerrados.js';
+import {
+  ESTADOS_ACTIVOS,
+  ESTADOS_DE_SERVICIO,
+  type EstadoDeServicio,
+} from '../../../dominio/valores-cerrados.js';
 import { servicioDeFila } from './mapeadores.js';
 import { historialDeEstados, servicios } from './reservas.esquema.js';
 
+const UN_DIA_MS = 86_400_000;
+
 export class RepositorioServiciosDrizzle implements RepositorioServicios {
   constructor(private readonly contexto: ContextoTransaccional) {}
+
+  async obtenerEstadisticas(ahora: Date): Promise<EstadisticasDeServicios> {
+    const bd = this.contexto.conexion();
+    const hace7Dias = new Date(ahora.getTime() - 7 * UN_DIA_MS).toISOString();
+    const hace30Dias = new Date(ahora.getTime() - 30 * UN_DIA_MS).toISOString();
+    const filas = await bd
+      .select({
+        estado: servicios.estado,
+        cantidad: sql<number>`count(*)::int`,
+        horas: sql<number>`coalesce(sum(${servicios.horas}), 0)::int`,
+        ultimos7: sql<number>`count(*) filter (where ${servicios.solicitadoEn} >= ${hace7Dias}::timestamptz)::int`,
+        ultimos30: sql<number>`count(*) filter (where ${servicios.solicitadoEn} >= ${hace30Dias}::timestamptz)::int`,
+      })
+      .from(servicios)
+      .groupBy(servicios.estado);
+
+    const porEstado = Object.fromEntries(
+      ESTADOS_DE_SERVICIO.map((e) => [e, 0]),
+    ) as Record<EstadoDeServicio, number>;
+    let total = 0;
+    let solicitadosUltimos7Dias = 0;
+    let solicitadosUltimos30Dias = 0;
+    let horasAtendidas = 0;
+    for (const fila of filas) {
+      total += fila.cantidad;
+      solicitadosUltimos7Dias += fila.ultimos7;
+      solicitadosUltimos30Dias += fila.ultimos30;
+      const estado = ESTADOS_DE_SERVICIO.find((e) => e === fila.estado);
+      if (estado === undefined) continue;
+      porEstado[estado] = fila.cantidad;
+      if (estado === 'finalizado') horasAtendidas = fila.horas;
+    }
+    return {
+      total,
+      porEstado,
+      solicitadosUltimos7Dias,
+      solicitadosUltimos30Dias,
+      horasAtendidas,
+    };
+  }
 
   async guardar(servicio: Servicio): Promise<void> {
     await this.contexto.ejecutar(async () => {
@@ -273,7 +320,10 @@ export class RepositorioServiciosDrizzle implements RepositorioServicios {
       .select({ id: servicios.id })
       .from(servicios)
       .where(
-        and(eq(servicios.estado, 'aceptado'), lte(servicios.fecha, hasta.aTexto())),
+        and(
+          eq(servicios.estado, 'aceptado'),
+          lte(servicios.fecha, hasta.aTexto()),
+        ),
       )
       .orderBy(servicios.fecha)
       .limit(limite);

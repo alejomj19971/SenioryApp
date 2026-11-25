@@ -9,6 +9,11 @@ import {
 } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import type { Response } from 'express';
+import { ObtenerEstadisticasDeCuidadores } from '../../../aplicacion/casos-de-uso/estadisticas-de-cuidadores.js';
+import {
+  ListarCuidadoresParaAdministrador,
+  type ListadoParaAdministrador,
+} from '../../../aplicacion/casos-de-uso/listar-cuidadores-para-administrador.js';
 import { ListarCuidadores } from '../../../aplicacion/casos-de-uso/listar-cuidadores.js';
 import type { PaginaDeVistas } from '../../../aplicacion/casos-de-uso/listar-cuidadores.js';
 import { ObtenerCuidador } from '../../../aplicacion/casos-de-uso/obtener-cuidador.js';
@@ -18,8 +23,13 @@ import {
 } from '../../../aplicacion/casos-de-uso/obtener-filtros-disponibles.js';
 import { ObtenerFotoDeCuidador } from '../../../aplicacion/casos-de-uso/obtener-foto-de-cuidador.js';
 import { ObtenerHojaDeVida } from '../../../aplicacion/casos-de-uso/obtener-hoja-de-vida.js';
+import type { EstadisticasDeCuidadores } from '../../../aplicacion/puertos/salida/repositorio-cuidadores.js';
 import type { VistaDeCuidadorConResenas } from '../../../aplicacion/vistas.js';
-import { BusquedaDeCuidadoresDto } from './dto-de-directorio.js';
+import { Roles } from '../../../../compartido/http/decoradores.js';
+import {
+  BusquedaDeCuidadoresDto,
+  ListadoParaAdministradorDto,
+} from './dto-de-directorio.js';
 
 // El directorio de cuidadores. Exige sesión (cualquier rol): el catálogo no es público. Solo muestra a los
 // cuidadores con sus tres controles vigentes; el teléfono nunca sale por aquí.
@@ -34,6 +44,10 @@ export class CuidadoresController {
     @Inject(ObtenerHojaDeVida) private readonly hojaDeVida: ObtenerHojaDeVida,
     @Inject(ObtenerFotoDeCuidador)
     private readonly fotoDeCuidador: ObtenerFotoDeCuidador,
+    @Inject(ObtenerEstadisticasDeCuidadores)
+    private readonly estadisticas: ObtenerEstadisticasDeCuidadores,
+    @Inject(ListarCuidadoresParaAdministrador)
+    private readonly listarParaAdministrador: ListarCuidadoresParaAdministrador,
   ) {}
 
   @Get()
@@ -47,6 +61,23 @@ export class CuidadoresController {
   @Get('filtros')
   opciones(): Promise<VistaDeFiltrosDisponibles> {
     return this.filtros.ejecutar();
+  }
+
+  // El resumen del panel del administrador: solo conteos. Antes que `:id`, para que «estadisticas» no se tome por un
+  // identificador.
+  @Roles('administrador')
+  @Get('estadisticas')
+  async resumen(): Promise<{ estadisticas: EstadisticasDeCuidadores }> {
+    return { estadisticas: await this.estadisticas.ejecutar() };
+  }
+
+  // Todos los cuidadores, de cualquier estado, para el panel del administrador. Antes que `:id`.
+  @Roles('administrador')
+  @Get('administracion')
+  administracion(
+    @Query() consulta: ListadoParaAdministradorDto,
+  ): Promise<ListadoParaAdministrador> {
+    return this.listarParaAdministrador.ejecutar(consulta);
   }
 
   @Get(':id')

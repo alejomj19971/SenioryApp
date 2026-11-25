@@ -37,8 +37,10 @@ import {
   ObtenerServicio,
   type Consultante,
 } from '../../../aplicacion/casos-de-uso/consultar-servicios.js';
+import { ObtenerEstadisticasDeServicios } from '../../../aplicacion/casos-de-uso/estadisticas-de-servicios.js';
 import { ModificarServicio } from '../../../aplicacion/casos-de-uso/modificar-servicio.js';
 import { SolicitarServicio } from '../../../aplicacion/casos-de-uso/solicitar-servicio.js';
+import type { EstadisticasDeServicios } from '../../../aplicacion/puertos/salida/repositorio-servicios.js';
 import type { RolConAcceso } from '../../../aplicacion/servicios/acceso-a-servicios.js';
 import { VistasDeServicios } from '../../../aplicacion/servicios/vistas-de-servicios.js';
 import type {
@@ -77,6 +79,8 @@ export class ServiciosController {
     @Inject(ObtenerServicio) private readonly obtener: ObtenerServicio,
     @Inject(ListarMisServicios) private readonly listar: ListarMisServicios,
     @Inject(VistasDeServicios) private readonly vistas: VistasDeServicios,
+    @Inject(ObtenerEstadisticasDeServicios)
+    private readonly estadisticas: ObtenerEstadisticasDeServicios,
   ) {}
 
   // 201 cuando se crea; 200 cuando es el reintento de una solicitud ya hecha con la misma `Idempotency-Key`.
@@ -128,6 +132,14 @@ export class ServiciosController {
     @Query() consulta: ListadoDeServiciosDto,
   ): Promise<PaginaDeVistasDeServicios> {
     return this.listar.ejecutar(consultanteDe(usuario), consulta);
+  }
+
+  // El resumen del panel del administrador: solo conteos. Antes que `:id`, para que «estadisticas» no se tome por un
+  // identificador.
+  @Roles('administrador')
+  @Get('estadisticas')
+  async resumen(): Promise<{ estadisticas: EstadisticasDeServicios }> {
+    return { estadisticas: await this.estadisticas.ejecutar() };
   }
 
   @Roles('familiar', 'cuidador')

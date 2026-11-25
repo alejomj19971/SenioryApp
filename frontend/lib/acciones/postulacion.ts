@@ -128,6 +128,8 @@ export async function decidirControlAccion(verificacionId: string, _previo: Esta
   } else {
     return { mensaje: "Elige aprobar o rechazar." };
   }
+  // La cola, y también el listado de inicio: aprobar o rechazar cambia el estado y la visibilidad del cuidador.
+  revalidatePath("/admin/revision");
   revalidatePath("/admin");
   return { listo: true };
 }
@@ -137,6 +139,6 @@ export async function decidirHojaDeVidaAccion(documentoId: string, decision: "ap
   if (!FORMATO_DE_UUID.test(documentoId) || (decision !== "aprobar" && decision !== "rechazar")) return { mensaje: "No encontramos esa hoja de vida." };
   const resultado = await decidirHojaDeVida(documentoId, decision);
   if (!resultado.ok) return { mensaje: mensajeDeErrorDePostulacion(resultado.error) };
-  revalidatePath("/admin");
+  revalidatePath("/admin/revision");
   return { listo: true };
 }

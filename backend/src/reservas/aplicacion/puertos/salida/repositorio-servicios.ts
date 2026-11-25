@@ -19,7 +19,21 @@ export type DuenoDeServicios =
   | { tipo: 'familiar'; familiarId: string }
   | { tipo: 'cuidador'; cuidadorId: string };
 
+// Conteos para el panel del administrador: ningún dato de ninguna persona.
+export interface EstadisticasDeServicios {
+  total: number;
+  porEstado: Record<EstadoDeServicio, number>;
+  // Cuántos se pidieron en los últimos 7 y 30 días.
+  solicitadosUltimos7Dias: number;
+  solicitadosUltimos30Dias: number;
+  // Suma de las horas de los servicios ya finalizados.
+  horasAtendidas: number;
+}
+
 export interface RepositorioServicios {
+  // Los conteos del panel del administrador, calculados en la base (no se traen los servicios).
+  obtenerEstadisticas(ahora: Date): Promise<EstadisticasDeServicios>;
+
   // Guarda un servicio nuevo y su historial. Lanza ConflictoDeEstado con `servicio.franja_ocupada` si el
   // cuidador ya tiene un servicio activo en esa fecha y franja, o `servicio.clave_repetida` si esa familia ya
   // usó esa clave de idempotencia. Tras cualquiera de los dos la transacción en curso queda abortada.
@@ -54,7 +68,10 @@ export interface RepositorioServicios {
 
   // Candidatos «aceptado» cuya fecha ya llegó (para la tarea de no-show). Es un filtro amplio por fecha
   // civil: el filtro fino por franja (que puede cruzar la medianoche) lo hace el dominio.
-  listarAceptadosHasta(hasta: FechaCivil, limite: number): Promise<ServicioId[]>;
+  listarAceptadosHasta(
+    hasta: FechaCivil,
+    limite: number,
+  ): Promise<ServicioId[]>;
 
   // ¿Hay un servicio vivo (solicitado, aceptado o en curso) entre esta familia y este cuidador?
   existeActivoEntre(familiarId: string, cuidadorId: string): Promise<boolean>;

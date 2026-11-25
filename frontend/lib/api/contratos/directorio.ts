@@ -58,3 +58,41 @@ export interface FiltrosDisponiblesDelBackend {
   especialidades: string[];
   jornadas: string[];
 }
+
+// `GET /cuidadores/estadisticas` (solo administradores): solo conteos, ningún dato de ninguna persona.
+export interface RespuestaDeEstadisticasDeCuidadores {
+  estadisticas: {
+    total: number;
+    porEstado: Record<"borrador" | "en_revision" | "activo" | "suspendido", number>;
+    // Los que hoy aparecen en el directorio.
+    visibles: number;
+    visiblesPorEspecialidad: Record<"auxiliar" | "enfermeria" | "fisioterapia" | "acompanamiento", number>;
+    verificacionesPendientes: number;
+    // Null mientras no haya ninguna reseña.
+    calificacionPromedio: number | null;
+    totalDeResenas: number;
+    serviciosCompletados: number;
+  };
+}
+
+// `GET /cuidadores/administracion` (solo administradores): todos los cuidadores, de cualquier estado. Sin teléfono ni
+// documentos.
+export interface CuidadorParaAdministradorDelBackend {
+  id: string;
+  nombre: string;
+  fotoUrl: string | null;
+  especialidad: "auxiliar" | "enfermeria" | "fisioterapia" | "acompanamiento";
+  zona: string;
+  estado: "borrador" | "en_revision" | "activo" | "suspendido";
+  // Si hoy aparece en el directorio de las familias.
+  visible: boolean;
+  // Null mientras no tenga reseñas.
+  calificacion: number | null;
+  cantidadResenas: number;
+  serviciosCompletados: number;
+}
+export interface RespuestaDeListadoParaAdministrador {
+  cuidadores: CuidadorParaAdministradorDelBackend[];
+  // Hay más que los mostrados: conviene afinar la búsqueda.
+  hayMas: boolean;
+}

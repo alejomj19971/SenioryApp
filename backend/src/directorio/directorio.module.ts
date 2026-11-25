@@ -53,6 +53,8 @@ import {
   RevisarHojaDeVida,
   RevisarVerificacion,
 } from './aplicacion/casos-de-uso/revision.js';
+import { ListarCuidadoresParaAdministrador } from './aplicacion/casos-de-uso/listar-cuidadores-para-administrador.js';
+import { ObtenerEstadisticasDeCuidadores } from './aplicacion/casos-de-uso/estadisticas-de-cuidadores.js';
 import { ObtenerCuidador } from './aplicacion/casos-de-uso/obtener-cuidador.js';
 import { ObtenerFiltrosDisponibles } from './aplicacion/casos-de-uso/obtener-filtros-disponibles.js';
 import { ObtenerFotoDeCuidador } from './aplicacion/casos-de-uso/obtener-foto-de-cuidador.js';
@@ -185,6 +187,18 @@ const SONDEO_DE_VIGENCIAS = Symbol('SondeoDeVigencias');
       inject: [REPOSITORIO_CUIDADORES],
       useFactory: (cuidadores: RepositorioCuidadores) =>
         new ListarCuidadores(cuidadores),
+    },
+    {
+      provide: ListarCuidadoresParaAdministrador,
+      inject: [REPOSITORIO_CUIDADORES],
+      useFactory: (cuidadores: RepositorioCuidadores) =>
+        new ListarCuidadoresParaAdministrador(cuidadores),
+    },
+    {
+      provide: ObtenerEstadisticasDeCuidadores,
+      inject: [REPOSITORIO_CUIDADORES],
+      useFactory: (cuidadores: RepositorioCuidadores) =>
+        new ObtenerEstadisticasDeCuidadores(cuidadores),
     },
     {
       provide: ObtenerFiltrosDisponibles,

@@ -20,6 +20,26 @@ import {
 // especialidad es válida, cuánto es una tarifa razonable) las aplica el dominio. Los parámetros que no se
 // declaran aquí se rechazan (lista blanca del ValidationPipe).
 
+// El listado del panel del administrador: solo la forma; el estado lo valida el caso de uso.
+export class ListadoParaAdministradorDto {
+  @IsOptional()
+  @IsString({ message: 'La búsqueda no es válida' })
+  @Length(0, 200, { message: 'La búsqueda es demasiado larga' })
+  busqueda?: string;
+
+  @IsOptional()
+  @IsString({ message: 'El estado no es válido' })
+  @Length(0, 30, { message: 'El estado no es válido' })
+  estado?: string;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt({ message: 'El límite debe ser un número entero' })
+  @Min(1, { message: 'El límite debe estar entre 1 y 200' })
+  @Max(200, { message: 'El límite debe estar entre 1 y 200' })
+  limite?: number;
+}
+
 export class BusquedaDeCuidadoresDto {
   @IsOptional()
   @IsString({ message: 'La búsqueda no es válida' })

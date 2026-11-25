@@ -127,6 +127,10 @@ test("un cuidador se postula, un revisor lo aprueba (y rechaza lo que no se lee)
   // ── Un revisor mira la cola ──────────────────────────────────────────────────────────────────────────────────────
   const { contexto, pagina: admin } = await otraPersona(browser, CUENTA_DEL_ADMIN, /\/admin$/);
   try {
+    // Al entrar, el administrador ve primero a los cuidadores; la cola está en la pestaña «Verificaciones».
+    await expect(admin.getByRole("heading", { name: "Panel del administrador" })).toBeVisible();
+    await admin.getByRole("link", { name: "Verificaciones" }).click();
+    await expect(admin).toHaveURL(/\/admin\/revision$/);
     await expect(admin.getByRole("heading", { name: "Panel de revisión" })).toBeVisible();
     await expect(tarjeta(admin, nombre, "Antecedentes")).toBeVisible();
     await expect(tarjeta(admin, nombre, "Títulos")).toBeVisible();
@@ -233,7 +237,7 @@ test("el panel de revisión es solo de administradores, y cada cuenta llega a su
   // Un administrador sí, y sin sesión se pide ingresar
   const { contexto, pagina } = await otraPersona(browser, CUENTA_DEL_ADMIN, /\/admin$/);
   try {
-    await pagina.goto("/admin?estado=otra");
+    await pagina.goto("/admin/revision?estado=otra");
     await expect(pagina.getByRole("heading", { name: /Verificaciones — por revisar/ })).toBeVisible();
     await pagina.goto("/app");
     await expect(pagina).toHaveURL(/\/admin$/);

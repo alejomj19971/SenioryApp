@@ -16,7 +16,7 @@ export default async function SeguridadPage() {
     <div className="flex flex-col gap-6">
       <Link href="/admin" className="inline-flex w-fit items-center gap-1 text-sm font-medium text-muted-foreground hover:text-foreground">
         <ArrowLeft className="size-4" aria-hidden="true" />
-        Panel de revisión
+        Panel del administrador
       </Link>
 
       <div>
