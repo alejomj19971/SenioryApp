@@ -32,6 +32,16 @@ Cuánto cuesta un servicio, cómo se reparte, cómo se cobra, la bolsa de horas 
 - `GET /liquidaciones` (cuidadores): lo que se le debe y lo que ya se le pagó.
 - **Tarea programada de dispersión:** le paga al cuidador de a una liquidación, fuera de cualquier transacción abierta por otra. Sin dispersor, **no hace nada** y las liquidaciones quedan pendientes, a la vista.
 
+## Pagos de prueba que se aprueban solos
+
+Para que personas de prueba (validación de la aplicación) recorran el ciclo completo sin dinero ni tarjetas: con `PASARELA_DE_PAGOS=simulada` y `PASARELA_SIMULADA_APRUEBA_SOLA=true`, al pedir el enlace de pago (`POST /pagos/:id/enlace`) el cobro se aprueba **solo** a los 1,5 s. El «enlace» lleva a `<frontend>/app/pagos/retorno?pago=<id>`, que espera la aprobación y vuelve al servicio.
+
+- **No es un atajo:** la propia API se entrega a sí misma, por HTTP, el aviso **firmado** «pago aprobado» (`POST /pagos/webhook/simulada`), exactamente como lo haría una pasarela real: misma firma, mismas validaciones (monto, un solo procesamiento por `idEvento`).
+- **Nunca en producción:** la configuración lo rechaza al arrancar (y la pasarela simulada tampoco se admite allí).
+- **Un aviso falso no aprueba nada:** sin la firma correcta, 401.
+- Necesita que la API pueda llamarse a sí misma en `URL_PUBLICA_DE_LA_API` (por omisión `http://localhost:<PUERTO>/api/v1`, que sirve dentro del contenedor).
+- En el frontend, `ENTORNO_DE_PRUEBA=true` muestra arriba el aviso «Entorno de prueba: aquí no se cobra dinero real».
+
 ## Cómo se calcula
 
 ```text

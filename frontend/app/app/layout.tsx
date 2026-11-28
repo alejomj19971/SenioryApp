@@ -3,6 +3,7 @@ import { BotonFlotanteDeAyuda } from "@/components/shell/boton-flotante-de-ayuda
 import { BottomNav } from "@/components/shell/bottom-nav";
 import { BarraAccesibilidad } from "@/components/accesibilidad/barra-accesibilidad";
 import { AvisoDeCorreo } from "@/components/cuenta/aviso-de-correo";
+import { AvisoDeEntornoDePrueba } from "@/components/shell/aviso-de-entorno-de-prueba";
 import { hayAvisosNuevos as hayAvisosNuevosParaMi } from "@/lib/services/notificaciones";
 import { exigirFamiliaLista } from "@/lib/services/paciente";
 import { obtenerResumen } from "@/lib/services/teleasistencia";
@@ -16,6 +17,7 @@ export default async function AppShellLayout({ children }: LayoutProps<"/app">) 
 
   return (
       <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col bg-background sm:border-x sm:border-border">
+        <AvisoDeEntornoDePrueba />
         <AppHeader hayAvisosNuevos={hayAvisosNuevos} />
         <BarraAccesibilidad />
         <AvisoDeCorreo />

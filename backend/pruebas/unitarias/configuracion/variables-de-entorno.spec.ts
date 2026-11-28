@@ -69,6 +69,7 @@ describe('validarVariables', () => {
         toleranciaDeTomaMinutos: 60,
         intervaloOmisionTomasMs: 60000,
         pasarelaDePagos: 'deshabilitada',
+        pasarelaSimuladaApruebaSola: false,
         secretoDePasarela: null,
         mercadopagoAccessToken: null,
         mercadopagoSecretoDeFirma: null,
@@ -326,6 +327,62 @@ describe('validarVariables', () => {
           }),
         ),
       ).toEqual([]);
+    });
+
+    describe('PASARELA_SIMULADA_APRUEBA_SOLA (aprobación automática de pagos de prueba)', () => {
+      it('por omisión está apagada', () => {
+        expect(problemasDe(entornoBase())).toEqual([]);
+      });
+
+      it('con la pasarela simulada, en desarrollo o en staging, se admite', () => {
+        expect(
+          problemasDe(
+            entornoDeProduccion({
+              NODE_ENV: 'staging',
+              PASARELA_DE_PAGOS: 'simulada',
+              SECRETO_DE_PASARELA: SECRETO_VALIDO,
+              DISPERSOR_DE_PAGOS: 'simulado',
+              PASARELA_SIMULADA_APRUEBA_SOLA: 'true',
+            }),
+          ),
+        ).toEqual([]);
+      });
+
+      it('en producción NUNCA se admite: todo pago se aprobaría sin cobrar nada', () => {
+        expect(
+          problemasDe(
+            entornoDeProduccion({
+              PASARELA_DE_PAGOS: 'mercadopago',
+              MERCADOPAGO_ACCESS_TOKEN: 'token',
+              MERCADOPAGO_SECRETO_DE_FIRMA: 'firma',
+              PASARELA_SIMULADA_APRUEBA_SOLA: 'true',
+            }),
+          ),
+        ).toContain(
+          'En producción, PASARELA_SIMULADA_APRUEBA_SOLA no puede ser true (todo pago se aprobaría sin cobrar nada)',
+        );
+      });
+
+      it('con otra pasarela (por ejemplo mercadopago) no se admite', () => {
+        expect(
+          problemasDe(
+            entornoBase({
+              PASARELA_DE_PAGOS: 'mercadopago',
+              MERCADOPAGO_ACCESS_TOKEN: 'token',
+              MERCADOPAGO_SECRETO_DE_FIRMA: 'firma',
+              PASARELA_SIMULADA_APRUEBA_SOLA: 'true',
+            }),
+          ),
+        ).toEqual([
+          'PASARELA_SIMULADA_APRUEBA_SOLA solo se admite con PASARELA_DE_PAGOS=simulada',
+        ]);
+      });
+
+      it('solo acepta true o false', () => {
+        expect(
+          problemasDe(entornoBase({ PASARELA_SIMULADA_APRUEBA_SOLA: 'si' })),
+        ).toEqual(['PASARELA_SIMULADA_APRUEBA_SOLA debe ser true o false']);
+      });
     });
 
     it('la pasarela simulada exige un secreto de 32 caracteres o más', () => {
@@ -787,7 +844,9 @@ describe('validarVariables', () => {
 
     it('rechaza un canal de correo de avisos desconocido', () => {
       expect(
-        problemasDe(entornoBase({ CANAL_DE_CORREO_PARA_AVISOS: 'paloma' })).join(),
+        problemasDe(
+          entornoBase({ CANAL_DE_CORREO_PARA_AVISOS: 'paloma' }),
+        ).join(),
       ).toContain('CANAL_DE_CORREO_PARA_AVISOS');
     });
 

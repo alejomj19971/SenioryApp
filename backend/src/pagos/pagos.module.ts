@@ -211,6 +211,9 @@ const SONDEO_DE_LIQUIDACIONES = Symbol('SondeoDeLiquidaciones');
         return new PasarelaSimulada(
           configuracion.secretoDePasarela,
           configuracion.urlPublicaDeLaApi,
+          configuracion.pasarelaSimuladaApruebaSola
+            ? { urlDelFrontend: configuracion.origenesPermitidos[0] ?? '' }
+            : undefined,
         );
       },
     },

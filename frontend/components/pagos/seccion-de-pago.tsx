@@ -41,6 +41,7 @@ export function SeccionDePago({ servicio, pago }: { servicio: Servicio; pago: Pa
             El cuidador ya aceptó.
             {pago.venceEn !== null && <> Tienes hasta las <strong>{horaEnColombia(pago.venceEn)}</strong> para pagar; si no, el servicio se cancela.</>}
           </p>
+          <p className="text-sm text-muted-foreground">Tu dinero queda reservado hasta que termine el servicio.</p>
           <BotonPagar pagoId={pago.id} />
         </section>
       );
@@ -49,7 +50,7 @@ export function SeccionDePago({ servicio, pago }: { servicio: Servicio; pago: Pa
         <section aria-label="Pago" className="flex items-start gap-2 rounded-2xl border border-success bg-success/5 p-4">
           <CircleCheck className="mt-0.5 size-5 shrink-0 text-success" aria-hidden="true" />
           <p className="text-base text-foreground">
-            <strong>Pago recibido.</strong> {pago.medio === "bolsa" ? "Se descontó de tu bolsa de horas." : `Pagaste ${formatearCOP(pago.montoTotal)}.`}
+            <strong>Pago recibido.</strong> {pago.medio === "bolsa" ? "Se descontó de tu bolsa de horas." : `Pagaste ${formatearCOP(pago.montoTotal)}.`} Queda reservado y se le entrega al cuidador cuando termine el servicio.
           </p>
         </section>
       );

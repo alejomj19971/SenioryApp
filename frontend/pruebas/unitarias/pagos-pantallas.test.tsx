@@ -63,6 +63,12 @@ describe("SeccionDePago (qué ve la familia de su pago)", () => {
     expect(screen.getByRole("button", { name: "Pagar ahora" })).toBeInTheDocument();
   });
 
+  it("pendiente: tranquiliza a la familia, dice que el dinero queda reservado hasta que termine el servicio", () => {
+    render(<SeccionDePago servicio={servicio()} pago={pago()} />);
+
+    expect(screen.getByText("Tu dinero queda reservado hasta que termine el servicio.")).toBeInTheDocument();
+  });
+
   it("aprobado con pasarela y con bolsa se dicen distinto, y no ofrecen pagar", () => {
     const { rerender } = render(<SeccionDePago servicio={servicio()} pago={pago({ estado: "aprobado" })} />);
     expect(screen.getByText(/Pago recibido/)).toBeInTheDocument();
@@ -71,6 +77,14 @@ describe("SeccionDePago (qué ve la familia de su pago)", () => {
 
     rerender(<SeccionDePago servicio={servicio({ medioDePago: "bolsa" })} pago={pago({ estado: "aprobado", medio: "bolsa" })} />);
     expect(screen.getByText(/Se descontó de tu bolsa/)).toBeInTheDocument();
+  });
+
+  it("aprobado: dice que queda reservado y que el cuidador lo recibe al terminar (con pasarela y con bolsa)", () => {
+    const { rerender } = render(<SeccionDePago servicio={servicio()} pago={pago({ estado: "aprobado" })} />);
+    expect(screen.getByText(/se le entrega al cuidador cuando termine el servicio/)).toBeInTheDocument();
+
+    rerender(<SeccionDePago servicio={servicio({ medioDePago: "bolsa" })} pago={pago({ estado: "aprobado", medio: "bolsa" })} />);
+    expect(screen.getByText(/se le entrega al cuidador cuando termine el servicio/)).toBeInTheDocument();
   });
 
   it("reembolsado: dice que se devolvió y a dónde", () => {

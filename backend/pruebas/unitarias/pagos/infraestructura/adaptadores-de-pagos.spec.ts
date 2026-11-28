@@ -20,6 +20,123 @@ const PAGO = '0198aaaa-0000-7000-8000-0000000000b1';
 const pasarela = () =>
   new PasarelaSimulada(SECRETO, 'http://localhost:3001/api/v1');
 
+describe('PasarelaSimulada con aprobación automática', () => {
+  const pedido = {
+    referencia: PAGO,
+    monto: 43_200,
+    descripcion: 'Seniory: servicio de cuidado',
+    venceEn: new Date('2030-06-10T15:30:00.000Z'),
+  };
+  const llamadas: { url: string; init: RequestInit }[] = [];
+  const clienteQueResponde = (estado = 200) =>
+    ((url: string, init: RequestInit) => {
+      llamadas.push({ url, init });
+      return Promise.resolve(new Response(null, { status: estado }));
+    }) as unknown as typeof fetch;
+  const automatica = (estado = 200) =>
+    new PasarelaSimulada(SECRETO, 'http://localhost:3001/api/v1', {
+      urlDelFrontend: 'https://seniory.app',
+      cliente: clienteQueResponde(estado),
+      esperaMs: 1_500,
+    });
+
+  beforeEach(() => {
+    llamadas.length = 0;
+    vi.useFakeTimers();
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+  });
+
+  it('el «enlace de pago» lleva a la pantalla de retorno de Seniory, no a un proveedor', async () => {
+    const cobro = await automatica().crearCobro(pedido);
+
+    expect(cobro).toEqual({
+      referenciaProveedor: `sim_${PAGO}`,
+      urlDePago: `https://seniory.app/app/pagos/retorno?pago=${PAGO}`,
+    });
+  });
+
+  it('a los pocos segundos le entrega a la propia API un aviso FIRMADO de pago aprobado, como una pasarela real', async () => {
+    const simulada = automatica();
+    await simulada.crearCobro(pedido);
+    expect(llamadas).toHaveLength(0);
+
+    await vi.advanceTimersByTimeAsync(1_500);
+
+    expect(llamadas).toHaveLength(1);
+    const { url, init } = llamadas[0] as { url: string; init: RequestInit };
+    expect(url).toBe('http://localhost:3001/api/v1/pagos/webhook/simulada');
+    expect(init.method).toBe('POST');
+    const cuerpo = init.body as string;
+    expect(JSON.parse(cuerpo)).toEqual({
+      idEvento: `auto_${PAGO}`,
+      tipo: 'pago.aprobado',
+      referencia: PAGO,
+      monto: 43_200,
+    });
+    // La firma es válida para la pasarela: entra por el mismo camino que un aviso real.
+    const encabezados = init.headers as Record<string, string>;
+    expect(
+      simulada.verificarFirma(Buffer.from(cuerpo), {
+        [ENCABEZADO_DE_FIRMA_SIMULADA]:
+          encabezados[ENCABEZADO_DE_FIRMA_SIMULADA],
+      }),
+    ).toBe(true);
+    expect(await simulada.interpretarAviso(JSON.parse(cuerpo))).toMatchObject({
+      resultado: 'aprobado',
+      referencia: PAGO,
+      monto: 43_200,
+    });
+  });
+
+  it('el cobro queda «aprobado» en la pasarela (para quien le pregunte antes de vencerlo)', async () => {
+    const simulada = automatica();
+    await simulada.crearCobro(pedido);
+
+    await vi.advanceTimersByTimeAsync(1_500);
+
+    expect(await simulada.consultarEstado(`sim_${PAGO}`)).toBe('aprobado');
+  });
+
+  it('pedir el enlace varias veces seguidas no manda varios avisos mientras el primero va en camino', async () => {
+    const simulada = automatica();
+    await simulada.crearCobro(pedido);
+    await simulada.crearCobro(pedido);
+    await simulada.crearCobro(pedido);
+
+    await vi.advanceTimersByTimeAsync(5_000);
+
+    expect(llamadas).toHaveLength(1);
+  });
+
+  it('si la API rechaza el aviso (por ejemplo, está arrancando), el cobro sigue pendiente y se puede volver a pedir', async () => {
+    const simulada = automatica(503);
+    await simulada.crearCobro(pedido);
+    await vi.advanceTimersByTimeAsync(1_500);
+    expect(await simulada.consultarEstado(`sim_${PAGO}`)).toBe('pendiente');
+
+    await simulada.crearCobro(pedido);
+    await vi.advanceTimersByTimeAsync(1_500);
+
+    expect(llamadas).toHaveLength(2);
+  });
+
+  it('sin la opción, NO aprueba nada: es la pasarela de siempre', async () => {
+    const simulada = new PasarelaSimulada(
+      SECRETO,
+      'http://localhost:3001/api/v1',
+    );
+    const cobro = await simulada.crearCobro(pedido);
+    await vi.advanceTimersByTimeAsync(10_000);
+
+    expect(cobro.urlDePago).toBe(
+      `http://localhost:3001/api/v1/pagos/simulada/${PAGO}`,
+    );
+    expect(await simulada.consultarEstado(`sim_${PAGO}`)).toBe('pendiente');
+  });
+});
+
 describe('PasarelaSimulada', () => {
   it('es la pasarela «simulada» y está habilitada', () => {
     expect(pasarela()).toMatchObject({ nombre: 'simulada', habilitada: true });
@@ -184,7 +301,9 @@ describe('PasarelaSimulada', () => {
       ['pago.aprobado', 'aprobado'],
       ['pago.cualquier-otra-cosa', 'otro'],
     ])('el tipo «%s» es un resultado «%s»', async (tipo, resultado) => {
-      expect(await pasarela().interpretarAviso({ ...base, tipo })).toMatchObject({
+      expect(
+        await pasarela().interpretarAviso({ ...base, tipo }),
+      ).toMatchObject({
         resultado,
       });
     });

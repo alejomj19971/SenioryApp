@@ -213,6 +213,15 @@ export class VariablesDeEntorno {
   })
   PASARELA_DE_PAGOS: PasarelaConfigurada = 'deshabilitada';
 
+  // Con la pasarela simulada, cada cobro se aprueba SOLO a los pocos segundos de pedirse el enlace de pago: la familia pulsa
+  // «Pagar ahora» y queda pagado, sin pasar por ningún proveedor. Es para que personas de prueba recorran el ciclo completo
+  // (contratar, pagar, prestar el servicio) sin dinero ni tarjetas. El aviso entra por el MISMO camino firmado que usaría una
+  // pasarela real, no por un atajo. Solo con PASARELA_DE_PAGOS=simulada y NUNCA en producción.
+  @IsIn(['true', 'false'], {
+    message: 'PASARELA_SIMULADA_APRUEBA_SOLA debe ser true o false',
+  })
+  PASARELA_SIMULADA_APRUEBA_SOLA: string = 'false';
+
   // Firma los avisos de la pasarela simulada (32 caracteres o más; obligatorio con la pasarela simulada).
   @IsOptional()
   @IsString()
@@ -411,6 +420,8 @@ export interface Configuracion {
   intervaloOmisionTomasMs: number;
   canalesDeNotificacionSimulados: boolean;
   pasarelaDePagos: PasarelaConfigurada;
+  // Los cobros de la pasarela simulada se aprueban solos (ver PASARELA_SIMULADA_APRUEBA_SOLA). Solo fuera de producción.
+  pasarelaSimuladaApruebaSola: boolean;
   secretoDePasarela: string | null;
   mercadopagoAccessToken: string | null;
   mercadopagoSecretoDeFirma: string | null;
@@ -561,6 +572,14 @@ function reglasAdicionales(variables: VariablesDeEntorno): string[] {
         'CLOUDINARY_API_SECRET es obligatorio con el almacén cloudinary',
       );
     }
+  }
+  if (
+    variables.PASARELA_SIMULADA_APRUEBA_SOLA === 'true' &&
+    variables.PASARELA_DE_PAGOS !== 'simulada'
+  ) {
+    problemas.push(
+      'PASARELA_SIMULADA_APRUEBA_SOLA solo se admite con PASARELA_DE_PAGOS=simulada',
+    );
   }
   if (variables.PASARELA_DE_PAGOS === 'simulada') {
     if (variables.SECRETO_DE_PASARELA === undefined) {
@@ -713,6 +732,11 @@ function reglasAdicionales(variables: VariablesDeEntorno): string[] {
         'En producción, PASARELA_DE_PAGOS no puede ser simulada (un pago de mentira se daría por cobrado)',
       );
     }
+    if (variables.PASARELA_SIMULADA_APRUEBA_SOLA === 'true') {
+      problemas.push(
+        'En producción, PASARELA_SIMULADA_APRUEBA_SOLA no puede ser true (todo pago se aprobaría sin cobrar nada)',
+      );
+    }
     if (variables.DISPERSOR_DE_PAGOS === 'simulado') {
       problemas.push(
         'En producción, DISPERSOR_DE_PAGOS no puede ser simulado (un pago al cuidador de mentira se daría por hecho)',
@@ -793,6 +817,8 @@ export function configuracionDesdeVariables(
     canalesDeNotificacionSimulados:
       variables.CANALES_DE_NOTIFICACION_SIMULADOS === 'true',
     pasarelaDePagos: variables.PASARELA_DE_PAGOS,
+    pasarelaSimuladaApruebaSola:
+      variables.PASARELA_SIMULADA_APRUEBA_SOLA === 'true',
     secretoDePasarela: variables.SECRETO_DE_PASARELA ?? null,
     mercadopagoAccessToken: variables.MERCADOPAGO_ACCESS_TOKEN ?? null,
     mercadopagoSecretoDeFirma: variables.MERCADOPAGO_SECRETO_DE_FIRMA ?? null,

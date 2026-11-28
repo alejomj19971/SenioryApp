@@ -25,7 +25,7 @@ export function FormularioReglas() {
         <li className="flex gap-3">
           <CreditCard className="mt-0.5 size-6 shrink-0 text-accent" aria-hidden="true" />
           <span>
-            <strong>Cuándo se cobra:</strong> al contratar, antes de que empiece el servicio.
+            <strong>Cuándo se paga:</strong> cuando el cuidador acepta, antes de que empiece. Tu dinero queda reservado: el cuidador lo recibe al terminar el servicio, y si no se presta, te lo devolvemos.
           </span>
         </li>
         <li className="flex gap-3">

@@ -1,4 +1,5 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
+import { Logger } from '@nestjs/common';
 import { ErrorDeValidacion } from '../../../../compartido/dominio/errores.js';
 import type {
   AvisoDeLaPasarela,
@@ -10,6 +11,19 @@ import type {
 } from '../../../aplicacion/puertos/salida/pasarela-de-pagos.js';
 
 export const ENCABEZADO_DE_FIRMA_SIMULADA = 'x-seniory-firma';
+
+type ClienteHttp = typeof fetch;
+
+// Cuánto espera la aprobación automática antes de entregar el aviso: da tiempo a que el enlace de pago termine de guardarse
+// (el aviso busca el pago por su referencia) y a que la familia vea «estamos verificando tu pago».
+export const ESPERA_DE_LA_APROBACION_AUTOMATICA_MS = 1_500;
+
+export interface OpcionesDeAprobacionAutomatica {
+  // Dirección del frontend: el «enlace de pago» lleva ahí, a una pantalla que espera la aprobación y vuelve al servicio.
+  urlDelFrontend: string;
+  cliente?: ClienteHttp;
+  esperaMs?: number;
+}
 
 // Firma el cuerpo de un aviso como lo hace la pasarela simulada. La usan las pruebas para fabricar avisos; una
 // pasarela real firma con su propio secreto y su propio esquema.
@@ -29,9 +43,17 @@ export class PasarelaSimulada implements PasarelaDePagos {
   private readonly estados = new Map<string, EstadoEnLaPasarela>();
   private readonly reembolsos = new Map<string, PedidoDeReembolso>();
 
+  private readonly registro = new Logger('PasarelaSimulada');
+  // Cobros cuya aprobación ya está en camino: pedir otra vez el enlace no manda un segundo aviso mientras tanto.
+  private readonly enCamino = new Set<string>();
+
+  // Con `aprobacionAutomatica`, cada cobro se aprueba SOLO a los pocos segundos: se le entrega a la propia API un aviso firmado
+  // «pago aprobado», exactamente como lo haría una pasarela real (misma ruta, misma firma, mismas validaciones). Es para que
+  // personas de prueba recorran el ciclo completo sin dinero ni tarjetas. La configuración lo prohíbe en producción.
   constructor(
     private readonly secreto: string,
     private readonly urlPublica: string,
+    private readonly aprobacionAutomatica?: OpcionesDeAprobacionAutomatica,
   ) {}
 
   crearCobro(pedido: PedidoDeCobro): Promise<CobroCreado> {
@@ -39,10 +61,77 @@ export class PasarelaSimulada implements PasarelaDePagos {
     if (!this.estados.has(referenciaProveedor)) {
       this.estados.set(referenciaProveedor, 'pendiente');
     }
+    if (this.aprobacionAutomatica === undefined) {
+      return Promise.resolve({
+        referenciaProveedor,
+        urlDePago: `${this.urlPublica}/pagos/simulada/${pedido.referencia}`,
+      });
+    }
+    this.programarAprobacion(pedido, referenciaProveedor);
     return Promise.resolve({
       referenciaProveedor,
-      urlDePago: `${this.urlPublica}/pagos/simulada/${pedido.referencia}`,
+      urlDePago: `${this.aprobacionAutomatica.urlDelFrontend}/app/pagos/retorno?pago=${encodeURIComponent(pedido.referencia)}`,
     });
+  }
+
+  private programarAprobacion(
+    pedido: PedidoDeCobro,
+    referenciaProveedor: string,
+  ): void {
+    if (this.aprobacionAutomatica === undefined) return;
+    if (this.enCamino.has(pedido.referencia)) return;
+    this.enCamino.add(pedido.referencia);
+    const espera =
+      this.aprobacionAutomatica.esperaMs ??
+      ESPERA_DE_LA_APROBACION_AUTOMATICA_MS;
+    const temporizador = setTimeout(() => {
+      void this.entregarAprobacion(pedido, referenciaProveedor).finally(() => {
+        this.enCamino.delete(pedido.referencia);
+      });
+    }, espera);
+    // Un cobro por aprobar no debe impedir que el proceso termine.
+    temporizador.unref();
+  }
+
+  private async entregarAprobacion(
+    pedido: PedidoDeCobro,
+    referenciaProveedor: string,
+  ): Promise<void> {
+    const cliente = this.aprobacionAutomatica?.cliente ?? fetch;
+    const cuerpo = JSON.stringify({
+      // El mismo aviso entregado dos veces se procesa una sola vez (ver ProcesarAvisoDePasarela).
+      idEvento: `auto_${pedido.referencia}`,
+      tipo: 'pago.aprobado',
+      referencia: pedido.referencia,
+      monto: pedido.monto,
+    });
+    try {
+      const respuesta = await cliente(
+        `${this.urlPublica}/pagos/webhook/${this.nombre}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            [ENCABEZADO_DE_FIRMA_SIMULADA]: firmarAvisoSimulado(
+              this.secreto,
+              Buffer.from(cuerpo),
+            ),
+          },
+          body: cuerpo,
+        },
+      );
+      if (!respuesta.ok) {
+        this.registro.warn(
+          `La aprobación automática del pago ${pedido.referencia} fue rechazada (${respuesta.status})`,
+        );
+        return;
+      }
+      this.estados.set(referenciaProveedor, 'aprobado');
+    } catch (error) {
+      this.registro.warn(
+        `No se pudo entregar la aprobación automática del pago ${pedido.referencia}: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
   }
 
   consultarEstado(referenciaProveedor: string): Promise<EstadoEnLaPasarela> {

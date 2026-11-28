@@ -2,6 +2,7 @@ import Link from "next/link";
 import { BarraAccesibilidad } from "@/components/accesibilidad/barra-accesibilidad";
 import { Campana } from "@/components/avisos/campana";
 import { AvisoDeCorreo } from "@/components/cuenta/aviso-de-correo";
+import { AvisoDeEntornoDePrueba } from "@/components/shell/aviso-de-entorno-de-prueba";
 import { Logo } from "@/components/logo";
 import { hayAvisosNuevos as hayAvisosNuevosParaMi } from "@/lib/services/notificaciones";
 import { SalirDeLaCuenta } from "@/components/shell/salir-de-la-cuenta";
@@ -12,6 +13,7 @@ export default async function CuidadorLayout({ children }: LayoutProps<"/cuidado
   const hayAvisosNuevos = await hayAvisosNuevosParaMi();
   return (
     <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col bg-background sm:border-x sm:border-border">
+      <AvisoDeEntornoDePrueba />
       <header className="sticky top-0 z-30 flex h-16 shrink-0 items-center justify-between border-b border-border bg-background/95 px-4 backdrop-blur">
         <Link href="/cuidador" aria-label="Ir al inicio de tu panel">
           <Logo />
