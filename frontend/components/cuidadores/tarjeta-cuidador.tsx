@@ -1,6 +1,8 @@
 import Link from "next/link";
-import { Check, ShieldCheck, Star, MapPin } from "lucide-react";
+import { Check, Clock, ShieldCheck, Star, MapPin } from "lucide-react";
 import { AvatarCuidador } from "@/components/avatar-cuidador";
+import { describirProximaDisponibilidad, proximaDisponibilidad } from "@/lib/disponibilidad";
+import type { AhoraEnColombia } from "@/lib/fecha-colombia";
 import type { CuidadorResumen } from "@/lib/types";
 import { cn } from "@/lib/utils";
 import { etiquetaEspecialidad, formatearCOP, formatearDistanciaKm } from "@/lib/format";
@@ -10,9 +12,12 @@ interface TarjetaCuidadorProps {
   // Para marcarlo y contratar a varios cuidadores juntos (el carrito, F4): la casilla no navega al perfil.
   seleccionado: boolean;
   onAlternarSeleccion: () => void;
+  // Con la hora actual en Colombia, la tarjeta dice cuándo puede atender; sin ella no dice nada de eso.
+  ahora?: AhoraEnColombia;
 }
 
-export function TarjetaCuidador({ cuidador, seleccionado, onAlternarSeleccion }: TarjetaCuidadorProps) {
+export function TarjetaCuidador({ cuidador, seleccionado, onAlternarSeleccion, ahora }: TarjetaCuidadorProps) {
+  const disponibilidad = ahora === undefined ? null : describirProximaDisponibilidad(proximaDisponibilidad(cuidador.horariosLibres, ahora), ahora.hoy);
   return (
     <div className="animate-in fade-in slide-in-from-bottom-1 ease-out relative flex gap-3 rounded-2xl bg-card p-4 ring-1 ring-border transition-colors hover:ring-primary/40">
       <button
@@ -50,6 +55,12 @@ export function TarjetaCuidador({ cuidador, seleccionado, onAlternarSeleccion }:
             {cuidador.zona}
             {cuidador.distanciaKm !== null && <span className="font-medium text-foreground">· a {formatearDistanciaKm(cuidador.distanciaKm)}</span>}
           </div>
+          {disponibilidad !== null && (
+            <p className={cn("flex items-center gap-1 text-sm font-medium", disponibilidad.hoy ? "text-success" : "text-muted-foreground")}>
+              <Clock className="size-3.5 shrink-0" aria-hidden="true" />
+              {disponibilidad.texto}
+            </p>
+          )}
           <div className="mt-1 flex items-center justify-between">
             {cuidador.calificacion !== null ? (
               <span className="flex items-center gap-1 text-sm font-medium text-foreground">

@@ -16,6 +16,9 @@ interface SelectorHorasProps {
   // Las horas de inicio (cada 30 min) que se pueden pedir ese día: las que atiende el cuidador y que todavía
   // no pasaron.
   horasPedibles: number[];
+  // Cuando ese día no hay horas: el próximo día con horas y cómo saltar a él (null: no hay en las próximas semanas; sin pasarlo: solo
+  // se pide elegir otro día).
+  sugerencia?: { texto: string; alElegir: () => void } | null;
   horaInicio: number | null;
   onHoraInicioChange: (valor: number) => void;
   horas: number;
@@ -32,6 +35,7 @@ export function SelectorHoras({
   onFechaPersonalizadaChange,
   fechaMinima,
   horasPedibles,
+  sugerencia,
   horaInicio,
   onHoraInicioChange,
   horas,
@@ -80,9 +84,18 @@ export function SelectorHoras({
             ))}
           </div>
         ) : (
-          <p role="status" className="text-base text-muted-foreground">
-            Para ese día ya no quedan horas con este cuidador. Elige otro día.
-          </p>
+          <div role="status" className="flex flex-col items-start gap-2">
+            <p className="text-base text-muted-foreground">Para ese día ya no quedan horas con este cuidador.</p>
+            {sugerencia === undefined ? (
+              <p className="text-base text-muted-foreground">Elige otro día.</p>
+            ) : sugerencia === null ? (
+              <p className="text-base text-muted-foreground">Tampoco tiene horas en los próximos días. Prueba con otro cuidador.</p>
+            ) : (
+              <button type="button" onClick={sugerencia.alElegir} className="text-left text-base font-medium text-primary underline underline-offset-4">
+                {sugerencia.texto}: ver esas horas
+              </button>
+            )}
+          </div>
         )}
       </div>
 

@@ -11,11 +11,17 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { solicitarServicioAccion } from "@/lib/acciones/servicios";
+import { describirProximaDisponibilidad, proximaDisponibilidad } from "@/lib/disponibilidad";
 import { horasPedibles, sumarDias, type AhoraEnColombia } from "@/lib/fecha-colombia";
 import { useCotizacion } from "@/lib/hooks/use-cotizacion";
 import { formatearCOP } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import type { Cotizacion, Cuidador } from "@/lib/types";
+
+function seleccionDeFecha(fecha: string, hoy: string): FechaSeleccion {
+  if (fecha === hoy) return "hoy";
+  return fecha === sumarDias(hoy, 1) ? "manana" : "elegir";
+}
 
 interface FormularioContratacionProps {
   cuidador: Cuidador;
@@ -34,8 +40,12 @@ export function FormularioContratacion({ cuidador, ahora, cotizacionInicial, sal
   const [enviando, empezarEnvio] = useTransition();
 
   const manana = sumarDias(ahora.hoy, 1);
-  const [fechaSeleccion, setFechaSeleccion] = useState<FechaSeleccion>("hoy");
-  const [fechaPersonalizada, setFechaPersonalizada] = useState(manana);
+  // Se abre en el primer día en que el cuidador sí tiene horas (no siempre «Hoy»): así la familia no cae en una pantalla vacía.
+  const [primeraDisponibilidad] = useState(() => proximaDisponibilidad(cuidador.horariosLibres, ahora));
+  const [fechaSeleccion, setFechaSeleccion] = useState<FechaSeleccion>(() =>
+    seleccionDeFecha(primeraDisponibilidad?.fecha ?? ahora.hoy, ahora.hoy),
+  );
+  const [fechaPersonalizada, setFechaPersonalizada] = useState(primeraDisponibilidad?.fecha ?? manana);
   const [horaInicio, setHoraInicio] = useState<number | null>(null);
   const [horas, setHoras] = useState(1);
   const [usarBolsa, setUsarBolsa] = useState(false);
@@ -47,6 +57,18 @@ export function FormularioContratacion({ cuidador, ahora, cotizacionInicial, sal
   );
   // Si la hora elegida ya no se puede pedir (cambió el día), se usa la primera que sí.
   const horaElegida = horaInicio !== null && horasDisponibles.includes(horaInicio) ? horaInicio : (horasDisponibles[0] ?? null);
+  // Si ese día no hay horas, a qué día se puede pasar (con las horas que se están pidiendo).
+  const siguienteDia = useMemo(
+    () => (horasDisponibles.length > 0 ? null : proximaDisponibilidad(cuidador.horariosLibres, ahora, horas, fecha)),
+    [horasDisponibles, cuidador.horariosLibres, ahora, horas, fecha],
+  );
+
+  function irAlDia(destino: string) {
+    const seleccion = seleccionDeFecha(destino, ahora.hoy);
+    if (seleccion === "elegir") setFechaPersonalizada(destino);
+    setFechaSeleccion(seleccion);
+    setHoraInicio(null);
+  }
 
   // ── La cotización del servidor ────────────────────────────────────────────────────────────────────────────────
   const { cotizacion, cotizando, errorDeCotizacion, reintentar } = useCotizacion(cuidador.id, horas, cotizacionInicial);
@@ -91,6 +113,11 @@ export function FormularioContratacion({ cuidador, ahora, cotizacionInicial, sal
         onFechaPersonalizadaChange={setFechaPersonalizada}
         fechaMinima={ahora.hoy}
         horasPedibles={horasDisponibles}
+        sugerencia={
+          siguienteDia === null
+            ? null
+            : { texto: describirProximaDisponibilidad(siguienteDia, ahora.hoy).texto, alElegir: () => irAlDia(siguienteDia.fecha) }
+        }
         horaInicio={horaElegida}
         onHoraInicioChange={setHoraInicio}
         horas={horas}

@@ -1,4 +1,5 @@
 import { BuscadorCuidadores } from "@/components/cuidadores/buscador-cuidadores";
+import { ahoraEnColombia } from "@/lib/fecha-colombia";
 import { filtrosDeConsulta } from "@/lib/filtros-de-cuidadores";
 import { listarCuidadores, obtenerOpcionesDeBusqueda } from "@/lib/services/cuidadores";
 
@@ -25,6 +26,7 @@ export default async function CuidadoresPage({ searchParams }: PageProps<"/app/c
         filtros={filtros}
         zonas={opciones.zonas}
         tarifaLimite={opciones.tarifaMaxima}
+        ahora={ahoraEnColombia()}
       />
     </div>
   );

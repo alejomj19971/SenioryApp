@@ -60,6 +60,24 @@ describe("BuscadorCuidadores", () => {
     expect(screen.getByText("2 cuidadores encontrados")).toBeInTheDocument();
   });
 
+  it("cada tarjeta dice cuándo puede atender el cuidador: hoy, otro día o sin horas", () => {
+    // Sábado 28 de noviembre de 2026, 2:00 p. m. (el día 6 de la semana).
+    const hoyYLuego = [{ diaSemana: 6, horaInicio: 18 * 60, horaFin: 22 * 60 }];
+    const soloLunes = [{ diaSemana: 1, horaInicio: 9 * 60, horaFin: 12 * 60 }];
+    mostrar({
+      ahora: { hoy: "2026-11-28", minutos: 14 * 60 },
+      cuidadores: [
+        cuidador(1, { horariosLibres: hoyYLuego }),
+        cuidador(2, { horariosLibres: soloLunes }),
+        cuidador(3, { horariosLibres: [] }),
+      ],
+    });
+
+    expect(screen.getByText("Disponible hoy desde las 6:00 p. m.")).toBeInTheDocument();
+    expect(screen.getByText("Disponible el lunes 30 de noviembre desde las 9:00 a. m.")).toBeInTheDocument();
+    expect(screen.getByText("Sin horas disponibles por ahora")).toBeInTheDocument();
+  });
+
   it("una calificación nula se dice con palabras, no como «0 estrellas»", () => {
     mostrar();
 

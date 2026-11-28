@@ -161,11 +161,43 @@ describe("FormularioContratacion", () => {
     expect(horas).not.toHaveTextContent("12:00 p. m.");
   });
 
-  it("si el cuidador solo atiende de mañana y ya pasó, no hay horas hoy y el botón queda desactivado", () => {
-    const soloManana = [1, 2, 3, 4, 5, 6, 7].map((diaSemana) => ({ diaSemana, horaInicio: 360, horaFin: 720 }));
-    mostrar({ cuidador: { ...cuidador, horariosLibres: soloManana }, ahora: { hoy: "2026-11-01", minutos: 15 * 60 } });
+  const soloEnLaManana = [1, 2, 3, 4, 5, 6, 7].map((diaSemana) => ({ diaSemana, horaInicio: 360, horaFin: 720 }));
+
+  it("si hoy el cuidador ya no tiene horas, el formulario se abre en el primer día que sí (mañana), con horas para elegir", () => {
+    mostrar({ cuidador: { ...cuidador, horariosLibres: soloEnLaManana }, ahora: { hoy: "2026-11-01", minutos: 15 * 60 } });
+
+    expect(screen.getByRole("button", { name: "Mañana" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("group", { name: "Elegir hora" })).toHaveTextContent("6:00 a. m.");
+    expect(screen.queryByText(/ya no quedan horas/)).not.toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Enviar solicitud" })).toBeEnabled();
+  });
+
+  it("si el primer día libre es más lejano, abre con «Elegir fecha» puesta en ese día", () => {
+    // Solo atiende los martes (2): hoy es domingo 1 de noviembre → el martes 3.
+    const soloMartes = [{ diaSemana: 2, horaInicio: 540, horaFin: 720 }];
+    mostrar({ cuidador: { ...cuidador, horariosLibres: soloMartes }, ahora: { hoy: "2026-11-01", minutos: 9 * 60 } });
+
+    expect(screen.getByLabelText("Fecha personalizada")).toHaveValue("2026-11-03");
+    expect(screen.getByRole("group", { name: "Elegir hora" })).toHaveTextContent("9:00 a. m.");
+  });
+
+  it("en un día sin horas ofrece pasar al próximo día con horas y lo hace con un toque", async () => {
+    mostrar({ cuidador: { ...cuidador, horariosLibres: soloEnLaManana }, ahora: { hoy: "2026-11-01", minutos: 15 * 60 } });
+    await userEvent.click(screen.getByRole("button", { name: "Hoy" }));
 
     expect(screen.getByText(/ya no quedan horas con este cuidador/)).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: "Enviar solicitud" })).toBeDisabled();
+
+    await userEvent.click(screen.getByRole("button", { name: /Disponible mañana desde las 6:00 a\. m\./ }));
+
+    expect(screen.getByRole("button", { name: "Mañana" })).toHaveAttribute("aria-pressed", "true");
+    expect(screen.getByRole("group", { name: "Elegir hora" })).toHaveTextContent("6:00 a. m.");
+  });
+
+  it("si no tiene horas en las próximas semanas, lo dice y no ofrece un día imposible", () => {
+    mostrar({ cuidador: { ...cuidador, horariosLibres: [] } });
+
+    expect(screen.getByText(/Tampoco tiene horas en los próximos días/)).toBeInTheDocument();
     expect(screen.getByRole("button", { name: "Enviar solicitud" })).toBeDisabled();
   });
 

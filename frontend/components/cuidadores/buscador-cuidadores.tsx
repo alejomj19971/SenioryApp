@@ -9,6 +9,7 @@ import { TarjetaCuidador } from "@/components/cuidadores/tarjeta-cuidador";
 import { Aviso } from "@/components/ui/aviso";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { cargarMasCuidadores } from "@/lib/acciones/cuidadores";
+import type { AhoraEnColombia } from "@/lib/fecha-colombia";
 import { consultaDeFiltros } from "@/lib/filtros-de-cuidadores";
 import { useUbicacionDelNavegador, type Coordenada } from "@/lib/hooks/use-ubicacion";
 import type { CuidadorResumen, Especialidad, FiltrosCuidador as Filtros, Jornada } from "@/lib/types";
@@ -24,6 +25,8 @@ interface BuscadorProps {
   filtros: Filtros;
   zonas: string[];
   tarifaLimite: number;
+  // «Hoy» y la hora en Colombia, decididos en el servidor: con ellos cada tarjeta dice cuándo puede atender el cuidador.
+  ahora?: AhoraEnColombia;
 }
 
 // La búsqueda de cuidadores (F2). Los filtros viven en la URL: al cambiarlos, el servidor vuelve a buscar y esta
@@ -34,6 +37,7 @@ export function BuscadorCuidadores({
   filtros,
   zonas,
   tarifaLimite,
+  ahora,
 }: BuscadorProps) {
   const enrutador = useRouter();
   const ruta = usePathname();
@@ -190,6 +194,7 @@ export function BuscadorCuidadores({
             <TarjetaCuidador
               key={cuidador.id}
               cuidador={cuidador}
+              ahora={ahora}
               seleccionado={seleccionados.has(cuidador.id)}
               onAlternarSeleccion={() => alternarSeleccion(cuidador.id)}
             />
