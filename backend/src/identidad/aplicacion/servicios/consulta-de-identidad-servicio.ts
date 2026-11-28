@@ -32,6 +32,7 @@ export class ConsultaDeIdentidadServicio implements ConsultaDeIdentidad {
       nombre: usuario.nombre.valor,
       correo: usuario.correo.valor,
       telefono: usuario.telefono?.valor ?? null,
+      correoVerificado: usuario.correoVerificadoEn !== null,
     };
   }
 

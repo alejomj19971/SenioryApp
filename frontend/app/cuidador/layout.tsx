@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { BarraAccesibilidad } from "@/components/accesibilidad/barra-accesibilidad";
 import { Campana } from "@/components/avisos/campana";
+import { AvisoDeCorreo } from "@/components/cuenta/aviso-de-correo";
 import { Logo } from "@/components/logo";
 import { hayAvisosNuevos as hayAvisosNuevosParaMi } from "@/lib/services/notificaciones";
 import { SalirDeLaCuenta } from "@/components/shell/salir-de-la-cuenta";
@@ -21,6 +22,7 @@ export default async function CuidadorLayout({ children }: LayoutProps<"/cuidado
         </div>
       </header>
       <BarraAccesibilidad />
+      <AvisoDeCorreo />
       <main className="flex-1 pb-24">{children}</main>
       <BottomNavCuidador />
     </div>

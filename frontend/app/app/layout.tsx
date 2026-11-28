@@ -2,6 +2,7 @@ import { AppHeader } from "@/components/shell/app-header";
 import { BotonFlotanteDeAyuda } from "@/components/shell/boton-flotante-de-ayuda";
 import { BottomNav } from "@/components/shell/bottom-nav";
 import { BarraAccesibilidad } from "@/components/accesibilidad/barra-accesibilidad";
+import { AvisoDeCorreo } from "@/components/cuenta/aviso-de-correo";
 import { hayAvisosNuevos as hayAvisosNuevosParaMi } from "@/lib/services/notificaciones";
 import { exigirFamiliaLista } from "@/lib/services/paciente";
 import { obtenerResumen } from "@/lib/services/teleasistencia";
@@ -17,6 +18,7 @@ export default async function AppShellLayout({ children }: LayoutProps<"/app">) 
       <div className="mx-auto flex min-h-dvh w-full max-w-md flex-col bg-background sm:border-x sm:border-border">
         <AppHeader hayAvisosNuevos={hayAvisosNuevos} />
         <BarraAccesibilidad />
+        <AvisoDeCorreo />
         {/* pb-52: dentro de la barra de navegación (64px) hay que caber también el botón flotante de ayuda
             (que llega hasta 176px desde abajo cuando no hay una barra de acción propia, ver boton-flotante-de-ayuda.tsx),
             para que el contenido normal de una pantalla corta (como Inicio) no le quede debajo. */}

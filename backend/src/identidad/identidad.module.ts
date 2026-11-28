@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Inject, Module, type OnModuleInit } from '@nestjs/common';
 import {
   AUDITORIA,
   type Auditoria,
@@ -16,6 +16,7 @@ import {
   type PublicadorDeEventos,
 } from '../compartido/aplicacion/puertos/publicador-de-eventos.js';
 import { RELOJ, type Reloj } from '../compartido/aplicacion/puertos/reloj.js';
+import { RegistroDeManejadores } from '../compartido/infraestructura/outbox/registro-de-manejadores.js';
 import {
   UNIDAD_DE_TRABAJO,
   type UnidadDeTrabajo,
@@ -74,6 +75,7 @@ import {
 } from './aplicacion/puertos/salida/repositorio-segundos-factores.js';
 import {
   REPOSITORIO_TOKENS_DE_RECUPERACION,
+  REPOSITORIO_TOKENS_DE_VERIFICACION_DE_CORREO,
   type RepositorioTokensDeRecuperacion,
 } from './aplicacion/puertos/salida/repositorio-tokens-de-recuperacion.js';
 import { REPOSITORIO_SESIONES } from './aplicacion/puertos/salida/repositorio-sesiones.js';
@@ -95,7 +97,15 @@ import { OtorgarConsentimiento } from './aplicacion/casos-de-uso/otorgar-consent
 import { RegistrarAdultoMayor } from './aplicacion/casos-de-uso/registrar-adulto-mayor.js';
 import { RestablecerContrasena } from './aplicacion/casos-de-uso/restablecer-contrasena.js';
 import { RevocarConsentimiento } from './aplicacion/casos-de-uso/revocar-consentimiento.js';
+import {
+  ReactivarCuentaDeCuidador,
+  SuspenderCuentaDeCuidador,
+} from './aplicacion/manejadores/bloquear-cuenta-de-cuidador-suspendido.js';
 import { SolicitarRecuperacion } from './aplicacion/casos-de-uso/solicitar-recuperacion.js';
+import {
+  ConfirmarCorreo,
+  SolicitarVerificacionDeCorreo,
+} from './aplicacion/casos-de-uso/verificacion-de-correo.js';
 import {
   CUENTAS_DE_CUIDADORES,
   type CuentasDeCuidadores,
@@ -135,6 +145,7 @@ import {
 } from './infraestructura/salida/contrasenas/diccionario-de-contrasenas-comunes.js';
 import { RepositorioAceptacionesDePoliticaDrizzle } from './infraestructura/salida/persistencia/repositorio-aceptaciones-de-politica-drizzle.js';
 import { RepositorioSesionesDrizzle } from './infraestructura/salida/persistencia/repositorio-sesiones-drizzle.js';
+import { tokensDeVerificacionDeCorreo } from './infraestructura/salida/persistencia/identidad.esquema.js';
 import { RepositorioTokensDeRecuperacionDrizzle } from './infraestructura/salida/persistencia/repositorio-tokens-de-recuperacion-drizzle.js';
 import {
   EnviadorDeRecuperacionDeshabilitado,
@@ -149,6 +160,9 @@ import { HashDeContrasenasArgon2 } from './infraestructura/salida/seguridad/hash
 import { TokensJwt } from './infraestructura/salida/seguridad/tokens-jwt.js';
 
 const TOKENS_JWT = Symbol('TokensJwt');
+const MANEJADORES_DE_CUENTAS_DE_CUIDADORES = Symbol(
+  'ManejadoresDeCuentasDeCuidadores',
+);
 const MS_POR_MINUTO = 60_000;
 const MS_POR_DIA = 24 * 60 * MS_POR_MINUTO;
 
@@ -204,6 +218,16 @@ const MS_POR_DIA = 24 * 60 * MS_POR_MINUTO;
         new RepositorioConsentimientosDrizzle(contexto),
     },
 
+    {
+      provide: REPOSITORIO_TOKENS_DE_VERIFICACION_DE_CORREO,
+      inject: [ContextoTransaccional],
+      useFactory: (contexto: ContextoTransaccional) =>
+        new RepositorioTokensDeRecuperacionDrizzle(
+          contexto,
+          tokensDeVerificacionDeCorreo,
+          'tokens_verificacion_correo_hash_unico',
+        ),
+    },
     {
       provide: REPOSITORIO_TOKENS_DE_RECUPERACION,
       inject: [ContextoTransaccional],
@@ -789,6 +813,86 @@ const MS_POR_DIA = 24 * 60 * MS_POR_MINUTO;
         ),
     },
 
+    // Reacciona a la suspensión y reactivación de un cuidador (Directorio): le cierra o le reabre la cuenta
+    {
+      provide: MANEJADORES_DE_CUENTAS_DE_CUIDADORES,
+      inject: [REPOSITORIO_USUARIOS, REPOSITORIO_SESIONES, AUDITORIA, RELOJ],
+      useFactory: (
+        usuarios: RepositorioUsuarios,
+        sesiones: RepositorioSesiones,
+        auditoria: Auditoria,
+        reloj: Reloj,
+      ) => [
+        new SuspenderCuentaDeCuidador(usuarios, sesiones, auditoria, reloj),
+        new ReactivarCuentaDeCuidador(usuarios, auditoria, reloj),
+      ],
+    },
+
+    // Confirmar que el correo es de la persona
+    {
+      provide: SolicitarVerificacionDeCorreo,
+      inject: [
+        REPOSITORIO_USUARIOS,
+        REPOSITORIO_TOKENS_DE_VERIFICACION_DE_CORREO,
+        GENERADOR_DE_TOKENS_OPACOS,
+        ENVIADOR_DE_RECUPERACION,
+        UNIDAD_DE_TRABAJO,
+        AUDITORIA,
+        RELOJ,
+        GENERADOR_DE_IDS,
+        CONFIGURACION,
+      ],
+      useFactory: (
+        usuarios: RepositorioUsuarios,
+        tokens: RepositorioTokensDeRecuperacion,
+        tokensOpacos: GeneradorDeTokensOpacos,
+        enviador: EnviadorDeRecuperacion,
+        unidadDeTrabajo: UnidadDeTrabajo,
+        auditoria: Auditoria,
+        reloj: Reloj,
+        ids: GeneradorDeIds,
+        configuracion: Configuracion,
+      ) =>
+        new SolicitarVerificacionDeCorreo(
+          usuarios,
+          tokens,
+          tokensOpacos,
+          enviador,
+          unidadDeTrabajo,
+          auditoria,
+          reloj,
+          ids,
+          { urlDelFrontend: configuracion.origenesPermitidos[0] ?? '' },
+        ),
+    },
+    {
+      provide: ConfirmarCorreo,
+      inject: [
+        REPOSITORIO_USUARIOS,
+        REPOSITORIO_TOKENS_DE_VERIFICACION_DE_CORREO,
+        GENERADOR_DE_TOKENS_OPACOS,
+        UNIDAD_DE_TRABAJO,
+        AUDITORIA,
+        RELOJ,
+      ],
+      useFactory: (
+        usuarios: RepositorioUsuarios,
+        tokens: RepositorioTokensDeRecuperacion,
+        tokensOpacos: GeneradorDeTokensOpacos,
+        unidadDeTrabajo: UnidadDeTrabajo,
+        auditoria: Auditoria,
+        reloj: Reloj,
+      ) =>
+        new ConfirmarCorreo(
+          usuarios,
+          tokens,
+          tokensOpacos,
+          unidadDeTrabajo,
+          auditoria,
+          reloj,
+        ),
+    },
+
     // Recuperar y cambiar la contraseña
     {
       provide: SolicitarRecuperacion,
@@ -993,4 +1097,20 @@ const MS_POR_DIA = 24 * 60 * MS_POR_MINUTO;
     CUENTAS_DE_CUIDADORES,
   ],
 })
-export class IdentidadModule {}
+export class IdentidadModule implements OnModuleInit {
+  constructor(
+    @Inject(RegistroDeManejadores)
+    private readonly registro: RegistroDeManejadores,
+    @Inject(MANEJADORES_DE_CUENTAS_DE_CUIDADORES)
+    private readonly manejadores: (
+      | SuspenderCuentaDeCuidador
+      | ReactivarCuentaDeCuidador
+    )[],
+  ) {}
+
+  onModuleInit(): void {
+    for (const manejador of this.manejadores) {
+      this.registro.registrar(manejador as never);
+    }
+  }
+}

@@ -78,7 +78,7 @@ export function usuarioDeFilas(
   }
   const estado: EstadoDeUsuario = exigir(
     fila.estado,
-    ['activo', 'eliminado'],
+    ['activo', 'suspendido', 'eliminado'],
     'estado',
   );
   return Usuario.reconstruir({

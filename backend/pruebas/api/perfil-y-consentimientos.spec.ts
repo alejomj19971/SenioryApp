@@ -159,6 +159,7 @@ describe('perfil, personas mayores y consentimientos (API)', () => {
           rol: 'familiar',
           telefono: null,
           reglasDelNegocioVistas: false,
+          correoVerificado: false,
         },
         adultosMayores: [],
       });
@@ -283,6 +284,7 @@ describe('perfil, personas mayores y consentimientos (API)', () => {
           rol: 'familiar',
           telefono: '+573001234567',
           reglasDelNegocioVistas: false,
+          correoVerificado: false,
         },
       });
       expect(
@@ -405,8 +407,11 @@ describe('perfil, personas mayores y consentimientos (API)', () => {
       const persona = await registrarFamiliar(c);
 
       expect(
-        ((await yo(c, persona)).body as { usuario: { reglasDelNegocioVistas: boolean } })
-          .usuario.reglasDelNegocioVistas,
+        (
+          (await yo(c, persona)).body as {
+            usuario: { reglasDelNegocioVistas: boolean };
+          }
+        ).usuario.reglasDelNegocioVistas,
       ).toBe(false);
     });
 
@@ -418,12 +423,15 @@ describe('perfil, personas mayores y consentimientos (API)', () => {
 
       expect(respuesta.status).toBe(200);
       expect(
-        (respuesta.body as { usuario: { reglasDelNegocioVistas: boolean } }).usuario
-          .reglasDelNegocioVistas,
+        (respuesta.body as { usuario: { reglasDelNegocioVistas: boolean } })
+          .usuario.reglasDelNegocioVistas,
       ).toBe(true);
       expect(
-        ((await yo(c, persona)).body as { usuario: { reglasDelNegocioVistas: boolean } })
-          .usuario.reglasDelNegocioVistas,
+        (
+          (await yo(c, persona)).body as {
+            usuario: { reglasDelNegocioVistas: boolean };
+          }
+        ).usuario.reglasDelNegocioVistas,
       ).toBe(true);
     });
 
@@ -449,9 +457,9 @@ describe('perfil, personas mayores y consentimientos (API)', () => {
     });
 
     it('sin sesión responde 401', async () => {
-      expect((await cliente().post('/api/v1/yo/reglas-del-negocio')).status).toBe(
-        401,
-      );
+      expect(
+        (await cliente().post('/api/v1/yo/reglas-del-negocio')).status,
+      ).toBe(401);
     });
   });
 

@@ -9,11 +9,23 @@ export class EnviadorDeRecuperacionEnMemoria implements EnviadorDeRecuperacion {
   // Para probar qué pasa cuando el canal falla.
   falla = false;
   readonly mensajes: MensajeDeRecuperacion[] = [];
+  // Los enlaces de verificación del correo, aparte de los de recuperación.
+  readonly verificaciones: MensajeDeRecuperacion[] = [];
 
   enviar(mensaje: MensajeDeRecuperacion): Promise<void> {
     if (this.falla) return Promise.reject(new Error('El canal no responde'));
     this.mensajes.push(mensaje);
     return Promise.resolve();
+  }
+
+  enviarVerificacion(mensaje: MensajeDeRecuperacion): Promise<void> {
+    if (this.falla) return Promise.reject(new Error('El canal no responde'));
+    this.verificaciones.push(mensaje);
+    return Promise.resolve();
+  }
+
+  verificacionesParaCorreo(correo: string): MensajeDeRecuperacion[] {
+    return this.verificaciones.filter((m) => m.correo === correo);
   }
 
   paraCorreo(correo: string): MensajeDeRecuperacion[] {

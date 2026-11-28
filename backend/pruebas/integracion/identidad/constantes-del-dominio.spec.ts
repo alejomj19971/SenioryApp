@@ -36,7 +36,11 @@ describe('constantes del dominio y CHECK de la base de datos', () => {
     ['roles', 'usuarios_rol_valido', ROLES],
     ['parentescos', 'vinculos_parentesco_valido', PARENTESCOS],
     ['estados de vínculo', 'vinculos_estado_valido', ['activo', 'revocado']],
-    ['estados de usuario', 'usuarios_estado_valido', ['activo', 'eliminado']],
+    [
+      'estados de usuario',
+      'usuarios_estado_valido',
+      ['activo', 'suspendido', 'eliminado'],
+    ],
     [
       'finalidades de consentimiento',
       'consentimientos_finalidad_valida',

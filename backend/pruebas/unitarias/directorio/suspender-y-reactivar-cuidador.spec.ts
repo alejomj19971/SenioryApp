@@ -25,6 +25,8 @@ const REVISOR = {
   rol: 'administrador',
 } as unknown as UsuarioAutenticado;
 
+const USUARIO_DEL_CUIDADOR = '0198aaaa-0000-7000-8000-0000000000c1';
+
 const unidadDeTrabajo = {
   ejecutar: <T>(trabajo: () => Promise<T>) => trabajo(),
 } as unknown as UnidadDeTrabajo;
@@ -64,7 +66,7 @@ function entorno(cuidador: Cuidador | null) {
 
 describe('SuspenderCuidador', () => {
   it('suspende a un cuidador activo y visible: lo oculta, avisa que se suspendió y que se ocultó, y lo deja en la auditoría', async () => {
-    const cuidador = cuidadorDePrueba();
+    const cuidador = cuidadorDePrueba({ usuarioId: USUARIO_DEL_CUIDADOR });
     const { suspender, actualizar, publicar, registrar } = entorno(cuidador);
 
     const resultado = await suspender.ejecutar(REVISOR, cuidador.id);
@@ -75,9 +77,10 @@ describe('SuspenderCuidador', () => {
       'directorio.cuidador_suspendido',
       'directorio.cuidador_oculto',
     ]);
+    // Lleva la cuenta del cuidador para que Identidad se la bloquee.
     expect(publicar).toHaveBeenCalledWith(
       'directorio.cuidador_suspendido',
-      { cuidadorId: cuidador.id },
+      { cuidadorId: cuidador.id, usuarioId: USUARIO_DEL_CUIDADOR },
       AHORA,
     );
     expect(registrar).toHaveBeenCalledWith(
@@ -131,7 +134,7 @@ describe('SuspenderCuidador', () => {
 
 describe('ReactivarCuidador', () => {
   it('lo devuelve a activo y, con sus tres controles vigentes, vuelve a mostrarse', async () => {
-    const cuidador = cuidadorDePrueba();
+    const cuidador = cuidadorDePrueba({ usuarioId: USUARIO_DEL_CUIDADOR });
     cuidador.suspender(AHORA);
     const { reactivar, actualizar, publicar, registrar } = entorno(cuidador);
 
@@ -139,9 +142,14 @@ describe('ReactivarCuidador', () => {
 
     expect(resultado).toEqual({ estado: 'activo', visible: true });
     expect(actualizar).toHaveBeenCalledWith(cuidador);
-    expect(publicar).toHaveBeenCalledWith(
+    // Avisa que se reactivó (Identidad le reabre la cuenta) y que vuelve a mostrarse.
+    expect(publicar.mock.calls.map((llamada) => llamada[0])).toEqual([
+      'directorio.cuidador_reactivado',
       'directorio.cuidador_visible',
-      { cuidadorId: cuidador.id },
+    ]);
+    expect(publicar).toHaveBeenCalledWith(
+      'directorio.cuidador_reactivado',
+      { cuidadorId: cuidador.id, usuarioId: USUARIO_DEL_CUIDADOR },
       AHORA,
     );
     expect(registrar).toHaveBeenCalledWith(
@@ -162,7 +170,10 @@ describe('ReactivarCuidador', () => {
     const resultado = await reactivar.ejecutar(REVISOR, cuidador.id);
 
     expect(resultado).toEqual({ estado: 'activo', visible: false });
-    expect(publicar).not.toHaveBeenCalled();
+    // Se reabre la cuenta, pero no vuelve a mostrarse: no hay aviso de «visible».
+    expect(publicar.mock.calls.map((llamada) => llamada[0])).toEqual([
+      'directorio.cuidador_reactivado',
+    ]);
   });
 
   it('solo se reactiva a un cuidador suspendido', async () => {

@@ -8,17 +8,31 @@ import { esViolacionDeUnicidad } from '../../../../compartido/infraestructura/ba
 import type { RepositorioTokensDeRecuperacion } from '../../../aplicacion/puertos/salida/repositorio-tokens-de-recuperacion.js';
 import type { UsuarioId } from '../../../dominio/ids.js';
 import type { TokenDeRecuperacion } from '../../../dominio/token-de-recuperacion.js';
-import { tokensDeRecuperacion } from './identidad.esquema.js';
+import {
+  tokensDeRecuperacion,
+  tokensDeVerificacionDeCorreo,
+} from './identidad.esquema.js';
 import { tokenDeRecuperacionDeFila } from './mapeadores.js';
 
 export class RepositorioTokensDeRecuperacionDrizzle implements RepositorioTokensDeRecuperacion {
-  constructor(private readonly contexto: ContextoTransaccional) {}
+  // Sirve a las DOS tablas de enlaces de un solo uso (recuperación de contraseña y verificación de correo): tienen la misma
+  // forma, y cada una va en su propia tabla para que un enlace de un tipo nunca valga para el otro.
+  private readonly tabla: typeof tokensDeRecuperacion;
+
+  constructor(
+    private readonly contexto: ContextoTransaccional,
+    tabla: typeof tokensDeRecuperacion | typeof tokensDeVerificacionDeCorreo = tokensDeRecuperacion,
+    private readonly restriccionDeHashUnico = 'tokens_de_recuperacion_hash_unico',
+  ) {
+    // Las columnas son idénticas: el tipo de una vale para la otra.
+    this.tabla = tabla as typeof tokensDeRecuperacion;
+  }
 
   async guardar(token: TokenDeRecuperacion): Promise<void> {
     try {
       await this.contexto
         .conexion()
-        .insert(tokensDeRecuperacion)
+        .insert(this.tabla)
         .values({
           id: token.id,
           usuarioId: token.usuarioId,
@@ -28,7 +42,7 @@ export class RepositorioTokensDeRecuperacionDrizzle implements RepositorioTokens
           usadoEn: token.usadoEn,
         });
     } catch (error) {
-      if (esViolacionDeUnicidad(error, 'tokens_de_recuperacion_hash_unico')) {
+      if (esViolacionDeUnicidad(error, this.restriccionDeHashUnico)) {
         // Con 256 bits aleatorios no ocurre por azar: indicaría un generador de tokens roto.
         throw new ConflictoDeEstado(
           'Ya existe un enlace con ese token',
@@ -45,8 +59,8 @@ export class RepositorioTokensDeRecuperacionDrizzle implements RepositorioTokens
     const filas = await this.contexto
       .conexion()
       .select()
-      .from(tokensDeRecuperacion)
-      .where(eq(tokensDeRecuperacion.hashDelToken, Buffer.from(hash)))
+      .from(this.tabla)
+      .where(eq(this.tabla.hashDelToken, Buffer.from(hash)))
       .limit(1);
     const fila = filas[0];
     return fila === undefined ? null : tokenDeRecuperacionDeFila(fila);
@@ -58,8 +72,8 @@ export class RepositorioTokensDeRecuperacionDrizzle implements RepositorioTokens
     const filas = await this.contexto
       .conexion()
       .select()
-      .from(tokensDeRecuperacion)
-      .where(eq(tokensDeRecuperacion.hashDelToken, Buffer.from(hash)))
+      .from(this.tabla)
+      .where(eq(this.tabla.hashDelToken, Buffer.from(hash)))
       .limit(1)
       // NO KEY UPDATE: la fila cambia (se gasta) pero nunca su clave.
       .for('no key update');
@@ -71,12 +85,12 @@ export class RepositorioTokensDeRecuperacionDrizzle implements RepositorioTokens
     // coalesce: si la base ya tiene la marca de uso, se conserva la primera.
     const actualizados = await this.contexto
       .conexion()
-      .update(tokensDeRecuperacion)
+      .update(this.tabla)
       .set({
-        usadoEn: sql`coalesce(${tokensDeRecuperacion.usadoEn}, ${token.usadoEn}::timestamptz)`,
+        usadoEn: sql`coalesce(${this.tabla.usadoEn}, ${token.usadoEn}::timestamptz)`,
       })
-      .where(eq(tokensDeRecuperacion.id, token.id))
-      .returning({ id: tokensDeRecuperacion.id });
+      .where(eq(this.tabla.id, token.id))
+      .returning({ id: this.tabla.id });
     if (actualizados.length === 0) {
       throw new RecursoNoEncontrado(
         'El enlace no existe',
@@ -91,9 +105,9 @@ export class RepositorioTokensDeRecuperacionDrizzle implements RepositorioTokens
     const filas = await this.contexto
       .conexion()
       .select()
-      .from(tokensDeRecuperacion)
-      .where(eq(tokensDeRecuperacion.usuarioId, usuarioId))
-      .orderBy(desc(tokensDeRecuperacion.creadoEn))
+      .from(this.tabla)
+      .where(eq(this.tabla.usuarioId, usuarioId))
+      .orderBy(desc(this.tabla.creadoEn))
       .limit(1);
     const fila = filas[0];
     return fila === undefined ? null : tokenDeRecuperacionDeFila(fila);
@@ -105,24 +119,24 @@ export class RepositorioTokensDeRecuperacionDrizzle implements RepositorioTokens
   ): Promise<number> {
     const gastados = await this.contexto
       .conexion()
-      .update(tokensDeRecuperacion)
+      .update(this.tabla)
       .set({ usadoEn: ahora })
       .where(
         and(
-          eq(tokensDeRecuperacion.usuarioId, usuarioId),
-          isNull(tokensDeRecuperacion.usadoEn),
+          eq(this.tabla.usuarioId, usuarioId),
+          isNull(this.tabla.usadoEn),
         ),
       )
-      .returning({ id: tokensDeRecuperacion.id });
+      .returning({ id: this.tabla.id });
     return gastados.length;
   }
 
   async eliminarVencidosAntesDe(limite: Date): Promise<number> {
     const eliminados = await this.contexto
       .conexion()
-      .delete(tokensDeRecuperacion)
-      .where(lt(tokensDeRecuperacion.expiraEn, limite))
-      .returning({ id: tokensDeRecuperacion.id });
+      .delete(this.tabla)
+      .where(lt(this.tabla.expiraEn, limite))
+      .returning({ id: this.tabla.id });
     return eliminados.length;
   }
 }

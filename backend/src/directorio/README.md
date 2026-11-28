@@ -54,7 +54,8 @@ Contratos en [`compartido/eventos/directorio.ts`](../compartido/eventos/director
 | ----------------------------------- | --------- | ---------------------------------------------------------------------- | ------------------------------------------ |
 | `directorio.cuidador_visible`       | Publica   | `cuidadorId`                                                           | —                                          |
 | `directorio.cuidador_oculto`        | Publica   | `cuidadorId`                                                           | Solo avisa que dejó de mostrarse (control vencido o suspensión) |
-| `directorio.cuidador_suspendido`    | Publica   | `cuidadorId`                                                           | Reservas cancela sus servicios solicitados y aceptados; Pagos devuelve el dinero (M4, M7) |
+| `directorio.cuidador_suspendido`    | Publica   | `cuidadorId`, `usuarioId`                                              | Reservas cancela sus servicios solicitados y aceptados; Pagos devuelve el dinero; Identidad le bloquea la cuenta (M4, M7, M1) |
+| `directorio.cuidador_reactivado`    | Publica   | `cuidadorId`, `usuarioId`                                              | Identidad le reabre la cuenta (M1) |
 | `directorio.cuidador_verificado`    | Publica   | `cuidadorId`                                                           | Notificaciones le avisa al cuidador        |
 | `directorio.verificacion_rechazada` | Publica   | `cuidadorId`, `control` (sin el motivo)                                | Notificaciones le avisa al cuidador        |
 | `reservas.servicio_calificado`      | Consume   | `servicioId`, `cuidadorId`, `familiarId`, `calificacion`, `comentario` | Manejador `directorio.registrar_resena`    |

@@ -221,4 +221,85 @@ describe('Usuario', () => {
       expect(usuario.actualizadoEn).toEqual(AHORA);
     });
   });
+
+  describe('verificar el correo', () => {
+    it('marca el correo como verificado en ese momento', () => {
+      const usuario = usuarioDePrueba();
+      const ahora = new Date(AHORA.getTime() + 60_000);
+
+      usuario.verificarCorreo(ahora);
+
+      expect(usuario.correoVerificadoEn).toEqual(ahora);
+      expect(usuario.actualizadoEn).toEqual(ahora);
+    });
+
+    it('es idempotente: una segunda vez no pisa la fecha original', () => {
+      const usuario = usuarioDePrueba();
+      const primera = new Date(AHORA.getTime() + 60_000);
+      usuario.verificarCorreo(primera);
+
+      usuario.verificarCorreo(new Date(AHORA.getTime() + 3_600_000));
+
+      expect(usuario.correoVerificadoEn).toEqual(primera);
+    });
+  });
+
+  describe('suspender y reactivar', () => {
+    it('una cuenta suspendida no puede iniciar sesión, aunque su credencial esté libre', () => {
+      const usuario = usuarioDePrueba();
+      expect(usuario.puedeIniciarSesion(AHORA)).toBe(true);
+
+      usuario.suspender(AHORA);
+
+      expect(usuario.estado).toBe('suspendido');
+      expect(usuario.puedeIniciarSesion(AHORA)).toBe(false);
+    });
+
+    it('al reactivarla vuelve a poder entrar', () => {
+      const usuario = usuarioDePrueba();
+      usuario.suspender(AHORA);
+
+      usuario.reactivar(AHORA);
+
+      expect(usuario.estado).toBe('activo');
+      expect(usuario.puedeIniciarSesion(AHORA)).toBe(true);
+    });
+
+    it('suspender una ya suspendida, o reactivar una activa, no hace nada (ni toca la fecha)', () => {
+      const usuario = usuarioDePrueba();
+      const despues = new Date(AHORA.getTime() + 60_000);
+
+      usuario.reactivar(despues);
+      expect(usuario).toMatchObject({ estado: 'activo', actualizadoEn: AHORA });
+
+      usuario.suspender(AHORA);
+      usuario.suspender(despues);
+      expect(usuario).toMatchObject({
+        estado: 'suspendido',
+        actualizadoEn: AHORA,
+      });
+    });
+
+    it('una cuenta eliminada es definitiva: no se suspende ni se reactiva', () => {
+      const original = usuarioDePrueba();
+      const eliminada = Usuario.reconstruir({
+        id: original.id,
+        correo: original.correo,
+        nombre: original.nombre,
+        telefono: null,
+        rol: 'familiar',
+        estado: 'eliminado',
+        correoVerificadoEn: null,
+        reglasDelNegocioVistasEn: null,
+        creadoEn: AHORA,
+        actualizadoEn: AHORA,
+        credencial: original.credencial,
+      });
+
+      eliminada.suspender(AHORA);
+      eliminada.reactivar(AHORA);
+
+      expect(eliminada.estado).toBe('eliminado');
+    });
+  });
 });

@@ -35,3 +35,9 @@ export interface RepositorioTokensDeRecuperacion {
 export const REPOSITORIO_TOKENS_DE_RECUPERACION = Symbol(
   'RepositorioTokensDeRecuperacion',
 );
+
+// El mismo contrato, para los enlaces de verificación del correo: otra tabla, para que un enlace de un tipo nunca valga
+// para el otro.
+export const REPOSITORIO_TOKENS_DE_VERIFICACION_DE_CORREO = Symbol(
+  'RepositorioTokensDeVerificacionDeCorreo',
+);

@@ -22,7 +22,7 @@ describe('estructura de la base de datos', () => {
   const consultar = async <T extends object>(texto: string): Promise<T[]> =>
     (await bd.query<T>(texto, [ESQUEMAS])).rows;
 
-  it('tiene exactamente los 8 esquemas de módulo y 41 tablas', async () => {
+  it('tiene exactamente los 8 esquemas de módulo y 42 tablas', async () => {
     const filas = await consultar<{ esquema: string; tablas: string }>(
       `select table_schema as esquema, count(*)::text as tablas
          from information_schema.tables
@@ -35,7 +35,7 @@ describe('estructura de la base de datos', () => {
     ).toEqual({
       compartido: 3,
       directorio: 5,
-      identidad: 10,
+      identidad: 11,
       mensajeria: 2,
       notificaciones: 3,
       pagos: 8,
@@ -75,7 +75,10 @@ describe('estructura de la base de datos', () => {
   it('nunca usa decimales de coma flotante ni numeric: el dinero va en enteros', async () => {
     // Única excepción (BASE_DE_DATOS.md §2): el pin del cuidador (M2/F2). No es dinero, y `earthdistance`
     // (la consulta de cercanía) exige `double precision`; cada columna lleva su propio CHECK de rango.
-    const EXCEPCIONES = new Set(['directorio.cuidadores.latitud', 'directorio.cuidadores.longitud']);
+    const EXCEPCIONES = new Set([
+      'directorio.cuidadores.latitud',
+      'directorio.cuidadores.longitud',
+    ]);
 
     const filas = await consultar<{ columna: string; tipo: string }>(
       `select table_schema || '.' || table_name || '.' || column_name as columna, data_type as tipo

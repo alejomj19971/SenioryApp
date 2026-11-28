@@ -489,7 +489,7 @@ export class SuspenderCuidador {
       await this.cuidadores.actualizar(cuidador);
       await this.eventos.publicar(
         'directorio.cuidador_suspendido',
-        { cuidadorId: cuidador.id },
+        { cuidadorId: cuidador.id, usuarioId: cuidador.usuarioId },
         ahora,
       );
       if (estabaVisible) {
@@ -543,6 +543,11 @@ export class ReactivarCuidador {
       cuidador.reactivar(ahora);
       const cambio = cuidador.recalcularVisibilidad(hoy, ahora);
       await this.cuidadores.actualizar(cuidador);
+      await this.eventos.publicar(
+        'directorio.cuidador_reactivado',
+        { cuidadorId: cuidador.id, usuarioId: cuidador.usuarioId },
+        ahora,
+      );
       if (cambio === 'visible') {
         await this.eventos.publicar(
           'directorio.cuidador_visible',

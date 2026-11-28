@@ -56,6 +56,13 @@ export class SolicitudDeRecuperacionDto {
   correo!: string;
 }
 
+export class VerificacionDeCorreoDto {
+  // El token del enlace: 43 caracteres. Un largo muy distinto no puede ser un enlace nuestro.
+  @IsString({ message: 'El enlace no es válido' })
+  @Length(20, 200, { message: 'El enlace no es válido' })
+  token!: string;
+}
+
 export class RestablecimientoDeContrasenaDto {
   // El token del enlace: 43 caracteres. Un largo muy distinto no puede ser un enlace nuestro.
   @IsString({ message: 'El enlace no es válido' })

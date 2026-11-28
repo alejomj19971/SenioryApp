@@ -27,6 +27,8 @@ export interface VistaDePerfil extends VistaDeUsuario {
   telefono: string | null;
   // Si ya vio y aceptó el instructivo con las reglas del negocio (M1), al final de la bienvenida.
   reglasDelNegocioVistas: boolean;
+  // Si ya confirmó que el correo es suyo. Sin esto no recibe avisos por correo.
+  correoVerificado: boolean;
 }
 
 export function vistaDePerfil(usuario: Usuario): VistaDePerfil {
@@ -34,6 +36,7 @@ export function vistaDePerfil(usuario: Usuario): VistaDePerfil {
     ...vistaDeUsuario(usuario),
     telefono: usuario.telefono?.valor ?? null,
     reglasDelNegocioVistas: usuario.reglasDelNegocioVistasEn !== null,
+    correoVerificado: usuario.correoVerificadoEn !== null,
   };
 }
 

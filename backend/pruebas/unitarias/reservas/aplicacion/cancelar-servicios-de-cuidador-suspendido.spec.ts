@@ -24,7 +24,7 @@ const suspendido: CuidadorSuspendido = {
   version: 1,
   ocurridoEn: AHORA_RESERVAS.toISOString(),
   idDeCorrelacion: 'correlacion',
-  datos: { cuidadorId: CUIDADOR_ID },
+  datos: { cuidadorId: CUIDADOR_ID, usuarioId: null },
 };
 
 // Un repositorio con los servicios dados (todos del cuidador): anota lo que se actualiza y qué cuidador se consultó.

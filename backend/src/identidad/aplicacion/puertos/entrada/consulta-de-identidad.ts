@@ -5,6 +5,9 @@ export interface Contacto {
   nombre: string;
   correo: string;
   telefono: string | null;
+  // Si la persona ya confirmó que el correo es suyo. Sin eso no se le escribe a esa dirección: podría ser de otra
+  // persona (un registro ajeno o un error al escribirla).
+  correoVerificado: boolean;
 }
 
 export interface AdultoMayorResumen {

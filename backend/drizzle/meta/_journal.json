@@ -120,6 +120,13 @@
       "when": 1795378827427,
       "tag": "0016_directorio_horario_semanal",
       "breakpoints": true
+    },
+    {
+      "idx": 17,
+      "version": "7",
+      "when": 1795879801548,
+      "tag": "0017_identidad_verificacion_de_correo_y_suspension",
+      "breakpoints": true
     }
   ]
 }

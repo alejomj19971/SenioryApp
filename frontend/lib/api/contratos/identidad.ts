@@ -19,6 +19,8 @@ export interface PerfilDelBackend {
   telefono: string | null;
   // Si ya vio y aceptó el instructivo con las reglas del negocio, al final de la bienvenida.
   reglasDelNegocioVistas: boolean;
+  // Si ya confirmó que el correo es suyo. Sin eso no recibe avisos por correo.
+  correoVerificado: boolean;
 }
 
 export interface AdultoMayorDelBackend {

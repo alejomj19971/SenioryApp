@@ -56,6 +56,7 @@ describe('ConsultaDeIdentidadServicio', () => {
         nombre: 'Andrea Gómez',
         correo: familiar.correo.valor,
         telefono: '+573001234567',
+        correoVerificado: false,
       });
     });
 

@@ -34,6 +34,7 @@ describe("VisibilidadDelCuidador", () => {
     expect(aviso).toHaveTextContent("¿Suspender a Marta Gómez?");
     expect(aviso).toHaveTextContent(/se cancelan sus servicios solicitados y aceptados, y se le devuelve todo el dinero/i);
     expect(aviso).toHaveTextContent(/los servicios que ya están en curso no se interrumpen/i);
+    expect(aviso).toHaveTextContent(/su cuenta deja de poder iniciar sesión/i);
     expect(suspenderCuidadorAccion).not.toHaveBeenCalled();
   });
 
@@ -78,6 +79,7 @@ describe("VisibilidadDelCuidador", () => {
     render(<VisibilidadDelCuidador cuidadorId={ID} nombre="Marta Gómez" estado="suspendido" />);
 
     expect(screen.getByText(/Marta Gómez está suspendido/)).toBeInTheDocument();
+    expect(screen.getByText(/su cuenta no puede iniciar sesión/i)).toBeInTheDocument();
     expect(screen.getByText(/no se restablecen/i)).toBeInTheDocument();
     expect(screen.queryByRole("button", { name: "Suspender cuidador" })).not.toBeInTheDocument();
 

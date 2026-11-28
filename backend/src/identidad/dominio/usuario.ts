@@ -6,7 +6,9 @@ import type { UsuarioId } from './ids.js';
 import type { NombrePersona } from './nombre-persona.js';
 import type { TelefonoE164 } from './telefono-e164.js';
 
-export type EstadoDeUsuario = 'activo' | 'eliminado';
+// «suspendido»: un administrador retiró a la persona (hoy, a un cuidador). No entra ni renueva su sesión, pero la cuenta y
+// sus datos siguen ahí; se puede reactivar. «eliminado» es definitivo.
+export type EstadoDeUsuario = 'activo' | 'suspendido' | 'eliminado';
 
 export interface DatosDeUsuario {
   id: UsuarioId;
@@ -81,7 +83,7 @@ export class Usuario {
       telefono: datos.telefono ?? null,
       rol,
       estado: 'activo',
-      // La verificación del correo llega con el canal de correo (M5).
+      // Nace sin verificar: se confirma con el enlace que llega a ese correo (`verificarCorreo`).
       correoVerificadoEn: null,
       reglasDelNegocioVistasEn: null,
       creadoEn: datos.ahora,
@@ -130,6 +132,28 @@ export class Usuario {
       this.datos.estado === 'activo' &&
       !this.datos.credencial.estaBloqueada(ahora)
     );
+  }
+
+  // La persona demostró que el correo es suyo (abrió el enlace que le llegó). Idempotente: no pisa la fecha original.
+  verificarCorreo(ahora: Date): void {
+    if (this.datos.correoVerificadoEn !== null) return;
+    this.datos.correoVerificadoEn = ahora;
+    this.datos.actualizadoEn = ahora;
+  }
+
+  // Un administrador retiró a la persona: la cuenta deja de poder entrar. Solo se suspende una cuenta activa;
+  // suspender una ya suspendida no hace nada, y una eliminada no se toca.
+  suspender(ahora: Date): void {
+    if (this.datos.estado !== 'activo') return;
+    this.datos.estado = 'suspendido';
+    this.datos.actualizadoEn = ahora;
+  }
+
+  // Lo contrario: solo vuelve una cuenta suspendida (una eliminada es definitiva).
+  reactivar(ahora: Date): void {
+    if (this.datos.estado !== 'suspendido') return;
+    this.datos.estado = 'activo';
+    this.datos.actualizadoEn = ahora;
   }
 
   // Idempotente: una vez vistas, un segundo llamado no hace nada (no se pisa la fecha original).

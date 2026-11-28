@@ -28,6 +28,10 @@ import {
   type ResultadoDeRestablecimiento,
 } from '../../../aplicacion/casos-de-uso/restablecer-contrasena.js';
 import { SolicitarRecuperacion } from '../../../aplicacion/casos-de-uso/solicitar-recuperacion.js';
+import {
+  ConfirmarCorreo,
+  SolicitarVerificacionDeCorreo,
+} from '../../../aplicacion/casos-de-uso/verificacion-de-correo.js';
 import { VerificarSegundoFactorDeInicioDeSesion } from '../../../aplicacion/casos-de-uso/verificar-segundo-factor.js';
 import type { VistaDeUsuario } from '../../../aplicacion/vistas.js';
 import {
@@ -39,6 +43,7 @@ import {
   InicioDeSesionDto,
   RegistroDto,
   RestablecimientoDeContrasenaDto,
+  VerificacionDeCorreoDto,
   SolicitudDeRecuperacionDto,
   VerificacionDeSegundoFactorDto,
 } from './dto-de-autenticacion.js';
@@ -74,6 +79,9 @@ export class AuthController {
     private readonly solicitarRecuperacion: SolicitarRecuperacion,
     @Inject(RestablecerContrasena)
     private readonly restablecer: RestablecerContrasena,
+    @Inject(SolicitarVerificacionDeCorreo)
+    private readonly solicitarVerificacion: SolicitarVerificacionDeCorreo,
+    @Inject(ConfirmarCorreo) private readonly confirmarCorreo: ConfirmarCorreo,
     @Inject(VerificarSegundoFactorDeInicioDeSesion)
     private readonly verificarSegundoFactor: VerificarSegundoFactorDeInicioDeSesion,
     @Inject(CONFIGURACION) private readonly configuracion: Configuracion,
@@ -87,6 +95,8 @@ export class AuthController {
     @Res({ passthrough: true }) respuesta: Response,
   ): Promise<RespuestaDeSesion> {
     const resultado = await this.registrar.ejecutar(cuerpo);
+    // El enlace para confirmar el correo sale sin que la persona espere, y un fallo no tumba el registro.
+    this.solicitarVerificacion.ejecutarEnSegundoPlano(resultado.usuario.id);
     return this.conSesion(respuesta, resultado);
   }
 
@@ -100,6 +110,7 @@ export class AuthController {
     @Res({ passthrough: true }) respuesta: Response,
   ): Promise<RespuestaDeSesion> {
     const resultado = await this.registrarCuidador.ejecutar(cuerpo);
+    this.solicitarVerificacion.ejecutarEnSegundoPlano(resultado.usuario.id);
     return this.conSesion(respuesta, resultado);
   }
 
@@ -206,6 +217,16 @@ export class AuthController {
       token: cuerpo.token,
       contrasenaNueva: cuerpo.contrasenaNueva,
     });
+  }
+
+  // Abrir el enlace que llegó al correo: confirma que el correo es de la persona. Pública (se abre desde el correo, quizá
+  // en otro navegador) y de un solo uso.
+  @Publico()
+  @Throttle({ default: { limit: 10, ttl: UN_MINUTO_MS } })
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @Post('verificar-correo')
+  async verificarCorreo(@Body() cuerpo: VerificacionDeCorreoDto): Promise<void> {
+    await this.confirmarCorreo.ejecutar(cuerpo.token);
   }
 
   private conSesion(

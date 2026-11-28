@@ -23,6 +23,7 @@ const CONTACTO: Contacto = {
   nombre: 'Andrea Gómez',
   correo: 'andrea@ejemplo.co',
   telefono: '+573001234567',
+  correoVerificado: true,
 };
 
 function montar(canales: CanalFalso[], contacto: Contacto | null = CONTACTO) {
@@ -84,7 +85,12 @@ describe('EntregarPendientes', () => {
 
       expect(correo.enviados).toEqual([
         {
-          destinatario: CONTACTO,
+          destinatario: {
+            usuarioId: CONTACTO.usuarioId,
+            nombre: CONTACTO.nombre,
+            correo: CONTACTO.correo,
+            telefono: CONTACTO.telefono,
+          },
           titulo: 'Servicio confirmado',
           cuerpo:
             'Tu servicio del martes 11 de junio, en la mañana quedó confirmado.',
@@ -103,6 +109,54 @@ describe('EntregarPendientes', () => {
       await caso.ejecutar();
 
       expect(aviso).toMatchObject({ estado: 'enviada', entregadaEn: null });
+    });
+
+    describe('correo sin verificar', () => {
+      const SIN_VERIFICAR: Contacto = { ...CONTACTO, correoVerificado: false };
+
+      it('no le escribe a una dirección que la persona no confirmó: el aviso queda fallido de una vez', async () => {
+        const correo = new CanalFalso('correo');
+        const { caso, repositorio } = montar([correo], SIN_VERIFICAR);
+        const aviso = avisoDePrueba({ canal: 'correo' });
+        await guardar(repositorio, aviso);
+
+        await caso.ejecutar();
+
+        expect(correo.enviados).toEqual([]);
+        // Reintentar no lo arregla: ni siquiera se gastan los intentos.
+        expect(aviso.estado).toBe('fallida');
+        expect(repositorio.intentosDe(aviso)[0]).toMatchObject({
+          resultado: 'error',
+          respuesta: 'El correo del destinatario todavía no está verificado',
+        });
+      });
+
+      it('tampoco una alerta (lleva información de salud): esa sigue saliendo por la campana', async () => {
+        const correo = new CanalFalso('correo');
+        const app = new CanalFalso('app');
+        const { caso, repositorio } = montar([correo, app], SIN_VERIFICAR);
+        const porCorreo = avisoDePrueba({ canal: 'correo', prioridad: 'alta' });
+        const porLaApp = avisoDePrueba({ canal: 'app', prioridad: 'alta' });
+        await guardar(repositorio, porCorreo, porLaApp);
+
+        await caso.ejecutar();
+
+        expect(correo.enviados).toEqual([]);
+        expect(porCorreo.estado).toBe('fallida');
+        expect(app.enviados).toHaveLength(1);
+        expect(porLaApp.estado).toBe('entregada');
+      });
+
+      it('la campana de la app no depende del correo: sale igual', async () => {
+        const app = new CanalFalso('app');
+        const { caso, repositorio } = montar([app], SIN_VERIFICAR);
+        const aviso = avisoDePrueba({ canal: 'app' });
+        await guardar(repositorio, aviso);
+
+        await caso.ejecutar();
+
+        expect(aviso.estado).toBe('entregada');
+      });
     });
 
     it('sin avisos pendientes no hace nada', async () => {

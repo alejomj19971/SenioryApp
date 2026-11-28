@@ -545,6 +545,11 @@ describe('notificaciones con canales simulados (API)', () => {
         constructor.overrideProvider(RELOJ).useValue(relojSimulado),
     });
     familia = await nuevaFamilia(app);
+    // Ningún correo sale a una dirección sin confirmar: estas pruebas son de los canales, así que esta familia ya confirmó el suyo.
+    await bd.query(
+      'update identidad.usuarios set correo_verificado_en = now() where id = $1',
+      [familia.persona.id],
+    );
     const telefono = await como(app)
       .patch('/api/v1/yo')
       .set('Cookie', familia.cookie)
@@ -624,6 +629,40 @@ describe('notificaciones con canales simulados (API)', () => {
       { canal: 'push', estado: 'enviada' },
       { canal: 'sms', estado: 'enviada' },
       { canal: 'whatsapp', estado: 'enviada' },
+    ]);
+  });
+
+  it('a quien no confirmó su correo NO le llega ningún correo (ni una alerta), pero la campana sí', async () => {
+    const sinConfirmar = await nuevaFamilia(app);
+    const evento = nuevoId();
+    await app.get(CrearAvisos, { strict: false }).ejecutar({
+      eventoId: evento,
+      destinatarioId: sinConfirmar.persona.id,
+      tipo: 'servicio_confirmado:familia',
+      prioridad: 'alta',
+      parametros: { fecha: MANANA, jornada: 'manana', horas: 1 },
+    });
+
+    await entregarTodo(app);
+
+    const avisos = await filas<{
+      canal: string;
+      estado: string;
+      intentos: number;
+      ultimo_error: string | null;
+    }>(
+      `select canal, estado, intentos, ultimo_error from notificaciones.notificaciones
+       where evento_id = $1 and canal in ('app', 'correo') order by canal`,
+      [evento],
+    );
+    expect(avisos).toEqual([
+      { canal: 'app', estado: 'entregada', intentos: 1, ultimo_error: null },
+      {
+        canal: 'correo',
+        estado: 'fallida',
+        intentos: 1,
+        ultimo_error: 'El correo del destinatario todavía no está verificado',
+      },
     ]);
   });
 

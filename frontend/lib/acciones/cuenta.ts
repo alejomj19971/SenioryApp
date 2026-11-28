@@ -192,6 +192,37 @@ export async function restablecerContrasena(_previo: EstadoDeFormulario, datos: 
   redirect("/ingresar?restablecida=1");
 }
 
+// Abrir el enlace que llegó al correo: confirma que el correo es de la persona. No exige sesión (se abre desde el correo, quizá en
+// otro navegador). Es una acción y no un GET para que un antivirus que abre los enlaces del correo no lo gaste por la persona.
+export async function confirmarCorreo(_previo: EstadoDeFormulario, datos: FormData): Promise<EstadoDeFormulario> {
+  const token = texto(datos, "token");
+  if (token === "") return { mensaje: "El enlace no es válido. Pide uno nuevo desde tu cuenta." };
+
+  const resultado = await enviarSinSesion("/auth/verificar-correo", { token });
+  if ("error" in resultado) return estadoDeError(resultado.error);
+  return { listo: true };
+}
+
+// «Reenviar enlace» desde el aviso de la cuenta: pide otro enlace para el correo de quien tiene la sesión.
+export async function reenviarVerificacionDeCorreo(): Promise<{ ok: boolean; mensaje: string }> {
+  const resultado = await escribirEnBackend<{ resultado: string }>("/yo/correo/verificacion", { metodo: "POST" });
+  if (!resultado.ok) {
+    return { ok: false, mensaje: resultado.error.estado === 429 ? "Espera un momento antes de pedir otro enlace." : "No pudimos enviar el enlace. Inténtalo de nuevo en unos minutos." };
+  }
+  switch (resultado.datos.resultado) {
+    case "enviado":
+      return { ok: true, mensaje: "Listo: te enviamos un enlace nuevo. Revisa tu correo (y la carpeta de spam)." };
+    case "demasiado_pronto":
+      return { ok: true, mensaje: "Ya te enviamos un enlace hace un momento. Revisa tu correo (y la carpeta de spam), o espera un minuto para pedir otro." };
+    case "ya_verificado":
+      return { ok: true, mensaje: "Tu correo ya está confirmado." };
+    case "no_disponible":
+      return { ok: false, mensaje: "El envío de correos no está disponible por ahora. Inténtalo más tarde." };
+    default:
+      return { ok: false, mensaje: "No pudimos enviar el enlace. Inténtalo de nuevo en unos minutos." };
+  }
+}
+
 export async function registrarAdultoMayor(_previo: EstadoDeFormulario, datos: FormData): Promise<EstadoDeFormulario> {
   const valores = {
     nombre: texto(datos, "nombre").trim(),

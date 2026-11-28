@@ -17,6 +17,13 @@ export class EnviadorDeRecuperacionEnConsola implements EnviadorDeRecuperacion {
     );
     return Promise.resolve();
   }
+
+  enviarVerificacion(mensaje: MensajeDeRecuperacion): Promise<void> {
+    this.registro.warn(
+      `[SOLO DESARROLLO] Enlace para verificar el correo de ${mensaje.correo}: ${mensaje.enlace}`,
+    );
+    return Promise.resolve();
+  }
 }
 
 // Mientras no haya un canal real de correo (M5): la recuperación responde «no disponible» en lugar de
@@ -28,6 +35,14 @@ export class EnviadorDeRecuperacionDeshabilitado implements EnviadorDeRecuperaci
     return Promise.reject(
       new Error(
         'No hay un canal configurado para enviar enlaces de recuperación',
+      ),
+    );
+  }
+
+  enviarVerificacion(): Promise<void> {
+    return Promise.reject(
+      new Error(
+        'No hay un canal configurado para enviar enlaces de verificación',
       ),
     );
   }

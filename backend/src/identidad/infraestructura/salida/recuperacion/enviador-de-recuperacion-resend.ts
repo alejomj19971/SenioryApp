@@ -29,6 +29,20 @@ function cuerpoHtml(mensaje: MensajeDeRecuperacion): string {
   `.trim();
 }
 
+function cuerpoHtmlDeVerificacion(mensaje: MensajeDeRecuperacion): string {
+  const vence = new Intl.DateTimeFormat('es-CO', {
+    timeZone: 'America/Bogota',
+    dateStyle: 'long',
+    timeStyle: 'short',
+  }).format(mensaje.expiraEn);
+  return `
+    <p>Hola ${escaparHtml(mensaje.nombre)},</p>
+    <p>Para terminar de crear tu cuenta en Seniory, confirma que este correo es tuyo (el enlace vence el ${vence}):</p>
+    <p><a href="${mensaje.enlace}">Confirmar mi correo</a></p>
+    <p>Si no creaste una cuenta en Seniory, ignora este correo: no pasará nada.</p>
+  `.trim();
+}
+
 // El canal real de recuperación (Resend): un enlace de un solo uso, admitido en producción.
 //
 // Sin un dominio propio verificado en Resend, `desde` solo puede ser una dirección de su sandbox
@@ -44,7 +58,27 @@ export class EnviadorDeRecuperacionResend implements EnviadorDeRecuperacion {
     private readonly cliente: ClienteHttp = fetch,
   ) {}
 
-  async enviar(mensaje: MensajeDeRecuperacion): Promise<void> {
+  enviar(mensaje: MensajeDeRecuperacion): Promise<void> {
+    return this.mandar(
+      mensaje,
+      'Recupera tu contraseña de Seniory',
+      cuerpoHtml(mensaje),
+    );
+  }
+
+  enviarVerificacion(mensaje: MensajeDeRecuperacion): Promise<void> {
+    return this.mandar(
+      mensaje,
+      'Confirma tu correo en Seniory',
+      cuerpoHtmlDeVerificacion(mensaje),
+    );
+  }
+
+  private async mandar(
+    mensaje: MensajeDeRecuperacion,
+    asunto: string,
+    html: string,
+  ): Promise<void> {
     const respuesta = await this.cliente(`${URL_BASE}/emails`, {
       method: 'POST',
       headers: {
@@ -54,8 +88,8 @@ export class EnviadorDeRecuperacionResend implements EnviadorDeRecuperacion {
       body: JSON.stringify({
         from: this.desde,
         to: [mensaje.correo],
-        subject: 'Recupera tu contraseña de Seniory',
-        html: cuerpoHtml(mensaje),
+        subject: asunto,
+        html,
       }),
     });
     if (!respuesta.ok) {

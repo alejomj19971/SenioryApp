@@ -32,8 +32,8 @@ export function VisibilidadDelCuidador({ cuidadorId, nombre, estado }: Visibilid
       {estado === "suspendido" ? (
         <>
           <p className="text-base text-muted-foreground">
-            {nombre} está suspendido: no aparece en las búsquedas ni se le pueden pedir servicios. Al reactivarlo vuelve a mostrarse si tiene sus tres verificaciones vigentes. Los
-            servicios que se cancelaron al suspenderlo no se restablecen.
+            {nombre} está suspendido: no aparece en las búsquedas, no se le pueden pedir servicios y su cuenta no puede iniciar sesión. Al reactivarlo recupera el acceso y vuelve a
+            mostrarse si tiene sus tres verificaciones vigentes. Los servicios que se cancelaron al suspenderlo no se restablecen.
           </p>
           {reactivacion.mensaje !== undefined && <Aviso titulo={reactivacion.mensaje} />}
           <form action={reactivar}>
@@ -51,6 +51,7 @@ export function VisibilidadDelCuidador({ cuidadorId, nombre, estado }: Visibilid
               <li>Deja de aparecer en las búsquedas de inmediato.</li>
               <li>Se cancelan sus servicios solicitados y aceptados, y se le devuelve todo el dinero a cada familia.</li>
               <li>Los servicios que ya están en curso no se interrumpen.</li>
+              <li>Su cuenta deja de poder iniciar sesión, y se cierran las sesiones que tuviera abiertas.</li>
               <li>Podrás reactivarlo después, pero los servicios cancelados no se restablecen.</li>
             </ul>
           </div>
@@ -67,7 +68,7 @@ export function VisibilidadDelCuidador({ cuidadorId, nombre, estado }: Visibilid
         </form>
       ) : (
         <>
-          <p className="text-base text-muted-foreground">Si hace falta, puedes retirar a este cuidador del directorio. Verás qué pasa con sus servicios antes de confirmar.</p>
+          <p className="text-base text-muted-foreground">Si hace falta, puedes retirar a este cuidador del directorio y bloquear su cuenta. Verás qué pasa antes de confirmar.</p>
           <div>
             <Button type="button" variant="outline" onClick={() => setConfirmando(true)}>
               <EyeOff aria-hidden="true" />

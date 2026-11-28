@@ -372,6 +372,64 @@ describe("recuperar y restablecer la contraseña", () => {
   });
 });
 
+describe("confirmar el correo", () => {
+  it("con el token del enlace, lo manda al backend SIN sesión y avisa que quedó listo", async () => {
+    pedirAlBackend.mockResolvedValue(new Response(null, { status: 204 }));
+
+    const estado = await acciones.confirmarCorreo({}, formulario({ token: "t".repeat(43) }));
+
+    expect(estado).toEqual({ listo: true });
+    expect(pedirAlBackend.mock.calls[0]?.[0]).toBe("/auth/verificar-correo");
+    expect(pedirAlBackend.mock.calls[0]?.[1]).toMatchObject({ metodo: "POST", cuerpo: { token: "t".repeat(43) }, sinSesion: true });
+  });
+
+  it("un enlace vencido o ya usado se explica, y dice cómo pedir otro", async () => {
+    pedirAlBackend.mockResolvedValue(problema(400, "verificacion_de_correo.enlace_no_valido"));
+
+    const estado = await acciones.confirmarCorreo({}, formulario({ token: "t".repeat(43) }));
+
+    expect(estado.mensaje).toContain("ya no es válido o venció");
+    expect(estado.mensaje).toContain("Confirma tu correo");
+    expect(estado.listo).toBeUndefined();
+  });
+
+  it("sin token no hay nada que confirmar (y no se llama al backend)", async () => {
+    const estado = await acciones.confirmarCorreo({}, formulario({ token: "" }));
+
+    expect(estado.mensaje).toContain("enlace no es válido");
+    expect(pedirAlBackend).not.toHaveBeenCalled();
+  });
+});
+
+describe("reenviar el enlace de verificación", () => {
+  const respuesta = (resultado: string) => ({ ok: true, datos: { resultado } });
+
+  it.each([
+    ["enviado", true, "te enviamos un enlace nuevo"],
+    ["demasiado_pronto", true, "hace un momento"],
+    ["ya_verificado", true, "ya está confirmado"],
+    ["no_disponible", false, "no está disponible por ahora"],
+    ["fallo_de_envio", false, "No pudimos enviar"],
+  ])("cuando el backend responde «%s», lo dice con claridad", async (resultado, ok, fragmento) => {
+    escribirEnBackend.mockResolvedValue(respuesta(resultado));
+
+    const salida = await acciones.reenviarVerificacionDeCorreo();
+
+    expect(salida.ok).toBe(ok);
+    expect(salida.mensaje).toContain(fragmento);
+    expect(escribirEnBackend.mock.calls[0]?.[0]).toBe("/yo/correo/verificacion");
+    expect(escribirEnBackend.mock.calls[0]?.[1]).toMatchObject({ metodo: "POST" });
+  });
+
+  it("si piden demasiados (429), pide esperar; con otro error, pide intentarlo luego", async () => {
+    escribirEnBackend.mockResolvedValueOnce({ ok: false, error: new ErrorDeApi({ mensaje: "x", estado: 429, codigo: "limite" }) });
+    expect((await acciones.reenviarVerificacionDeCorreo()).mensaje).toContain("Espera un momento");
+
+    escribirEnBackend.mockResolvedValueOnce({ ok: false, error: new ErrorDeApi({ mensaje: "x", estado: 500, codigo: "error" }) });
+    expect((await acciones.reenviarVerificacionDeCorreo()).mensaje).toContain("Inténtalo de nuevo");
+  });
+});
+
 describe("registrarAdultoMayor", () => {
   const PERSONA = { nombre: "Doña Carmen", dia: "14", mes: "3", anio: "1948", parentesco: "hijo_hija" };
 

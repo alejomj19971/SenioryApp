@@ -20,6 +20,10 @@ import { AceptarReglasDelNegocio } from '../../../aplicacion/casos-de-uso/acepta
 import { ActualizarPerfilPropio } from '../../../aplicacion/casos-de-uso/actualizar-perfil-propio.js';
 import { CambiarContrasena } from '../../../aplicacion/casos-de-uso/cambiar-contrasena.js';
 import {
+  SolicitarVerificacionDeCorreo,
+  type ResultadoDeSolicitudDeVerificacion,
+} from '../../../aplicacion/casos-de-uso/verificacion-de-correo.js';
+import {
   ObtenerPerfilPropio,
   type Perfil,
 } from '../../../aplicacion/casos-de-uso/obtener-perfil-propio.js';
@@ -41,8 +45,21 @@ export class PerfilController {
     private readonly cambiarContrasena: CambiarContrasena,
     @Inject(AceptarReglasDelNegocio)
     private readonly aceptarReglas: AceptarReglasDelNegocio,
+    @Inject(SolicitarVerificacionDeCorreo)
+    private readonly solicitarVerificacion: SolicitarVerificacionDeCorreo,
     @Inject(CONFIGURACION) private readonly configuracion: Configuracion,
   ) {}
+
+  // Vuelve a enviar el enlace para confirmar el correo de quien tiene la sesión (el id sale del token, nunca del cuerpo).
+  // Límite estricto: pedirlo no debe servir para llenar una bandeja.
+  @Throttle({ default: { limit: 3, ttl: 60_000 } })
+  @HttpCode(HttpStatus.OK)
+  @Post('correo/verificacion')
+  async pedirVerificacionDeCorreo(
+    @UsuarioActual() usuario: UsuarioAutenticado,
+  ): Promise<{ resultado: ResultadoDeSolicitudDeVerificacion }> {
+    return { resultado: await this.solicitarVerificacion.ejecutar(usuario.id) };
+  }
 
   @Get()
   perfil(@UsuarioActual() usuario: UsuarioAutenticado): Promise<Perfil> {

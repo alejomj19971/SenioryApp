@@ -15,12 +15,20 @@ export type CuidadorOculto = EventoDeIntegracion<
   { cuidadorId: string }
 >;
 
-// Un administrador suspendió a un cuidador. Reservas cancela sus servicios que aún no empezaron (solicitado o aceptado) y
-// Pagos devuelve el dinero. Va junto a `cuidador_oculto`, que solo dice que dejó de mostrarse: esto es una decisión, y
-// otras causas de ocultarlo (un control vencido) NO cancelan servicios.
+// Un administrador suspendió a un cuidador. Reservas cancela sus servicios que aún no empezaron (solicitado o aceptado), Pagos
+// devuelve el dinero e Identidad le bloquea la cuenta (no puede iniciar sesión). Va junto a `cuidador_oculto`, que solo dice
+// que dejó de mostrarse: esto es una decisión, y otras causas de ocultarlo (un control vencido) NO cancelan servicios ni
+// bloquean la cuenta. `usuarioId` es la cuenta del cuidador en Identidad (null si todavía no tiene).
 export type CuidadorSuspendido = EventoDeIntegracion<
   'directorio.cuidador_suspendido',
-  { cuidadorId: string }
+  { cuidadorId: string; usuarioId: string | null }
+>;
+
+// Un administrador devolvió al directorio a un cuidador suspendido. Identidad le reabre la cuenta. Los servicios que se
+// cancelaron al suspenderlo NO se restablecen. Que el cuidador vuelva a mostrarse lo dice `cuidador_visible`.
+export type CuidadorReactivado = EventoDeIntegracion<
+  'directorio.cuidador_reactivado',
+  { cuidadorId: string; usuarioId: string | null }
 >;
 
 // Un revisor aprobó los tres controles de un cuidador que se postuló: ya es parte del directorio. Notificaciones se
@@ -41,5 +49,6 @@ export type EventoDeDirectorio =
   | CuidadorVisible
   | CuidadorOculto
   | CuidadorSuspendido
+  | CuidadorReactivado
   | CuidadorVerificado
   | VerificacionRechazada;

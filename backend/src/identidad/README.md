@@ -6,6 +6,8 @@ Quién es cada persona, cómo entra y a quién puede ver. Plan completo: [docs/b
 
 - **Cuentas y sesión:** registro de familiares y de cuidadores que se postulan (`POST /auth/registro-cuidador`: la cuenta nace con rol `cuidador` y sin acceso a nada del directorio hasta que lo aprueben), inicio y cierre de sesión, renovación del acceso (`/auth/*`).
 - **Perfil:** `GET` y `PATCH /yo`.
+- **Verificar el correo:** al registrarse llega un enlace (`POST /auth/verificar-correo` lo confirma; `POST /yo/correo/verificacion` pide otro). Sin confirmar, Notificaciones no le escribe a esa dirección.
+- **Cuenta suspendida:** cuando un administrador suspende a un cuidador (Directorio), su cuenta pasa a «suspendido»: no inicia sesión ni renueva la sesión, y se le cierran las abiertas. Al reactivarlo, vuelve.
 - **Contraseña:** cambiarla con la actual (`PATCH /yo/contrasena`) y recuperarla si se olvidó (`/auth/olvide-contrasena` y `/auth/restablecer-contrasena`).
 - **Personas mayores:** las registra un familiar, que queda como su responsable (`/adultos-mayores`).
 - **Consentimiento** para tratar sus datos de salud (Ley 1581): se otorga y se revoca (`/consentimientos`).
@@ -18,6 +20,7 @@ Los datos clínicos **no** viven aquí (están en Teleasistencia). Identidad sol
 | -------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Rol                  | Se fija al crear la cuenta y no se cambia. El registro público crea un `familiar`, y el de cuidadores un `cuidador` (el rol lo fija la ruta, nunca el cuerpo); un administrador solo se crea con `npm run crear-admin`. |
 | Contraseña           | De 10 a 128 caracteres, sin reglas de composición; se rechazan las 9 218 más comunes. Solo se guarda su hash argon2id.                                                                                                  |
+| Verificación del correo | El enlace vence a las 24 h, sirve una sola vez y solo vale el último (otra tabla que el de recuperación: uno nunca sirve para el otro). Abrirlo dos veces responde bien (un antivirus puede abrirlo antes). Pedir otro tiene 60 s de espera. **Sin correo confirmado no sale ningún correo a esa dirección, ni una alerta** (lleva información de salud); la alerta sigue saliendo por la campana. |
 | Recuperación         | El enlace del correo vence a los 30 min, sirve una sola vez y solo vale el último que se pidió. La respuesta es igual exista o no la cuenta. Al restablecer se cierran **todas** las sesiones y se levanta el bloqueo.  |
 | Bloqueo              | Cada 5 fallos seguidos: 15 min, luego el doble, hasta 24 h. Los intentos durante el bloqueo no cuentan.                                                                                                                 |
 | Sesión               | Acceso: JWT de 15 min. Refresco: opaco, 30 días, rota en cada uso; si un token ya usado reaparece pasados 30 s, se revoca toda su familia.                                                                              |

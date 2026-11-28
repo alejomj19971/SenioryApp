@@ -27,6 +27,7 @@
 | 🧑 | **Aceptar los ADR-03 (comunicación) y ADR-04 (stack)** entre los dos desarrolladores. |
 | 🧑 | Actualizar la imagen del diagrama de ADR-01 (datos de salud en Teleasistencia, Mensajería y outbox). |
 | 🔧 | Revisar las actualizaciones que abre Dependabot **una por una** antes de fusionarlas (TypeScript 7 rompió la instalación). |
+| 🔧 | **Actualización de seguridad de Next.js** (aplazada por decisión del equipo, 2026-11-28): al correr `next dev`, la CLI de Next.js 16.4.2 avisa que esa versión tiene una vulnerabilidad conocida y sugiere `next upgrade --agent=security`. No se ha verificado el aviso ni se ha actualizado nada. Antes de lanzar: confirmar de qué versión se corrige, actualizar en un PR aparte y pasar las pruebas del frontend (unitarias y de recorrido). |
 | 🔧 | Contratos versionados del [ADR-03](./ADR-03.md): `openapi.json` (con el plugin de Swagger para que muestre los campos de los DTO), AsyncAPI de los eventos y su verificación en la CI. **Va en un PR aparte.** |
 
 ### M1 — Identidad  *(7 de 8 PR)*
@@ -40,7 +41,8 @@
 | ⚖️ | **Vincular a un segundo familiar** (`POST /vinculos`): necesita decidir quién autoriza la invitación (el responsable, la persona mayor…). |
 | 🔧 | Contraseña de un solo uso del administrador, que se cambia al primer ingreso (M10: obliga al guard global a conocer esa marca). |
 | 🧑 | **Segundo factor obligatorio para administradores** (decisión 4, M10): el TOTP ya está construido y cada administrador lo activa por su cuenta (`segundo-factor.controller.ts`); falta decidir si antes de producción debe ser obligatorio para todos, no solo opcional. |
-| 🔧 | Verificar el correo de las cuentas (necesita el canal de correo, M5). |
+| ✅ | ~~Verificar el correo de las cuentas.~~ Resuelto (2026-11-28): enlace por correo al registrarse (`/verificar-correo`), aviso «Confirma tu correo» con reenvío, y ningún correo sale a una dirección sin confirmar. Las cuentas de cuidadores que carga Directorio nacen sin confirmar y lo hacen desde su panel. |
+| 🔧 | **Teléfono verificado** (SMS/WhatsApp): hoy solo el correo se confirma; cuando haya proveedor de SMS, el mismo criterio debe aplicarse al teléfono antes de enviar avisos. |
 | 🔧 | Tarea programada diaria que borre las sesiones y los enlaces de recuperación vencidos (los repositorios ya tienen el método; falta programarla, M10). |
 | 🧑 | **Bloqueo de cuenta como vector de denegación de servicio** (decisión 7): que los fallos caduquen con el tiempo y desbloquear por correo (M10). |
 | 🔧 | Rotar el secreto de firma de los tokens sin invalidar los de acceso vigentes: hoy acepta una sola clave. |

@@ -125,6 +125,15 @@ export class EntregarPendientes {
     if (contacto === null) {
       throw new FalloDeEnvio('La cuenta del destinatario ya no existe', true);
     }
+    // Ningún correo sale a una dirección que la persona no confirmó (puede ser de otra persona), ni siquiera una
+    // alerta: lleva información de salud, y esa no debe llegar a una bandeja ajena. La alerta sigue saliendo por la campana.
+    // Reintentar no lo arregla: queda fallido de una vez.
+    if (aviso.canal === 'correo' && !contacto.correoVerificado) {
+      throw new FalloDeEnvio(
+        'El correo del destinatario todavía no está verificado',
+        true,
+      );
+    }
     let texto;
     try {
       texto = renderizarAviso(aviso.tipo, aviso.parametros);

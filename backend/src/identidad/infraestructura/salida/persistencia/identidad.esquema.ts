@@ -44,7 +44,10 @@ export const usuarios = esquemaIdentidad.table(
       'usuarios_rol_valido',
       sql`rol in ('familiar', 'adulto_mayor', 'cuidador', 'administrador')`,
     ),
-    check('usuarios_estado_valido', sql`estado in ('activo', 'eliminado')`),
+    check(
+      'usuarios_estado_valido',
+      sql`estado in ('activo', 'suspendido', 'eliminado')`,
+    ),
     check('usuarios_nombre_valido', sql`char_length(nombre) between 1 and 100`),
     // Formato internacional E.164, por ejemplo +573001234567.
     check(
@@ -117,6 +120,35 @@ export const tokensDeRecuperacion = esquemaIdentidad.table(
     ),
     check('tokens_de_recuperacion_vigencia_valida', sql`expira_en > creado_en`),
     index('tokens_de_recuperacion_usuario_idx').on(t.usuarioId, t.creadoEn),
+  ],
+);
+
+// El enlace que llega al correo para confirmar que es de la persona. Misma forma y mismas garantías que
+// `tokensDeRecuperacion` (solo se guarda el hash, de un solo uso, de vida limitada), en su propia tabla para que un enlace de
+// un tipo nunca sirva para el otro.
+export const tokensDeVerificacionDeCorreo = esquemaIdentidad.table(
+  'tokens_de_verificacion_de_correo',
+  {
+    id: uuid('id').primaryKey(),
+    usuarioId: uuid('usuario_id')
+      .notNull()
+      .references(() => usuarios.id, { onDelete: 'cascade' }),
+    hashDelToken: bytea('hash_del_token').notNull(),
+    creadoEn: instante('creado_en').notNull().defaultNow(),
+    expiraEn: instante('expira_en').notNull(),
+    usadoEn: instante('usado_en'),
+  },
+  (t) => [
+    unique('tokens_verificacion_correo_hash_unico').on(t.hashDelToken),
+    check(
+      'tokens_verificacion_correo_hash_valido',
+      sql`octet_length(hash_del_token) = 32`,
+    ),
+    check(
+      'tokens_verificacion_correo_vigencia_valida',
+      sql`expira_en > creado_en`,
+    ),
+    index('tokens_verificacion_correo_usuario_idx').on(t.usuarioId, t.creadoEn),
   ],
 );
 

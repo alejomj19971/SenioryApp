@@ -45,6 +45,9 @@ export function estadoDeError(error: ErrorDeApi, valores?: Record<string, string
     return estado({ errores: { correo: MENSAJE_CORREO_REGISTRADO } });
   }
   if (error.codigo === "recuperacion.enlace_no_valido") return estado({ mensaje: MENSAJE_ENLACE_NO_VALIDO });
+  if (error.codigo === "verificacion_de_correo.enlace_no_valido") {
+    return estado({ mensaje: "Este enlace ya no es válido o venció. Entra a tu cuenta y pide uno nuevo desde el aviso «Confirma tu correo»." });
+  }
 
   if (error.errores.length > 0) {
     const errores: Record<string, string> = {};
