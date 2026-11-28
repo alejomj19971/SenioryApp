@@ -41,15 +41,13 @@ export function TarjetaCuidador({ cuidador, seleccionado, onAlternarSeleccion, a
         <div className="flex flex-1 flex-col gap-1">
           {/* pr-8: deja libre la esquina superior derecha, donde está la casilla de selección */}
           <p className="pr-8 text-base font-semibold text-foreground">{cuidador.nombre}</p>
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-            <p className="text-sm text-muted-foreground">
-              {etiquetaEspecialidad(cuidador.especialidad)}
-            </p>
-            <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-primary px-2 py-0.5 text-xs font-semibold text-primary-foreground">
-              <ShieldCheck className="size-3.5" aria-hidden="true" />
-              Verificado
-            </span>
-          </div>
+          <p className="text-sm text-muted-foreground">{etiquetaEspecialidad(cuidador.especialidad)}</p>
+          {/* En su propia línea y pegada a la izquierda: así queda en el mismo lugar en todas las tarjetas, sin importar
+              cuánto mida la especialidad. */}
+          <span className="inline-flex w-fit items-center gap-1 rounded-full bg-primary px-2 py-0.5 text-xs font-semibold text-primary-foreground">
+            <ShieldCheck className="size-3.5" aria-hidden="true" />
+            Verificado
+          </span>
           <div className="flex items-center gap-1 text-sm text-muted-foreground">
             <MapPin className="size-3.5 shrink-0" aria-hidden="true" />
             {cuidador.zona}
